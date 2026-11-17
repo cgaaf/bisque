@@ -1,0 +1,40 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { SeparatorHero } from "../../demos/separator/hero.rx"
+import { SeparatorPropsFunction } from "../../demos/separator/props-function.rx"
+
+export default component Page() {
+  <DocsPage title="Separator" subtitle="A line that divides content, horizontally or vertically.">
+    <Demo source="separator/hero"><SeparatorHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the part:</p>
+    <Code file="separator/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      A separator is an <code>{"<hr>"}</code>, which has the <code>separator</code> role and is horizontal by
+      default. The part adds one attribute: <code>aria-orientation="vertical"</code> when it is vertical. Nothing
+      is written for a horizontal one.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="vertical">Vertical</h3>
+    <p>
+      With <code>orientation="vertical"</code> the separator divides items in a row, as between the links above.
+      Style it with <code>[aria-orientation="vertical"]</code>. An <code>{"<hr>"}</code> brings the browser's
+      margin and inset border: reset them and draw the line you want.
+    </p>
+
+    <h3 id="other-elements">On another element</h3>
+    <p>
+      Where an <code>{"<hr>"}</code> doesn't fit, spread <code>separator(orientation)</code> on an element of your
+      own. It writes what an <code>{"<hr>"}</code> would have implied: <code>role="separator"</code>,{" "}
+      <code>aria-orientation</code> for both orientations, and <code>data-orientation</code> for the stylesheet.
+    </p>
+    <Demo source="separator/props-function"><SeparatorPropsFunction /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="separator" />
+  </DocsPage>
+}

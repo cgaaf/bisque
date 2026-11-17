@@ -1,0 +1,125 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { ComboboxHero } from "../../demos/combobox/hero.rx"
+import { ComboboxMultiple } from "../../demos/combobox/multiple.rx"
+import { ComboboxGrouped } from "../../demos/combobox/grouped.rx"
+
+export default component Page() {
+  <DocsPage title="Combobox" subtitle="An input that filters a list of options to choose from.">
+    <Demo source="combobox/hero"><ComboboxHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="combobox/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The popup is an element with the native <code>popover</code> attribute, placed against the input with CSS
+      anchor positioning. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the popup is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>
+        Placement below the input, flipped above it when it doesn't fit, and at least as wide as the input
+        (<code>min-width: anchor-size(width)</code>).
+      </li>
+      <li>The text input itself: typing, selection, the caret, and a <code>placeholder</code>.</li>
+    </ul>
+    <p>
+      The popup is <code>popover="manual"</code>, not <code>"auto"</code>: the browser's light dismiss counts a
+      press on the input that opened the popup as a press outside, in Chrome, Firefox and Safari alike, so it would
+      close the list as soon as you click into the input. The library closes it instead, on <kbd>Escape</kbd>, on
+      {" "}<kbd>Tab</kbd> and on a press outside the input, its buttons and the popup.
+    </p>
+    <p>
+      The library adds the rest: filtering the options as you type, the highlighted option (named by the input's
+      {" "}<code>aria-activedescendant</code> while focus stays in the input), the arrow keys and <kbd>Enter</kbd>,
+      the selected value and the form value it submits, chips for multiple selection, the ARIA roles and
+      relationships, and <code>data-side</code> with the arrow's position, which the browser doesn't report.
+    </p>
+    <div class="note">
+      <p>
+        The popup stays in the document while it is closed, so there is no Portal part, and the popup is the
+        positioned element, so there is no Positioner or Backdrop. There is no Label part: put the combobox in a
+        {" "}<code>FieldRoot</code> with a <code>FieldLabel</code>, as the demo above does, or give the input an
+        {" "}<code>aria-label</code>. There is no InputGroup or Icon either: wrap the input and its buttons in an
+        element of your own, and put an icon inside <code>ComboboxTrigger</code>. Options are written as markup, one
+        {" "}<code>ComboboxItem</code> each, so there are no Collection or Row parts.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="multiple">Multiple selection</h3>
+    <p>
+      With <code>multiple</code> the root holds <code>values</code> (with <code>defaultValues</code> and
+      {" "}<code>onValuesChange</code>). Choosing an option toggles it, empties the input and leaves the list open.
+      Put the input in <code>ComboboxChips</code> and the popup is anchored to that container instead, so it is as
+      wide as the whole field. Render a <code>ComboboxChip</code> per selected value from the{" "}
+      <code>combobox</code> context; <kbd>Backspace</kbd> in an empty input removes the last one. With a{" "}
+      <code>name</code>, the form gets one entry per value.
+    </p>
+    <Demo source="combobox/multiple"><ComboboxMultiple /></Demo>
+
+    <h3 id="grouped">Groups</h3>
+    <p>
+      <code>ComboboxGroup</code> and <code>ComboboxGroupLabel</code> put a heading over related options. A group
+      whose options all fail the filter is hidden. A separator next to it isn't, so the demo's CSS hides it with
+      {" "}<code>:has()</code>.
+    </p>
+    <Demo source="combobox/grouped"><ComboboxGrouped /></Demo>
+
+    <h3 id="filtering">Filtering</h3>
+    <p>
+      An option matches when its label contains what was typed, ignoring case and accents: "creme" finds "Crème
+      brûlée". The label is the option's <code>label</code> prop, else its text. Pass <code>filter</code> to
+      match another way; it gets the label and the trimmed query. An option that doesn't match isn't rendered.
+      With <code>autoHighlight</code> the first match is highlighted as you type, so <kbd>Enter</kbd> chooses it.
+    </p>
+    <p>
+      <code>ComboboxEmpty</code> shows its children while no option matches, and <code>ComboboxStatus</code> holds
+      any other message about the list. Both are <code>role="status"</code> elements that stay in the document;
+      style the empty one with <code>:not(:empty)</code> so it takes no room while there are matches. The popup
+      and the list carry <code>data-empty</code> then too.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      <code>value</code> and <code>onValueChange</code> hold the selection; <code>null</code> is no selection.
+      {" "}<code>inputValue</code> and <code>onInputValueChange</code> hold the text, and <code>open</code> and
+      {" "}<code>onOpenChange</code> the popup. By default the input shows the selected option's label. Closing the
+      list without choosing puts that label back, and emptying the input clears the selection.
+    </p>
+    <p>
+      The input and <code>ComboboxValue</code> name a value by the label its option registered. A value whose
+      option hasn't rendered (a controlled value set before the list exists) has no label yet; pass{" "}
+      <code>items</code>, a list of <code>{"{ value, label }"}</code>, to name it.
+    </p>
+
+    <h3 id="forms">Forms</h3>
+    <p>
+      With a <code>name</code>, or inside a <code>FieldRoot</code> that has one, the selected value is submitted
+      with the form. Inside a field the input is labelled and described by it, and <code>required</code> is
+      validated with the field's other constraints.
+    </p>
+
+    <h3 id="placement">Placement and the arrow</h3>
+    <p>
+      <code>side</code>, <code>align</code>, <code>sideOffset</code> and <code>alignOffset</code> on the popup
+      become CSS anchor positioning declarations in its inline style, so a stylesheet can replace any of them.
+      When the browser flips the popup, its <code>data-side</code> changes to the side it ended up on.{" "}
+      <code>ComboboxArrow</code> is placed on the popup's edge that faces the input and carries the same{" "}
+      <code>data-side</code>; give it a shape and turn it per side, as the Popover page shows.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the popup in with <code>@starting-style</code> under <code>:popover-open</code>, and turn the
+      animation's origin with <code>data-side</code>, as the first demo does. Closing hides a popover at once; to
+      animate it out, transition <code>display</code> and <code>overlay</code> with <code>allow-discrete</code>,
+      which takes effect in the engines that support it and is ignored in the others.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="combobox" />
+  </DocsPage>
+}

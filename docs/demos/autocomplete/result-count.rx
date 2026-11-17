@@ -1,0 +1,29 @@
+import { combobox } from "../../../src/combobox/combobox.rx"
+import { AutocompleteRoot, AutocompleteInput, AutocompletePopup, AutocompleteStatus, AutocompleteList, AutocompleteItem } from "../../../src/autocomplete/autocomplete.rx"
+
+// Autocomplete's parts share Combobox's context: `visibleCount` is how many suggestions pass the filter.
+component ResultCount() {
+  c = use combobox
+  <AutocompleteStatus class="Status">
+    {c.visibleCount == 0 ? "No results" : c.visibleCount == 1 ? "1 result" : `${c.visibleCount} results`}
+  </AutocompleteStatus>
+}
+
+export component AutocompleteResultCount() {
+  <div class="AutocompleteResultCount">
+    <AutocompleteRoot openOnInputClick autoHighlight>
+      <AutocompleteInput class="Input" aria-label="Command" placeholder="Run a command…" />
+      <AutocompletePopup class="Popup" sideOffset={6}>
+        <ResultCount />
+        <AutocompleteList class="List">
+          <AutocompleteItem class="Item" value="New file">New file</AutocompleteItem>
+          <AutocompleteItem class="Item" value="New folder">New folder</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Open recent">Open recent</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Rename">Rename</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Duplicate">Duplicate</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Move to trash">Move to trash</AutocompleteItem>
+        </AutocompleteList>
+      </AutocompletePopup>
+    </AutocompleteRoot>
+  </div>
+}

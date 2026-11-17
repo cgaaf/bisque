@@ -1,0 +1,29 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectItem, SelectGroup, SelectGroupLabel, SelectSeparator } from "../../../src/select/select.rx"
+
+export component SelectGrouped() {
+  <div class="SelectGrouped">
+    <SelectRoot>
+      <SelectTrigger class="Trigger" aria-label="Produce">
+        <SelectValue class="Value" placeholder="Choose produce" />
+        <SelectIcon class="Icon">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="none"><path d="M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </SelectIcon>
+      </SelectTrigger>
+      <SelectPopup class="Popup" sideOffset={6}>
+        <SelectGroup class="Group">
+          <SelectGroupLabel class="GroupLabel">Fruit</SelectGroupLabel>
+          <SelectItem class="Item" value="apple">Apple</SelectItem>
+          <SelectItem class="Item" value="banana">Banana</SelectItem>
+          <SelectItem class="Item" value="orange">Orange</SelectItem>
+        </SelectGroup>
+        <SelectSeparator class="Separator" />
+        <SelectGroup class="Group">
+          <SelectGroupLabel class="GroupLabel">Vegetables</SelectGroupLabel>
+          <SelectItem class="Item" value="carrot">Carrot</SelectItem>
+          <SelectItem class="Item" value="lettuce">Lettuce</SelectItem>
+          <SelectItem class="Item" value="spinach">Spinach</SelectItem>
+        </SelectGroup>
+      </SelectPopup>
+    </SelectRoot>
+  </div>
+}

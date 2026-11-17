@@ -1,0 +1,70 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { ProgressHero } from "../../demos/progress/hero.rx"
+import { ProgressStatus } from "../../demos/progress/status.rx"
+
+export default component Page() {
+  <DocsPage title="Progress" subtitle="Shows how far a task that takes a while has got.">
+    <Demo source="progress/hero"><ProgressHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="progress/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Nothing here needs a browser feature. The root is a <code>{"<div>"}</code> with{" "}
+      <code>role="progressbar"</code> and <code>aria-valuemin</code>, <code>aria-valuemax</code>,{" "}
+      <code>aria-valuenow</code> and <code>aria-valuetext</code>; the track and the indicator are plain elements
+      that you draw. It is not the native <code>{"<progress>"}</code> element.
+    </p>
+    <p>The library adds:</p>
+    <ul>
+      <li>
+        The status: indeterminate while the value is <code>null</code>, complete when it reaches{" "}
+        <code>max</code>, progressing otherwise. Every part carries it as a <code>data-*</code> attribute.
+      </li>
+      <li>Clamping the value to the range, for the ARIA attributes, the indicator and the text.</li>
+      <li>The indicator's width: the share of the range done, as an inline <code>width</code> percentage.</li>
+      <li>
+        The value formatted with <code>Intl.NumberFormat</code>: a percentage of the range unless you pass{" "}
+        <code>format</code>. It is shown by <code>ProgressValue</code> and is the root's{" "}
+        <code>aria-valuetext</code>; while indeterminate the text is "indeterminate progress" and{" "}
+        <code>aria-valuenow</code> is left out.
+      </li>
+      <li><code>aria-labelledby</code> on the root, pointing at <code>ProgressLabel</code>.</li>
+    </ul>
+    <div class="note">
+      <p>
+        Progress is for a task. For a measurement within a range, use <a href={href("components/meter")}>Meter</a>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="status">Indeterminate and complete</h3>
+    <p>
+      Pass <code>null</code> as the value while how much is done isn't known. The parts then carry{" "}
+      <code>data-indeterminate</code>, <code>ProgressValue</code> is empty, and the indicator gets no width, so
+      the stylesheet decides what it looks like: here it slides along the track. At <code>max</code> the parts
+      carry <code>data-complete</code>, and in between <code>data-progressing</code>.
+    </p>
+    <Demo source="progress/status"><ProgressStatus /></Demo>
+
+    <h3 id="formatting">Formatting the value</h3>
+    <p>
+      <code>min</code> and <code>max</code> set the range, 0 to 100 by default. <code>format</code> takes{" "}
+      <code>Intl.NumberFormat</code> options and <code>locale</code> a locale; with a format, the clamped value is
+      formatted rather than its percentage. <code>getAriaValueText</code> receives the formatted value and the raw
+      one (<code>null</code> while indeterminate), and returns the text announced for the progress bar.
+    </p>
+    <p>
+      <code>ProgressValue</code> shows the formatted value and nothing else. For other text, write a small
+      component that reads the <code>progress</code> context and spreads <code>progressValue(c)</code> on its own
+      element. The context holds the clamped value, its percentage, the formatted text and the status.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="progress" />
+  </DocsPage>
+}

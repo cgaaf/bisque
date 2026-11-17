@@ -1,0 +1,21 @@
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../../../src/slider/slider.rx"
+
+export component SliderHero() {
+  <div class="SliderHero">
+    <FieldRoot class="Field">
+      <SliderRoot class="Slider" defaultValue={40}>
+        <div class="Header">
+          <FieldLabel class="Label">Volume</FieldLabel>
+          <SliderValue class="Value" />
+        </div>
+        <SliderControl class="Control">
+          <SliderTrack class="Track">
+            <SliderIndicator class="Indicator" />
+            <SliderThumb class="Thumb" />
+          </SliderTrack>
+        </SliderControl>
+      </SliderRoot>
+    </FieldRoot>
+  </div>
+}

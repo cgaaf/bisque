@@ -1,0 +1,110 @@
+{
+  "SliderRoot": {
+    "description": "Holds the slider's value and shares it with the parts inside it. Renders a `role=\"group\"` element.",
+    "props": {
+      "value": "The value: a number for one thumb, an array for a range with a thumb per entry. Pass it with `onValueChange` to control the slider.",
+      "defaultValue": "The value at first, when it isn't controlled: a number, or an array for a range. Defaults to `min`.",
+      "onValueChange": "Called on every change, many times during a drag, with the new value (a number or an array, as `value` is) and details: the `reason` (`track-press`, `drag`, `keyboard` or `input-change`) and the `activeThumbIndex`.",
+      "onValueCommitted": "Called when a change is final: on pointer release and on each key press. Receives the value and the `reason`.",
+      "min": "The smallest value.",
+      "max": "The largest value.",
+      "step": "The values are multiples of `step` from `min`.",
+      "largeStep": "How far Page Up, Page Down and Shift with an arrow key move a thumb.",
+      "minStepsBetweenValues": "How many steps apart a range's thumbs must stay.",
+      "orientation": "Whether the slider runs left to right or bottom to top.",
+      "disabled": "Whether the slider ignores the pointer and the keyboard. Its range inputs are disabled too. Also true inside a disabled FieldRoot.",
+      "name": "The name each thumb's range input submits its value under. Taken from an enclosing FieldRoot when not given.",
+      "form": "The id of a `<form>` the thumbs' inputs belong to, when the slider isn't inside it.",
+      "format": "`Intl.NumberFormat` options for how `SliderValue` shows the values and the thumbs announce them.",
+      "locale": "The locale used with `format`. Defaults to the browser's."
+    },
+    "dataAttributes": {
+      "data-orientation": "The slider's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the slider is disabled.",
+      "data-dragging": "Present while a pointer is pressing the control or dragging a thumb.",
+      "data-touched": "Inside a FieldRoot: present once the slider has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present once the value has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-filled": "Inside a FieldRoot: present when the field has a value.",
+      "data-focused": "Inside a FieldRoot: present while a thumb has focus."
+    }
+  },
+  "SliderControl": {
+    "description": "The area that takes pointer presses: a press moves the nearest thumb there, and dragging moves it on. Put the track and thumbs inside it, and give it more height than the track for an easier target. It sets `touch-action: none`.",
+    "dataAttributes": {
+      "data-orientation": "The slider's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the slider is disabled.",
+      "data-dragging": "Present while a pointer is pressing the control or dragging a thumb.",
+      "data-touched": "Inside a FieldRoot: present once the slider has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present once the value has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-filled": "Inside a FieldRoot: present when the field has a value.",
+      "data-focused": "Inside a FieldRoot: present while a thumb has focus."
+    }
+  },
+  "SliderTrack": {
+    "description": "The rail the thumbs move along. It is `position: relative`, and the indicator and thumbs are placed within it, so give it its length and thickness.",
+    "dataAttributes": {
+      "data-orientation": "The slider's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the slider is disabled.",
+      "data-dragging": "Present while a pointer is pressing the control or dragging a thumb.",
+      "data-touched": "Inside a FieldRoot: present once the slider has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present once the value has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-filled": "Inside a FieldRoot: present when the field has a value.",
+      "data-focused": "Inside a FieldRoot: present while a thumb has focus."
+    }
+  },
+  "SliderIndicator": {
+    "description": "The filled part of the track: from the start to the value, or between a range's first and last thumbs. Its offset and length are inline styles; it inherits the track's height (horizontal) or width (vertical).",
+    "dataAttributes": {
+      "data-orientation": "The slider's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the slider is disabled.",
+      "data-dragging": "Present while a pointer is pressing the control or dragging a thumb.",
+      "data-touched": "Inside a FieldRoot: present once the slider has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present once the value has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-filled": "Inside a FieldRoot: present when the field has a value.",
+      "data-focused": "Inside a FieldRoot: present while a thumb has focus."
+    }
+  },
+  "SliderValue": {
+    "description": "The values as text, formatted with `format` and `locale`, a range's joined by \" – \". An `<output>` whose `for` names the thumbs' inputs. It isn't announced as it changes (`aria-live=\"off\"`): the focused thumb announces its own value.",
+    "dataAttributes": {
+      "data-orientation": "The slider's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the slider is disabled.",
+      "data-dragging": "Present while a pointer is pressing the control or dragging a thumb.",
+      "data-touched": "Inside a FieldRoot: present once the slider has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present once the value has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-filled": "Inside a FieldRoot: present when the field has a value.",
+      "data-focused": "Inside a FieldRoot: present while a thumb has focus."
+    }
+  },
+  "SliderThumb": {
+    "description": "A thumb: a `<div>` centred on its value with inline `position` and `translate`, around a visually hidden `<input type=\"range\">` that takes focus, carries the slider's ARIA and submits the value. ARIA props given to the thumb (`aria-label`, `aria-labelledby`, `aria-describedby`, `aria-valuetext`) go to that input. Style focus with `:has(:focus-visible)`.",
+    "props": {
+      "index": "Which value this thumb shows: its position in the array for a range. Leave it at 0 for a single-value slider.",
+      "disabled": "Disables this thumb alone.",
+      "getAriaLabel": "Names each thumb of a range from its index. Takes precedence over `aria-label`.",
+      "getAriaValueText": "The text the input announces for its value, from the formatted value, the value and the thumb's index."
+    },
+    "dataAttributes": {
+      "data-index": "The thumb's index in the value array.",
+      "data-orientation": "The slider's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the thumb or the whole slider is disabled.",
+      "data-dragging": "Present while a pointer is pressing the control or dragging a thumb.",
+      "data-touched": "Inside a FieldRoot: present once the slider has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present once the value has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-filled": "Inside a FieldRoot: present when the field has a value.",
+      "data-focused": "Inside a FieldRoot: present while a thumb has focus."
+    }
+  }
+}

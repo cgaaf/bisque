@@ -1,0 +1,70 @@
+.NumberFieldFormat {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+
+  .Field {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.375rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Group {
+    display: flex;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    overflow: hidden;
+  }
+
+  .Group:has(.Input:focus-visible) {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Input {
+    width: 7.5rem;
+    height: 2.5rem;
+    padding: 0 0.5rem;
+    border: 0;
+    border-inline: 1px solid light-dark(#d4d4dc, #3a3a43);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    outline: none;
+  }
+
+  .Stepper {
+    width: 2.5rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 1.125rem;
+    cursor: pointer;
+  }
+
+  .Stepper:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Stepper:disabled {
+    color: light-dark(#b4b4be, #4a4a55);
+    background: transparent;
+    cursor: default;
+  }
+
+  .Raw {
+    font-family: ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

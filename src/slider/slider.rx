@@ -236,8 +236,9 @@ export component SliderValue(props: Omit<OutputProps, "children">) {
 }
 
 export type SliderThumbProps = {
-  // Which value this thumb shows: 0 for a single-value slider, its position in the array for a range.
+  // Which value this thumb shows: its position in the array for a range. Default: 0.
   index?: number
+  // Disables this thumb alone. Default: false.
   disabled?: boolean
   // Name the thumb's input; for a range, `getAriaLabel(index)` names each thumb.
   "aria-label"?: string

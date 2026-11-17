@@ -1,0 +1,19 @@
+import { ProgressRoot, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator } from "../../../src/progress/progress.rx"
+
+export component ProgressStatus() {
+  source done: number | null := 40
+  <div class="ProgressStatus">
+    <ProgressRoot class="Progress" value={done}>
+      <ProgressLabel class="Label">Export</ProgressLabel>
+      <ProgressValue class="Value" />
+      <ProgressTrack class="Track">
+        <ProgressIndicator class="Indicator" />
+      </ProgressTrack>
+    </ProgressRoot>
+    <div class="Buttons">
+      <button class="Button" type="button" onClick={() => { done := null }}>Unknown</button>
+      <button class="Button" type="button" onClick={() => { done := 0 }}>Restart</button>
+      <button class="Button" type="button" onClick={() => { done := done == null ? 20 : done + 20 > 100 ? 100 : done + 20 }}>Add 20%</button>
+    </div>
+  </div>
+}

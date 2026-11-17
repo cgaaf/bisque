@@ -1,0 +1,13 @@
+import { ProgressRoot, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator } from "../../../src/progress/progress.rx"
+
+export component ProgressHero() {
+  <div class="ProgressHero">
+    <ProgressRoot class="Progress" value={62}>
+      <ProgressLabel class="Label">Uploading 3 files</ProgressLabel>
+      <ProgressValue class="Value" />
+      <ProgressTrack class="Track">
+        <ProgressIndicator class="Indicator" />
+      </ProgressTrack>
+    </ProgressRoot>
+  </div>
+}

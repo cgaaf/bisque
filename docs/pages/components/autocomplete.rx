@@ -1,0 +1,112 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { AutocompleteHero } from "../../demos/autocomplete/hero.rx"
+import { AutocompleteInline } from "../../demos/autocomplete/inline.rx"
+import { AutocompleteResultCount } from "../../demos/autocomplete/result-count.rx"
+
+export default component Page() {
+  <DocsPage title="Autocomplete" subtitle="A text input that suggests what to type.">
+    <Demo source="autocomplete/hero"><AutocompleteHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="autocomplete/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      An autocomplete is a text input whose text is its value: the suggestions only help to fill it in. Use{" "}
+      <a href="../combobox/">Combobox</a> when the value must be one of the options. It is Combobox underneath,
+      and its popup is the same element: a native <code>popover</code> placed against the input with CSS anchor
+      positioning. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the popup is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>
+        Placement below the input, flipped above it when it doesn't fit, and at least as wide as the input
+        (<code>min-width: anchor-size(width)</code>).
+      </li>
+      <li>The text input itself, and with a <code>name</code> on it, its text submitted with the form.</li>
+    </ul>
+    <p>
+      The popup is <code>popover="manual"</code>: the browser's light dismiss counts a press on the input that
+      opened it as a press outside, in Chrome, Firefox and Safari alike. The library closes it instead, on{" "}
+      <kbd>Escape</kbd>, on <kbd>Tab</kbd> and on a press outside, and leaves the text as it was.
+    </p>
+    <p>
+      The library adds filtering the suggestions, the highlighted suggestion (the input's{" "}
+      <code>aria-activedescendant</code>, while focus stays in the input), the arrow keys and <kbd>Enter</kbd>,
+      inline completion, the ARIA roles and relationships, and <code>data-side</code> with the arrow's position.
+    </p>
+    <div class="note">
+      <p>
+        As in Combobox, there are no Portal, Positioner or Backdrop parts, no InputGroup or Icon (wrap the input in
+        your own element and put an icon in <code>AutocompleteTrigger</code>), and no Collection or Row: each
+        suggestion is an <code>AutocompleteItem</code> in markup. Label the input with a <code>FieldLabel</code> or
+        an <code>aria-label</code>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="modes">Inline completion</h3>
+    <p>
+      <code>mode</code> says how the input completes what is typed, and is announced as the input's{" "}
+      <code>aria-autocomplete</code>:
+    </p>
+    <ul>
+      <li><code>"list"</code>, the default, filters the suggestions by what was typed.</li>
+      <li>
+        <code>"inline"</code> shows the suggestion highlighted with the arrow keys in the input, without filtering.
+      </li>
+      <li><code>"both"</code> filters and shows the highlighted suggestion.</li>
+      <li><code>"none"</code> does neither: the suggestions are a fixed list.</li>
+    </ul>
+    <p>
+      The suggestion shown inline is a preview: the value changes when you choose it with <kbd>Enter</kbd> or a
+      press, or type again. Type "l" below, then press <kbd>↓</kbd>.
+    </p>
+    <Demo source="autocomplete/inline"><AutocompleteInline /></Demo>
+
+    <h3 id="opening">Opening the list</h3>
+    <p>
+      The list opens as you type, and on <kbd>↓</kbd> or <kbd>↑</kbd>. A click in the input opens it only with
+      {" "}<code>openOnInputClick</code>, unlike Combobox, where that is the default. <code>AutocompleteTrigger</code>
+      {" "}is a button that toggles it and keeps focus in the input; <code>AutocompleteClear</code> empties the input
+      and is rendered only while there is text, unless it has <code>keepMounted</code>.
+    </p>
+
+    <h3 id="status">Empty state and status</h3>
+    <p>
+      <code>AutocompleteEmpty</code> shows its children while no suggestion matches; <kbd>Enter</kbd> then closes
+      the list and keeps the text. <code>AutocompleteStatus</code> is for any other message about the list. Both
+      are <code>role="status"</code> elements with <code>aria-live="polite"</code> that stay in the document. The
+      parts share Combobox's context, so a component of your own can read it: this one counts the suggestions that
+      pass the filter, and highlights the first with <code>autoHighlight</code>.
+    </p>
+    <Demo source="autocomplete/result-count"><AutocompleteResultCount /></Demo>
+
+    <h3 id="filtering">Filtering</h3>
+    <p>
+      A suggestion matches when its label (its <code>label</code> prop, else its text) contains what was typed,
+      ignoring case and accents. Pass <code>filter</code> to match another way: it gets the label and the trimmed
+      query. A suggestion that doesn't match isn't rendered, and a group with no matches is hidden.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      <code>value</code> and <code>onValueChange</code> hold the input's text, as the inline example does, and{" "}
+      <code>open</code> and <code>onOpenChange</code> the popup. Inside a <code>FieldRoot</code>, the input carries
+      the field's name, and <code>required</code> is validated on its text.
+    </p>
+
+    <h3 id="placement">Placement, the arrow and animation</h3>
+    <p>
+      The popup takes <code>side</code>, <code>align</code>, <code>sideOffset</code> and{" "}
+      <code>alignOffset</code>, written as CSS anchor positioning in its inline style. <code>data-side</code> is
+      the side the browser placed it on, and <code>AutocompleteArrow</code> sits on the edge facing the input.
+      Animate it in with <code>@starting-style</code> under <code>:popover-open</code>, as the first demo does.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="autocomplete" />
+  </DocsPage>
+}

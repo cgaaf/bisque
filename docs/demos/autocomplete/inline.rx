@@ -1,0 +1,22 @@
+import { AutocompleteRoot, AutocompleteInput, AutocompletePopup, AutocompleteList, AutocompleteItem } from "../../../src/autocomplete/autocomplete.rx"
+
+export component AutocompleteInline() {
+  source city := ""
+  <div class="AutocompleteInline">
+    <AutocompleteRoot mode="both" value={city} onValueChange={(next) => { city := next }}>
+      <AutocompleteInput class="Input" aria-label="City" placeholder="Type, then press ↓" />
+      <AutocompletePopup class="Popup" sideOffset={6}>
+        <AutocompleteList class="List">
+          <AutocompleteItem class="Item" value="Lisbon">Lisbon</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Lima">Lima</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Lyon">Lyon</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Madrid">Madrid</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Malmö">Malmö</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Oslo">Oslo</AutocompleteItem>
+          <AutocompleteItem class="Item" value="Osaka">Osaka</AutocompleteItem>
+        </AutocompleteList>
+      </AutocompletePopup>
+    </AutocompleteRoot>
+    <p class="State">value: <output>{city == "" ? "(empty)" : city}</output></p>
+  </div>
+}

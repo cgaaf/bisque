@@ -1,0 +1,20 @@
+import { SliderRoot, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../../../src/slider/slider.rx"
+
+export component SliderControlled() {
+  source value: number | number[] := 25
+  source committed: number | number[] := 25
+  <div class="SliderControlled">
+    <SliderRoot class="Slider" value={value} onValueChange={(next) => { value := next }} onValueCommitted={(next) => { committed := next }}>
+      <SliderControl class="Control">
+        <SliderTrack class="Track">
+          <SliderIndicator class="Indicator" />
+          <SliderThumb class="Thumb" aria-label="Brightness" />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+    <dl class="Readout">
+      <div><dt>onValueChange</dt><dd>{value}</dd></div>
+      <div><dt>onValueCommitted</dt><dd>{committed}</dd></div>
+    </dl>
+  </div>
+}

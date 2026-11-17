@@ -1,0 +1,94 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { SliderHero } from "../../demos/slider/hero.rx"
+import { SliderRange } from "../../demos/slider/range.rx"
+import { SliderVertical } from "../../demos/slider/vertical.rx"
+import { SliderControlled } from "../../demos/slider/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Slider" subtitle="A range input with any number of thumbs that you can style.">
+    <Demo source="slider/hero"><SliderHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="slider/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Each thumb is a positioned <code>{"<div>"}</code> around a visually hidden{" "}
+      <code>{"<input type=\"range\">"}</code>. The native input is what takes focus, carries the slider's ARIA
+      (with <code>aria-valuetext</code> from the formatted value) and submits the thumb's value with a form. A
+      change the input reports on its own, from assistive technology or autofill, updates the slider too.
+    </p>
+    <p>
+      The visible slider is not a native widget. A native range input has a single thumb and no way to show a
+      filled range between two, and several thumbs on one track is something only the library does. So the
+      library draws the track, places the indicator and the thumbs with inline styles, moves the nearest thumb to
+      a press on the control and follows a drag, and handles the keys itself: the arrow keys step,{" "}
+      <kbd>Shift</kbd> with an arrow and <kbd>Page Up</kbd>/<kbd>Page Down</kbd> take the large step, and{" "}
+      <kbd>Home</kbd>/<kbd>End</kbd> go to the bounds. It also formats the values with{" "}
+      <code>Intl.NumberFormat</code> and connects the slider to an enclosing Field.
+    </p>
+    <div class="note">
+      <p>
+        There is no Label part: put the slider in a <code>FieldRoot</code> with a <code>FieldLabel</code>, point{" "}
+        <code>aria-labelledby</code> on the root at a label, or give each thumb an <code>aria-label</code>. Base
+        UI's <code>thumbAlignment</code> and <code>thumbCollisionBehavior</code> don't exist: a thumb is centred
+        on its value, so it overhangs the ends of the track by half its width, and in a range a dragged thumb pushes
+        its neighbour along while a key stops it <code>minStepsBetweenValues</code> short.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="labelling">Labelling it</h3>
+    <p>
+      The first demo is in a <code>FieldRoot</code>, whose <code>FieldLabel</code> is a{" "}
+      <code>{"<label>"}</code> for the first thumb's input and the root's <code>aria-labelledby</code>. Without a Field, an{" "}
+      <code>aria-labelledby</code> on <code>SliderRoot</code> labels every thumb that has no{" "}
+      <code>aria-label</code> of its own.
+    </p>
+
+    <h3 id="range">A range</h3>
+    <p>
+      Pass an array as <code>defaultValue</code> or <code>value</code> and put a <code>SliderThumb</code> for each
+      entry, with its <code>index</code>. The indicator fills between the first and last thumbs.{" "}
+      <code>getAriaLabel</code> names each thumb, and <code>minStepsBetweenValues</code> keeps them that many
+      steps apart. <code>step</code> snaps the values to multiples from <code>min</code>; <code>largeStep</code> is
+      what <kbd>Page Up</kbd>, <kbd>Page Down</kbd> and <kbd>Shift</kbd> with an arrow move. With a{" "}
+      <code>format</code>, <code>SliderValue</code> shows the formatted values joined by an en dash.
+    </p>
+    <Demo source="slider/range"><SliderRange /></Demo>
+
+    <h3 id="vertical">Vertical</h3>
+    <p>
+      With <code>orientation="vertical"</code> the bottom of the control is the minimum. The indicator then
+      inherits the track's width instead of its height, so give the track a width.
+    </p>
+    <Demo source="slider/vertical"><SliderVertical /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the value yourself. <code>onValueChange</code>{" "}
+      is called on every change, many times during a drag; <code>onValueCommitted</code> only when a change is
+      final: when the pointer is released, and on each key press. Both receive a number, or an array for a range,
+      and a <code>details</code> object whose <code>reason</code> says what made the change.
+    </p>
+    <Demo source="slider/controlled"><SliderControlled /></Demo>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      With a <code>name</code>, or inside a named <code>FieldRoot</code>, each thumb's range input submits its
+      value under that name, so a range submits one entry per thumb.
+    </p>
+
+    <h3 id="styling">Styling the thumb</h3>
+    <p>
+      Focus is on the input inside the thumb, so style a keyboard focus ring with{" "}
+      <code>.Thumb:has(:focus-visible)</code>. Every part carries <code>data-orientation</code>, and{" "}
+      <code>data-dragging</code> while a pointer is pressing the control or dragging a thumb.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="slider" />
+  </DocsPage>
+}

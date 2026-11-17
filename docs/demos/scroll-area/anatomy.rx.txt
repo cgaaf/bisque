@@ -1,0 +1,11 @@
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaCorner } from "./rs-ui/scroll-area/scroll-area.rx"
+
+<ScrollAreaRoot>
+  <ScrollAreaViewport>
+    <ScrollAreaContent />
+  </ScrollAreaViewport>
+  <ScrollAreaScrollbar>
+    <ScrollAreaThumb />
+  </ScrollAreaScrollbar>
+  <ScrollAreaCorner />
+</ScrollAreaRoot>

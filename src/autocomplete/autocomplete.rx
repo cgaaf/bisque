@@ -11,7 +11,7 @@ export type AutocompleteRootProps = {
   defaultValue?: string
   onValueChange?: (value: string) => void
   // "list" (default) filters the suggestions by what was typed; "inline" shows the highlighted suggestion in the
-  // input; "both" does both; "none" neither (the suggestions are static).
+  // input; "both" does both; "none" neither (the suggestions are static). Default: "list".
   mode?: AutocompleteMode
   open?: boolean
   defaultOpen?: boolean

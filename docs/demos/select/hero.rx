@@ -1,0 +1,36 @@
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectItem, SelectItemText, SelectItemIndicator } from "../../../src/select/select.rx"
+
+export component SelectHero() {
+  <div class="SelectHero">
+    <FieldRoot class="Field">
+      <FieldLabel class="Label">Theme</FieldLabel>
+      <SelectRoot defaultValue="system">
+        <SelectTrigger class="Trigger">
+          <SelectValue class="Value" placeholder="Choose a theme" />
+          <SelectIcon class="Icon">
+            <svg width="10" height="14" viewBox="0 0 10 14" fill="none"><path d="M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </SelectIcon>
+        </SelectTrigger>
+        <SelectPopup class="Popup" sideOffset={6}>
+          <SelectItem class="Item" value="system">
+            <SelectItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></SelectItemIndicator>
+            <SelectItemText class="ItemText">System default</SelectItemText>
+          </SelectItem>
+          <SelectItem class="Item" value="light">
+            <SelectItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></SelectItemIndicator>
+            <SelectItemText class="ItemText">Light</SelectItemText>
+          </SelectItem>
+          <SelectItem class="Item" value="dark">
+            <SelectItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></SelectItemIndicator>
+            <SelectItemText class="ItemText">Dark</SelectItemText>
+          </SelectItem>
+          <SelectItem class="Item" value="contrast" disabled>
+            <SelectItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></SelectItemIndicator>
+            <SelectItemText class="ItemText">High contrast</SelectItemText>
+          </SelectItem>
+        </SelectPopup>
+      </SelectRoot>
+    </FieldRoot>
+  </div>
+}

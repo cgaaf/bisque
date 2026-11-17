@@ -1,0 +1,20 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectArrow, SelectItem, SelectItemText, SelectItemIndicator, SelectGroup, SelectGroupLabel, SelectSeparator } from "./rs-ui/select/select.rx"
+
+<SelectRoot>
+  <SelectTrigger>
+    <SelectValue />
+    <SelectIcon />
+  </SelectTrigger>
+  <SelectPopup>
+    <SelectArrow />
+    <SelectItem>
+      <SelectItemIndicator />
+      <SelectItemText />
+    </SelectItem>
+    <SelectSeparator />
+    <SelectGroup>
+      <SelectGroupLabel />
+      <SelectItem />
+    </SelectGroup>
+  </SelectPopup>
+</SelectRoot>

@@ -1,0 +1,74 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { ScrollAreaHero } from "../../demos/scroll-area/hero.rx"
+import { ScrollAreaBoth } from "../../demos/scroll-area/both.rx"
+import { ScrollAreaFade } from "../../demos/scroll-area/fade.rx"
+
+export default component Page() {
+  <DocsPage title="Scroll Area" subtitle="A native scroll container with scrollbars you draw yourself.">
+    <Demo source="scroll-area/hero"><ScrollAreaHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="scroll-area/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The viewport is an ordinary scroll container (<code>overflow: scroll</code>), so the scrolling itself is the
+      browser's: the wheel, touch, and the keyboard, since the viewport is focusable while its content overflows.
+      Only its own scrollbars are hidden, with <code>scrollbar-width: none</code>.
+    </p>
+    <p>
+      The scrollbars you see are not native. CSS can give a native scrollbar a colour and a thickness, and no
+      more: an overlay scrollbar that appears on hover, a thumb of your own shape, or styling driven by how far the
+      content is scrolled all need it drawn by hand. The library reads the viewport's scroll position and sizes on
+      every scroll and resize, sizes each thumb to the visible share of the content and moves it along its
+      scrollbar, scrolls the viewport when a thumb is dragged, the track is pressed or the wheel turns over a
+      scrollbar, and reports the state as data attributes and CSS variables.
+    </p>
+    <div class="note">
+      <p>
+        If all you need is a thinner or differently coloured scrollbar, you don't need this component:{" "}
+        <code>scrollbar-width</code> and <code>scrollbar-color</code> do that on any scroll container, in every
+        engine.
+      </p>
+    </div>
+    <Code file="scroll-area/native.css.txt" />
+    <p>The parts are the same as Base UI's.</p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="showing-scrollbars">Showing the scrollbars</h3>
+    <p>
+      A scrollbar is rendered only while its axis overflows (<code>keepMounted</code> keeps it), and carries{" "}
+      <code>data-hovering</code> while a mouse or pen is over the root and <code>data-scrolling</code> while the
+      viewport scrolls on its axis and for half a second after. The first demo fades its scrollbar in on either.
+      Position the scrollbars yourself: the first demo puts its scrollbar against a{" "}
+      <code>position: relative</code> root.
+    </p>
+
+    <h3 id="both-scrollbars">Both scrollbars</h3>
+    <p>
+      Add a horizontal <code>ScrollAreaScrollbar</code> and a <code>ScrollAreaCorner</code>. While both scrollbars
+      are shown, the corner fills the square where they meet, sized from their thickness, and the root exposes that
+      size as <code>--scroll-area-corner-width</code> and <code>--scroll-area-corner-height</code> so each
+      scrollbar can stop short of it. <code>ScrollAreaContent</code> is at least as wide as what it holds, which is
+      how horizontal overflow is measured.
+    </p>
+    <Demo source="scroll-area/both"><ScrollAreaBoth /></Demo>
+
+    <h3 id="scroll-fade">Fading the edges</h3>
+    <p>
+      The viewport sets <code>--scroll-area-overflow-y-start</code>, <code>-y-end</code>, <code>-x-start</code>{" "}
+      and <code>-x-end</code>: how far, in pixels, the content is scrolled from each edge. Used in a mask, they
+      fade an edge in only once there is content beyond it. They are plain custom properties, so the viewport's
+      children inherit them. For a style that only needs to know whether there is more content beyond an edge,
+      every part carries <code>data-overflow-y-start</code>, <code>data-overflow-y-end</code> and the{" "}
+      <code>x</code> pair; <code>overflowEdgeThreshold</code> on the root sets how far from the edge they
+      appear.
+    </p>
+    <Demo source="scroll-area/fade"><ScrollAreaFade /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="scroll-area" />
+  </DocsPage>
+}

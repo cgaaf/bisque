@@ -1,0 +1,31 @@
+import { ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxChips, ComboboxChip, ComboboxChipRemove, ComboboxPopup, ComboboxArrow, ComboboxStatus, ComboboxEmpty, ComboboxList, ComboboxItem, ComboboxItemIndicator, ComboboxSeparator, ComboboxGroup, ComboboxGroupLabel } from "./rs-ui/combobox/combobox.rx"
+
+<ComboboxRoot>
+  <ComboboxInput />
+  <ComboboxTrigger />
+  <ComboboxClear />
+  <ComboboxValue />
+
+  <ComboboxChips>
+    <ComboboxChip>
+      <ComboboxChipRemove />
+    </ComboboxChip>
+    <ComboboxInput />
+  </ComboboxChips>
+
+  <ComboboxPopup>
+    <ComboboxArrow />
+    <ComboboxStatus />
+    <ComboboxEmpty />
+    <ComboboxList>
+      <ComboboxItem>
+        <ComboboxItemIndicator />
+      </ComboboxItem>
+      <ComboboxSeparator />
+      <ComboboxGroup>
+        <ComboboxGroupLabel />
+        <ComboboxItem />
+      </ComboboxGroup>
+    </ComboboxList>
+  </ComboboxPopup>
+</ComboboxRoot>

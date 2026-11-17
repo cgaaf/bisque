@@ -1,0 +1,103 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { NumberFieldHero } from "../../demos/number-field/hero.rx"
+import { NumberFieldFormat } from "../../demos/number-field/format.rx"
+
+export default component Page() {
+  <DocsPage title="Number Field" subtitle="A text input for numbers, with buttons and a scrub area to step the value.">
+    <Demo source="number-field/hero"><NumberFieldHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="number-field/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The input is a native <code>{"<input type=\"text\">"}</code> with <code>inputmode="numeric"</code>, so it
+      can show the value formatted (grouped, as a currency, as a percentage), and the attribute asks a touch
+      keyboard for digits.
+      The steppers are native buttons. With a <code>name</code>, a hidden <code>{"<input type=\"number\">"}</code>{" "}
+      holds the plain value for the form, with <code>min</code>, <code>max</code> and <code>required</code>.
+      While a mouse scrubs, the browser's pointer lock hides the real cursor.
+    </p>
+    <p>
+      Numbers themselves are the library's: it reads typed text in the field's locale with{" "}
+      <code>Intl.NumberFormat</code>, refuses a keystroke that can't be part of a number, and on blur clamps the
+      value to <code>min</code> and <code>max</code> and shows it formatted. The arrow keys step it (with{" "}
+      <kbd>Shift</kbd> the large step, with <kbd>Alt</kbd> the small one), <kbd>Home</kbd> and <kbd>End</kbd> go to{" "}
+      <code>min</code> and <code>max</code> when they are set, a stepper repeats while it is held and is disabled at
+      its bound, and dragging across the scrub area steps the value.
+    </p>
+    <div class="note">
+      <p>
+        The parts are the same as Base UI's. A stepper is left out of the tab order: the arrow keys in the input do
+        what it does, and pressing it with a mouse keeps focus in the input.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="labelling">Labelling it</h3>
+    <p>
+      Give <code>NumberFieldInput</code> an <code>id</code> and point a <code>{"<label for>"}</code> at it, as the
+      demos do, or put the number field in a <code>FieldRoot</code> with a <code>FieldLabel</code>. The steppers
+      are named “Increase” and “Decrease”, and point at the input with <code>aria-controls</code>.
+    </p>
+
+    <h3 id="formatting">Formatting</h3>
+    <p>
+      <code>format</code> takes <code>Intl.NumberFormat</code> options and <code>locale</code> a locale. The input
+      shows the value formatted and reads what is typed the same way: in the first field below, “1.249,50 €” is
+      1249.5. A percentage's value is the fraction, so 15% is 0.15 and a <code>step</code> of 0.05 moves it by five
+      points. <code>snapOnStep</code> rounds a step to a multiple of <code>step</code>.
+    </p>
+    <Demo source="number-field/format"><NumberFieldFormat /></Demo>
+
+    <h3 id="scrubbing">Scrubbing</h3>
+    <p>
+      Pressing <code>NumberFieldScrubArea</code> and moving the pointer changes the value: right (or up, with{" "}
+      <code>direction="vertical"</code>) increases it, one step every <code>pixelSensitivity</code> pixels. A
+      mouse's pointer is locked while it scrubs, and <code>NumberFieldScrubAreaCursor</code> is drawn where the
+      virtual pointer is, wrapping to the other side of the viewport at its edge. Put the label inside the scrub
+      area, as the first demo does, so it is the thing to drag.
+    </p>
+    <div class="note">
+      <p>
+        The cursor is rendered into the document's body while scrubbing, outside the number field, so a rule
+        nested under your component's class won't reach it. The first demo sizes its cursor with attributes on
+        the SVG.
+      </p>
+    </div>
+
+    <h3 id="wheel">Stepping with the wheel</h3>
+    <p>
+      With <code>allowWheelScrub</code>, turning the wheel over the input while it has focus steps the value. It
+      is off by default, so scrolling the page past a number field doesn't change it.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the value yourself, as the formatting demo
+      does. The value is a number, or <code>null</code> while the input is empty. <code>onValueChange</code> is
+      called as typed text parses, on every step and while a stepper is held; <code>onValueCommitted</code> when a
+      change is final: on blur after typing, on each key, wheel turn and stepper click, and on release after holding
+      a stepper or scrubbing. Both receive a <code>details</code> object whose <code>reason</code> says what made
+      the change.
+    </p>
+
+    <h3 id="range">Bounds</h3>
+    <p>
+      A typed value outside <code>min</code> and <code>max</code> is clamped, and shown clamped once the input
+      loses focus; the steppers and keys stop at the bounds. With <code>allowOutOfRange</code>, typed values outside them stand;
+      steps still clamp.
+    </p>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      With a <code>name</code>, or inside a named <code>FieldRoot</code>, the hidden number input submits the plain
+      value, not the formatted text: the price above would submit <code>1249.5</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="number-field" />
+  </DocsPage>
+}

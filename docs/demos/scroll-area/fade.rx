@@ -1,0 +1,30 @@
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb } from "../../../src/scroll-area/scroll-area.rx"
+
+export component ScrollAreaFade() {
+  <div class="ScrollAreaFade">
+    <ScrollAreaRoot class="Root">
+      <ScrollAreaViewport class="Viewport">
+        <ScrollAreaContent class="Content">
+          <ul class="List">
+            <li>Inbox</li>
+            <li>Drafts</li>
+            <li>Sent</li>
+            <li>Scheduled</li>
+            <li>Archive</li>
+            <li>Spam</li>
+            <li>Trash</li>
+            <li>Receipts</li>
+            <li>Travel</li>
+            <li>Newsletters</li>
+            <li>Projects</li>
+            <li>Family</li>
+            <li>Later</li>
+          </ul>
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar class="Scrollbar">
+        <ScrollAreaThumb class="Thumb" />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+  </div>
+}

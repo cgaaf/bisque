@@ -1,0 +1,34 @@
+.MeterHero {
+  .Meter {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    width: 16rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Value {
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Track {
+    grid-column: 1 / -1;
+    height: 0.5rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: light-dark(#e8e8ed, #2a2a31);
+  }
+
+  /* The part sets the indicator's width to the value's share of the range, and its height to the track's. */
+  .Indicator {
+    border-radius: inherit;
+    background: light-dark(#2f5bea, #8eabff);
+    transition: width 300ms;
+  }
+}

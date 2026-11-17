@@ -1,0 +1,13 @@
+import { MeterRoot, MeterLabel, MeterValue, MeterTrack, MeterIndicator } from "../../../src/meter/meter.rx"
+
+export component MeterHero() {
+  <div class="MeterHero">
+    <MeterRoot class="Meter" value={64}>
+      <MeterLabel class="Label">Storage used</MeterLabel>
+      <MeterValue class="Value" />
+      <MeterTrack class="Track">
+        <MeterIndicator class="Indicator" />
+      </MeterTrack>
+    </MeterRoot>
+  </div>
+}

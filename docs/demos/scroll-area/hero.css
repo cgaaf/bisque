@@ -1,0 +1,63 @@
+.ScrollAreaHero {
+  /* A width that doesn't depend on the content, so wide content can't widen the page on a small screen. */
+  width: min(20rem, calc(100vw - 6rem));
+
+  /* The scrollbar is placed against the root. */
+  .Root {
+    position: relative;
+    width: 100%;
+    height: 13rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+  }
+
+  /* The viewport is the native scroll container; the part hides its own scrollbars. */
+  .Viewport {
+    height: 100%;
+    border-radius: inherit;
+    outline: none;
+  }
+
+  .Viewport:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Content {
+    padding: 0.25rem 1.25rem 0.25rem 1rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+
+    p {
+      margin: 0.75rem 0;
+    }
+  }
+
+  .Scrollbar {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    bottom: 0.25rem;
+    display: flex;
+    width: 0.375rem;
+    border-radius: 999px;
+    background: light-dark(rgb(0 0 0 / 0.05), rgb(255 255 255 / 0.06));
+    /* Shown while the pointer is over the area or it scrolls. */
+    opacity: 0;
+    transition: opacity 150ms;
+  }
+
+  .Scrollbar[data-hovering],
+  .Scrollbar[data-scrolling] {
+    opacity: 1;
+    transition-duration: 0ms;
+  }
+
+  /* The part sets the thumb's height from --scroll-area-thumb-height and moves it with a transform. */
+  .Thumb {
+    width: 100%;
+    border-radius: inherit;
+    background: light-dark(#a8a8b3, #55555f);
+  }
+}

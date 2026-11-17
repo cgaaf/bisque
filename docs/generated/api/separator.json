@@ -4,14 +4,14 @@
     {
       "name": "Separator",
       "element": "hr",
-      "description": "",
+      "description": "A line between pieces of content: an `<hr>`, which has the separator role and is horizontal by default. Style a vertical one with `[aria-orientation=\"vertical\"]`.",
       "props": [
         {
           "name": "orientation",
           "type": "SeparatorOrientation",
           "default": "\"horizontal\"",
           "required": false,
-          "description": ""
+          "description": "Which way the line runs. Only `vertical` writes an attribute, `aria-orientation=\"vertical\"`."
         }
       ],
       "dataAttributes": [],

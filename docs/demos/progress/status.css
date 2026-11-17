@@ -1,0 +1,97 @@
+.ProgressStatus {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+
+  .Progress {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    width: 16rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Value {
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* While indeterminate the value is empty; say something instead. */
+  .Value[data-indeterminate]::before {
+    content: "Preparing…";
+  }
+
+  .Value[data-complete]::after {
+    content: " · done";
+  }
+
+  .Track {
+    position: relative;
+    grid-column: 1 / -1;
+    height: 0.375rem;
+    border-radius: 999px;
+    overflow: hidden;
+    background: light-dark(#e8e8ed, #2a2a31);
+  }
+
+  .Indicator {
+    border-radius: inherit;
+    background: light-dark(#2f5bea, #8eabff);
+    transition:
+      width 300ms,
+      background-color 300ms;
+  }
+
+  .Indicator[data-complete] {
+    background: light-dark(#0a7a52, #6fd3a7);
+  }
+
+  /* An indeterminate indicator has no width from the part: give it one and move it along the track. */
+  .Indicator[data-indeterminate] {
+    position: absolute;
+    inset-block: 0;
+    width: 35%;
+    animation: ProgressStatus-slide 1.2s ease-in-out infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .Indicator[data-indeterminate] {
+      animation-duration: 3s;
+    }
+  }
+
+  .Buttons {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .Button {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Button:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}
+
+@keyframes ProgressStatus-slide {
+  from {
+    inset-inline-start: -35%;
+  }
+  to {
+    inset-inline-start: 100%;
+  }
+}

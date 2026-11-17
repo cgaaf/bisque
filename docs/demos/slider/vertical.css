@@ -1,0 +1,57 @@
+.SliderVertical {
+  display: flex;
+  gap: 2rem;
+
+  .Slider {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8125rem;
+  }
+
+  .Value {
+    min-width: 2ch;
+    text-align: center;
+    color: light-dark(#63636e, #9a9aa6);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Control {
+    display: flex;
+    justify-content: center;
+    height: 8rem;
+    padding: 0 0.5rem;
+    cursor: pointer;
+  }
+
+  /* Vertical: the bottom of the track is the minimum. The indicator inherits the track's width. */
+  .Track {
+    width: 0.25rem;
+    border-radius: 999px;
+    background: light-dark(#e4e4e8, #2a2a31);
+  }
+
+  .Indicator {
+    border-radius: inherit;
+    background: light-dark(#26262c, #e4e4e8);
+  }
+
+  .Thumb {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid light-dark(#cfcfd6, #3a3a43);
+    border-radius: 50%;
+    background: light-dark(#fff, #ededf0);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  }
+
+  .Thumb:has(:focus-visible) {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Label {
+    font-weight: 500;
+  }
+}

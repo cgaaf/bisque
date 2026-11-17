@@ -1,0 +1,23 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectItem } from "../../../src/select/select.rx"
+
+export component SelectControlled() {
+  source size: string | null := "m"
+  sizes = [{ value: "s", label: "Small" }, { value: "m", label: "Medium" }, { value: "l", label: "Large" }]
+  <div class="SelectControlled">
+    <SelectRoot value={size} onValueChange={(next) => { size := next }} items={sizes}>
+      <SelectTrigger class="Trigger" aria-label="Size">
+        <SelectValue class="Value" placeholder="Choose a size" />
+        <SelectIcon class="Icon">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="none"><path d="M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </SelectIcon>
+      </SelectTrigger>
+      <SelectPopup class="Popup" sideOffset={6}>
+        {for entry in sizes {
+          <SelectItem class="Item" value={entry.value}>{entry.label}</SelectItem>
+        }}
+      </SelectPopup>
+    </SelectRoot>
+    <button class="Button" type="button" onClick={() => { size := null }}>Clear</button>
+    <output class="State">{size ?? "null"}</output>
+  </div>
+}

@@ -1,0 +1,21 @@
+import { MeterRoot, MeterLabel, MeterTrack, MeterIndicator, meter, meterValue } from "../../../src/meter/meter.rx"
+
+// Text of your own in place of MeterValue: the context has the clamped value, its share of the range and the
+// formatted value.
+component UsedOfTotal() {
+  c = use meter
+  own = meterValue()
+  <span class="Value" {...own}>{c.formatted} of 64 GB</span>
+}
+
+export component MeterFormat() {
+  <div class="MeterFormat">
+    <MeterRoot class="Meter" value={41.5} max={64} format={{ style: "unit", unit: "gigabyte", maximumFractionDigits: 1 }} getAriaValueText={(formatted, value) => `${formatted} of 64 GB used`}>
+      <MeterLabel class="Label">Disk</MeterLabel>
+      <UsedOfTotal />
+      <MeterTrack class="Track">
+        <MeterIndicator class="Indicator" />
+      </MeterTrack>
+    </MeterRoot>
+  </div>
+}

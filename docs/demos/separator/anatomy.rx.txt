@@ -1,0 +1,3 @@
+import { Separator } from "./rs-ui/separator/separator.rx"
+
+<Separator />

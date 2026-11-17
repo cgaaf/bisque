@@ -1,0 +1,150 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { SelectHero } from "../../demos/select/hero.rx"
+import { SelectGrouped } from "../../demos/select/grouped.rx"
+import { SelectMultiple } from "../../demos/select/multiple.rx"
+import { SelectControlled } from "../../demos/select/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Select" subtitle="A button that opens a list of options to choose a value from.">
+    <Demo source="select/hero"><SelectHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="select/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The list is not a native <code>{"<select>"}</code>. A <code>{"<select>"}</code> whose list can be styled
+      (<code>appearance: base-select</code>) isn't shipped in Firefox yet, so the list is the library's own: the
+      roles, the selection, typeahead and the arrow keys are written here. What surrounds the list is native. The
+      popup is an element with <code>popover="auto"</code>, and the trigger is a button with{" "}
+      <code>popovertarget</code>. The browser provides:
+    </p>
+    <ul>
+      <li>Opening and closing the popup on a click, <kbd>Enter</kbd> and <kbd>Space</kbd> on the trigger.</li>
+      <li>The top layer: the popup is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>Closing on <kbd>Escape</kbd> and on a press outside the popup.</li>
+      <li>
+        Placement against the trigger with CSS anchor positioning, flipped to the other side when it doesn't fit,
+        and a minimum width equal to the trigger's (<code>anchor-size(width)</code>).
+      </li>
+    </ul>
+    <p>The library adds:</p>
+    <ul>
+      <li>
+        The roles: the trigger is a <code>combobox</code> that controls a <code>listbox</code> of{" "}
+        <code>option</code>s, each with <code>aria-selected</code>.
+      </li>
+      <li>
+        Focus on opening: the selected item takes focus. With nothing selected, <kbd>Enter</kbd>,{" "}
+        <kbd>Space</kbd> and <kbd>ArrowDown</kbd> focus the first item, <kbd>ArrowUp</kbd> the last, and a
+        pointer the list itself.
+      </li>
+      <li>
+        The arrow keys move through the enabled items without wrapping, and <kbd>Enter</kbd> or <kbd>Space</kbd>{" "}
+        chooses one. Choosing closes the popup and puts focus back on the trigger; <kbd>Tab</kbd> closes it and
+        moves on.
+      </li>
+      <li>
+        Typeahead. In the open list, typing focuses the next item whose label starts with what was typed. On the
+        closed trigger it selects that item without opening the list.
+      </li>
+      <li>
+        The form value: a hidden input submits the selected value, and inside a FieldRoot the select is labelled,
+        described and validated by the field.
+      </li>
+      <li><code>data-side</code> and the arrow's position, which the browser doesn't report.</li>
+    </ul>
+    <div class="note">
+      <p>
+        The popup stays in the document while it is closed (its items name the selected value and answer
+        typeahead on the closed trigger), so there is no Portal part. There is no Positioner, List or Backdrop
+        either: the popup is the positioned element and the listbox at once, and <code>::backdrop</code> styles
+        what is behind it. Base UI's <code>alignItemWithTrigger</code> mode, and the scroll arrows that come with
+        it, don't exist: the popup is placed beside the trigger like any anchored popup. There is no Label part;
+        put the select in a FieldRoot with a FieldLabel, or give the trigger an <code>aria-label</code>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="labelling">Labelling it</h3>
+    <p>
+      The first demo wraps the select in a <code>FieldRoot</code> and names it with a <code>FieldLabel</code>,
+      which labels the trigger. Without a visible label, give <code>SelectTrigger</code> an{" "}
+      <code>aria-label</code>, as the demos below do.
+    </p>
+
+    <h3 id="groups">Groups and separators</h3>
+    <p>
+      <code>SelectGroup</code> gives related items <code>role="group"</code>, named by the{" "}
+      <code>SelectGroupLabel</code> inside it. <code>SelectSeparator</code> draws a line between items or groups.
+      Neither takes part in the keyboard navigation.
+    </p>
+    <Demo source="select/grouped"><SelectGrouped /></Demo>
+
+    <h3 id="multiple">Multiple selection</h3>
+    <p>
+      With <code>multiple</code>, choosing an item toggles it and the popup stays open. The selection is then
+      read and written through <code>values</code>, <code>defaultValues</code> and{" "}
+      <code>onValuesChange</code>, and <code>SelectValue</code> shows the labels joined by commas. Give{" "}
+      <code>SelectItemIndicator</code> the <code>keepMounted</code> prop to draw a box on every item, and fill it
+      from <code>data-selected</code>.
+    </p>
+    <Demo source="select/multiple"><SelectMultiple /></Demo>
+
+    <h3 id="controlled">Controlling the value</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the selection yourself; <code>null</code>{" "}
+      means nothing is selected and shows the placeholder. <code>open</code> and <code>onOpenChange</code> do the
+      same for the popup, with the limit every popover has: the browser's light dismiss is reported after it
+      happened, and can't be refused.
+    </p>
+    <p>
+      <code>SelectValue</code> shows the label of the selected item, which it learns once the item has rendered.
+      Where the label must be known before that, or should differ from the item's text, pass{" "}
+      <code>items</code>: a list of <code>{"{ value, label }"}</code> pairs. A <code>label</code> on{" "}
+      <code>SelectItem</code> does the same for one item.
+    </p>
+    <Demo source="select/controlled"><SelectControlled /></Demo>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      Give the root a <code>name</code>, or put it in a named <code>FieldRoot</code>, and the selected value is
+      submitted with its form; with <code>multiple</code>, each value is its own entry. <code>required</code>{" "}
+      makes the form invalid while nothing is selected, and <code>readOnly</code> lets the list be opened and
+      browsed while nothing in it can be chosen. <code>disabled</code> on the root, or on an enclosing{" "}
+      <code>FieldRoot</code>, disables the trigger. A <code>disabled</code> item is skipped by the arrow keys and
+      typeahead.
+    </p>
+
+    <h3 id="placement">Placement and the arrow</h3>
+    <p>
+      The popup opens below the trigger with their start edges lined up. <code>side</code>,{" "}
+      <code>align</code>, <code>sideOffset</code> and <code>alignOffset</code> on <code>SelectPopup</code> become
+      CSS anchor positioning declarations in its inline style, beside <code>min-width: anchor-size(width)</code>,
+      so a stylesheet can replace any of them. When the popup doesn't fit, the browser flips it and{" "}
+      <code>data-side</code> changes to the side it ended up on. <code>SelectArrow</code> is placed on the popup's
+      edge that faces the trigger; give it a shape and turn it per <code>data-side</code>, as{" "}
+      <a href={href("components/popover") + "#placement"}>Popover's arrow</a> does. The arrow sits on the popup's
+      edge, so a popup that scrolls (<code>overflow-y: auto</code>) clips it: keep the arrow off a long list.
+    </p>
+    <p>
+      The popup brings the browser's border, padding and <code>overflow</code> for a popover. Reset them, and set
+      a <code>max-height</code> with <code>overflow-y: auto</code> for a long list: the selected item is scrolled
+      into view when the list opens on it.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the popup in with <code>@starting-style</code> under <code>:popover-open</code>, and set its{" "}
+      <code>transform-origin</code> from <code>data-side</code> so it grows out of the trigger. Animating it out
+      is left to CSS, as for every popover: transition <code>display</code> and <code>overlay</code> with{" "}
+      <code>allow-discrete</code>, which takes effect in the engines that support it.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="select" />
+  </DocsPage>
+}

@@ -1,0 +1,114 @@
+{
+  "AutocompleteRoot": {
+    "description": "Holds the input's text and the open state, and shares them with the parts inside it through Combobox's `combobox` context.",
+    "props": {
+      "value": "The input's text. Pass it with `onValueChange` to control it.",
+      "defaultValue": "The input's text at first, when `value` isn't controlled.",
+      "onValueChange": "Called with the input's new text: what was typed, or a suggestion's label once chosen. An inline preview isn't reported until it is chosen.",
+      "mode": "How the input completes what is typed: `\"list\"` filters the suggestions; `\"inline\"` shows the highlighted suggestion in the input; `\"both\"` does both; `\"none\"` neither. It is also the input's `aria-autocomplete`.",
+      "open": "Whether the popup is open. Pass it with `onOpenChange` to control it.",
+      "defaultOpen": "Whether the popup is open at first, when `open` isn't controlled.",
+      "onOpenChange": "Called after the popup opened or closed, whatever closed it.",
+      "disabled": "Whether the autocomplete is disabled. Also disabled inside a disabled `FieldRoot`.",
+      "readOnly": "Whether the text can't be changed. The popup doesn't open.",
+      "required": "Whether the input must have text for the form to submit. Validated by an enclosing `FieldRoot`."
+    }
+  },
+  "AutocompleteInput": {
+    "description": "The text input, with `role=\"combobox\"`. Its text is the value: give it a `name` to submit it with a form. Typing opens the popup; the arrow keys move the highlight while focus stays here; Enter chooses the highlighted suggestion.",
+    "dataAttributes": {
+      "data-popup-open": "Present while the popup is open.",
+      "data-readonly": "Present when the autocomplete is read-only.",
+      "data-required": "Present when text is required.",
+      "data-disabled": "Present when the autocomplete is disabled."
+    }
+  },
+  "AutocompleteTrigger": {
+    "description": "A button beside the input that opens and closes the popup and leaves focus in the input. It isn't a Tab stop. Give it an `aria-label`.",
+    "dataAttributes": {
+      "data-popup-open": "Present while the popup is open.",
+      "data-disabled": "Present when the autocomplete is disabled.",
+      "data-readonly": "Present when the autocomplete is read-only.",
+      "data-required": "Present when text is required."
+    }
+  },
+  "AutocompleteClear": {
+    "description": "A button that empties the input and focuses it. It is rendered only while the input has text, and isn't a Tab stop. Give it an `aria-label`.",
+    "props": {
+      "keepMounted": "Whether to render the button while the input is empty. Default: false."
+    },
+    "dataAttributes": {
+      "data-popup-open": "Present while the popup is open.",
+      "data-disabled": "Present when the autocomplete is disabled.",
+      "data-readonly": "Present when the autocomplete is read-only.",
+      "data-required": "Present when text is required."
+    }
+  },
+  "AutocompleteValue": {
+    "description": "The input's text, shown somewhere else, or the placeholder while it is empty.",
+    "props": {
+      "placeholder": "Shown while the input is empty (the part then carries `data-placeholder`)."
+    },
+    "dataAttributes": {
+      "data-placeholder": "Present while the input is empty and the placeholder is shown.",
+      "data-popup-open": "Present while the popup is open.",
+      "data-disabled": "Present when the autocomplete is disabled.",
+      "data-readonly": "Present when the autocomplete is read-only.",
+      "data-required": "Present when text is required."
+    }
+  },
+  "AutocompletePopup": {
+    "description": "The popup: an element with `popover=\"manual\"`, placed against the input with CSS anchor positioning and at least as wide as it. Style it with `:popover-open` and `@starting-style`. A press inside it keeps focus in the input.",
+    "props": {
+      "side": "Which side of the input it sits on; the browser flips it when it doesn't fit. Default: `\"bottom\"`.",
+      "align": "Which edge of the input it lines up with. Default: `\"start\"`.",
+      "sideOffset": "Gap between input and popup, in pixels. Default: 0.",
+      "alignOffset": "How far the popup is moved along the input's edge from its `align` position, in pixels. Default: 0."
+    },
+    "dataAttributes": {
+      "data-empty": "Present while no suggestion matches what was typed.",
+      "data-side": "Which side of the input the popup is on: the one asked for, then the one the browser placed it on."
+    }
+  },
+  "AutocompleteList": {
+    "description": "The listbox that holds the suggestions. The input's `aria-controls` points at it.",
+    "dataAttributes": {
+      "data-empty": "Present while no suggestion matches what was typed."
+    }
+  },
+  "AutocompleteItem": {
+    "description": "A suggestion. Choosing it fills the input with its label and closes the popup. It isn't rendered while it doesn't match what was typed (modes `\"list\"` and `\"both\"`).",
+    "props": {
+      "value": "Identifies the suggestion. The input is filled with its label, not this.",
+      "label": "The text the filter matches and the input is filled with. Default: the suggestion's text.",
+      "disabled": "Whether the suggestion can't be highlighted or chosen."
+    },
+    "dataAttributes": {
+      "data-highlighted": "Present while the suggestion is highlighted: the input's `aria-activedescendant`.",
+      "data-selected": "Never present on a suggestion: an autocomplete has no selection.",
+      "data-value": "The suggestion's `value`.",
+      "data-label": "The suggestion's label."
+    }
+  },
+  "AutocompleteGroup": {
+    "description": "Groups related suggestions under an `AutocompleteGroupLabel`. It gets `hidden` while none of its suggestions match."
+  },
+  "AutocompleteGroupLabel": {
+    "description": "The heading of a group. The group's `aria-labelledby` points at it."
+  },
+  "AutocompleteEmpty": {
+    "description": "A `role=\"status\"` element whose children show while no suggestion matches. The element stays in the document, empty, while there are matches."
+  },
+  "AutocompleteStatus": {
+    "description": "A `role=\"status\"` element with `aria-live=\"polite\"`, for a message about the list, such as a result count."
+  },
+  "AutocompleteSeparator": {
+    "description": "A horizontal `role=\"separator\"` between suggestions or groups."
+  },
+  "AutocompleteArrow": {
+    "description": "An element placed on the popup's edge that faces the input, centred on it. It follows the popup when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
+    "dataAttributes": {
+      "data-side": "Which side of the input the popup is on. Absent while the popup is closed."
+    }
+  }
+}

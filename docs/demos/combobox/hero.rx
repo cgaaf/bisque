@@ -1,0 +1,48 @@
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxPopup, ComboboxEmpty, ComboboxList, ComboboxItem, ComboboxItemIndicator } from "../../../src/combobox/combobox.rx"
+
+// One option, with its check mark. A component of your own keeps the list short to write.
+component Fruit(props: { value: string; label: string }) {
+  <ComboboxItem class="Item" value={props.value} label={props.label}>
+    <ComboboxItemIndicator class="Indicator">
+      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+    </ComboboxItemIndicator>
+    <span class="ItemText">{props.label}</span>
+  </ComboboxItem>
+}
+
+export component ComboboxHero() {
+  <div class="ComboboxHero">
+    <FieldRoot class="Field">
+      <FieldLabel class="Label">Fruit</FieldLabel>
+      <ComboboxRoot>
+        <div class="InputGroup">
+          <ComboboxInput class="Input" placeholder="e.g. Apple" />
+          <div class="Actions">
+            <ComboboxClear class="IconButton" aria-label="Clear">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+            </ComboboxClear>
+            <ComboboxTrigger class="IconButton" aria-label="Show fruits">
+              <svg width="10" height="14" viewBox="0 0 10 14" fill="none"><path d="M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </ComboboxTrigger>
+          </div>
+        </div>
+        <ComboboxPopup class="Popup" sideOffset={6}>
+          <ComboboxEmpty class="Empty">No fruit found.</ComboboxEmpty>
+          <ComboboxList class="List">
+            <Fruit value="apple" label="Apple" />
+            <Fruit value="apricot" label="Apricot" />
+            <Fruit value="banana" label="Banana" />
+            <Fruit value="blackberry" label="Blackberry" />
+            <Fruit value="cherry" label="Cherry" />
+            <Fruit value="fig" label="Fig" />
+            <Fruit value="grape" label="Grape" />
+            <Fruit value="lemon" label="Lemon" />
+            <Fruit value="mango" label="Mango" />
+            <Fruit value="pear" label="Pear" />
+          </ComboboxList>
+        </ComboboxPopup>
+      </ComboboxRoot>
+    </FieldRoot>
+  </div>
+}

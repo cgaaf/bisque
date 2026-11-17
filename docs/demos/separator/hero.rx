@@ -1,0 +1,15 @@
+import { Separator } from "../../../src/separator/separator.rx"
+
+export component SeparatorHero() {
+  <div class="SeparatorHero">
+    <nav class="Links" aria-label="Account">
+      <a class="Link" href="#profile">Profile</a>
+      <Separator class="Separator" orientation="vertical" />
+      <a class="Link" href="#billing">Billing</a>
+      <Separator class="Separator" orientation="vertical" />
+      <a class="Link" href="#sign-out">Sign out</a>
+    </nav>
+    <Separator class="Separator" />
+    <p class="Text">Signed in since 9:41. Changes are saved as you make them.</p>
+  </div>
+}

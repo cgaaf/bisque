@@ -1,0 +1,9 @@
+import { MeterRoot, MeterLabel, MeterValue, MeterTrack, MeterIndicator } from "./rs-ui/meter/meter.rx"
+
+<MeterRoot>
+  <MeterLabel />
+  <MeterValue />
+  <MeterTrack>
+    <MeterIndicator />
+  </MeterTrack>
+</MeterRoot>

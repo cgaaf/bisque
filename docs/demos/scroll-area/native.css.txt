@@ -1,0 +1,6 @@
+/* Colour and thickness alone need no component. */
+.list {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #a8a8b3 transparent; /* thumb, then track */
+}

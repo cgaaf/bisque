@@ -4,94 +4,226 @@
     {
       "name": "ScrollAreaRoot",
       "element": "div",
-      "description": "",
+      "description": "Holds the scroll state and shares it with the parts. Position the scrollbars against it (give it `position: relative`).",
       "props": [
         {
           "name": "overflowEdgeThreshold",
           "type": "number",
           "default": "0",
           "required": false,
-          "description": "How far from an edge, in px, the content must be scrolled before `data-overflow-*-start`/`-end` appear."
+          "description": "How far from an edge, in pixels, the content must be scrolled before that edge's `data-overflow-*` attribute appears."
         }
       ],
       "dataAttributes": [
         {
+          "name": "data-has-overflow-x",
+          "description": "Present while the content is wider than the viewport."
+        },
+        {
+          "name": "data-has-overflow-y",
+          "description": "Present while the content is taller than the viewport."
+        },
+        {
+          "name": "data-overflow-x-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content beyond the right edge."
+        },
+        {
+          "name": "data-overflow-x-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its left edge."
+        },
+        {
+          "name": "data-overflow-y-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content below the bottom edge."
+        },
+        {
+          "name": "data-overflow-y-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its top."
+        },
+        {
           "name": "data-scrolling",
-          "description": ""
+          "description": "Present while the viewport scrolls on either axis, and for 500ms after."
         }
       ],
-      "cssVariables": []
+      "cssVariables": [
+        {
+          "name": "--scroll-area-corner-width",
+          "description": "The corner's width: the vertical scrollbar's thickness while both scrollbars are shown, else `0px`."
+        },
+        {
+          "name": "--scroll-area-corner-height",
+          "description": "The corner's height: the horizontal scrollbar's thickness while both scrollbars are shown, else `0px`."
+        }
+      ]
     },
     {
       "name": "ScrollAreaViewport",
       "element": "div",
-      "description": "The element that scrolls. Its native scrollbars are hidden (`scrollbar-width: none`); it is focusable while it overflows, so the keyboard can scroll it. The distance to each edge is a CSS variable: `--scroll-area-overflow-x-start`, `-x-end`, `-y-start`, `-y-end`.",
+      "description": "The element that scrolls: a native scroll container (`overflow: scroll`) whose own scrollbars are hidden with `scrollbar-width: none`. It takes focus (`tabindex=\"0\"`) while its content overflows, so the keyboard can scroll it. Give it the root's size.",
       "props": [],
       "dataAttributes": [
         {
+          "name": "data-has-overflow-x",
+          "description": "Present while the content is wider than the viewport."
+        },
+        {
+          "name": "data-has-overflow-y",
+          "description": "Present while the content is taller than the viewport."
+        },
+        {
+          "name": "data-overflow-x-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content beyond the right edge."
+        },
+        {
+          "name": "data-overflow-x-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its left edge."
+        },
+        {
+          "name": "data-overflow-y-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content below the bottom edge."
+        },
+        {
+          "name": "data-overflow-y-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its top."
+        },
+        {
           "name": "data-scrolling",
-          "description": ""
+          "description": "Present while the viewport scrolls on either axis, and for 500ms after."
         }
       ],
-      "cssVariables": []
+      "cssVariables": [
+        {
+          "name": "--scroll-area-overflow-x-start",
+          "description": "How far the content is scrolled from its left edge, in pixels."
+        },
+        {
+          "name": "--scroll-area-overflow-x-end",
+          "description": "How much content is beyond the right edge, in pixels."
+        },
+        {
+          "name": "--scroll-area-overflow-y-start",
+          "description": "How far the content is scrolled from its top, in pixels."
+        },
+        {
+          "name": "--scroll-area-overflow-y-end",
+          "description": "How much content is below the bottom edge, in pixels."
+        }
+      ]
     },
     {
       "name": "ScrollAreaContent",
       "element": "div",
-      "description": "Wraps the content inside the viewport, at least as wide as the content (`min-width: fit-content`), so horizontal overflow is measured.",
+      "description": "Wraps the content inside the viewport. It is at least as wide as what it holds (`min-width: fit-content`), which is how horizontal overflow is measured.",
       "props": [],
-      "dataAttributes": [],
+      "dataAttributes": [
+        {
+          "name": "data-has-overflow-x",
+          "description": "Present while the content is wider than the viewport."
+        },
+        {
+          "name": "data-has-overflow-y",
+          "description": "Present while the content is taller than the viewport."
+        },
+        {
+          "name": "data-overflow-x-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content beyond the right edge."
+        },
+        {
+          "name": "data-overflow-x-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its left edge."
+        },
+        {
+          "name": "data-overflow-y-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content below the bottom edge."
+        },
+        {
+          "name": "data-overflow-y-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its top."
+        }
+      ],
       "cssVariables": []
     },
     {
       "name": "ScrollAreaScrollbar",
       "element": "div",
-      "description": "Pressing the track scrolls so the thumb centres on the pointer; the wheel over it scrolls the viewport. Its thumb's size is `--scroll-area-thumb-height` (vertical) or `--scroll-area-thumb-width` (horizontal).",
+      "description": "A scrollbar, rendered while its axis overflows. Pressing its track scrolls so the thumb centres on the pointer, and the wheel over it scrolls the viewport. Hidden from assistive technology: the viewport is what scrolls.",
       "props": [
         {
           "name": "orientation",
           "type": "ScrollAreaOrientation",
           "default": "\"vertical\"",
           "required": false,
-          "description": ""
+          "description": "Which axis the scrollbar is for."
         },
         {
           "name": "keepMounted",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Keep the scrollbar in the DOM while there is nothing to scroll on its axis."
+          "description": "Keep the scrollbar rendered while there is nothing to scroll on its axis."
         }
       ],
       "dataAttributes": [
         {
+          "name": "data-has-overflow-x",
+          "description": "Present while the content is wider than the viewport."
+        },
+        {
+          "name": "data-has-overflow-y",
+          "description": "Present while the content is taller than the viewport."
+        },
+        {
           "name": "data-hovering",
-          "description": ""
+          "description": "Present while a mouse or pen is over the scroll area."
         },
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The scrollbar's axis: `vertical` or `horizontal`."
+        },
+        {
+          "name": "data-overflow-x-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content beyond the right edge."
+        },
+        {
+          "name": "data-overflow-x-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its left edge."
+        },
+        {
+          "name": "data-overflow-y-end",
+          "description": "Present while there is more than `overflowEdgeThreshold` pixels of content below the bottom edge."
+        },
+        {
+          "name": "data-overflow-y-start",
+          "description": "Present while the content is scrolled more than `overflowEdgeThreshold` pixels from its top."
         },
         {
           "name": "data-scrolling",
-          "description": ""
+          "description": "Present while the viewport scrolls on this scrollbar's axis, and for 500ms after."
         }
       ],
-      "cssVariables": []
+      "cssVariables": [
+        {
+          "name": "--scroll-area-thumb-height",
+          "description": "On a vertical scrollbar: the thumb's height in pixels, the visible share of the content's height (at least 16px)."
+        },
+        {
+          "name": "--scroll-area-thumb-width",
+          "description": "On a horizontal scrollbar: the thumb's width in pixels, the visible share of the content's width (at least 16px)."
+        }
+      ]
     },
     {
       "name": "ScrollAreaThumb",
       "element": "div",
-      "description": "Sized and moved along its scrollbar from the viewport's scroll position; drag it to scroll.",
+      "description": "The thumb. Its length comes from the scrollbar's `--scroll-area-thumb-height` or `--scroll-area-thumb-width` and its offset is an inline `transform`; drag it to scroll. Give it its thickness.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The scrollbar's axis: `vertical` or `horizontal`."
         },
         {
           "name": "data-scrolling",
-          "description": ""
+          "description": "Present while the viewport scrolls on this thumb's axis, and for 500ms after."
         }
       ],
       "cssVariables": []
@@ -99,7 +231,7 @@
     {
       "name": "ScrollAreaCorner",
       "element": "div",
-      "description": "Fills the gap where the two scrollbars meet. Rendered only while both are. Sized from the scrollbars' thickness, also exposed on the root as `--scroll-area-corner-width` and `--scroll-area-corner-height`.",
+      "description": "Fills the square where the two scrollbars meet, rendered only while both are. Its width and height are the scrollbars' thickness, set inline; position it in the root's bottom corner.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []

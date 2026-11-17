@@ -1,0 +1,36 @@
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../../../src/slider/slider.rx"
+
+export component SliderVertical() {
+  <div class="SliderVertical">
+    <SliderRoot class="Slider" orientation="vertical" defaultValue={4} min={-12} max={12}>
+      <SliderValue class="Value" />
+      <SliderControl class="Control">
+        <SliderTrack class="Track">
+          <SliderIndicator class="Indicator" />
+          <SliderThumb class="Thumb" aria-label="Bass" />
+        </SliderTrack>
+      </SliderControl>
+      <span class="Label" aria-hidden="true">Bass</span>
+    </SliderRoot>
+    <SliderRoot class="Slider" orientation="vertical" defaultValue={-2} min={-12} max={12}>
+      <SliderValue class="Value" />
+      <SliderControl class="Control">
+        <SliderTrack class="Track">
+          <SliderIndicator class="Indicator" />
+          <SliderThumb class="Thumb" aria-label="Mid" />
+        </SliderTrack>
+      </SliderControl>
+      <span class="Label" aria-hidden="true">Mid</span>
+    </SliderRoot>
+    <SliderRoot class="Slider" orientation="vertical" defaultValue={6} min={-12} max={12}>
+      <SliderValue class="Value" />
+      <SliderControl class="Control">
+        <SliderTrack class="Track">
+          <SliderIndicator class="Indicator" />
+          <SliderThumb class="Thumb" aria-label="Treble" />
+        </SliderTrack>
+      </SliderControl>
+      <span class="Label" aria-hidden="true">Treble</span>
+    </SliderRoot>
+  </div>
+}

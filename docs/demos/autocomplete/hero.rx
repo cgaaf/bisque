@@ -1,0 +1,31 @@
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { AutocompleteRoot, AutocompleteInput, AutocompleteClear, AutocompletePopup, AutocompleteEmpty, AutocompleteList, AutocompleteItem } from "../../../src/autocomplete/autocomplete.rx"
+
+export component AutocompleteHero() {
+  <div class="AutocompleteHero">
+    <FieldRoot class="Field">
+      <FieldLabel class="Label">Search tags</FieldLabel>
+      <AutocompleteRoot>
+        <div class="InputGroup">
+          <AutocompleteInput class="Input" placeholder="e.g. feature" />
+          <AutocompleteClear class="Clear" aria-label="Clear">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+          </AutocompleteClear>
+        </div>
+        <AutocompletePopup class="Popup" sideOffset={6}>
+          <AutocompleteEmpty class="Empty">No matching tags.</AutocompleteEmpty>
+          <AutocompleteList class="List">
+            <AutocompleteItem class="Item" value="feature">feature</AutocompleteItem>
+            <AutocompleteItem class="Item" value="fix">fix</AutocompleteItem>
+            <AutocompleteItem class="Item" value="docs">docs</AutocompleteItem>
+            <AutocompleteItem class="Item" value="refactor">refactor</AutocompleteItem>
+            <AutocompleteItem class="Item" value="performance">performance</AutocompleteItem>
+            <AutocompleteItem class="Item" value="test">test</AutocompleteItem>
+            <AutocompleteItem class="Item" value="build">build</AutocompleteItem>
+            <AutocompleteItem class="Item" value="chore">chore</AutocompleteItem>
+          </AutocompleteList>
+        </AutocompletePopup>
+      </AutocompleteRoot>
+    </FieldRoot>
+  </div>
+}

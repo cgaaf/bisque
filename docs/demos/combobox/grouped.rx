@@ -1,0 +1,27 @@
+import { ComboboxRoot, ComboboxInput, ComboboxPopup, ComboboxEmpty, ComboboxList, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxSeparator } from "../../../src/combobox/combobox.rx"
+
+export component ComboboxGrouped() {
+  <div class="ComboboxGrouped">
+    <ComboboxRoot>
+      <ComboboxInput class="Input" aria-label="Produce" placeholder="Search produce" />
+      <ComboboxPopup class="Popup" sideOffset={6}>
+        <ComboboxEmpty class="Empty">Nothing matches.</ComboboxEmpty>
+        <ComboboxList class="List">
+          <ComboboxGroup class="Group">
+            <ComboboxGroupLabel class="GroupLabel">Fruit</ComboboxGroupLabel>
+            <ComboboxItem class="Item" value="apple" label="Apple">Apple</ComboboxItem>
+            <ComboboxItem class="Item" value="banana" label="Banana">Banana</ComboboxItem>
+            <ComboboxItem class="Item" value="orange" label="Orange">Orange</ComboboxItem>
+          </ComboboxGroup>
+          <ComboboxSeparator class="Separator" />
+          <ComboboxGroup class="Group">
+            <ComboboxGroupLabel class="GroupLabel">Vegetables</ComboboxGroupLabel>
+            <ComboboxItem class="Item" value="carrot" label="Carrot">Carrot</ComboboxItem>
+            <ComboboxItem class="Item" value="leek" label="Leek">Leek</ComboboxItem>
+            <ComboboxItem class="Item" value="spinach" label="Spinach">Spinach</ComboboxItem>
+          </ComboboxGroup>
+        </ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+  </div>
+}

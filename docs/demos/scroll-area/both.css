@@ -1,0 +1,90 @@
+.ScrollAreaBoth {
+  /* A width that doesn't depend on the content, so wide content can't widen the page on a small screen. */
+  width: min(22rem, calc(100vw - 6rem));
+
+  .Root {
+    position: relative;
+    width: 100%;
+    height: 14rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+    overflow: hidden;
+  }
+
+  .Viewport {
+    height: 100%;
+    outline: none;
+  }
+
+  .Viewport:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -2px;
+  }
+
+  /* Wider and taller than the viewport: eight columns of 5rem, six rows. */
+  .Content {
+    display: grid;
+    grid-template-columns: repeat(8, 5rem);
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem 1.25rem 0.75rem;
+  }
+
+  .Cell {
+    display: grid;
+    place-items: center;
+    height: 3.5rem;
+    border-radius: 0.375rem;
+    background: light-dark(#f2f2f5, #222228);
+    color: light-dark(#63636e, #9a9aa6);
+    font-size: 0.8125rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Scrollbar {
+    position: absolute;
+    display: flex;
+    background: light-dark(rgb(255 255 255 / 0.85), rgb(22 22 26 / 0.85));
+  }
+
+  /* Each scrollbar stops short of the corner, whose size the root exposes. */
+  .Scrollbar[data-orientation="vertical"] {
+    top: 0;
+    right: 0;
+    bottom: var(--scroll-area-corner-height);
+    width: 0.625rem;
+    border-left: 1px solid light-dark(#e4e4e8, #26262c);
+  }
+
+  .Scrollbar[data-orientation="horizontal"] {
+    left: 0;
+    right: var(--scroll-area-corner-width);
+    bottom: 0;
+    height: 0.625rem;
+    border-top: 1px solid light-dark(#e4e4e8, #26262c);
+  }
+
+  /* The thumb's length is measured against the scrollbar's, so inset it with a transparent border, not with
+     padding on the scrollbar. */
+  .Thumb {
+    flex: none;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    background: light-dark(#a8a8b3, #55555f) padding-box;
+  }
+
+  .Scrollbar[data-orientation="vertical"] .Thumb {
+    width: 100%;
+  }
+
+  .Scrollbar[data-orientation="horizontal"] .Thumb {
+    height: 100%;
+  }
+
+  .Corner {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    background: light-dark(#f2f2f5, #1c1c21);
+  }
+}

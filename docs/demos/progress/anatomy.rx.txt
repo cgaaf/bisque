@@ -1,0 +1,9 @@
+import { ProgressRoot, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator } from "./rs-ui/progress/progress.rx"
+
+<ProgressRoot>
+  <ProgressLabel />
+  <ProgressValue />
+  <ProgressTrack>
+    <ProgressIndicator />
+  </ProgressTrack>
+</ProgressRoot>

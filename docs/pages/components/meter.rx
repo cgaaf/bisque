@@ -1,0 +1,65 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { MeterHero } from "../../demos/meter/hero.rx"
+import { MeterFormat } from "../../demos/meter/format.rx"
+
+export default component Page() {
+  <DocsPage title="Meter" subtitle="A measurement within a known range, such as disk usage or a battery level.">
+    <Demo source="meter/hero"><MeterHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="meter/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Nothing here needs a browser feature. The root is a <code>{"<div>"}</code> with <code>role="meter"</code>{" "}
+      and <code>aria-valuemin</code>, <code>aria-valuemax</code>, <code>aria-valuenow</code> and{" "}
+      <code>aria-valuetext</code>; the track and the indicator are plain elements that you draw. It is not the
+      native <code>{"<meter>"}</code> element.
+    </p>
+    <p>The library adds:</p>
+    <ul>
+      <li>Clamping the value to the range, for the ARIA attributes, the indicator and the text.</li>
+      <li>The indicator's width: the value's share of the range, as an inline <code>width</code> percentage.</li>
+      <li>
+        The value formatted with <code>Intl.NumberFormat</code>: a percentage of the range unless you pass{" "}
+        <code>format</code>. It is shown by <code>MeterValue</code> and is the root's <code>aria-valuetext</code>.
+      </li>
+      <li><code>aria-labelledby</code> on the root, pointing at <code>MeterLabel</code>.</li>
+    </ul>
+    <div class="note">
+      <p>
+        A meter shows a measurement. For the progress of a task, which can also be indeterminate, use{" "}
+        <a href={href("components/progress")}>Progress</a>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="formatting">Formatting the value</h3>
+    <p>
+      <code>min</code> and <code>max</code> set the range, 0 to 100 by default. <code>format</code> takes{" "}
+      <code>Intl.NumberFormat</code> options and <code>locale</code> a locale; with a format, the clamped value is
+      formatted rather than its percentage. <code>getAriaValueText</code> receives the formatted value and the raw
+      one, and returns the text announced for the meter.
+    </p>
+    <p>
+      <code>MeterValue</code> shows the formatted value and nothing else. For other text, write a small component
+      that reads the <code>meter</code> context and spreads <code>meterValue()</code> on its own element, as this
+      demo does. The context holds the clamped value, its percentage and the formatted text.
+    </p>
+    <Demo source="meter/format"><MeterFormat /></Demo>
+
+    <h3 id="styling">Styling the indicator</h3>
+    <p>
+      <code>MeterIndicator</code> gets <code>width</code>, <code>height: inherit</code> and{" "}
+      <code>inset-inline-start: 0</code> in its inline style. Give the track a height and the indicator a
+      background; transition <code>width</code> to animate a change. A value outside the range fills the track
+      or empties it.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="meter" />
+  </DocsPage>
+}
