@@ -3,20 +3,19 @@
   "version": "0.0.0",
   "description": "Headless, unstyled, accessible components for ReactiveScript (.rx).",
   "license": "MIT",
+  "bin": {
+    "rs-ui": "./bin/rs-ui.mjs"
+  },
   "files": [
     "src",
-    "skills",
+    "bin",
     "README.md",
-    "LICENSE",
     "!src/**/*.test.ts",
-    "!src/**/fixtures"
+    "!src/**/fixtures",
+    "!src/test"
   ],
   "type": "module",
   "sideEffects": false,
-  "exports": {
-    "./package.json": "./package.json",
-    "./*": "./src/*"
-  },
   "scripts": {
     "dev": "vite",
     "test": "vitest run",
@@ -52,5 +51,10 @@
     "tsrs": "0.25.0-ts7.1.0-beta",
     "vite": "8.3.8",
     "vitest": "5.1.0"
+  },
+  "peerDependencies": {
+    "@reactivescript/runtime": "^0.3.1",
+    "@solidjs/web": "^2.0.0-rc.21",
+    "solid-js": "^2.0.0-rc.21"
   }
 }

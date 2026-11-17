@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+// Copies the component source into an app.
+//
+// ReactiveScript 0.3 resolves an `.rx` import only by relative path, so an app can't import components from
+// node_modules. Until it can, the components live in the app's own tree:
+//   npx rs-ui copy [directory]     default: src/rs-ui
+// Run it again after upgrading the package to refresh the copy. Tests and fixtures are left out.
+import { cpSync, existsSync, readdirSync, rmSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const [command, target = "src/rs-ui"] = process.argv.slice(2);
+if (command !== "copy") {
+  console.log("usage: rs-ui copy [directory]   (default: src/rs-ui)");
+  process.exit(command ? 1 : 0);
+}
+
+const source = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src");
+const destination = path.resolve(target);
+const skipped = (file) =>
+  file.endsWith(".test.ts") ||
+  /[\\/]fixtures([\\/]|$)/.test(file) ||
+  /[\\/]test([\\/]|$)/.test(file) ||
+  file.endsWith("rx.d.ts");
+
+if (existsSync(destination)) {
+  // Only replace a folder this command wrote: one that holds the library's `internal` folder.
+  if (readdirSync(destination).length > 0 && !existsSync(path.join(destination, "internal"))) {
+    console.error(`${target} exists and doesn't look like a copy of rs-ui. Choose another directory.`);
+    process.exit(1);
+  }
+  rmSync(destination, { recursive: true });
+}
+cpSync(source, destination, { recursive: true, filter: (file) => !skipped(file) });
+
+const families = readdirSync(destination).filter((name) => name !== "internal");
+console.log(`Copied ${families.length} component families to ${target}.`);
+console.log(`Import them by relative path, e.g. import { DialogRoot } from "./rs-ui/dialog/dialog.rx"`);
+console.log(
+  `The app needs @floating-ui/dom installed, and "exclude": ["**/*.d.rx"] in the tsconfig rx-tsc reads.`,
+);
