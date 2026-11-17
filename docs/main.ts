@@ -15,4 +15,5 @@ const path = pagePath();
 const load = pages[`./pages/${path === "" ? "index" : path}.rx`] ?? pages["./pages/not-found.rx"];
 const page = await load();
 const app = createApp({ root: document.getElementById("app")! });
+// oxlint-disable-next-line typescript/no-unsafe-type-assertion -- a compiled `.rx` page has no TypeScript type here
 app.mount(page.default(app) as never);

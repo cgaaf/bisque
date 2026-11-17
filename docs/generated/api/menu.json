@@ -25,7 +25,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state after the browser or a part opened or closed the menu. Escape and a press outside can't be refused: a controlled menu that keeps `open` true is shown again."
+          "description": "Called with the new state after the browser or a part opened or closed the menu, and in a menubar whenever the bar opens or closes it (including moving to it with the arrow keys). Escape and a press outside can't be refused: a controlled menu that keeps `open` true is shown again. It is called in a change of its own, after the menu's: a request it starts, or a handler that is itself an action, doesn't hold the menu."
         },
         {
           "name": "disabled",
@@ -174,7 +174,7 @@
           "type": "(checked: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state when the item is chosen."
+          "description": "Called with the new state when the item is chosen. It is called in a change of its own, after the item's: a request it starts, or a handler that is itself an action, doesn't hold the menu."
         },
         {
           "name": "disabled",
@@ -235,7 +235,7 @@
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": "Called with the item's value when a radio item is chosen."
+          "description": "Called with the item's value when a radio item is chosen. It is called in a change of its own, after the group's: a request it starts, or a handler that is itself an action, doesn't hold the menu."
         }
       ],
       "dataAttributes": [],
@@ -336,7 +336,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state when the submenu opens or closes, including when the browser closes it with its parent."
+          "description": "Called with the new state when the submenu opens or closes, including when the browser closes it with its parent. It is called in a change of its own, after the submenu's: a request it starts, or a handler that is itself an action, doesn't hold the submenu."
         },
         {
           "name": "disabled",

@@ -1,4 +1,4 @@
-import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, ToastDescription, toast } from "../../../src/toast/toast.rx"
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, ToastDescription, ToastAction, toast } from "../../../src/toast/toast.rx"
 import { publishPost } from "./publish.js"
 
 component Toasts() {
@@ -9,6 +9,7 @@ component Toasts() {
       <div>
         <ToastTitle class="Title" />
         <ToastDescription class="Description" />
+        <ToastAction class="Action" />
       </div>
     </ToastRoot>
   }
@@ -16,18 +17,29 @@ component Toasts() {
 
 component PublishButton() {
   c = use toast
+  source address := ""
+  // A "loading" toast until the promise settles, then the same toast turns into "success" or "error". Awaiting it
+  // in the action is fine: the toast shows at once, and the action carries on with the answer.
   action publish() {
-    // A "loading" toast until the promise settles, then the same toast turns into "success" or "error".
-    let published = c.manager.promise(publishPost(), {
-      loading: { title: "Publishing…", description: "Sending the post to the server." },
-      success: { title: "Post published", description: "It is live on the blog now." },
-      error: { title: "Couldn't publish", description: "The server didn't answer. Try again." },
-    })
-    // The promise still rejects after the toast has shown the error. Not awaited here: an action that awaits
-    // holds back its writes, the loading toast included, until it ends.
-    let _handled = published.catch((error) => error)
+    // `pending? address` is true until the action ends: the button is disabled meanwhile.
+    affects address
+    try {
+      let url = await c.manager.promise(publishPost(), {
+        // With an id, the retry below turns the failed toast back to loading instead of adding another.
+        loading: { id: "publish", title: "Publishing…", description: "Sending the post to the server.", actionProps: undefined },
+        success: { title: "Post published", description: "It is live on the blog now." },
+        error: { title: "Couldn't publish", description: "The server didn't answer.", actionProps: { children: "Try again", onClick: publish } },
+      })
+      address := url
+    } catch (e) {
+      // The promise still rejects after the toast has shown the error; the toast is all this page shows of it.
+      address := ""
+    }
   }
-  <button class="Button" type="button" onClick={publish}>Publish post</button>
+  <div class="Row">
+    <button class="Button" type="button" disabled={pending? address} onClick={publish}>Publish post</button>
+    {if address != "" { <span class="Address">Live at {address}</span> }}
+  </div>
 }
 
 export component ToastPromise() {

@@ -4,7 +4,7 @@
     "props": {
       "open": "Whether the drawer is open. Pass it with `onOpenChange` to control the drawer.",
       "defaultOpen": "Whether the drawer is open at first, when it isn't controlled.",
-      "onOpenChange": "Called when a part, Escape, a press outside or a swipe asks to open or close the drawer. A controlled drawer changes only when `open` does.",
+      "onOpenChange": "Called when a part, Escape, a press outside or a swipe asks to open or close the drawer. A controlled drawer changes only when `open` does. It is called in a change of its own, after the drawer's: a request it starts, or a handler that is itself an action, doesn't hold the drawer.",
       "swipeDirection": "The edge the drawer is swiped out through: `\"up\"`, `\"down\"`, `\"left\"` or `\"right\"`.",
       "swipeThreshold": "How far a swipe must travel to close the drawer, in pixels. When it isn't given, half the drawer's size along `swipeDirection`. A fast flick closes it whatever the distance.",
       "modal": "Whether the drawer is opened with `showModal()`: in the top layer, with a backdrop, the page behind it inert and its scroll locked. As DialogRoot's.",

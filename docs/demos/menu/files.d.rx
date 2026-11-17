@@ -1,0 +1,5 @@
+// How the "items from a server" menu demo may use ./files.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./files.d.ts.
+export fn dropNetwork(): void
+export pure fn loadRecent(): Promise<string[]>
+export fn openFile(name: string): Promise<string>

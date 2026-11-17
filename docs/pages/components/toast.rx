@@ -91,7 +91,22 @@ export default component Page() {
       the toast's options; <code>success</code> and <code>error</code> may also be functions of the result. It
       returns the promise, which still rejects when it rejects, so catch it.
     </p>
+    <p>
+      Await it in an action when the action needs the answer: the loading toast still shows at once. Each call
+      follows its own promise, so two requests whose answers come back in the other order each end their own
+      toast. Give <code>loading</code> an <code>id</code> to have a retry reuse the toast: the demo's failed toast
+      has a "Try again" button that calls the same action, and the toast turns back to loading in place instead of
+      a second one appearing. (Every other publish fails here, so the retry goes through.)
+    </p>
     <Demo source="toast/promise"><ToastPromise /></Demo>
+    <div class="note">
+      <p>
+        What you tell the manager lands a moment later, in a change of its own, not in the run of the handler or
+        action that called it. An action holds all of its writes until it ends, so a toast added inside one would
+        otherwise wait for the action's request. The same goes for a toast's <code>onClose</code> and{" "}
+        <code>onRemove</code>: one that is an action awaiting a request doesn't hold the toast's exit.
+      </p>
+    </div>
 
     <h3 id="position">Position and swiping</h3>
     <p>

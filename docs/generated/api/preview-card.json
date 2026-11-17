@@ -25,7 +25,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state when hover, focus, Escape or a press outside opens or closes the card."
+          "description": "Called with the new state when hover, focus, Escape or a press outside opens or closes the card. It is called in a change of its own, after the card's: a request it starts (a preview that loads on open), or a handler that is itself an action, doesn't hold the card."
         }
       ],
       "dataAttributes": [],

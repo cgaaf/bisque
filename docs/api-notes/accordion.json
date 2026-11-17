@@ -4,7 +4,7 @@
     "props": {
       "value": "The values of the open items. Pass it with `onValueChange` to control the accordion.",
       "defaultValue": "The values of the items open at first, when it isn't controlled.",
-      "onValueChange": "Called with the new list of open values when a trigger asks to open or close an item, and after the browser opened one by itself for find-in-page. A controlled accordion follows `value`.",
+      "onValueChange": "Called with the new list of open values when a trigger asks to open or close an item, and after the browser opened one by itself for find-in-page. A controlled accordion follows `value`. It is called in a change of its own, after the component's: a handler that starts a request, writes what a loading question reads, or is an action that awaits, never holds the component.",
       "multiple": "Whether several items can be open at once. Without it the items share a `name`, and the browser closes the open item when another opens.",
       "disabled": "Whether every item is disabled.",
       "orientation": "Which arrow keys move focus between triggers: Up and Down when `vertical`, Left and Right when `horizontal`.",
@@ -20,7 +20,7 @@
     "props": {
       "value": "Identifies the item in the root's `value`. Without it the item gets a generated value.",
       "disabled": "Whether the item is disabled: its trigger ignores presses and keys, leaves the tab order and is skipped by the arrow keys. Find-in-page still opens it.",
-      "onOpenChange": "Called when the item is asked to open or close, before the root's `onValueChange`."
+      "onOpenChange": "Called when the item is asked to open or close, before the root's `onValueChange`. It is called in a change of its own, after the component's: a handler that starts a request, writes what a loading question reads, or is an action that awaits, never holds the component."
     },
     "dataAttributes": {
       "data-disabled": "Present when the item, or the whole accordion, is disabled.",

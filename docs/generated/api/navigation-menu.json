@@ -25,7 +25,7 @@
           "type": "(value: string | null) => void",
           "default": null,
           "required": false,
-          "description": "Called once per change with the open item's value, or `null` when it closed, including when the browser closed it (Escape, a press outside)."
+          "description": "Called once per change with the open item's value, or `null` when it closed, including when the browser closed it (Escape, a press outside). It is called in a change of its own, after the menu's: a request it starts, or a handler that is itself an action, doesn't hold the menu."
         },
         {
           "name": "orientation",

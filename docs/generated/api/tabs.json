@@ -25,7 +25,7 @@
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new value when a tab is selected."
+          "description": "Called with the new value when a tab is selected, after the selection has landed: a handler that starts a request (the panel's content), writes what a loading question reads, or is an action that awaits, never holds the tab, the roving focus or the indicator. A controlled `value` is shown as given, so an owner that writes it late switches late; one that guesses (`guess value := next`) switches at once."
         },
         {
           "name": "orientation",

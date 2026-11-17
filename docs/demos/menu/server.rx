@@ -1,0 +1,39 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem } from "../../../src/menu/menu.rx"
+import { loadRecent, openFile, dropNetwork } from "./files.js"
+
+export component MenuServer() {
+  // Asked the first time the menu opens: `onOpenChange` sets `wanted`, which the question reads.
+  source wanted: boolean := false
+  recent = wanted ? await loadRecent() : []
+  source opened := ""
+  source failure := ""
+  action open(name: string) {
+    affects opened
+    onFlush(() => { failure := "" })
+    try {
+      let answer = await openFile(name)
+      opened := answer
+    } catch (e) {
+      failure := e.message
+    }
+  }
+  <div class="MenuServer">
+    <MenuRoot onOpenChange={(next) => { if (next) { wanted := true } }}>
+      <MenuTrigger class="Button">Open recent</MenuTrigger>
+      <MenuPopup class="Popup" sideOffset={6}>
+        {loading on(wanted) fallback { <div class="Status">Loading…</div> } {
+          {errored fallback(e) {
+            <div class="Error" role="alert">{e.message}</div>
+            <MenuItem class="Item" closeOnClick={false} onClick={() => { refresh recent }}>Retry</MenuItem>
+          } {
+            {for name in recent {
+              <MenuItem class="Item" onClick={() => { open(name) }}>{name}</MenuItem>
+            }}
+          }}
+        }}
+      </MenuPopup>
+    </MenuRoot>
+    <p class="Result" role="status">{pending? opened ? "Opening…" : failure != "" ? failure : opened == "" ? "No file open" : "Opened " + opened}</p>
+    <button type="button" class="Toggle" onClick={() => { dropNetwork() }}>Drop the network for 2 seconds</button>
+  </div>
+}

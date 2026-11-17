@@ -1,0 +1,4 @@
+// How the "content from a server" popover demo may use ./inbox.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./inbox.d.ts.
+export fn failNextLoad(): void
+export pure fn loadNotifications(): Promise<string[]>

@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { TabsHero } from "../../demos/tabs/hero.rx"
 import { TabsAnimated } from "../../demos/tabs/animated.rx"
 import { TabsVertical } from "../../demos/tabs/vertical.rx"
+import { TabsLoading } from "../../demos/tabs/loading.rx"
 
 export default component Page() {
   <DocsPage title="Tabs" subtitle="A set of panels on the same page, one shown at a time.">
@@ -64,6 +65,21 @@ export default component Page() {
       <code>value</code> and <code>onValueChange</code>.
     </p>
     <Demo source="tabs/vertical"><TabsVertical /></Demo>
+
+    <h3 id="loading">Panels that load</h3>
+    <p>
+      A panel's content can come from a server: keep the selected tab in a source, write it from{" "}
+      <code>onValueChange</code>, and let a question read it (<code>text = await loadText(tab)</code>). The tab
+      switches at once: <code>onValueChange</code> is called in a change of its own, after the selection, so a
+      handler whose write starts a request (or an action that awaits one) never holds the tab, the arrow keys or
+      the indicator. An answer for a tab that is no longer selected is dropped. Without a <code>loading</code>{" "}
+      region the new panel shows the previous answer until the new one lands, and <code>pending? text</code> says
+      one is on its way; <code>loading on(tab)</code> shows a fallback instead, each time the tab changes. An{" "}
+      <code>errored</code> region inside the panel shows a failure where the content would be, and{" "}
+      <code>refresh text</code> asks again. When content replaces what had focus inside the selected panel (the
+      retry button, once the answer lands), focus stays in the panel rather than dropping to the page.
+    </p>
+    <Demo source="tabs/loading"><TabsLoading /></Demo>
 
     <h3 id="disabled">Disabled tabs</h3>
     <p>

@@ -1,0 +1,49 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink } from "../../../src/navigation-menu/navigation-menu.rx"
+import { loadArticles, dropNetwork } from "./articles.js"
+
+export component NavigationMenuServer() {
+  // Each panel asks for its links the first time it opens: `onValueChange` sets the flag its question reads.
+  source wantTools: boolean := false
+  source wantPlants: boolean := false
+  tools = wantTools ? await loadArticles("tools") : []
+  plants = wantPlants ? await loadArticles("plants") : []
+  action opened(value: string | null) {
+    if (value == "tools") { wantTools := true }
+    if (value == "plants") { wantPlants := true }
+  }
+  <div class="NavigationMenuServer">
+    <NavigationMenuRoot aria-label="Articles" onValueChange={opened}>
+      <NavigationMenuList class="List">
+        <NavigationMenuItem value="tools">
+          <NavigationMenuTrigger class="Trigger">Tools</NavigationMenuTrigger>
+          <NavigationMenuContent class="Content" sideOffset={8}>
+            {loading on(wantTools) fallback { <p class="Status">Loading…</p> } {
+              {errored fallback(e) {
+                <div class="Error" role="alert">{e.message} <button type="button" class="Retry" onClick={() => { refresh tools }}>Retry</button></div>
+              } {
+                {for title in tools {
+                  <NavigationMenuLink class="Row" href="#tools">{title}</NavigationMenuLink>
+                }}
+              }}
+            }}
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem value="plants">
+          <NavigationMenuTrigger class="Trigger">Plants</NavigationMenuTrigger>
+          <NavigationMenuContent class="Content" sideOffset={8}>
+            {loading on(wantPlants) fallback { <p class="Status">Loading…</p> } {
+              {errored fallback(e) {
+                <div class="Error" role="alert">{e.message} <button type="button" class="Retry" onClick={() => { refresh plants }}>Retry</button></div>
+              } {
+                {for title in plants {
+                  <NavigationMenuLink class="Row" href="#plants">{title}</NavigationMenuLink>
+                }}
+              }}
+            }}
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+    <button type="button" class="Toggle" onClick={() => { dropNetwork() }}>Drop the network for 2 seconds</button>
+  </div>
+}

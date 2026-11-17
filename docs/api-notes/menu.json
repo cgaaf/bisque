@@ -4,7 +4,7 @@
     "props": {
       "open": "Whether the menu is open. Pass it with `onOpenChange` to control the menu.",
       "defaultOpen": "Whether the menu is open at first, when it isn't controlled.",
-      "onOpenChange": "Called with the new state after the browser or a part opened or closed the menu. Escape and a press outside can't be refused: a controlled menu that keeps `open` true is shown again.",
+      "onOpenChange": "Called with the new state after the browser or a part opened or closed the menu, and in a menubar whenever the bar opens or closes it (including moving to it with the arrow keys). Escape and a press outside can't be refused: a controlled menu that keeps `open` true is shown again. It is called in a change of its own, after the menu's: a request it starts, or a handler that is itself an action, doesn't hold the menu.",
       "disabled": "A disabled menu doesn't open, and its trigger is disabled."
     }
   },
@@ -59,7 +59,7 @@
     "props": {
       "checked": "Whether the item is checked. Pass it with `onCheckedChange` to control it.",
       "defaultChecked": "Whether the item is checked at first, when it isn't controlled.",
-      "onCheckedChange": "Called with the new state when the item is chosen.",
+      "onCheckedChange": "Called with the new state when the item is chosen. It is called in a change of its own, after the item's: a request it starts, or a handler that is itself an action, doesn't hold the menu.",
       "disabled": "A disabled item can't be chosen, and the arrow keys skip it.",
       "closeOnClick": "Whether choosing the item closes the menu."
     },
@@ -75,7 +75,7 @@
     "props": {
       "value": "The value of the chosen item. Pass it with `onValueChange` to control the group.",
       "defaultValue": "The value chosen at first, when the group isn't controlled.",
-      "onValueChange": "Called with the item's value when a radio item is chosen."
+      "onValueChange": "Called with the item's value when a radio item is chosen. It is called in a change of its own, after the group's: a request it starts, or a handler that is itself an action, doesn't hold the menu."
     }
   },
   "MenuRadioItem": {
@@ -106,7 +106,7 @@
     "props": {
       "open": "Whether the submenu is open. Pass it with `onOpenChange` to control it.",
       "defaultOpen": "Whether the submenu is open at first, when it isn't controlled.",
-      "onOpenChange": "Called with the new state when the submenu opens or closes, including when the browser closes it with its parent.",
+      "onOpenChange": "Called with the new state when the submenu opens or closes, including when the browser closes it with its parent. It is called in a change of its own, after the submenu's: a request it starts, or a handler that is itself an action, doesn't hold the submenu.",
       "disabled": "A disabled submenu doesn't open. It is also disabled when its parent menu is."
     }
   },

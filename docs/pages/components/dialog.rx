@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { DialogHero } from "../../demos/dialog/hero.rx"
 import { DialogControlled } from "../../demos/dialog/controlled.rx"
 import { DialogNonModal } from "../../demos/dialog/non-modal.rx"
+import { DialogServer } from "../../demos/dialog/server.rx"
 
 export default component Page() {
   <DocsPage title="Dialog" subtitle="A popup that opens on top of the entire page.">
@@ -53,6 +54,30 @@ export default component Page() {
       animates out as usual, and the button's <code>value</code> becomes the dialog's <code>returnValue</code>.
     </p>
     <Demo source="dialog/controlled"><DialogControlled /></Demo>
+
+    <h3 id="server">Content from a server</h3>
+    <p>
+      Load what the dialog shows in an equation and render its answer inside the popup, under a{" "}
+      <code>loading</code> region keyed on what asks for it:{" "}
+      <code>{"project = visit == 0 ? null : await loadProject()"}</code>, with <code>onOpenChange</code> moving{" "}
+      <code>visit</code> each time the dialog opens. The dialog opens at once, whatever your handler starts: the root
+      calls <code>onOpenChange</code> in a change of its own, so a request it starts, or an <code>onOpenChange</code>{" "}
+      that is itself an action awaiting one, never holds the dialog open or shut. While the fallback shows, the
+      dialog can be closed as usual, and an answer that arrives after it closed shows nothing.
+    </p>
+    <p>
+      Content that loads or fails replaces what was there, often the element that had focus (a Retry button after
+      it is pressed). Focus then stays in the dialog, on its first focusable element, instead of falling to the
+      page behind it.
+    </p>
+    <p>
+      To close the dialog after a save, write <code>open := false</code> after the <code>await</code> in the save
+      action: the dialog stays open, its button showing <code>pending?</code>, until the server agrees, and stays
+      open with the error if it doesn't. A controlled dialog follows its owner both ways, however late the owner
+      writes <code>open</code>; with <code>guess open := next</code> it opens or closes at once and goes back if the
+      request fails.
+    </p>
+    <Demo source="dialog/server"><DialogServer /></Demo>
 
     <h3 id="dismissal">Closing on Escape and a press outside</h3>
     <p>

@@ -3,6 +3,7 @@ import { href } from "../../lib/site.js"
 import { MenuHero } from "../../demos/menu/hero.rx"
 import { MenuOptions } from "../../demos/menu/options.rx"
 import { MenuSubmenu } from "../../demos/menu/submenu.rx"
+import { MenuServer } from "../../demos/menu/server.rx"
 
 export default component Page() {
   <DocsPage title="Menu" subtitle="A list of actions in a popup, opened from a button and driven from the keyboard.">
@@ -87,11 +88,37 @@ export default component Page() {
       <code>href</code>, and <kbd>Enter</kbd> follows it.
     </p>
 
+    <h3 id="server">Items from a server</h3>
+    <p>
+      Load the items in an equation and render its answer inside the popup:{" "}
+      <code>{"recent = wanted ? await loadRecent() : []"}</code>, with <code>onOpenChange</code> setting{" "}
+      <code>wanted</code> the first time the menu opens. The menu opens at once, whatever your handlers wait for: the
+      root calls <code>onOpenChange</code> (and an item's <code>onCheckedChange</code> or a radio group's{" "}
+      <code>onValueChange</code>) in a change of its own, so a request it starts never holds the popup, the
+      highlight or the tick. Show a fallback with <code>loading on(wanted)</code> around the items; the menu stays
+      closable with <kbd>Escape</kbd> and a press outside while it shows.
+    </p>
+    <p>
+      Opened from the keyboard, focus waits on the popup and moves to the first item when the items arrive. Items
+      may be replaced while the menu is open (a reload, an error in their place, a retry): if the focused item goes,
+      focus moves to the first item rather than leaving the menu. Put an <code>errored</code> region around the items
+      with a Retry item (<code>closeOnClick={"{false}"}</code>) that calls <code>refresh</code>.
+    </p>
+    <p>
+      An item whose <code>onClick</code> starts a save closes the menu at once: the item closes it in a change of
+      its own, so the menu doesn't wait for the request. Show the request's progress outside the menu, here with{" "}
+      <code>affects opened</code> and <code>pending? opened</code>. Press the button under the demo to drop its
+      network for two seconds and see the error and Retry.
+    </p>
+    <Demo source="menu/server"><MenuServer /></Demo>
+
     <h3 id="controlled">Controlling it</h3>
     <p>
       Pass <code>open</code> and <code>onOpenChange</code> to <code>MenuRoot</code> to hold the state yourself.
       Escape and a press outside can't be refused: they are reported through <code>onOpenChange</code> after the
-      browser closed the menu, and a menu whose <code>open</code> stays true is shown again. A{" "}
+      browser closed the menu, and a menu whose <code>open</code> stays true is shown again. The element follows
+      your <code>open</code> both ways: a handler that writes it only once a request has answered opens or closes the
+      menu then, and a <code>guess</code> shows at once and is undone if the request fails. A{" "}
       <code>disabled</code> menu doesn't open.
     </p>
 

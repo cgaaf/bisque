@@ -4,7 +4,7 @@
     "props": {
       "open": "Whether the dialog is open. Pass it with `onOpenChange` to control the dialog.",
       "defaultOpen": "Whether the dialog is open at first, when it isn't controlled.",
-      "onOpenChange": "Called when a part, Escape or a press outside asks to open or close the dialog. A controlled dialog changes only when `open` does, so it can refuse to close.",
+      "onOpenChange": "Called when a part, Escape or a press outside asks to open or close the dialog. A controlled dialog changes only when `open` does, so it can refuse to close. It is called in a change of its own, after the dialog's: a request it starts, or a handler that is itself an action, doesn't hold the dialog. The owner may answer late (write `open` after an `await`) or guess (`guess open := next`); the dialog follows either way.",
       "modal": "Whether the dialog is opened with `showModal()`: in the top layer, with a backdrop, the page behind it inert and its scroll locked. With `false` it is opened with `show()` and the page stays usable.",
       "dismissible": "Whether Escape and a press outside close the dialog. With `false` only its own buttons do.",
       "disablePointerDismissal": "Whether a press outside is ignored. Escape still closes the dialog.",

@@ -4,7 +4,7 @@
     {
       "name": "AvatarRoot",
       "element": "span",
-      "description": "Holds the picture's loading status and shares it with the image and fallback inside it. Size and shape the avatar on this element.",
+      "description": "Holds the picture's loading status and shares it with the image and fallback inside it. Size and shape the avatar on this element. Avatars in a list that comes from a server can be removed by a new answer at any time.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []
@@ -47,7 +47,7 @@
           "type": "(status: ImageLoadingStatus) => void",
           "default": null,
           "required": false,
-          "description": "Called with `\"loading\"`, then `\"loaded\"` or `\"error\"`, each time the source is loaded."
+          "description": "Called with `\"loading\"`, then `\"loaded\"` or `\"error\"`, each time the source is loaded. It is called from an effect, after the status has changed on screen."
         }
       ],
       "dataAttributes": [

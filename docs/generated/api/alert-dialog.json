@@ -25,7 +25,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called when a part or Escape asks to open or close the alert dialog. A controlled alert dialog changes only when `open` does."
+          "description": "Called when a part or Escape asks to open or close the alert dialog. A controlled alert dialog changes only when `open` does. It is called in a change of its own, after the alert dialog's: a request it starts, or a handler that is itself an action, doesn't hold it."
         }
       ],
       "dataAttributes": [],

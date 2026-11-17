@@ -1,0 +1,82 @@
+.MenuServer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .Button:hover,
+  .Button[data-popup-open] {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Popup {
+    /* A popover comes with the browser's border, padding and scrolling. */
+    min-width: 13rem;
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.25);
+    /* Focus waits on the popup until the items arrive, then moves to the first one if the keyboard opened it. */
+    outline: 0;
+  }
+
+  .Status {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    padding: 0.375rem 0.625rem;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff9b8f);
+  }
+
+  .Item {
+    display: block;
+    padding: 0.375rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    cursor: default;
+    user-select: none;
+    outline: 0;
+  }
+
+  .Item[data-highlighted] {
+    background: light-dark(#17171a, #ededf0);
+    color: light-dark(#fff, #17171a);
+  }
+
+  .Result {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* Not part of the component: makes the demo's requests fail for a moment, to show the error and Retry. */
+  .Toggle {
+    padding: 0.25rem 0.625rem;
+    border: 1px dashed light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.25rem;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    font: inherit;
+    font-size: 0.8125rem;
+  }
+
+  .Toggle:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}

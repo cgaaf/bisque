@@ -1,0 +1,4 @@
+// How the "content from a server" navigation menu demo may use ./articles.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./articles.d.ts.
+export fn dropNetwork(): void
+export pure fn loadArticles(topic: string): Promise<string[]>

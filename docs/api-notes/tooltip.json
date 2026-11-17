@@ -12,7 +12,7 @@
     "props": {
       "open": "Whether the tooltip is open. Pass it with `onOpenChange` to control the tooltip.",
       "defaultOpen": "Whether the tooltip is open at first, when it isn't controlled.",
-      "onOpenChange": "Called with the new state when hover, focus, a press, Escape or a press outside opens or closes the tooltip.",
+      "onOpenChange": "Called with the new state when hover, focus, a press, Escape or a press outside opens or closes the tooltip. It is called in a change of its own, after the tooltip's: a request it starts (text that loads on open), or a handler that is itself an action, doesn't hold the tooltip.",
       "disabled": "A disabled tooltip doesn't open, and closes if it was open.",
       "disableHoverablePopup": "Close the tooltip as soon as the pointer leaves the trigger, instead of letting it move onto the popup."
     }

@@ -1,5 +1,6 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { NavigationMenuHero } from "../../demos/navigation-menu/hero.rx"
+import { NavigationMenuServer } from "../../demos/navigation-menu/server.rx"
 
 export default component Page() {
   <DocsPage title="Navigation Menu" subtitle="A site's main links, with panels of more links that open from it.">
@@ -64,6 +65,23 @@ export default component Page() {
       <code>active</code>, which sets <code>aria-current="page"</code> and <code>data-active</code>. A link in the
       content leaves it open when followed, unless it has <code>closeOnClick</code>.
     </p>
+
+    <h3 id="server">Content from a server</h3>
+    <p>
+      Load a panel's links in an equation that its first opening turns on:{" "}
+      <code>{"tools = wantTools ? await loadArticles(\"tools\") : []"}</code>, with <code>onValueChange</code>{" "}
+      setting <code>wantTools</code>. The panel opens at once: the root calls <code>onValueChange</code> in a change
+      of its own, so a request your handler starts (or a handler that is itself an action) never holds the menu.
+      Show a fallback with <code>loading on(wantTools)</code>; the panel stays closable while it shows, and moving to
+      another item while one is loading shows each panel's own answer.
+    </p>
+    <p>
+      Opened from the keyboard, focus waits on the content and moves to its first link when the links arrive. If
+      something focused inside the content goes (the Retry button of an <code>errored</code> region, once its retry
+      has answered), focus moves to the content's first link instead of leaving the menu. Press the button under the
+      demo to drop its network for two seconds.
+    </p>
+    <Demo source="navigation-menu/server"><NavigationMenuServer /></Demo>
 
     <h3 id="controlled">Controlling it</h3>
     <p>

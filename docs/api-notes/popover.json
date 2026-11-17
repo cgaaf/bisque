@@ -3,7 +3,8 @@
     "description": "Holds the popover's open state and shares it with the parts inside it.",
     "props": {
       "open": "Whether the popover is open. Pass it with `onOpenChange` to control the popover.",
-      "defaultOpen": "Whether the popover is open at first, when it isn't controlled."
+      "defaultOpen": "Whether the popover is open at first, when it isn't controlled.",
+      "onOpenChange": "Called with the new state after the browser or a part opened or closed the popover. A press outside and Escape can't be refused: a controlled popover that keeps `open` true is shown again. It is called in a change of its own, after the popover's: a request it starts, or a handler that is itself an action, doesn't hold the popover or hide it again after the browser showed it."
     }
   },
   "PopoverTrigger": {

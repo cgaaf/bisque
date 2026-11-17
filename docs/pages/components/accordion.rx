@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { AccordionHero } from "../../demos/accordion/hero.rx"
 import { AccordionMultiple } from "../../demos/accordion/multiple.rx"
 import { AccordionControlled } from "../../demos/accordion/controlled.rx"
+import { AccordionLoading } from "../../demos/accordion/loading.rx"
 
 export default component Page() {
   <DocsPage title="Accordion" subtitle="A set of collapsible panels with headings.">
@@ -58,6 +59,19 @@ export default component Page() {
       <code>onOpenChange</code>, called before the root's.
     </p>
     <Demo source="accordion/controlled"><AccordionControlled /></Demo>
+
+    <h3 id="loading">Content that loads</h3>
+    <p>
+      An item's content can come from a server when it opens: write the open item from <code>onValueChange</code>{" "}
+      and let a question read it. The item opens at once, because <code>onValueChange</code> (and an item's{" "}
+      <code>onOpenChange</code>) is called in a change of its own, after the item has opened: a write that starts a
+      request, or a handler that is an action awaiting one, never holds the item, and never shuts a{" "}
+      <code>{"<details>"}</code> the browser opened by itself (find-in-page) to match. Put a{" "}
+      <code>loading on(topic)</code> region in the panel for a fallback each time the topic changes, and an{" "}
+      <code>errored</code> region with <code>refresh</code> for a failure and its retry. Focus that was on content
+      the answer replaces stays in the panel.
+    </p>
+    <Demo source="accordion/loading"><AccordionLoading /></Demo>
 
     <h3 id="keyboard">Keyboard and orientation</h3>
     <p>

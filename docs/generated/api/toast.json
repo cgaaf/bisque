@@ -4,7 +4,7 @@
     {
       "name": "ToastProvider",
       "element": null,
-      "description": "Holds the list of toasts and their timers. Inside it, `(use toast).toasts` is the list to render (newest first) and `(use toast).manager` adds, updates and closes toasts.",
+      "description": "Holds the list of toasts and their timers. Inside it, `(use toast).toasts` is the list to render (newest first) and `(use toast).manager` adds, updates and closes toasts. What the manager is told lands in a change of its own, a microtask after the call, so a toast added from inside an action (`await manager.promise(save())`) shows at once rather than when the action ends. A toast's `onClose` and `onRemove` are called the same way.",
       "props": [
         {
           "name": "timeout",

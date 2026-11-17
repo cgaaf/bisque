@@ -4,7 +4,7 @@
     "props": {
       "open": "Whether the card is open. Pass it with `onOpenChange` to control it.",
       "defaultOpen": "Whether the card is open at first, when it isn't controlled.",
-      "onOpenChange": "Called with the new state when hover, focus, Escape or a press outside opens or closes the card."
+      "onOpenChange": "Called with the new state when hover, focus, Escape or a press outside opens or closes the card. It is called in a change of its own, after the card's: a request it starts (a preview that loads on open), or a handler that is itself an action, doesn't hold the card."
     }
   },
   "PreviewCardTrigger": {

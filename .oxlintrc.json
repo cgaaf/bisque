@@ -2,5 +2,27 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript", "unicorn", "oxc", "import", "vitest"],
   "categories": { "correctness": "error", "suspicious": "warn", "perf": "warn" },
-  "ignorePatterns": ["dist", "node_modules"]
+  // Type-aware rules, run by tsrs (oxlint finds the installed one).
+  "options": { "typeAware": true },
+  "ignorePatterns": ["dist", "node_modules"],
+  "rules": {
+    // A Solid effect returns its cleanup, and only on the paths that set something up.
+    "typescript/consistent-return": "off"
+  },
+  "overrides": [
+    {
+      // Where the DOM's loose types (`event.target`, `querySelector`) are narrowed for the rest of the library.
+      "files": ["src/internal/impl/**"],
+      "rules": { "typescript/no-unsafe-type-assertion": "off" }
+    },
+    {
+      // Tests narrow what a query returns (`getByRole(…) as HTMLInputElement`) and pass methods to `expect`.
+      "files": ["**/*.test.ts", "src/test/**"],
+      "rules": {
+        "typescript/unbound-method": "off",
+        "typescript/no-unsafe-type-assertion": "off",
+        "typescript/no-unnecessary-type-assertion": "off"
+      }
+    }
+  ]
 }

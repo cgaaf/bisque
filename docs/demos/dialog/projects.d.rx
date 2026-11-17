@@ -1,0 +1,6 @@
+// How the "content from a server" dialog demo may use ./projects.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./projects.d.ts.
+export type Project = { name: string; edited: string }
+export fn failNextSave(): void
+export pure fn loadProject(): Promise<Project>
+export fn saveProject(next: string): Promise<string>

@@ -81,6 +81,7 @@ const GROUPS: { title: string; pages: [title: string, path: string][] }[] = [
       ["Animation", "handbook/animation"],
       ["Composition", "handbook/composition"],
       ["Forms", "handbook/forms"],
+      ["Working with a server", "handbook/server-data"],
     ],
   },
   { title: "Components", pages: COMPONENTS.map((slug) => [titled(slug), `components/${slug}`]) },

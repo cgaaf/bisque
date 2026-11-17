@@ -25,7 +25,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called when the trigger asks to open or close the panel, and after the browser opened it by itself for find-in-page. A controlled collapsible follows `open`, and is closed again if `open` stays false."
+          "description": "Called when the trigger asks to open or close the panel, and after the browser opened it by itself for find-in-page. A controlled collapsible follows `open`, and is closed again if `open` stays false. It is called in a change of its own, after the component's: a handler that starts a request, writes what a loading question reads, or is an action that awaits, never holds the component."
         },
         {
           "name": "disabled",

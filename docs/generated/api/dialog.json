@@ -25,7 +25,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called when a part, Escape or a press outside asks to open or close the dialog. A controlled dialog changes only when `open` does, so it can refuse to close."
+          "description": "Called when a part, Escape or a press outside asks to open or close the dialog. A controlled dialog changes only when `open` does, so it can refuse to close. It is called in a change of its own, after the dialog's: a request it starts, or a handler that is itself an action, doesn't hold the dialog. The owner may answer late (write `open` after an `await`) or guess (`guess open := next`); the dialog follows either way."
         },
         {
           "name": "modal",

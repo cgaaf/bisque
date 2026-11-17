@@ -1,0 +1,29 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle } from "../../../src/popover/popover.rx"
+import { loadNotifications, failNextLoad } from "./inbox.js"
+
+export component PopoverServer() {
+  // Asked again each time the popover opens: `onOpenChange` moves `visit`, which the question reads.
+  source visit := 0
+  notifications = visit == 0 ? [] : await loadNotifications()
+  <div class="PopoverServer">
+    <PopoverRoot onOpenChange={(open) => { if (open) { visit := visit + 1 } }}>
+      <PopoverTrigger class="Button">Notifications</PopoverTrigger>
+      <PopoverPopup class="Popup" sideOffset={8}>
+        <PopoverTitle class="Title">Notifications</PopoverTitle>
+        {loading on(visit) fallback { <p class="Status">Loading…</p> } {
+          {errored fallback(e) {
+            <p class="Error" role="alert">{e.message}</p>
+            <button type="button" class="Button" onClick={() => { refresh notifications }}>Retry</button>
+          } {
+            <ul class="List">
+              {for message in notifications {
+                <li>{message}</li>
+              }}
+            </ul>
+          }}
+        }}
+      </PopoverPopup>
+    </PopoverRoot>
+    <button type="button" class="Toggle" onClick={() => { failNextLoad() }}>Make the next load fail</button>
+  </div>
+}

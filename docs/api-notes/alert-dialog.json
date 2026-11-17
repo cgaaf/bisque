@@ -4,7 +4,7 @@
     "props": {
       "open": "Whether the alert dialog is open. Pass it with `onOpenChange` to control it.",
       "defaultOpen": "Whether the alert dialog is open at first, when it isn't controlled.",
-      "onOpenChange": "Called when a part or Escape asks to open or close the alert dialog. A controlled alert dialog changes only when `open` does."
+      "onOpenChange": "Called when a part or Escape asks to open or close the alert dialog. A controlled alert dialog changes only when `open` does. It is called in a change of its own, after the alert dialog's: a request it starts, or a handler that is itself an action, doesn't hold it."
     }
   },
   "AlertDialogTrigger": {

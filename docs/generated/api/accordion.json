@@ -25,7 +25,7 @@
           "type": "(value: string[]) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new list of open values when a trigger asks to open or close an item, and after the browser opened one by itself for find-in-page. A controlled accordion follows `value`."
+          "description": "Called with the new list of open values when a trigger asks to open or close an item, and after the browser opened one by itself for find-in-page. A controlled accordion follows `value`. It is called in a change of its own, after the component's: a handler that starts a request, writes what a loading question reads, or is an action that awaits, never holds the component."
         },
         {
           "name": "multiple",
@@ -92,7 +92,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called when the item is asked to open or close, before the root's `onValueChange`."
+          "description": "Called when the item is asked to open or close, before the root's `onValueChange`. It is called in a change of its own, after the component's: a handler that starts a request, writes what a loading question reads, or is an action that awaits, never holds the component."
         }
       ],
       "dataAttributes": [

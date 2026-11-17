@@ -39,7 +39,7 @@ don't mention. The `solid-2.0` skills (linked from `solid-js` by pnpm) cover the
 - Vite compiles an `.rx` program whole, from an entry, and reports only what that entry reaches. `pnpm typecheck:rx`
   is the only check that sees every `.rx` file.
 - `src/internal/*.d.ts` are generated from the `.d.rx` beside them (`pnpm gen:dts`). Edit the `.d.rx`.
-- A bundler problem can pass every test: Vitest tolerates an import of a name that doesn't exist. `pnpm build:demo`
+- A bundler problem can pass every test: Vitest tolerates an import of a name that doesn't exist. `pnpm build:docs`
   is the check that catches it.
 - Solid's dev warnings in test output (`[STRICT_READ_UNTRACKED]` and the like) are bugs in `src/internal/impl`,
   not noise.
@@ -53,7 +53,7 @@ page; `.claude/skills/rs-ui-components/references/docs.md` says how a page is wr
 
 ## Commands
 
-`pnpm check` runs everything (format, lint, both type checks, tests, demo build). While working on one component:
+`pnpm check` runs everything (format, lint, both type checks, tests, docs build). While working on one component:
 
 ```bash
 pnpm rx-check src/menu/fixtures/basic.rx   # compile one program; add `--emit menu.rx` to see the JavaScript

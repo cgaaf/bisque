@@ -1,0 +1,4 @@
+// How the "content that loads" demos may use ./panel-server.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./panel-server.d.ts.
+export fn failNextLoad(): void
+export pure fn loadText(topic: string): Promise<string>

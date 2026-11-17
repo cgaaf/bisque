@@ -4,7 +4,7 @@
     "props": {
       "open": "Whether the menu is open. Pass it with `onOpenChange` to control the menu.",
       "defaultOpen": "Whether the menu is open at first, when it isn't controlled. Default: false.",
-      "onOpenChange": "Called with the new state after the browser or a part opened or closed the menu.",
+      "onOpenChange": "Called with the new state after the browser or a part opened or closed the menu. It is called in a change of its own, after the menu's: a request it starts, or a handler that is itself an action, doesn't hold the menu.",
       "disabled": "A disabled context menu doesn't open, and the browser's own menu shows instead."
     }
   },
@@ -53,7 +53,7 @@
     "props": {
       "checked": "Whether the item is checked. Pass it with `onCheckedChange` to control it.",
       "defaultChecked": "Whether the item is checked at first, when it isn't controlled. Default: false.",
-      "onCheckedChange": "Called with the new state when the item is chosen.",
+      "onCheckedChange": "Called with the new state when the item is chosen. It is called in a change of its own, after the item's: a request it starts, or a handler that is itself an action, doesn't hold the menu.",
       "disabled": "A disabled item can't be chosen, and the arrow keys skip it. Default: false.",
       "closeOnClick": "Whether choosing the item closes the menu. Default: false."
     },
@@ -69,7 +69,7 @@
     "props": {
       "value": "The value of the chosen item. Pass it with `onValueChange` to control the group.",
       "defaultValue": "The value chosen at first, when the group isn't controlled.",
-      "onValueChange": "Called with the item's value when a radio item is chosen."
+      "onValueChange": "Called with the item's value when a radio item is chosen. It is called in a change of its own, after the group's: a request it starts, or a handler that is itself an action, doesn't hold the menu."
     }
   },
   "ContextMenuRadioItem": {
@@ -100,7 +100,7 @@
     "props": {
       "open": "Whether the submenu is open. Pass it with `onOpenChange` to control it.",
       "defaultOpen": "Whether the submenu is open at first, when it isn't controlled. Default: false.",
-      "onOpenChange": "Called with the new state when the submenu opens or closes.",
+      "onOpenChange": "Called with the new state when the submenu opens or closes. It is called in a change of its own, after the submenu's: a request it starts, or a handler that is itself an action, doesn't hold the submenu.",
       "disabled": "A disabled submenu doesn't open. Default: false."
     }
   },

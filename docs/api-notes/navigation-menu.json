@@ -4,7 +4,7 @@
     "props": {
       "value": "The open item's value, or `null` for none. Pass it with `onValueChange` to control the menu.",
       "defaultValue": "The item open at first, when the menu isn't controlled.",
-      "onValueChange": "Called once per change with the open item's value, or `null` when it closed, including when the browser closed it (Escape, a press outside).",
+      "onValueChange": "Called once per change with the open item's value, or `null` when it closed, including when the browser closed it (Escape, a press outside). It is called in a change of its own, after the menu's: a request it starts, or a handler that is itself an action, doesn't hold the menu.",
       "orientation": "Whether the list runs `horizontal`ly or `vertical`ly: which arrow keys move along it and which one opens an item.",
       "delay": "How long the pointer rests on a trigger before its content opens, in milliseconds. While another item is open, the switch is immediate.",
       "closeDelay": "How long after the pointer leaves the trigger and its content before the content closes, in milliseconds."

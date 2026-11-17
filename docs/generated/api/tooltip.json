@@ -55,7 +55,7 @@
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state when hover, focus, a press, Escape or a press outside opens or closes the tooltip."
+          "description": "Called with the new state when hover, focus, a press, Escape or a press outside opens or closes the tooltip. It is called in a change of its own, after the tooltip's: a request it starts (text that loads on open), or a handler that is itself an action, doesn't hold the tooltip."
         },
         {
           "name": "disabled",

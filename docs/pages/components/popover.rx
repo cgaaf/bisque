@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { PopoverHero } from "../../demos/popover/hero.rx"
 import { PopoverOpenOnHover } from "../../demos/popover/open-on-hover.rx"
 import { PopoverControlled } from "../../demos/popover/controlled.rx"
+import { PopoverServer } from "../../demos/popover/server.rx"
 
 export default component Page() {
   <DocsPage title="Popover" subtitle="An accessible popup anchored to a button.">
@@ -53,6 +54,19 @@ export default component Page() {
       shown again.
     </p>
     <Demo source="popover/controlled"><PopoverControlled /></Demo>
+
+    <h3 id="server">Content from a server</h3>
+    <p>
+      Load the popup's content in an equation that <code>onOpenChange</code> asks:{" "}
+      <code>{"notifications = visit == 0 ? [] : await loadNotifications()"}</code>, with <code>visit</code> moved
+      each time the popover opens, and a <code>loading on(visit)</code> region around what reads it. The popover
+      opens at once: the root calls <code>onOpenChange</code> in a change of its own, so a request it starts, or a
+      handler that is itself an action awaiting one, never holds the popup shut or hides it again after the browser
+      showed it. It closes on <kbd>Escape</kbd> and a press outside while it loads. When a failure or a retry
+      replaces the element that had focus, focus moves to the popup's first focusable element, if it has one,
+      instead of falling to the page.
+    </p>
+    <Demo source="popover/server"><PopoverServer /></Demo>
 
     <h3 id="placement">Placement and the arrow</h3>
     <p>

@@ -1,0 +1,115 @@
+import { DocsPage, Demo } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { FormHero } from "../../demos/form/hero.rx"
+import { ComboboxServer } from "../../demos/combobox/server.rx"
+import { SwitchSaving } from "../../demos/switch/saving.rx"
+import { DialogServer } from "../../demos/dialog/server.rx"
+
+export default component Page() {
+  <DocsPage title="Working with a server" subtitle="Requests take time, fail, and come back in the wrong order. The components are built and tested for that.">
+    <p>
+      A demo that reads from memory hides most of what goes wrong in a real interface: the answer that arrives
+      after the person has moved on, the save that is refused, the second press while the first is still out.
+      ReactiveScript was designed around those problems, and the components are written so that its tools work
+      through them. Every example on this page talks to a fake server that is slow and can be made to fail.
+    </p>
+
+    <h2 id="what-the-language-gives">What the language gives you</h2>
+    <ul>
+      <li>
+        <strong>An answer that is always current.</strong> <code>results = await search(query)</code> is asked
+        again whenever <code>query</code> changes, and an answer to an older question is dropped when it lands.
+        There are no request ids to track.
+      </li>
+      <li>
+        <strong>One consistent frame.</strong> A change whose readers are still waiting is held, so the screen
+        never shows half of it.
+      </li>
+      <li>
+        <strong>Work in progress as a value.</strong> <code>pending? x</code> is true while a new answer for{" "}
+        <code>x</code> is out, and <code>latest x</code> is the value it is moving to.
+      </li>
+      <li>
+        <strong>Optimism that undoes itself.</strong> <code>guess x := next</code> shows a value now and takes it
+        back if the action fails.
+      </li>
+      <li>
+        <strong>Failures you can't forget.</strong> The compiler refuses an action that awaits and doesn't catch.
+      </li>
+    </ul>
+
+    <h2 id="what-the-components-do">What the components do about it</h2>
+    <ul>
+      <li>
+        <strong>They stay live while your request is out.</strong> A component's own state (what is open, what is
+        highlighted, what was typed) does not wait for your server. Your callbacks run in their own step, after
+        the component has made its own change.
+      </li>
+      <li>
+        <strong>They follow an owner that answers late or says no.</strong> A controlled part ends on its owner's
+        value, and a guess that is taken back puts the control back with no flash of the wrong state.
+      </li>
+      <li>
+        <strong>They survive their content changing under them.</strong> Options replaced by a new answer keep
+        the highlight on its value, focus moves to content that arrives late, and a failure inside a popup
+        leaves the popup usable.
+      </li>
+      <li>
+        <strong>They take a pending or failed value as a prop</strong> without stopping the page.
+      </li>
+    </ul>
+
+    <h2 id="submitting">Submitting a form</h2>
+    <p>
+      <a href={href("components/form")}>Form</a> waits for your <code>onFormSubmit</code>. While it is out the
+      form is <code>data-submitting</code> and further submits are ignored, so two requests can't race. What
+      the handler resolves to is shown as errors on the fields. An error for a field that was edited while the
+      request was out is dropped: it was about a value that is no longer there.
+    </p>
+    <Demo source="form/hero"><FormHero /></Demo>
+
+    <h2 id="loading-options">Loading options</h2>
+    <p>
+      Pass <a href={href("components/combobox")}>Combobox</a>, Autocomplete or Select an answer that is still on
+      its way, and tell it so with <code>loading</code>. Typing and the highlight stay live while options load,
+      the empty state stays quiet until there is an answer, and a failed request can be shown and retried inside
+      the popup.
+    </p>
+    <Demo source="combobox/server"><ComboboxServer /></Demo>
+
+    <h2 id="saving-a-setting">Saving a setting</h2>
+    <p>
+      A control that saves when it changes shows the new state at once with <code>guess</code>, and returns to
+      the old one if the save is refused. End the action with <code>refresh</code>: with two saves out at once,
+      their answers can cross, and asking the server again makes what it holds be what shows.
+    </p>
+    <Demo source="switch/saving"><SwitchSaving /></Demo>
+    <div class="note">
+      <p>
+        To stop a second press while a save is out, disable the control with <code>pending?</code>. Prefer{" "}
+        <code>readOnly</code> where the control has it: a disabled native input loses focus in every browser,
+        and although the components give it back when the control is enabled again, a read-only one never loses
+        it.
+      </p>
+    </div>
+
+    <h2 id="content-that-loads">Content that loads</h2>
+    <p>
+      A <a href={href("components/dialog")}>dialog</a>, popover, menu or tab panel opens at once and shows your{" "}
+      <code>loading</code> fallback; when the content arrives, focus moves into it. Put an{" "}
+      <code>errored</code> region inside the popup, not around it, so that a failure can be read and retried
+      where it happened.
+    </p>
+    <Demo source="dialog/server"><DialogServer /></Demo>
+
+    <h2 id="held-props">One thing to know: a held value passed as a prop</h2>
+    <p>
+      If an action of yours writes a source and then awaits, that write is held until the action ends. A prop
+      you compute from it is held too. The components read what you pass past that hold wherever they can, so
+      their own state keeps moving. In a few places they can't yet, and a part that receives such a prop waits
+      for your request; each of those is recorded as a known failing case in the family's tests. Writing with{" "}
+      <code>guess</code> avoids it everywhere, and is usually what you want for a value the person should see
+      change.
+    </p>
+  </DocsPage>
+}

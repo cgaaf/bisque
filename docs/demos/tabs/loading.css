@@ -1,0 +1,96 @@
+.TabsLoading {
+  width: min(28rem, 100%);
+
+  .List {
+    /* The indicator is placed against the list. */
+    position: relative;
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid light-dark(#e4e4ea, #2a2a31);
+  }
+
+  .Tab {
+    padding: 0.625rem 0.75rem;
+    border: 0;
+    border-radius: 0.375rem 0.375rem 0 0;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Tab:hover,
+  .Tab[data-active] {
+    color: light-dark(#18181b, #f4f4f5);
+  }
+
+  .Tab:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: -2px;
+  }
+
+  /* The selected tab's box arrives as CSS variables relative to the list; the transition makes it slide. */
+  .Indicator {
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    width: var(--active-tab-width);
+    height: 2px;
+    translate: var(--active-tab-left) 0;
+    background: light-dark(#18181b, #f4f4f5);
+    transition:
+      translate 200ms ease,
+      width 200ms ease;
+  }
+
+  .Panel {
+    padding: 1.25rem 0.25rem 0.25rem;
+    border-radius: 0.25rem;
+  }
+
+  .Panel:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 2px;
+  }
+
+  .Text,
+  .Muted,
+  .Error {
+    margin: 0;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Panel {
+    /* Room for the longest text, so the page doesn't jump while a panel loads. */
+    min-height: 4.5rem;
+  }
+
+  .Muted {
+    color: light-dark(#8b8b96, #6e6e79);
+  }
+
+  .Error {
+    color: light-dark(#b42318, #f97066);
+  }
+
+  .Retry,
+  .Fail {
+    margin-top: 0.5rem;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid light-dark(#e4e4ea, #2a2a31);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #18181b);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Fail {
+    margin-top: 1rem;
+  }
+}

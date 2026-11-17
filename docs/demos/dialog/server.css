@@ -1,0 +1,107 @@
+.DialogServer {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Primary {
+    border-color: transparent;
+    background: light-dark(#18181b, #f4f4f5);
+    color: light-dark(#fff, #18181b);
+  }
+
+  .Popup {
+    box-sizing: border-box;
+    width: min(22rem, calc(100vw - 2rem));
+    padding: 1.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.75rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.35);
+  }
+
+  .Popup::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  .Title {
+    margin: 0 0 0.75rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .Input {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.5rem 0.625rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    resize: vertical;
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 1px;
+  }
+
+  .Actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .Status {
+    margin: 0 0 0.75rem;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* Empty until there is a failure, so it takes no room. */
+  .Error:empty {
+    display: none;
+  }
+
+  .Error {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #f97066);
+  }
+
+  .Primary:disabled {
+    opacity: 0.6;
+    cursor: progress;
+  }
+
+  .State {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Toggle {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    font: inherit;
+    font-size: 0.8125rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}

@@ -390,10 +390,12 @@ function describePart(component, seen = new Set()) {
     element: note.element ?? elementOf(component),
     description,
     props,
-    dataAttributes: [...attributes].toSorted().map((name) => ({
-      name,
-      description: note.dataAttributes?.[name] ?? COMMON[name] ?? "",
-    })),
+    dataAttributes: [...attributes]
+      .toSorted((a, b) => a.localeCompare(b))
+      .map((name) => ({
+        name,
+        description: note.dataAttributes?.[name] ?? COMMON[name] ?? "",
+      })),
     cssVariables: Object.entries(note.cssVariables ?? {}).map(([name, meaning]) => ({
       name,
       description: meaning,

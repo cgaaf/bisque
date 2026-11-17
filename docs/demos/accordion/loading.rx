@@ -1,0 +1,37 @@
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../../../src/accordion/accordion.rx"
+import { loadText, failNextLoad } from "../../lib/panel-server.js"
+
+export component AccordionLoading() {
+  // The open item is what the question reads. `onValueChange` is called after the item has opened, so opening
+  // never waits for the answer.
+  source topic := ""
+  text = topic == "" ? "" : await loadText(topic)
+  questions = [{ value: "shipping", label: "How long does shipping take?" }, { value: "returns", label: "Can I return an order?" }, { value: "warranty", label: "Is there a warranty?" }]
+  <div class="AccordionLoading">
+    <AccordionRoot onValueChange={(next) => { topic := next.length > 0 ? next[0] : "" }}>
+      {for question in questions {
+        <AccordionItem class="Item" value={question.value}>
+          <AccordionTrigger class="Trigger">
+            <h3 class="Heading">{question.label}</h3>
+            <svg class="Icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </AccordionTrigger>
+          <AccordionPanel class="Panel">
+            <div class="Content">
+              {loading on(topic) fallback { <p class="Muted">Loading…</p> } {
+                {errored fallback(e) {
+                  <p class="Error">{e.message}</p>
+                  <button class="Retry" onClick={() => { refresh text }}>Try again</button>
+                } {
+                  <p class="Text">{text}</p>
+                }}
+              }}
+            </div>
+          </AccordionPanel>
+        </AccordionItem>
+      }}
+    </AccordionRoot>
+    <button class="Fail" onClick={() => { failNextLoad() }}>Fail the next load</button>
+  </div>
+}
