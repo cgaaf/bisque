@@ -1,22 +1,17 @@
+// A popover on the native `popover` attribute. The browser provides the top layer, closing on Escape and on a
+// press outside, focus order (the popup follows its trigger), and the placement against the trigger with CSS
+// anchor positioning. This family adds the open state and ARIA labelling. There is no Portal, Positioner,
+// Backdrop or Arrow part: the popup is the positioned element, styled with `:popover-open`, `::backdrop` and
+// `@starting-style`. For a modal popup that traps focus, use Dialog.
 import { mergeProps, createId } from "../internal/props.js"
-import { createFloating, createScrollLock } from "../internal/dom.js"
-import { createHoverIntent, createArrow, createPopupFocus } from "../internal/overlay.js"
-import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
-// What opened the popover. "hover" (openOnHover) leaves focus where it is; anything else moves it in.
-export type PopoverOpenReason = "click" | "hover" | "focus" | "press" | "group"
-
-export type PopoverContext = PopupState & {
-  popupId: string
-  modal: boolean | "trap-focus"
-  openReason: PopoverOpenReason
+export type PopoverContext = PopoverState & {
   titleId: string | undefined
   descriptionId: string | undefined
-  openWith: (open: boolean, reason: PopoverOpenReason) => void
   setTitleId: (id: string | undefined) => void
   setDescriptionId: (id: string | undefined) => void
-  addClosePart: (count: number) => void
 }
 
 export context popover: PopoverContext
@@ -24,186 +19,56 @@ export context popover: PopoverContext
 export type PopoverRootProps = {
   open?: boolean
   defaultOpen?: boolean
+  // Called after the browser or a part opened or closed it. A press outside and Escape can't be refused: a
+  // controlled popover that keeps `open` true is shown again.
   onOpenChange?: (open: boolean) => void
-  // `true`: focus is trapped in the popup (when it holds a PopoverClose) and page scroll is locked.
-  // "trap-focus": the trap without the scroll lock. `false`: the page stays interactive. Default: false.
-  modal?: boolean | "trap-focus"
   children?: View
 }
 
 export component PopoverRoot(props: PopoverRootProps) {
-  source openReason: PopoverOpenReason := "click"
   source titleId: string | undefined := undefined
   source descriptionId: string | undefined := undefined
-  source closeParts := 0
-  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
-  popupId = createId("popover")
-  modal = props.modal ?? false
-
-  action openWith(next: boolean, reason: PopoverOpenReason) {
-    if (next) { openReason := reason }
-    state.setOpen(next)
-  }
-  action focusOut() { state.setOpen(false) }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
   action setTitleId(id: string | undefined) { titleId := id }
   action setDescriptionId(id: string | undefined) { descriptionId := id }
-  action addClosePart(count: number) { closeParts := n => n + count }
 
-  // Like Base UI, the trap needs a PopoverClose inside the popup, so a touch screen reader can get out.
-  trap = modal != false && closeParts > 0
-  _focus = createPopupFocus(state.open && openReason != "hover", state.popup, state.trigger, trap, focusOut)
-  _lock = createScrollLock(state.open && modal == true)
-
-  provide popover = {
-    ...state,
-    popupId: popupId,
-    modal: modal,
-    openReason: openReason,
-    titleId: titleId,
-    descriptionId: descriptionId,
-    openWith: openWith,
-    setTitleId: setTitleId,
-    setDescriptionId: setDescriptionId,
-    addClosePart: addClosePart,
-  }
+  provide popover = { ...state, titleId: titleId, descriptionId: descriptionId, setTitleId: setTitleId, setDescriptionId: setDescriptionId }
 
   {props.children}
 }
 
-export type PopoverTriggerProps = {
-  // Whether hovering the trigger opens the popover. A click still toggles it. Default: false.
-  openOnHover?: boolean
-  // With openOnHover: how long the pointer rests on the trigger before it opens, in ms. Default: 300.
-  delay?: number
-  // With openOnHover: how long after the pointer leaves before it closes, in ms. Default: 0.
-  closeDelay?: number
-} & ButtonProps
-
-export fn popoverTrigger(ref c: PopoverContext, ref openOnHover: boolean, ref delay: number, ref closeDelay: number): PartProps {
-  action hoverChange(next: boolean, reason: "hover" | "focus" | "press" | "group") { c.openWith(next, reason) }
-  // Once a click has opened it (or made a hover-open stick), leaving with the pointer no longer closes it.
-  _hover = createHoverIntent(openOnHover && !(c.open && c.openReason != "hover"), c.open, c.trigger, c.popup, {
-    openDelay: delay,
-    closeDelay: closeDelay,
-    hoverablePopup: true,
-    focus: false,
-    focusDelay: 0,
-    closeOnPress: false,
-    group: undefined,
-  }, hoverChange)
-  action press() {
-    if (c.open && c.openReason == "hover") {
-      c.openWith(true, "click")
-    } else {
-      c.openWith(!c.open, "click")
-    }
-  }
-  {
-    type: "button",
-    "aria-haspopup": "dialog",
-    "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.mounted ? c.popupId : undefined,
-    "data-popup-open": c.open ? "" : undefined,
-    ref: c.setTrigger,
-    onClick: press,
-  }
+// Spread on a <button>: the browser's `popovertarget` does the opening and closing.
+export fn popoverTrigger(ref c: PopoverContext): PartProps {
+  base = popoverTriggerProps(c)
+  { ...base, "aria-haspopup": "dialog" }
 }
 
-export component PopoverTrigger({ openOnHover = false, delay = 300, closeDelay = 0, children, ...rest }: PopoverTriggerProps) {
+export component PopoverTrigger({ children, ...rest }: ButtonProps) {
   c = use popover
-  own = popoverTrigger(c, openOnHover, delay, closeDelay)
+  own = popoverTrigger(c)
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
-// Renders its children at the end of <body> while the popover is mounted.
-export component PopoverPortal(props: { keepMounted?: boolean; children?: View }) {
-  c = use popover
-  {if c.mounted || (props.keepMounted ?? false) {
-    portal { {props.children} }
-  }}
-}
-
-export component PopoverBackdrop({ children, ...rest }: DivProps) {
-  c = use popover
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", ...state }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Where the positioner put the popup, for the popup and the arrow inside it.
-export type PopoverPositionerContext = {
-  side: "top" | "bottom" | "left" | "right"
-  align: "start" | "center" | "end"
-  arrowUncentered: boolean
-  setArrow: (element: HTMLElement) => void
-}
-
-export context popoverPositioner: PopoverPositionerContext
-
-export type PopoverPositionerProps = {
+export type PopoverPopupProps = {
+  // Which side of the trigger it sits on; the browser flips it when it doesn't fit. Default: "bottom".
   side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the trigger it lines up with. Default: "center".
   align?: "start" | "center" | "end"
+  // Gap between trigger and popup, in pixels. Default: 0.
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: number
 } & DivProps
 
-// Positions the popup against the trigger. Carries `data-side` and `data-align`: where it ended up.
-export component PopoverPositioner(props: PopoverPositionerProps) {
-  c = use popover
-  source arrow: HTMLElement | undefined := undefined
-  action setArrow(element: HTMLElement) { arrow := element }
-  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
-    side: props.side ?? "bottom",
-    align: props.align ?? "center",
-    sideOffset: props.sideOffset ?? 0,
-    alignOffset: props.alignOffset ?? 0,
-    collisionPadding: props.collisionPadding ?? 5,
-  })
-  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
-  provide popoverPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
-  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
-  <div {...merged}>{children}</div>
+export fn popoverPopup(ref c: PopoverContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  base = popoverPopupProps(c, "auto", side, align, sideOffset, alignOffset)
+  { ...base, role: "dialog", "aria-labelledby": c.titleId, "aria-describedby": c.descriptionId }
 }
 
-export fn popoverPopup(ref c: PopoverContext): PartProps {
-  state = popupStateAttributes(c)
-  {
-    id: c.popupId,
-    role: "dialog",
-    tabindex: "-1",
-    "aria-labelledby": c.titleId,
-    "aria-describedby": c.descriptionId,
-    ref: c.setPopup,
-    ...state,
-  }
-}
-
-export component PopoverPopup({ children, ...rest }: DivProps) {
+export component PopoverPopup({ side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: PopoverPopupProps) {
   c = use popover
-  p = use popoverPositioner
-  own = popoverPopup(c)
-  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
-// by `data-side` (e.g. `[data-side="bottom"] { top: -8px }`).
-export component PopoverArrow({ children, ...rest }: DivProps) {
-  c = use popover
-  p = use popoverPositioner
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    "aria-hidden": "true",
-    "data-side": p.side,
-    "data-align": p.align,
-    "data-uncentered": p.arrowUncentered ? "" : undefined,
-    ref: p.setArrow,
-    ...state,
-  }, rest)
+  own = popoverPopup(c, side, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -236,10 +101,6 @@ export fn popoverClose(ref c: PopoverContext): PartProps {
 
 export component PopoverClose({ children, ...rest }: ButtonProps) {
   c = use popover
-  effect () {
-    c.addClosePart(1)
-    return () => { c.addClosePart(-1) }
-  }
   own = popoverClose(c)
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>

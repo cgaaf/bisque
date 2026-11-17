@@ -4,3 +4,4 @@ export pure fn mergeProps(internal: any, external: any): any
 export pure fn withoutHandlers(external: any, disabled: boolean): any
 export pure fn createId(prefix: string): string instantiates
 export fn preventDefaultBehavior(event: Event): void
+export pure fn createRef(set: (element: any) => void): (element: any) => void instantiates

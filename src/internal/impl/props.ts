@@ -35,7 +35,7 @@ function chain(internal: Handler, external: Handler): Handler {
  * Merges a part's own props (`internal`) with the ones the consumer passed (`external`):
  * - event handlers both run, the consumer's first (it can call `preventDefaultBehavior(event)`);
  * - `ref` callbacks both run;
- * - `class` values are joined, `style` objects are merged;
+ * - `class` values are joined, `style` declarations are merged (objects or strings);
  * - for anything else the consumer wins, unless it passed `undefined`.
  *
  * It reads every field when called, so an equation `p = mergeProps(own, rest)` re-runs when any of them changes.
@@ -53,9 +53,8 @@ export function mergeProps(internal: Source, external: Source): PartProps {
     else if (isHandler(key) && typeof ours === "function" && typeof theirs === "function") {
       out[key] = chain(ours as Handler, theirs as Handler);
     } else if (key === "class") out[key] = [ours, theirs];
-    else if (key === "style" && typeof ours === "object" && typeof theirs === "object") {
-      out[key] = { ...(ours as object), ...(theirs as object) };
-    } else out[key] = theirs;
+    else if (key === "style") out[key] = mergeStyles(ours, theirs);
+    else out[key] = theirs;
   }
   return out;
 }
@@ -72,10 +71,40 @@ export function withoutHandlers(external: Source, disabled: boolean): Source {
   return out;
 }
 
+const cssText = (style: unknown): string =>
+  typeof style === "string"
+    ? style
+    : Object.entries(style as Record<string, unknown>)
+        .filter(([, value]) => value !== undefined && value !== null && value !== false)
+        .map(([property, value]) => `${property}: ${String(value)}`)
+        .join("; ");
+
+/** The part's declarations, then the consumer's, which win. A style may be an object or a string. */
+function mergeStyles(ours: unknown, theirs: unknown): unknown {
+  if (typeof ours === "object" && typeof theirs === "object") return { ...ours, ...theirs };
+  return `${cssText(ours)}; ${cssText(theirs)}`;
+}
+
 function composeRefs(a: Handler, b: Handler): Handler {
   return (element) => {
     a(element);
     b(element);
+  };
+}
+
+/**
+ * Wraps a part's element setter so it runs once per element.
+ *
+ * A `ref` that sits in a props object is applied again whenever that object is recomputed (another attribute
+ * changed). Only the first application counts as a ref callback; a later one runs inside a computation, where
+ * calling an action is an error (`ACTION_CALLED_IN_OWNED_SCOPE`). The same element again is therefore ignored.
+ */
+export function createRef<E extends Element>(set: (element: E) => void): (element: E) => void {
+  let current: E | undefined;
+  return (element) => {
+    if (element === current) return;
+    current = element;
+    set(element);
   };
 }
 

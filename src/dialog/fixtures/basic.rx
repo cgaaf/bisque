@@ -1,20 +1,21 @@
-import { DialogRoot, DialogTrigger, DialogPortal, DialogBackdrop, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../dialog.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../dialog.rx"
 
 export default component Fixture() {
   source changes := 0
+  <style>
+    :global(dialog.animated) { transition: opacity 80ms }
+    :global(dialog.animated[data-ending-style]) { opacity: 0 }
+  </style>
   <main>
     <button>Before</button>
     <DialogRoot onOpenChange={(open) => { changes := changes + 1 }}>
       <DialogTrigger>Open dialog</DialogTrigger>
-      <DialogPortal>
-        <DialogBackdrop data-testid="backdrop" />
-        <DialogPopup data-testid="popup">
-          <DialogTitle>Delete project</DialogTitle>
-          <DialogDescription>This can't be undone.</DialogDescription>
-          <button>Confirm</button>
-          <DialogClose>Cancel</DialogClose>
-        </DialogPopup>
-      </DialogPortal>
+      <DialogPopup class="animated" style="width: 200px; height: 120px">
+        <DialogTitle>Delete project</DialogTitle>
+        <DialogDescription>This can't be undone.</DialogDescription>
+        <button>Confirm</button>
+        <DialogClose>Cancel</DialogClose>
+      </DialogPopup>
     </DialogRoot>
     <output data-testid="changes">{changes}</output>
   </main>

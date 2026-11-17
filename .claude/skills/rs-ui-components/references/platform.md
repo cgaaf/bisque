@@ -7,18 +7,18 @@ on the "not yet" list, because features move off it with each release.
 
 ## Use natively
 
-| Need | Use | So the library does not |
-| --- | --- | --- |
-| Modal layer, focus containment, Escape, focus return, backdrop | `<dialog>` with `showModal()`, the `cancel` event, `::backdrop`, `requestClose()` | portal, trap focus, track a dismissal stack, render a backdrop element |
-| Non-modal layer, light dismiss, Escape, nesting | `popover="auto"` (`"manual"` where the part decides when to close), `showPopover({ source })`, `beforetoggle` / `toggle` | portal, listen for outside presses, manage z-index |
-| Placing a popup against its trigger, flipping at the viewport edge | CSS anchor positioning: the implicit anchor from the invoker, `position-area`, `position-try-fallbacks`, `anchor-size()` | measure, compute positions, depend on a positioning library |
-| Trigger opens or closes its target | `popovertarget`, `command` / `commandfor` | attach click handlers for it |
-| Disclosure, and one-open-at-a-time groups | `<details>`, `<summary>`, `<details name>`, the `toggle` event | hold open state the browser already holds, hide content itself |
-| Entry animation | `@starting-style` in the consumer's CSS | set a starting-style attribute for a frame |
-| Checked, selected and invalid state | native `<input>` (`appearance: none`), `:checked`, `:indeterminate`, `:user-invalid`, `:has()` | mirror a hidden input, track touched state for styling |
-| Radio group keyboard behaviour | native radios sharing a `name` | add roving focus |
-| Making the page behind inert | the top layer, `inert` | toggle `aria-hidden` on siblings |
-| Scrollbar colour and thickness | `scrollbar-color`, `scrollbar-width` | need ScrollArea for that |
+| Need                                                               | Use                                                                                                                      | So the library does not                                                |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
+| Modal layer, focus containment, Escape, focus return, backdrop     | `<dialog>` with `showModal()`, the `cancel` event, `::backdrop`, `requestClose()`                                        | portal, trap focus, track a dismissal stack, render a backdrop element |
+| Non-modal layer, light dismiss, Escape, nesting                    | `popover="auto"` (`"manual"` where the part decides when to close), `showPopover({ source })`, `beforetoggle` / `toggle` | portal, listen for outside presses, manage z-index                     |
+| Placing a popup against its trigger, flipping at the viewport edge | CSS anchor positioning: the implicit anchor from the invoker, `position-area`, `position-try-fallbacks`, `anchor-size()` | measure, compute positions, depend on a positioning library            |
+| Trigger opens or closes its target                                 | `popovertarget`, `command` / `commandfor`                                                                                | attach click handlers for it                                           |
+| Disclosure, and one-open-at-a-time groups                          | `<details>`, `<summary>`, `<details name>`, the `toggle` event                                                           | hold open state the browser already holds, hide content itself         |
+| Entry animation                                                    | `@starting-style` in the consumer's CSS                                                                                  | set a starting-style attribute for a frame                             |
+| Checked, selected and invalid state                                | native `<input>` (`appearance: none`), `:checked`, `:indeterminate`, `:user-invalid`, `:has()`                           | mirror a hidden input, track touched state for styling                 |
+| Radio group keyboard behaviour                                     | native radios sharing a `name`                                                                                           | add roving focus                                                       |
+| Making the page behind inert                                       | the top layer, `inert`                                                                                                   | toggle `aria-hidden` on siblings                                       |
+| Scrollbar colour and thickness                                     | `scrollbar-color`, `scrollbar-width`                                                                                     | need ScrollArea for that                                               |
 
 ## Not shipped in all three yet: the library still does these
 

@@ -1,17 +1,20 @@
-import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverPositioner, PopoverPopup } from "../popover.rx"
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverClose } from "../popover.rx"
 
+// One popover opened from outside its parts, one placed where it can't fit below its trigger.
 export default component Fixture() {
-  source open := true
+  source open := false
   <main>
-    <button onClick={() => { open := !open }}>Toggle from outside</button>
+    <button onClick={() => { open := true }}>Open from outside</button>
     <PopoverRoot open={open} onOpenChange={(next) => { open := next }}>
-      <PopoverTrigger>Filters</PopoverTrigger>
-      <PopoverPortal>
-        <PopoverPositioner side="right" align="start">
-          <PopoverPopup data-testid="popup">Filter options</PopoverPopup>
-        </PopoverPositioner>
-      </PopoverPortal>
+      <PopoverTrigger>Settings</PopoverTrigger>
+      <PopoverPopup aria-label="Settings panel" data-testid="settings">
+        <PopoverClose>Close</PopoverClose>
+      </PopoverPopup>
     </PopoverRoot>
     <output data-testid="open">{open ? "open" : "closed"}</output>
+    <PopoverRoot>
+      <PopoverTrigger style="position: fixed; bottom: 4px; left: 200px">Low</PopoverTrigger>
+      <PopoverPopup aria-label="Flipped" side="bottom" style="width: 100px; height: 150px; border: 0; padding: 0">Up here</PopoverPopup>
+    </PopoverRoot>
   </main>
 }

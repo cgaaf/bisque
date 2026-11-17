@@ -1,0 +1,71 @@
+// What every anchored popup shares (popover, menu, select, tooltip): open state that may be controlled, the
+// trigger and popup elements, and a native `popover` element kept in step with that state. The browser provides
+// the top layer, light dismiss, Escape and the placement against the trigger (../internal/native.js).
+import { createId, createRef } from "./props.js"
+import { createNativePopover, anchoredStyle } from "./native.js"
+import { PartProps } from "./types.rx"
+
+export type PopoverState = {
+  open: boolean
+  popupId: string
+  trigger: HTMLElement | undefined
+  popup: HTMLElement | undefined
+  setOpen: (open: boolean) => void
+  setTrigger: (element: HTMLElement) => void
+  setPopup: (element: HTMLElement) => void
+}
+
+// `controlled` is the `open` prop (undefined when the consumer leaves it out), `initial` the `defaultOpen` one.
+export fn createPopoverState(ref controlled: boolean | undefined, initial: boolean, ref onOpenChange: (((open: boolean) => void) | undefined)): PopoverState {
+  source uncontrolled: boolean := initial
+  source trigger: HTMLElement | undefined := undefined
+  source popup: HTMLElement | undefined := undefined
+  isOpen = controlled ?? uncontrolled
+  popupId = createId("popup")
+
+  action setOpen(next: boolean) {
+    if (next == isOpen) { return }
+    uncontrolled := next
+    if (onOpenChange) { onOpenChange(next) }
+  }
+  action writeTrigger(element: HTMLElement) { trigger := element }
+  action writePopup(element: HTMLElement) { popup := element }
+  setTrigger = createRef(writeTrigger)
+  setPopup = createRef(writePopup)
+
+  _native = createNativePopover(popup, isOpen, trigger, setOpen)
+
+  {
+    open: isOpen,
+    popupId: popupId,
+    trigger: trigger,
+    popup: popup,
+    setOpen: setOpen,
+    setTrigger: setTrigger,
+    setPopup: setPopup,
+  }
+}
+
+// For the <button> that opens the popup. `popovertarget` makes the browser toggle it, anchor it to this button
+// and keep a press on the button from counting as a press outside. It only works on a button element.
+export fn popoverTriggerProps(ref p: PopoverState): PartProps {
+  {
+    type: "button",
+    popovertarget: p.popupId,
+    "aria-expanded": p.open ? "true" : "false",
+    "aria-controls": p.popupId,
+    "data-popup-open": p.open ? "" : undefined,
+    ref: p.setTrigger,
+  }
+}
+
+// For the popup element. `mode` is "auto" (light dismiss and Escape close it) or "manual" (only the part does).
+// Style it with `:popover-open`, `::backdrop` and `@starting-style`.
+export fn popoverPopupProps(ref p: PopoverState, ref mode: "auto" | "manual", ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  {
+    id: p.popupId,
+    popover: mode,
+    style: anchoredStyle(side, align, sideOffset, alignOffset),
+    ref: p.setPopup,
+  }
+}

@@ -1,0 +1,6 @@
+// How .rx may use ./native.js (implemented in ./impl/native.ts): drivers that keep a native element in step with
+// a component's state. A `ref` parameter is passed live. Bind every call: `_dialog = createNativeDialog(…)`.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./native.d.ts.
+export pure fn createNativeDialog(ref element: HTMLDialogElement | undefined, ref open: boolean, ref modal: boolean, onRequestClose: (reason: "escape-key" | "outside-press" | "close") => void) instantiates
+export pure fn createNativePopover(ref element: HTMLElement | undefined, ref open: boolean, ref source: HTMLElement | undefined, onOpenChange: (open: boolean) => void) instantiates
+export pure fn anchoredStyle(side: "top" | "bottom" | "left" | "right", align: "start" | "center" | "end", sideOffset: number, alignOffset: number): any

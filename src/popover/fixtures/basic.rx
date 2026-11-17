@@ -1,24 +1,19 @@
-import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverPositioner, PopoverPopup, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose } from "../popover.rx"
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle, PopoverDescription, PopoverClose } from "../popover.rx"
 
 export default component Fixture() {
   source changes := 0
-  <main>
-    <button>Before</button>
+  <main style="padding: 120px 0 0 160px">
     <PopoverRoot onOpenChange={(open) => { changes := changes + 1 }}>
       <PopoverTrigger>Notifications</PopoverTrigger>
-      <PopoverPortal>
-        <PopoverPositioner data-testid="positioner" sideOffset={8}>
-          <PopoverPopup data-testid="popup">
-            <PopoverArrow data-testid="arrow" />
-            <PopoverTitle>Notifications</PopoverTitle>
-            <PopoverDescription>You are all caught up.</PopoverDescription>
-            <button>Settings</button>
-            <PopoverClose>Dismiss</PopoverClose>
-          </PopoverPopup>
-        </PopoverPositioner>
-      </PopoverPortal>
+      <PopoverPopup side="bottom" align="start" sideOffset={8} style="width: 180px; height: 200px; border: 0; padding: 0">
+        <PopoverTitle>Inbox</PopoverTitle>
+        <PopoverDescription>You're all caught up.</PopoverDescription>
+        <input aria-label="Search inbox" />
+        <PopoverClose>Done</PopoverClose>
+      </PopoverPopup>
     </PopoverRoot>
-    <button>After</button>
+    <input aria-label="After" />
+    <p data-testid="outside">Outside</p>
     <output data-testid="changes">{changes}</output>
   </main>
 }

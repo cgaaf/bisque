@@ -67,7 +67,7 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - **`ref={c.someAction}` inside `{if …}` markup** reads the context untracked (`STRICT_READ_UNTRACKED`). Wrap
   it in a local action.
 
-- **`for … in` keeps rows by object identity.** Only a keyed *equation* (`rows key id = …`) keeps a row when
+- **`for … in` keeps rows by object identity.** Only a keyed _equation_ (`rows key id = …`) keeps a row when
   its object is replaced; a keyed `source` does not, in either form. Hold the data in a plain source and loop
   over a keyed equation of it (`src/toast/toast.rx`).
 - **Module state is one value per app**, and plain TypeScript can't import an `.rx` module's named exports, so
@@ -88,6 +88,7 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 
 - `rx-tsc` checks an imported `.ts` module against its real signature, so a `ref` parameter looks like it wants
   an accessor and every call is a type error. That is why `.rx` imports a `.js` facade with a generated `.d.ts`.
+- Solid's `ToggleEvent`, `HTMLDialogElement` and the other DOM types are available in `.rx` annotations.
 - A `.d.rx` in the TypeScript program crashes `rx-tsc` (`languageId not found`): `tsconfig.json` excludes them.
 - A `.ts` file that imports an `.rx` entry sees no default export under `rx-tsc`. Tests are checked by `tsrs`
   instead, through the ambient declaration in `src/rx.d.ts`.

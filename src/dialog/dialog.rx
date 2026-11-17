@@ -1,12 +1,14 @@
-import { mergeProps, createId } from "../internal/props.js"
-import { createPresence, createFocusScope, createDismiss, createScrollLock } from "../internal/dom.js"
-import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps, TransitionStatus } from "../internal/types.rx"
+// A dialog on the native <dialog> element. The browser provides the top layer, the inert page behind it, focus
+// moving in and back out, Escape and the ::backdrop; this family adds the open state, ARIA labelling and the
+// exit animation. There is no Portal and no Backdrop part: the popup is the <dialog>, styled with `[open]`,
+// `::backdrop`, `@starting-style` and `[data-ending-style]`.
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createScrollLock } from "../internal/dom.js"
+import { createNativeDialog } from "../internal/native.js"
+import { ButtonProps, DialogElementProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
 export type DialogContext = {
   open: boolean
-  // True from opening until the popup has finished animating out.
-  mounted: boolean
-  status: TransitionStatus
   modal: boolean
   // "alertdialog" under AlertDialogRoot.
   role: "dialog" | "alertdialog"
@@ -14,8 +16,7 @@ export type DialogContext = {
   titleId: string | undefined
   descriptionId: string | undefined
   setOpen: (open: boolean) => void
-  setPopup: (element: HTMLElement) => void
-  setTrigger: (element: HTMLElement) => void
+  setPopup: (element: HTMLDialogElement) => void
   setTitleId: (id: string | undefined) => void
   setDescriptionId: (id: string | undefined) => void
 }
@@ -26,7 +27,7 @@ export type DialogRootProps = {
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
-  // A modal dialog traps focus and locks page scroll. Default: true.
+  // A modal dialog makes the rest of the page inert and locks its scroll. Default: true.
   modal?: boolean
   // Whether Escape and a press outside close it. Default: true.
   dismissible?: boolean
@@ -38,9 +39,8 @@ export type DialogRootProps = {
 }
 
 export component DialogRoot(props: DialogRootProps) {
-  source uncontrolled := peek(props.defaultOpen ?? false)
-  source popup: HTMLElement | undefined := undefined
-  source trigger: HTMLElement | undefined := undefined
+  source uncontrolled: boolean := peek(props.defaultOpen ?? false)
+  source popup: HTMLDialogElement | undefined := undefined
   source titleId: string | undefined := undefined
   source descriptionId: string | undefined := undefined
   isOpen = props.open ?? uncontrolled
@@ -52,24 +52,21 @@ export component DialogRoot(props: DialogRootProps) {
     uncontrolled := next
     if (props.onOpenChange) { props.onOpenChange(next) }
   }
-  action dismiss(reason: "escape-key" | "outside-press") {
+  action requestClose(reason: "escape-key" | "outside-press" | "close") {
+    if (reason != "close" && !(props.dismissible ?? true)) { return }
     if (reason == "outside-press" && (props.disablePointerDismissal ?? false)) { return }
     setOpen(false)
   }
-  action setPopup(element: HTMLElement) { popup := element }
-  action setTrigger(element: HTMLElement) { trigger := element }
+  action writePopup(element: HTMLDialogElement) { popup := element }
+  setPopup = createRef(writePopup)
   action setTitleId(id: string | undefined) { titleId := id }
   action setDescriptionId(id: string | undefined) { descriptionId := id }
 
-  [mounted, status] = createPresence(isOpen, popup)
-  _scope = createFocusScope(isOpen, popup, isModal, "auto")
-  _dismiss = createDismiss(isOpen && (props.dismissible ?? true), [popup, trigger], dismiss)
+  _dialog = createNativeDialog(popup, isOpen, isModal, requestClose)
   _lock = createScrollLock(isOpen && isModal)
 
   provide dialog = {
     open: isOpen,
-    mounted: mounted,
-    status: status,
     modal: isModal,
     role: props.role ?? "dialog",
     popupId: popupId,
@@ -77,21 +74,11 @@ export component DialogRoot(props: DialogRootProps) {
     descriptionId: descriptionId,
     setOpen: setOpen,
     setPopup: setPopup,
-    setTrigger: setTrigger,
     setTitleId: setTitleId,
     setDescriptionId: setDescriptionId,
   }
 
   {props.children}
-}
-
-fn stateAttributes(ref c: DialogContext): PartProps {
-  {
-    "data-open": c.open ? "" : undefined,
-    "data-closed": c.open ? undefined : "",
-    "data-starting-style": c.status == "starting" ? "" : undefined,
-    "data-ending-style": c.status == "ending" ? "" : undefined,
-  }
 }
 
 export fn dialogTrigger(ref c: DialogContext): PartProps {
@@ -100,9 +87,8 @@ export fn dialogTrigger(ref c: DialogContext): PartProps {
     type: "button",
     "aria-haspopup": "dialog",
     "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.mounted ? c.popupId : undefined,
+    "aria-controls": c.popupId,
     "data-popup-open": c.open ? "" : undefined,
-    ref: c.setTrigger,
     onClick: press,
   }
 }
@@ -114,40 +100,22 @@ export component DialogTrigger({ children, ...rest }: ButtonProps) {
   <button {...merged}>{children}</button>
 }
 
-// Renders its children at the end of <body> while the dialog is mounted.
-export component DialogPortal(props: { keepMounted?: boolean; children?: View }) {
-  c = use dialog
-  {if c.mounted || (props.keepMounted ?? false) {
-    portal { {props.children} }
-  }}
-}
-
-export component DialogBackdrop({ children, ...rest }: DivProps) {
-  c = use dialog
-  state = stateAttributes(c)
-  merged = mergeProps({ role: "presentation", ...state }, rest)
-  <div {...merged}>{children}</div>
-}
-
+// Spread on a <dialog>. A <dialog> already has the dialog role; only "alertdialog" is written.
 export fn dialogPopup(ref c: DialogContext): PartProps {
-  state = stateAttributes(c)
   {
     id: c.popupId,
-    role: c.role,
-    tabindex: "-1",
-    "aria-modal": c.modal ? "true" : undefined,
+    role: c.role == "alertdialog" ? "alertdialog" : undefined,
     "aria-labelledby": c.titleId,
     "aria-describedby": c.descriptionId,
     ref: c.setPopup,
-    ...state,
   }
 }
 
-export component DialogPopup({ children, ...rest }: DivProps) {
+export component DialogPopup({ children, ...rest }: DialogElementProps) {
   c = use dialog
   own = dialogPopup(c)
   merged = mergeProps(own, rest)
-  <div {...merged}>{children}</div>
+  <dialog {...merged}>{children}</dialog>
 }
 
 export component DialogTitle({ children, ...rest }: HeadingProps) {

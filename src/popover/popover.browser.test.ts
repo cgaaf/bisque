@@ -1,0 +1,106 @@
+import { expect, test } from "vitest";
+import { frame, mount } from "../test/browser.ts";
+import basic from "./fixtures/basic.rx";
+import controlled from "./fixtures/controlled.rx";
+
+const shown = (popup: HTMLElement) => popup.matches(":popover-open");
+
+test("is closed until the trigger is pressed, then wires ARIA", async () => {
+  const { getByRole, getByText, user } = mount(basic);
+  const trigger = getByRole("button", { name: "Notifications" });
+  const popup = getByText("Inbox").parentElement!;
+  expect(shown(popup)).toBe(false);
+  expect(trigger.getAttribute("aria-haspopup")).toBe("dialog");
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+  expect(trigger.getAttribute("aria-controls")).toBe(popup.id);
+
+  await user.click(trigger);
+  expect(shown(popup)).toBe(true);
+  await expect.poll(() => trigger.getAttribute("aria-expanded")).toBe("true");
+  expect(popup.getAttribute("role")).toBe("dialog");
+  expect(popup.getAttribute("aria-labelledby")).toBe(getByText("Inbox").id);
+  expect(popup.getAttribute("aria-describedby")).toBe(getByText("You're all caught up.").id);
+});
+
+test("pressing the trigger again closes it", async () => {
+  const { getByRole, getByText, getByTestId, user } = mount(basic);
+  const trigger = getByRole("button", { name: "Notifications" });
+  const popup = getByText("Inbox").parentElement!;
+  await user.click(trigger);
+  await user.click(trigger);
+  expect(shown(popup)).toBe(false);
+  await expect.poll(() => getByTestId("changes").textContent).toBe("2");
+  expect(trigger.getAttribute("aria-expanded")).toBe("false");
+});
+
+test("the browser places it against the trigger: below, left edges aligned, 8px away", async () => {
+  const { getByRole, getByText, user } = mount(basic);
+  const trigger = getByRole("button", { name: "Notifications" });
+  await user.click(trigger);
+  await frame();
+  const anchor = trigger.getBoundingClientRect();
+  const placed = getByText("Inbox").parentElement!.getBoundingClientRect();
+  expect(Math.round(placed.top - anchor.bottom)).toBe(8);
+  expect(Math.round(placed.left - anchor.left)).toBe(0);
+});
+
+test("the browser flips it above the trigger when it can't fit below", async () => {
+  const { getByRole, getByText, user } = mount(controlled);
+  const trigger = getByRole("button", { name: "Low" });
+  await user.click(trigger);
+  await frame();
+  const placed = getByText("Up here").getBoundingClientRect();
+  expect(placed.bottom).toBeLessThanOrEqual(trigger.getBoundingClientRect().top + 1);
+  expect(placed.top).toBeGreaterThanOrEqual(0);
+});
+
+test("closes on Escape and on a press outside, and reports both", async () => {
+  const { getByRole, getByText, getByTestId, user } = mount(basic);
+  const trigger = getByRole("button", { name: "Notifications" });
+  const popup = getByText("Inbox").parentElement!;
+  await user.click(trigger);
+  await user.keyboard("{Escape}");
+  expect(shown(popup)).toBe(false);
+  await expect.poll(() => trigger.getAttribute("aria-expanded")).toBe("false");
+
+  await user.click(trigger);
+  expect(shown(popup)).toBe(true);
+  // A point of the page the popup doesn't cover.
+  await user.click(document.body, { position: { x: 5, y: 5 } });
+  expect(shown(popup)).toBe(false);
+  await expect.poll(() => getByTestId("changes").textContent).toBe("4");
+});
+
+test("Tab moves from the trigger into the popup, and Escape returns focus to the trigger", async () => {
+  const { getByRole, getByText, user } = mount(basic);
+  const trigger = getByRole("button", { name: "Notifications" });
+  trigger.focus();
+  await user.keyboard("{Enter}");
+  expect(document.activeElement).toBe(trigger);
+  // The popup follows its trigger in the Tab order, wherever it is in the document. Which element inside it
+  // takes focus first is the engine's call: Firefox stops on the popup itself (a popover is a scroll container),
+  // and Safari skips buttons unless the system setting says otherwise.
+  await user.tab();
+  expect(getByText("Inbox").parentElement!.contains(document.activeElement)).toBe(true);
+  await user.keyboard("{Escape}");
+  expect(document.activeElement).toBe(trigger);
+});
+
+test("PopoverClose closes it", async () => {
+  const { getByRole, getByText, user } = mount(basic);
+  await user.click(getByRole("button", { name: "Notifications" }));
+  await user.click(getByRole("button", { name: "Done" }));
+  await expect.poll(() => shown(getByText("Inbox").parentElement!)).toBe(false);
+});
+
+test("can be controlled from outside its parts", async () => {
+  const { getByRole, getByTestId, user } = mount(controlled);
+  const popup = getByTestId("settings");
+  expect(popup.getAttribute("aria-label")).toBe("Settings panel");
+  await user.click(getByRole("button", { name: "Open from outside" }));
+  await expect.poll(() => shown(popup)).toBe(true);
+  expect(getByTestId("open").textContent).toBe("open");
+  await user.keyboard("{Escape}");
+  await expect.poll(() => getByTestId("open").textContent).toBe("closed");
+  expect(shown(popup)).toBe(false);
+});

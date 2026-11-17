@@ -1,0 +1,35 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "../dialog.rx"
+
+// A controlled dialog whose owner refuses to close it while `locked`, and one that ignores outside presses.
+export default component Fixture() {
+  source open := false
+  source locked := true
+  source requests := 0
+  action change(next: boolean) {
+    requests := requests + 1
+    if (next || !locked) { open := next }
+  }
+  <main>
+    <DialogRoot open={open} onOpenChange={change}>
+      <DialogTrigger>Open locked</DialogTrigger>
+      <DialogPopup aria-label="Locked">
+        <button onClick={() => { locked := false }}>Unlock</button>
+        <DialogClose>Close</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+    <DialogRoot disablePointerDismissal role="alertdialog">
+      <DialogTrigger>Open alert</DialogTrigger>
+      <DialogPopup style="width: 200px; height: 120px">
+        <DialogTitle>Really?</DialogTitle>
+        <DialogClose>No</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+    <DialogRoot modal={false}>
+      <DialogTrigger>Open panel</DialogTrigger>
+      <DialogPopup aria-label="Panel">
+        <DialogClose>Hide</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+    <output data-testid="requests">{requests}</output>
+  </main>
+}

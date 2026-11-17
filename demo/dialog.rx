@@ -1,15 +1,12 @@
-import { DialogRoot, DialogTrigger, DialogPortal, DialogBackdrop, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../src/dialog/dialog.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../src/dialog/dialog.rx"
 
 export component DialogDemo() {
   <DialogRoot>
     <DialogTrigger>Delete project</DialogTrigger>
-    <DialogPortal>
-      <DialogBackdrop class="backdrop" />
-      <DialogPopup class="popup">
-        <DialogTitle>Delete project?</DialogTitle>
-        <DialogDescription>This can't be undone.</DialogDescription>
-        <DialogClose>Cancel</DialogClose>
-      </DialogPopup>
-    </DialogPortal>
+    <DialogPopup class="popup">
+      <DialogTitle>Delete project?</DialogTitle>
+      <DialogDescription>This can't be undone.</DialogDescription>
+      <DialogClose>Cancel</DialogClose>
+    </DialogPopup>
   </DialogRoot>
 }

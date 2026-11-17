@@ -24,3 +24,6 @@ export type ParagraphProps = import("./impl/types.ts").ElementProps<"p">
 export type ListProps = import("./impl/types.ts").ElementProps<"ul">
 export type ListItemProps = import("./impl/types.ts").ElementProps<"li">
 export type NavProps = import("./impl/types.ts").ElementProps<"nav">
+export type DialogElementProps = import("./impl/types.ts").ElementProps<"dialog">
+export type DetailsProps = import("./impl/types.ts").ElementProps<"details">
+export type SummaryProps = import("./impl/types.ts").ElementProps<"summary">

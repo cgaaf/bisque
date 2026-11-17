@@ -10,20 +10,32 @@ The language itself is documented in `node_modules/@reactivescript/compiler/guid
 how a headless component is shaped here, and how ReactiveScript 0.3.1 actually behaves at the edges a component
 library hits. Everything in it was checked against the compiler; `references/language-notes.md` has the detail.
 
+## Platform first
+
+Before writing behaviour, ask what the browser already does. If the latest Chrome, Firefox and Safari all ship
+it, the component uses it and adds no JavaScript for it; `pnpm baseline` says whether a feature qualifies.
+`references/platform.md` lists what qualifies today, what doesn't yet, and what that means for a component's
+parts and state. Read it before designing a family. A family that ends up as a few attributes on a native
+element is finished, not thin.
+
 ## Read real components first
 
 They are the specification of the house style. Pick the one closest to what you're building:
 
-| File                             | Shows                                                                           |
-| -------------------------------- | ------------------------------------------------------------------------------- |
-| `src/collapsible/collapsible.rx` | The smallest complete family: controlled state, context, props functions        |
-| `src/checkbox/checkbox.rx`       | A form control: hidden native input, state attributes shared with an indicator  |
-| `src/dialog/dialog.rx`           | Portal, focus scope, dismissal, presence, ids registered by child parts         |
-| `src/menu/menu.rx`               | Anchored popup on `createPopupState`, roving focus, item kinds, nested contexts |
-| `src/internal/popup.rx`          | An instantiating `fn` shared across families                                    |
+| File | Shows |
+| --- | --- |
+| `src/dialog/dialog.rx` | A family on a native element (`<dialog>`): state mirrored to the browser, ids registered by child parts |
+| `src/popover/popover.rx` + `src/internal/popover.rx` | An anchored popup on `popover` and CSS anchor positioning; the shared state other popups build on |
+| `src/alert-dialog/alert-dialog.rx` | Reusing another family through thin wrappers |
+| `src/checkbox/checkbox.rx` | A form control and its Field integration |
+| `src/menu/menu.rx` | Behaviour the platform lacks: roving focus, typeahead, item kinds, nested contexts |
 
-Behaviour, parts and ARIA follow Base UI. A Solid 2 port of it is the best behavioural reference when one is
-available on the machine (`solid-bedrock`: its `src/<component>` and tests); port behaviour, not code.
+Families that still import `src/internal/popup.rx`, `createFloating`, `createFocusScope`, `createDismiss` or
+`createPresence` predate platform first and are being moved off them: don't copy that plumbing.
+
+Base UI is the reference for what each part means and for ARIA. Its React source and a Solid 2 port are on this
+machine when available (`solid-bedrock`: `src/<component>` and `.reference/base-ui`). Take the behaviour that
+the platform doesn't cover; where the browser's own behaviour differs from Base UI's, the browser's wins.
 
 ## The shape of a family
 
@@ -38,18 +50,23 @@ One file per family, `src/<family>/<family>.rx`, exporting:
 The props function is this library's answer to Base UI's `render` prop. `.rx` has no JSX expressions and a
 component can't be passed as a value, so a consumer who wants a different element writes their own small
 component, reads the context, and spreads the same props: `t = collapsibleTrigger(use collapsible)`.
-Give every part that has behaviour a props function; a part that only places children doesn't need one.
+Give every part that has behaviour a props function; a part that only places children doesn't need one. Where
+the behaviour comes from the element itself (`popovertarget` works only on a button), say so on the function.
 
 Conventions the existing families follow, and consumers will rely on:
 
-- State is exposed as `data-*` attributes, present or absent (`""` or `undefined`): `data-open`/`data-closed`,
-  `data-checked`/`data-unchecked`, `data-disabled`, `data-highlighted`, and `data-starting-style`/
-  `data-ending-style` on anything that animates. ARIA states are the strings `"true"`/`"false"`.
+- **The browser's state is the truth.** Where a native element holds the state (`<dialog>`, `popover`,
+  `<details>`, an `<input>`), the component mirrors it from the element's events and pushes a controlled prop
+  back onto it. `src/internal/impl/native.ts` has the drivers.
+- **Style hooks are native first**: `[open]`, `:popover-open`, `:checked`, `::backdrop`. A `data-*` attribute
+  (present or absent: `""` or `undefined`) is for state with no selector: `data-highlighted`,
+  `data-ending-style`, `data-disabled` on a non-native control. ARIA states are the strings `"true"`/`"false"`.
 - Controlled or uncontrolled, the same way everywhere: `source uncontrolled := peek(props.defaultX ?? …)`,
   `current = props.x ?? uncontrolled`, and an action that writes `uncontrolled` and calls `props.onXChange`.
 - A part accepts every attribute of its element (`DivProps`, `ButtonProps` from `src/internal/types.rx`) and
-  merges them with `mergeProps(own, rest)`, so the consumer's `class`, handlers and `ref` are kept.
-- Parts ship no styles and no inline visual CSS. Positioning written by `createFloating` is the exception.
+  merges them with `mergeProps(own, rest)`, so the consumer's `class`, `style`, handlers and `ref` are kept.
+- Parts ship no styles. The exception is placement: a popup's anchoring declarations are written inline
+  (`anchoredStyle`), where a stylesheet can override them.
 
 ## Rules the compiler won't explain
 
@@ -73,7 +90,10 @@ Conventions the existing families follow, and consumers will rely on:
    import in the output, which Vitest tolerates and the bundler rejects. Add an alias there instead. `.rx` also
    has no `as`, no generic type aliases and no `import type`: type an event parameter to narrow it
    (`event: KeyboardEvent & { currentTarget: HTMLElement }`).
-7. **A read doesn't see the same run's write.** After `x := v`, `x` is still the old value: keep `v` in a `let`.
+7. **An element setter in a props object goes through `createRef`.** A `ref` inside a spread object is applied
+   again whenever the object recomputes, and the repeat runs inside a computation, where calling an action
+   throws `ACTION_CALLED_IN_OWNED_SCOPE`. `setPopup = createRef(writePopup)` ignores the same element twice.
+8. **A read doesn't see the same run's write.** After `x := v`, `x` is still the old value: keep `v` in a `let`.
 
 ## The JavaScript boundary
 
@@ -86,9 +106,9 @@ Conventions the existing families follow, and consumers will rely on:
 - `src/internal/dom.d.ts`: generated from the `.d.rx` by `pnpm gen:dts`, so `rx-tsc` types calls as `.rx` sees
   them. Never edited.
 
-Keep state, derivation and context in `.rx`; add a primitive only for what needs the DOM, and look in
-`dom.d.rx` first, since most behaviours already exist (presence, focus scope, dismissal, scroll lock, floating
-position, roving focus and typeahead). A call that returns nothing is still bound: `_scope = createFocusScope(…)`.
+Keep state, derivation and context in `.rx`. Add a primitive only for what needs the DOM **and** that the
+platform doesn't do; look in `native.d.rx` (drivers for native elements) and the other `.d.rx` files first. A
+call that returns nothing is still bound: `_dialog = createNativeDialog(…)`.
 
 Inside a primitive: `createEffect(compute, apply)` with the cleanup returned from `apply`; read an accessor once
 with `untrack`; and never let one primitive depend on another's effect having run first.
@@ -103,24 +123,33 @@ Lists use the DOM as the registry: an item carries `data-rs-ui-item` (and `data-
 ## Tests
 
 A test mounts a fixture, which is a small `.rx` entry (`export default component Fixture`) in the family's
-`fixtures/` folder, and drives it as a user would:
+`fixtures/` folder, and drives it as a user would. There are two kinds:
+
+- `<family>.browser.test.ts` runs in Chromium, Firefox and WebKit (`pnpm test:browser`), with `mount` from
+  `src/test/browser.ts`. Anything that touches a native feature, focus, layout or real input belongs here: its
+  `user` sends trusted events, the only kind native behaviour answers to.
+- `<family>.test.ts` runs in jsdom (`pnpm test`), with `mount` from `src/test/mount.ts`. Use it for logic that
+  needs no browser: value maths, parsing, state transitions.
 
 ```ts
-import { mount } from "../test/mount.ts";
+import { frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 
 const { getByRole, user } = mount(basic);
 await user.click(getByRole("button", { name: "Open" }));
 ```
 
-Queries cover the whole document, so portalled content is found. Assert on roles, ARIA, `data-*` state, focus
-and what the consumer's callbacks received. Something that unmounts after an exit animation is awaited with
-`expect.poll`. Cover: the default state, each way to change it (pointer and every key), controlled and
-uncontrolled, disabled, and form submission where the part has a value. A test that passes on its first run has
-not yet been shown to fail: break the behaviour once and watch it go red.
+Assert what every engine guarantees, not what one does: Safari doesn't focus a clicked button and skips buttons
+when tabbing; Firefox makes a scrollable popup a Tab stop. Open things from the keyboard when focus return is
+under test, and measure placement with `getBoundingClientRect()` after `await frame()`. A closed native element
+is still in the document, so check `dialog.open` or `:popover-open`, not presence. Cover: the default state,
+each way to change it (pointer and every key), controlled and uncontrolled, disabled, and form submission where
+the part has a value. A test that passes on its first run has not yet been shown to fail: break the behaviour
+once and watch it go red.
 
 Each family also has a demo, `demo/<family>.rx`: one exported component showing typical use, added to
 `demo/app.rx`. The demo build is what proves a family bundles.
 
-A component is done when its tests pass, `pnpm typecheck` and `pnpm lint` are clean, and the test output has no
-Solid diagnostics. `pnpm check` is the whole suite; run it when a stage of work is finished, not per component.
+A component is done when its tests pass in all three engines, `pnpm typecheck` and `pnpm lint` are clean, and
+the test output has no Solid diagnostics. `pnpm check` is the whole suite; run it when a stage of work is
+finished, not per component.
