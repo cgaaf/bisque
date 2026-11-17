@@ -1,0 +1,38 @@
+import { NumberFieldRoot, NumberFieldGroup, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement } from "../../../src/number-field/number-field.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+export component NumberFieldSaving() {
+  // What the server holds. `-> 2` is shown until the first answer.
+  seats = await loadSetting("seats", 2) -> 2
+  source failure := ""
+  <div class="NumberFieldSaving">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      <NumberFieldRoot class="Field" value={seats} min={1} max={50} onValueCommitted={(next) => {
+        // Only what is committed is saved: a blur after typing, a key, a stepper click.
+        guess seats := next
+        onFlush(() => { failure := "" })
+        affects seats
+        try {
+          await saveSetting("seats", next)
+          // Ask the server again: with saves crossing, what it holds is what shows.
+          refresh seats
+        } catch (error) {
+          failure := messageOf(error)
+        }
+      }}>
+        <label class="Label" for="number-field-saving">Seats</label>
+        <NumberFieldGroup class="Group">
+          <NumberFieldDecrement class="Stepper" aria-label="Fewer seats">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 5h8" /></svg>
+          </NumberFieldDecrement>
+          <NumberFieldInput class="Input" id="number-field-saving" />
+          <NumberFieldIncrement class="Stepper" aria-label="More seats">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M1 5h8M5 1v8" /></svg>
+          </NumberFieldIncrement>
+        </NumberFieldGroup>
+      </NumberFieldRoot>
+      <p class="Status" aria-live="polite">{pending? seats ? "Saving…" : failure}</p>
+    }}
+    <button type="button" class="Drop" onClick={() => { dropNetwork() }}>Drop the network for 3 seconds</button>
+  </div>
+}

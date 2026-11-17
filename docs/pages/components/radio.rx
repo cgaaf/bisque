@@ -1,6 +1,7 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { RadioHero } from "../../demos/radio/hero.rx"
 import { RadioCards } from "../../demos/radio/cards.rx"
+import { RadioSaving } from "../../demos/radio/saving.rx"
 
 export default component Page() {
   <DocsPage title="Radio" subtitle="A set of native radios of which one is checked.">
@@ -86,6 +87,30 @@ export default component Page() {
       radio and <code>:disabled</code> matches it. <code>readOnly</code> on the group lets focus move through the
       radios with the arrow keys but checks none of them; the group carries <code>aria-readonly</code> and each
       radio <code>data-readonly</code>.
+    </p>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      A setting that saves when it changes: <code>onValueChange</code> sends the new choice, and the group shows
+      its owner's <code>value</code>. Write the handler as an action with a <code>guess</code>, and the new choice
+      shows at once, <code>pending?</code> says it is saving, and it goes back by itself if the save fails. Ending a
+      save with <code>refresh</code> asks the server what it holds, so when the group is changed again while a
+      save is out, the last choice is what stays, whatever order the answers come back in.
+    </p>
+    <Demo source="radio/saving"><RadioSaving /></Demo>
+    <p>
+      The group calls <code>onValueChange</code> in a change of its own, so a handler that waits for a server never
+      holds it: it can be changed again at once. Without a guess, the group shows the owner's choice until the
+      owner writes the new one: the browser's change is put back right after the press.
+    </p>
+    <p>
+      To stop changes while a save is out, pass <code>readOnly={"{"}pending? setting{"}"}</code>: focus stays where it
+      is and presses are ignored. Disabled the same way, the focused radio loses focus, as every disabled control
+      does, and takes it back when it is enabled again if focus hasn't moved elsewhere.
+    </p>
+    <p>
+      A <code>value</code> read from an answer that fails doesn't stop the group: the failure is the app's to
+      show, in an <code>errored</code> region around it.
     </p>
 
     <h2 id="api-reference">API reference</h2>

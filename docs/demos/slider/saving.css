@@ -1,0 +1,89 @@
+.SliderSaving {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+  width: 16rem;
+
+  .Slider {
+    align-self: stretch;
+  }
+
+  .Header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+  }
+
+  .Label {
+    font-weight: 500;
+  }
+
+  .Value {
+    color: light-dark(#63636e, #9a9aa6);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Control {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0;
+    cursor: pointer;
+  }
+
+  .Track {
+    flex: 1;
+    height: 0.25rem;
+    border-radius: 999px;
+    background: light-dark(#e4e4e8, #2a2a31);
+  }
+
+  .Indicator {
+    border-radius: inherit;
+    background: light-dark(#26262c, #e4e4e8);
+  }
+
+  .Thumb {
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid light-dark(#cfcfd6, #3a3a43);
+    border-radius: 50%;
+    background: light-dark(#fff, #ededf0);
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.2);
+  }
+
+  .Thumb:has(:focus-visible) {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  /* "Saving…" while the save is out, the failure once the thumb has gone back. Keeps its line either way. */
+  .Status {
+    min-height: 1.25em;
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff8a80);
+  }
+
+  .Drop {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Drop:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}

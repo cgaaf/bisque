@@ -1,0 +1,109 @@
+import { CheckboxRoot, checkbox } from "../checkbox.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Checkboxes whose change is saved to a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out. The guess shows at once and goes back by
+  // itself if the save fails; a save that succeeds asks the server again, so the last choice sent is what shows.
+  wifi = await load("wifi", false) -> false
+  source wifiError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source saved: boolean := false
+  source savedError := ""
+  // Optimistic, and disabled while its save is out.
+  sync = await load("sync", false) -> false
+  // Optimistic, and read-only while its save is out.
+  locked = await load("locked", false) -> false
+  // The plainest optimistic save: guess, save, write the value. Two of these answered out of order end on the
+  // older answer, which is the app's to avoid (the `refresh` above), not the checkbox's.
+  source plain: boolean = false
+  source plainError := ""
+  // Not optimistic, and mixed until saved on: a press clears `indeterminate` natively, and the owner's state puts
+  // it back until the server has the new value.
+  source everything: boolean := false
+  // Uncontrolled, with a handler that writes what a loading question reads: its change waits for the answer.
+  source wanted: boolean := false
+  preview = await load(wanted ? "preview-on" : "preview-off", wanted) -> false
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <CheckboxRoot aria-label="Wi-Fi" checked={wifi} onCheckedChange={(next) => {
+      guess wifi := next
+      onFlush(() => { wifiError := "" })
+      affects wifi
+      try {
+        await save("wifi", next)
+        refresh wifi
+      } catch (e) {
+        wifiError := "failed"
+      }
+    }} />
+    <output data-testid="wifi">{wifi ? "on" : "off"}</output>
+    <output data-testid="wifi-saving">{pending? wifi ? "saving" : ""}</output>
+    <output data-testid="wifi-error">{wifiError}</output>
+
+    <CheckboxRoot aria-label="Backup" checked={saved} onCheckedChange={(next) => {
+      onFlush(() => { savedError := "" })
+      try {
+        await save("backup", next)
+        saved := next
+      } catch (e) {
+        savedError := "failed"
+      }
+    }} />
+    <output data-testid="backup">{saved ? "on" : "off"}</output>
+    <output data-testid="backup-error">{savedError}</output>
+
+    <CheckboxRoot aria-label="Sync" checked={sync} disabled={pending? sync} onCheckedChange={(next) => {
+      guess sync := next
+      affects sync
+      try {
+        await save("sync", next)
+        refresh sync
+      } catch (e) {
+      }
+    }} />
+
+    <CheckboxRoot aria-label="Locked" checked={locked} readOnly={pending? locked} onCheckedChange={(next) => {
+      guess locked := next
+      affects locked
+      try {
+        await save("locked", next)
+        refresh locked
+      } catch (e) {
+      }
+    }} />
+
+    <CheckboxRoot aria-label="Plain" checked={plain} onCheckedChange={(next) => {
+      guess plain := next
+      onFlush(() => { plainError := "" })
+      try {
+        await save("plain", next)
+        plain := next
+      } catch (e) {
+        plainError := "failed"
+      }
+    }} />
+    <output data-testid="plain-error">{plainError}</output>
+
+    <CheckboxRoot aria-label="Everything" checked={everything} indeterminate={!everything} onCheckedChange={(next) => {
+      try {
+        await save("everything", next)
+        everything := next
+      } catch (e) {
+      }
+    }} />
+
+    <CheckboxRoot aria-label="Notifications" onCheckedChange={(next) => { wanted := next }}>
+      <State />
+    </CheckboxRoot>
+    <output data-testid="preview">{preview ? "on" : "off"}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}
+
+// What a custom indicator reads: the checkbox's own state.
+component State() {
+  s = use checkbox
+  <span data-testid="state">{s.checked ? "on" : "off"}</span>
+}

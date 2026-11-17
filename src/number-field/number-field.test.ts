@@ -229,7 +229,7 @@ function moveBy(dx: number) {
   flush();
 }
 
-test("scrubbing: dragging across the scrub area steps per pixelSensitivity and commits on release", () => {
+test("scrubbing: dragging across the scrub area steps per pixelSensitivity and commits on release", async () => {
   const { getByLabelText, getByTestId, queryByTestId } = mount(basic);
   const input = getByLabelText("Quantity") as HTMLInputElement;
   const scrub = getByTestId("scrub");
@@ -249,6 +249,9 @@ test("scrubbing: dragging across the scrub area steps per pixelSensitivity and c
   flush();
   expect(getByTestId("root").hasAttribute("data-scrubbing")).toBe(false);
   expect(queryByTestId("cursor")).toBeNull();
+  // The owner's handlers run in a change of their own, after the one that updated the field.
+  await new Promise((resolve) => setTimeout(resolve));
+  flush();
   expect(getByTestId("commits").textContent).toBe("4:scrub");
 });
 

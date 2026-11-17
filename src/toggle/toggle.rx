@@ -21,15 +21,29 @@ export fn toggle(ref group: ToggleGroupContext, ref bar: ToolbarContext, ref o: 
   source uncontrolled := peek(o.defaultPressed ?? false)
   fallbackValue = createId("toggle")
   key = o.value ?? fallbackValue
-  isPressed = group.present ? group.value.includes(key) : (o.pressed ?? uncontrolled)
-  isDisabled = (o.disabled ?? false) || group.disabled
+  // `pressed` and `disabled` are often read from an answer that can fail (`pressed={setting}` with
+  // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the toggle's.
+  givenPressed = o.pressed catch (e) => undefined
+  givenDisabled = (o.disabled ?? false) catch (e) => false
+  isPressed = group.present ? group.value.includes(key) : (givenPressed ?? uncontrolled)
+  isDisabled = givenDisabled || group.disabled
   composite = group.present || bar.present
   own = button({ disabled: isDisabled, native: o.native ?? true, composite: composite })
 
+  // The owner's handler is called in a change of its own (`onFlush`), never in the one that updates this toggle: a
+  // handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the toggle would be held with it.
+  action notify(next: boolean) {
+    if (o.onPressedChange) {
+      let report = o.onPressedChange
+      onFlush(() => { report(next) })
+    }
+  }
   action press() {
     if (isDisabled) { return }
     let next = !isPressed
-    if (o.onPressedChange) { o.onPressedChange(next) }
+    // The toggle's own handler is told before the group's.
+    notify(next)
     if (group.present) { group.setPressed(key, next) } else { uncontrolled := next }
   }
 

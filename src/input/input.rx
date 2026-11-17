@@ -8,7 +8,16 @@ export type InputComponentProps = FieldControlProps
 export component Input(props: InputComponentProps) {
   f = use field
   { value, defaultValue, onValueChange, disabled, children, ...rest } = props
-  own = fieldControl(f, value, peek(defaultValue ?? ""), onValueChange, disabled == true)
+  // The app's handler is called in a change of its own (`onFlush`), never in the one the keystroke makes: a handler
+  // that writes what a loading question reads (a check as the person types), or that saves, would hold the input's
+  // own state and the field's with it until the answer lands, every keystroke queued behind the first.
+  action report(next: string) {
+    if (onValueChange) {
+      let handler = onValueChange
+      onFlush(() => { handler(next) })
+    }
+  }
+  own = fieldControl(f, value, peek(defaultValue ?? ""), report, disabled == true)
   merged = mergeProps(own, rest)
   <input {...merged} />
 }

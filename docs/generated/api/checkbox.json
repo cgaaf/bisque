@@ -11,7 +11,7 @@
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": "Whether the box is checked. Pass it with `onCheckedChange` to control the box."
+          "description": "Whether the box is checked. Pass it with `onCheckedChange` to control the box. It may be read from an answer that is loading or guessed over (`checked={setting}`); one that fails is left to the app's `errored` region."
         },
         {
           "name": "defaultChecked",
@@ -25,7 +25,7 @@
           "type": "(checked: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state when the user checks or clears the box, and once when a form reset changes an uncontrolled box."
+          "description": "Called with the new state when the user checks or clears the box, and once when a form reset changes an uncontrolled box. It is called in a change of its own, so it may be an action that saves: the box is never held by it. A controlled box shows `checked` until the owner writes the new state, or guesses it."
         },
         {
           "name": "indeterminate",
@@ -39,14 +39,14 @@
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Disables the box natively: it can't be focused or pressed, and `:disabled` matches it."
+          "description": "Disables the box natively: it can't be focused or pressed, and `:disabled` matches it. A box disabled while it has focus (`disabled={pending? setting}`) takes focus back when it is enabled again, if focus hasn't moved elsewhere."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Keeps the box focusable but cancels a press or Space, so its state doesn't change. Sets `aria-readonly` and `data-readonly`."
+          "description": "Keeps the box focusable but cancels a press or Space, so its state doesn't change. Sets `aria-readonly` and `data-readonly`. `readOnly={pending? setting}` locks it while a save is out without losing focus."
         },
         {
           "name": "required",

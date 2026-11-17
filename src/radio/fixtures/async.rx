@@ -1,0 +1,114 @@
+import { RadioGroup, RadioRoot, radioGroup } from "../radio.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Radio groups whose choice is saved to a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  plan = await load("plan", "free") -> "free"
+  source planError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source shipping := "standard"
+  source shippingError := ""
+  // Optimistic, and disabled while its save is out.
+  theme = await load("theme", "light") -> "light"
+  // Optimistic, and read-only while its save is out.
+  size = await load("size", "s") -> "s"
+  // The plainest optimistic save: guess, save, write the value.
+  source plain: string = "a"
+  source plainError := ""
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := "x"
+  preview = await load(`preview-${wanted}`, wanted) -> "x"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <RadioGroup aria-label="Plan" value={plan} onValueChange={(next) => {
+      guess plan := next
+      onFlush(() => { planError := "" })
+      affects plan
+      try {
+        await save("plan", next)
+        refresh plan
+      } catch (e) {
+        planError := "failed"
+      }
+    }}>
+      <label><RadioRoot value="free" />Free</label>
+      <label><RadioRoot value="pro" />Pro</label>
+      <label><RadioRoot value="team" />Team</label>
+    </RadioGroup>
+    <output data-testid="plan">{plan}</output>
+    <output data-testid="plan-saving">{pending? plan ? "saving" : ""}</output>
+    <output data-testid="plan-error">{planError}</output>
+
+    <RadioGroup aria-label="Shipping" value={shipping} onValueChange={(next) => {
+      onFlush(() => { shippingError := "" })
+      try {
+        await save("shipping", next)
+        shipping := next
+      } catch (e) {
+        shippingError := "failed"
+      }
+    }}>
+      <label><RadioRoot value="standard" />Standard</label>
+      <label><RadioRoot value="express" />Express</label>
+    </RadioGroup>
+    <output data-testid="shipping">{shipping}</output>
+    <output data-testid="shipping-error">{shippingError}</output>
+
+    <RadioGroup aria-label="Theme" value={theme} disabled={pending? theme} onValueChange={(next) => {
+      guess theme := next
+      affects theme
+      try {
+        await save("theme", next)
+        refresh theme
+      } catch (e) {
+      }
+    }}>
+      <label><RadioRoot value="light" />Light</label>
+      <label><RadioRoot value="dark" />Dark</label>
+    </RadioGroup>
+
+    <RadioGroup aria-label="Size" value={size} readOnly={pending? size} onValueChange={(next) => {
+      guess size := next
+      affects size
+      try {
+        await save("size", next)
+        refresh size
+      } catch (e) {
+      }
+    }}>
+      <label><RadioRoot value="s" />Small</label>
+      <label><RadioRoot value="m" />Medium</label>
+    </RadioGroup>
+
+    <RadioGroup aria-label="Plain" value={plain} onValueChange={(next) => {
+      guess plain := next
+      onFlush(() => { plainError := "" })
+      try {
+        await save("plain", next)
+        plain := next
+      } catch (e) {
+        plainError := "failed"
+      }
+    }}>
+      <label><RadioRoot value="a" />A</label>
+      <label><RadioRoot value="b" />B</label>
+    </RadioGroup>
+    <output data-testid="plain-error">{plainError}</output>
+
+    <RadioGroup aria-label="Preview" defaultValue="x" onValueChange={(next) => { wanted := next }}>
+      <label><RadioRoot value="x" />X</label>
+      <label><RadioRoot value="y" />Y</label>
+      <State />
+    </RadioGroup>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}
+
+// What a part inside the group reads: the group's own value.
+component State() {
+  g = use radioGroup
+  <span data-testid="state">{g.value ?? ""}</span>
+}

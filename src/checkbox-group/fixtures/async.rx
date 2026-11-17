@@ -1,0 +1,64 @@
+import { CheckboxGroup, checkboxGroup } from "../checkbox-group.rx"
+import { CheckboxRoot } from "../../checkbox/checkbox.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Checkbox groups whose value is saved to a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  toppings: string[] = await load("toppings", []) -> []
+  source toppingsError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source days: string[] := []
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted: string[] := []
+  preview = await load(`preview-${wanted.join(",")}`, wanted.length) -> 0
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <CheckboxGroup aria-label="Toppings" allValues={["cheese", "olives", "basil"]} value={toppings} onValueChange={(next) => {
+      guess toppings := next
+      onFlush(() => { toppingsError := "" })
+      affects toppings
+      try {
+        await save("toppings", next)
+        refresh toppings
+      } catch (e) {
+        toppingsError := "failed"
+      }
+    }}>
+      <label><CheckboxRoot parent />All toppings</label>
+      <label><CheckboxRoot value="cheese" />Cheese</label>
+      <label><CheckboxRoot value="olives" />Olives</label>
+      <label><CheckboxRoot value="basil" />Basil</label>
+    </CheckboxGroup>
+    <output data-testid="toppings">{toppings.join(",")}</output>
+    <output data-testid="toppings-saving">{pending? toppings ? "saving" : ""}</output>
+    <output data-testid="toppings-error">{toppingsError}</output>
+
+    <CheckboxGroup aria-label="Days" value={days} onValueChange={(next) => {
+      try {
+        await save("days", next)
+        days := next
+      } catch (e) {
+      }
+    }}>
+      <label><CheckboxRoot value="sat" />Saturday</label>
+      <label><CheckboxRoot value="sun" />Sunday</label>
+    </CheckboxGroup>
+    <output data-testid="days">{days.join(",")}</output>
+
+    <CheckboxGroup aria-label="Colours" onValueChange={(next) => { wanted := next }}>
+      <label><CheckboxRoot value="red" />Red</label>
+      <label><CheckboxRoot value="blue" />Blue</label>
+      <State />
+    </CheckboxGroup>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}
+
+// What a part inside the group reads: the group's own value.
+component State() {
+  g = use checkboxGroup
+  <span data-testid="state">{(g?.value ?? []).join(",")}</span>
+}

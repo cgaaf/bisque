@@ -1,0 +1,116 @@
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../slider.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// A slider's value is a number or an array; `load` is typed by its fallback (../../test/settings-server.ts).
+fn sliderValue(value: number | number[]): number | number[] => value
+
+// Sliders whose value is saved to a server, written as an app would (../../test/settings-server.ts). Each saves
+// only what is committed (pointer release, a key): `onValueChange` fires on every move of a drag.
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  volume = await load("volume", sliderValue(50)) -> 50
+  source volumeError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source brightness: number | number[] := 50
+  source brightnessError := ""
+  // The plainest optimistic save: guess, save, write the value.
+  source contrast: number | number[] = 50
+  // Disabled while its save is out.
+  warmth = await load("warmth", sliderValue(50)) -> 50
+  // Follows every change in the app's state (`onValueChange`), saves only what is committed.
+  source balance: number | number[] := 50
+  source balanceSaves := 0
+  // Uncontrolled, with a handler that writes what a loading question reads: its change waits for the answer.
+  source wanted: number | number[] := 50
+  preview = await load(`preview-${wanted}`, wanted) -> 50
+  <div style="width: 300px; padding: 20px">
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <SliderRoot value={volume} onValueCommitted={(next) => {
+      guess volume := next
+      onFlush(() => { volumeError := "" })
+      affects volume
+      try {
+        await save("volume", next)
+        refresh volume
+      } catch (e) {
+        volumeError := "failed"
+      }
+    }}>
+      <SliderControl data-testid="volume-control" style="height: 20px">
+        <SliderTrack style="height: 4px">
+          <SliderIndicator />
+          <SliderThumb aria-label="Volume" style="width: 10px; height: 10px" />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+    <output data-testid="volume">{volume}</output>
+    <output data-testid="volume-saving">{pending? volume ? "saving" : ""}</output>
+    <output data-testid="volume-error">{volumeError}</output>
+
+    <SliderRoot value={brightness} onValueCommitted={(next) => {
+      onFlush(() => { brightnessError := "" })
+      try {
+        await save("brightness", next)
+        brightness := next
+      } catch (e) {
+        brightnessError := "failed"
+      }
+    }}>
+      <SliderControl data-testid="brightness-control" style="height: 20px">
+        <SliderThumb aria-label="Brightness" style="width: 10px; height: 10px" />
+      </SliderControl>
+    </SliderRoot>
+    <output data-testid="brightness">{brightness}</output>
+    <output data-testid="brightness-error">{brightnessError}</output>
+
+    <SliderRoot value={contrast} onValueCommitted={(next) => {
+      guess contrast := next
+      try {
+        await save("contrast", next)
+        contrast := next
+      } catch (e) {
+      }
+    }}>
+      <SliderControl style="height: 20px">
+        <SliderThumb aria-label="Contrast" style="width: 10px; height: 10px" />
+      </SliderControl>
+    </SliderRoot>
+
+    <SliderRoot value={warmth} disabled={pending? warmth} onValueCommitted={(next) => {
+      guess warmth := next
+      affects warmth
+      try {
+        await save("warmth", next)
+        refresh warmth
+      } catch (e) {
+      }
+    }}>
+      <SliderControl style="height: 20px">
+        <SliderThumb aria-label="Warmth" style="width: 10px; height: 10px" />
+      </SliderControl>
+    </SliderRoot>
+
+    <SliderRoot value={balance} onValueChange={(next) => { balance := next }} onValueCommitted={(next) => {
+      onFlush(() => { balanceSaves := balanceSaves + 1 })
+      try {
+        await save("balance", next)
+      } catch (e) {
+      }
+    }}>
+      <SliderControl data-testid="balance-control" style="height: 20px">
+        <SliderThumb aria-label="Balance" style="width: 10px; height: 10px" />
+      </SliderControl>
+    </SliderRoot>
+    <output data-testid="balance">{balance}</output>
+
+    <SliderRoot defaultValue={50} onValueChange={(next) => { wanted := next }}>
+      <SliderValue data-testid="preview-value" />
+      <SliderControl style="height: 20px">
+        <SliderThumb aria-label="Preview" style="width: 10px; height: 10px" />
+      </SliderControl>
+    </SliderRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

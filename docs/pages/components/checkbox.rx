@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { CheckboxHero } from "../../demos/checkbox/hero.rx"
 import { CheckboxControlled } from "../../demos/checkbox/controlled.rx"
 import { CheckboxStates } from "../../demos/checkbox/states.rx"
+import { CheckboxSaving } from "../../demos/checkbox/saving.rx"
 
 export default component Page() {
   <DocsPage title="Checkbox" subtitle="A native checkbox that can be styled whole, with an optional indicator.">
@@ -92,6 +93,30 @@ export default component Page() {
       technology is given.
     </p>
     <Code file="checkbox/custom-indicator.rx.txt" />
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      A setting that saves when it changes: <code>onCheckedChange</code> sends the new state, and the checkbox shows
+      its owner's <code>checked</code>. Write the handler as an action with a <code>guess</code>, and the new state
+      shows at once, <code>pending?</code> says it is saving, and it goes back by itself if the save fails. Ending a
+      save with <code>refresh</code> asks the server what it holds, so when the checkbox is pressed again while a
+      save is out, the last choice is what stays, whatever order the answers come back in.
+    </p>
+    <Demo source="checkbox/saving"><CheckboxSaving /></Demo>
+    <p>
+      The checkbox calls <code>onCheckedChange</code> in a change of its own, so a handler that waits for a server never
+      holds it: it can be pressed again at once. Without a guess, the checkbox shows the owner's state until the
+      owner writes the new one: the browser's change is put back right after the press.
+    </p>
+    <p>
+      To stop changes while a save is out, pass <code>readOnly={"{"}pending? setting{"}"}</code>: focus stays where it
+      is and presses are ignored. Disabled the same way, the focused box loses focus, as every disabled control
+      does, and takes it back when it is enabled again if focus hasn't moved elsewhere.
+    </p>
+    <p>
+      A <code>checked</code> read from an answer that fails doesn't stop the checkbox: the failure is the app's to
+      show, in an <code>errored</code> region around it.
+    </p>
 
     <h2 id="api-reference">API reference</h2>
     <ApiReference family="checkbox" />

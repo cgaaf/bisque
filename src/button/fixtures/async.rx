@@ -1,0 +1,44 @@
+import { Button } from "../button.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Buttons whose press starts a request, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // How many times each was sent, as the server has it.
+  saves = await load("saves", 0) -> 0
+  sends = await load("sends", 0) -> 0
+  source plainCalls := 0
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    // Disabled natively while its request is out.
+    <Button disabled={pending? saves} onClick={() => {
+      affects saves
+      try {
+        await save("saves", saves + 1)
+        refresh saves
+      } catch (e) {
+      }
+    }}>Save</Button>
+    <output data-testid="saves">{saves}</output>
+
+    // Disabled, but focusable, while its request is out.
+    <Button disabled={pending? sends} focusableWhenDisabled onClick={() => {
+      affects sends
+      try {
+        await save("sends", sends + 1)
+        refresh sends
+      } catch (e) {
+      }
+    }}>Send</Button>
+    <output data-testid="sends">{sends}</output>
+
+    // Nothing stops a second press.
+    <Button onClick={() => {
+      onFlush(() => { plainCalls := plainCalls + 1 })
+      try {
+        await save("plain", plainCalls)
+      } catch (e) {
+      }
+    }}>Plain</Button>
+    }}
+  </div>
+}

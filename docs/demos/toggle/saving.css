@@ -1,0 +1,72 @@
+.ToggleSaving {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+
+  .Row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .Toggle {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: light-dark(#63636e, #9a9aa6);
+    cursor: pointer;
+  }
+
+  .Toggle:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Toggle:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Toggle svg {
+    fill: none;
+  }
+
+  /* Pressed shows at once, from the guess; it goes back if the save fails. */
+  .Toggle[data-pressed] {
+    color: light-dark(#b7791f, #f6c453);
+  }
+
+  .Toggle[data-pressed] svg {
+    fill: currentColor;
+  }
+
+  .Status {
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff8a80);
+  }
+
+  .Drop {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Drop:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}

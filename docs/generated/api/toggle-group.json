@@ -11,7 +11,7 @@
           "type": "string[]",
           "default": null,
           "required": false,
-          "description": "The values of the pressed toggles. Pass it with `onValueChange` to control the group."
+          "description": "The values of the pressed toggles. Pass it with `onValueChange` to control the group. It may be read from an answer that is loading or guessed over; one that fails is left to the app's `errored` region."
         },
         {
           "name": "defaultValue",
@@ -25,7 +25,7 @@
           "type": "(value: string[]) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new array of pressed values when a toggle is pressed or released."
+          "description": "Called with the new array of pressed values when a toggle is pressed or released, in a change of its own: it may be an action that saves without holding the group."
         },
         {
           "name": "multiple",

@@ -1,0 +1,20 @@
+import { MeterRoot, MeterLabel, MeterTrack, MeterIndicator, MeterValue } from "../meter.rx"
+import { load } from "../../test/settings-server.js"
+
+// A meter whose value comes from a server (../../test/settings-server.ts): it loads, is asked again, and fails.
+export default component Fixture() {
+  level = await load("level", 40) -> 0
+  source clicks := 0
+  <div>
+    {errored fallback(e) { <p data-testid="error">{e.message} <button type="button" onClick={() => { refresh level }}>Retry</button></p> } {
+      <MeterRoot value={level} data-testid="meter">
+        <MeterLabel>Storage</MeterLabel>
+        <MeterTrack style="width: 100px; height: 4px"><MeterIndicator data-testid="indicator" /></MeterTrack>
+        <MeterValue data-testid="value" />
+      </MeterRoot>
+      <button type="button" onClick={() => { refresh level }}>Reload</button>
+    }}
+    <button type="button" onClick={() => { clicks := clicks + 1 }}>Count</button>
+    <output data-testid="clicks">{clicks}</output>
+  </div>
+}

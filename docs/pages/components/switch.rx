@@ -1,6 +1,7 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { SwitchHero } from "../../demos/switch/hero.rx"
 import { SwitchField } from "../../demos/switch/field.rx"
+import { SwitchSaving } from "../../demos/switch/saving.rx"
 
 export default component Page() {
   <DocsPage title="Switch" subtitle="A native checkbox with the switch role, for a setting that is on or off.">
@@ -70,6 +71,30 @@ export default component Page() {
       <code>readOnly</code> keeps the switch focusable but cancels a press or <kbd>Space</kbd>, so it doesn't
       change. The browser has no read-only checkbox, so the switch carries <code>aria-readonly="true"</code> and{" "}
       <code>data-readonly</code> to style it from.
+    </p>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      A setting that saves when it changes: <code>onCheckedChange</code> sends the new state, and the switch shows
+      its owner's <code>checked</code>. Write the handler as an action with a <code>guess</code>, and the switch
+      turns at once, says it is saving through <code>pending?</code>, and goes back by itself if the save fails.
+      Ending a save with <code>refresh</code> asks the server what it holds, so when the switch is pressed again
+      while a save is out, the last choice is what stays, whatever order the answers come back in.
+    </p>
+    <Demo source="switch/saving"><SwitchSaving /></Demo>
+    <p>
+      The switch calls <code>onCheckedChange</code> in a change of its own, so a handler that waits for a server
+      never holds the switch: it can be pressed again at once. Without a guess, the switch shows the owner's state
+      until the owner writes the new one: the browser's toggle is put back right after the press.
+    </p>
+    <p>
+      To stop presses while a save is out, pass <code>readOnly={"{"}pending? setting{"}"}</code>: the switch keeps
+      focus and ignores presses. A switch disabled the same way loses focus, as every disabled control does, and
+      takes it back when it is enabled again if focus hasn't moved elsewhere.
+    </p>
+    <p>
+      A <code>checked</code> read from an answer that fails doesn't stop the switch: the failure is the app's to
+      show, in an <code>errored</code> region around it.
     </p>
 
     <h2 id="api-reference">API reference</h2>

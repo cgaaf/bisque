@@ -1,6 +1,7 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { ButtonHero } from "../../demos/button/hero.rx"
 import { ButtonLoading } from "../../demos/button/loading.rx"
+import { ButtonRequest } from "../../demos/button/request.rx"
 
 export default component Page() {
   <DocsPage title="Button" subtitle="A button that can stay focusable while disabled, or be another element.">
@@ -46,6 +47,22 @@ export default component Page() {
       <kbd>Tab</kbd> move on.
     </p>
     <Demo source="button/loading"><ButtonLoading /></Demo>
+
+    <h3 id="request">Starting a request</h3>
+    <p>
+      A button whose press sends something to a server. Write its <code>onClick</code> as an action that{" "}
+      <code>affects</code> the value the request changes, and pass{" "}
+      <code>disabled={"{"}pending? value{"}"}</code>: the button is disabled from the press until the request
+      ends, failed or not, so a second press can't send it twice. Nothing has to be tracked by hand, and there is
+      no <code>pending</code> prop to learn: <code>aria-busy</code> and the label can read the same{" "}
+      <code>pending?</code>.
+    </p>
+    <Demo source="button/request"><ButtonRequest /></Demo>
+    <p>
+      With <code>focusableWhenDisabled</code> the button keeps focus while the request is out. Without it, the
+      native <code>disabled</code> attribute takes focus away in Chromium and Firefox; the button takes focus back
+      when it is enabled again, if focus hasn't moved elsewhere, so the keyboard can carry on.
+    </p>
 
     <h3 id="other-element">Another element as a button</h3>
     <p>

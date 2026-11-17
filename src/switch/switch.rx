@@ -6,7 +6,9 @@
 // An <input> can't have children, so SwitchRoot renders its children right after the input: SwitchThumb is the
 // input's next sibling, styled from it (`input:checked + span`), or the input draws its own thumb (`::before`).
 import { mergeProps, createRef } from "../internal/props.js"
-import { createCheckedInput, createFormReset } from "../internal/field.js"
+import { createFormReset } from "../internal/field.js"
+import { createCheckedInput } from "../internal/checked-input.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { field, fieldInputProps } from "../field/field.rx"
 import { InputProps, SpanProps } from "../internal/types.rx"
 
@@ -40,14 +42,19 @@ export type SwitchRootProps = {
 export component SwitchRoot(props: SwitchRootProps) {
   f = use field
   source uncontrolled := peek(props.defaultChecked ?? false)
-  // Counts the browser's changes, so the input is set back to the state after each one (createCheckedInput).
+  // Counts form resets, so the input is set back to the state after one (createCheckedInput).
   source revision := 0
   source element: HTMLInputElement | undefined := undefined
-  isChecked = props.checked ?? uncontrolled
+  // `checked` and `disabled` are often read from an answer that can fail (`checked={setting}` with
+  // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the switch's.
+  givenChecked = props.checked catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  isChecked = givenChecked ?? uncontrolled
+  isReadOnly = props.readOnly ?? false
   self = {
     checked: isChecked,
-    disabled: (props.disabled ?? false) || (f?.disabled ?? false),
-    readOnly: props.readOnly ?? false,
+    disabled: givenDisabled || (f?.disabled ?? false),
+    readOnly: isReadOnly,
     required: props.required ?? false,
   }
 
@@ -57,27 +64,38 @@ export component SwitchRoot(props: SwitchRootProps) {
   effect (isChecked) { if (f) { f.setValue($0) } }
   _input = createCheckedInput(element, isChecked, false, revision)
   _reset = createFormReset(element, reset)
+  // Disabled while it had focus (`disabled={pending? setting}`), it takes focus back when re-enabled.
+  _focus = createFocusKeeper(element, self.disabled)
 
-  // The browser has already toggled the input: report that, and let the state decide what it shows.
+  // The owner's handler is called in a change of its own (`onFlush`), never in the one that updates this switch: a
+  // handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the switch would be held with it, showing the browser's toggle whatever the owner decided.
+  action notify(next: boolean) {
+    if (props.onCheckedChange) {
+      let report = props.onCheckedChange
+      onFlush(() => { report(next) })
+    }
+  }
+  // The browser has already toggled the input: report that, and let the state decide what it shows. The input is
+  // set back to the state once the owner's change has run too (createCheckedInput).
   action change(event: Event & { currentTarget: HTMLInputElement }) {
     let next = event.currentTarget.checked
-    revision := revision + 1
     uncontrolled := next
-    if (props.onCheckedChange) { props.onCheckedChange(next) }
+    notify(next)
   }
   // The browser has put the input back to `defaultChecked`. Uncontrolled, that is the new state, reported once if
   // it changed; controlled, the owner's state is written back over it.
   action reset() {
     revision := revision + 1
-    let next = props.checked ?? initialChecked
-    if (props.checked == undefined && next != uncontrolled) {
+    let next = givenChecked ?? initialChecked
+    if (givenChecked == undefined && next != uncontrolled) {
       uncontrolled := next
-      if (props.onCheckedChange) { props.onCheckedChange(next) }
+      notify(next)
     }
     if (f) { f.reset(next) }
   }
   // Cancelling the click is what keeps a native checkbox unchanged: the browser restores it and fires no change.
-  action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
+  action click(event: MouseEvent) { if (isReadOnly) { event.preventDefault() } }
   action writeElement(input: HTMLInputElement) {
     element := input
     if (f) { f.setInput(input) }

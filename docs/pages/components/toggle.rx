@@ -1,6 +1,7 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { href } from "../../lib/site.js"
 import { ToggleHero } from "../../demos/toggle/hero.rx"
+import { ToggleSaving } from "../../demos/toggle/saving.rx"
 
 export default component Page() {
   <DocsPage title="Toggle" subtitle="A button that is either pressed or not.">
@@ -47,6 +48,28 @@ export default component Page() {
       each toggle a <code>value</code>, and the group's <code>value</code> lists the pressed ones. Inside a{" "}
       <a href={href("components/toolbar")}>Toolbar</a> the toggle is one of the toolbar's items, reached with the
       arrow keys.
+    </p>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      A toggle whose state saves when it changes: <code>onPressedChange</code> sends the new state, and the toggle
+      shows its owner's <code>pressed</code>. Write the handler as an action with a <code>guess</code>, and the
+      toggle is pressed at once, says it is saving through <code>pending?</code>, and is released by itself if the
+      save fails. Ending a save with <code>refresh</code> asks the server what it holds, so when the toggle is
+      pressed again while a save is out, the last choice is what stays, whatever order the answers come back in.
+    </p>
+    <Demo source="toggle/saving"><ToggleSaving /></Demo>
+    <p>
+      The toggle calls <code>onPressedChange</code> in a change of its own, so a handler that waits for a server
+      never holds the toggle: it can be pressed again at once. Without a guess, the toggle shows the owner's state
+      until the owner writes the new one. A toggle group calls its <code>onValueChange</code> the same way, and its{" "}
+      <code>value</code> can be guessed over just like <code>pressed</code>.
+    </p>
+    <p>
+      A toggle disabled while its save is out (<code>disabled={"{"}pending? setting{"}"}</code>) loses focus in
+      Chromium and Firefox, as a disabled button does, and takes it back when it is enabled again if focus hasn't
+      moved elsewhere. A <code>pressed</code> or group <code>value</code> read from an answer that fails doesn't
+      stop the toggle: the failure is the app's to show, in an <code>errored</code> region around it.
     </p>
 
     <h3 id="custom-element">On another element</h3>

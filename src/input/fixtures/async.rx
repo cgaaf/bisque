@@ -1,0 +1,35 @@
+import { Input } from "../input.rx"
+import { FieldRoot } from "../../field/field.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Inputs used as an app would against a server (../../test/settings-server.ts).
+export default component Fixture() {
+  // A controlled input whose value a loading question reads: a check that runs as the person types.
+  source name := ""
+  check = await load(`name-${name}`, name) -> ""
+  // An uncontrolled input whose handler writes what a loading question reads.
+  source query := ""
+  found = await load(`query-${query}`, query) -> ""
+  // A controlled input saved when it changes, optimistically.
+  source bio: string = ""
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+      <Input aria-label="Name" value={name} onValueChange={(next) => { name := next }} />
+      <output data-testid="check">{check}</output>
+      <output data-testid="checking">{pending? check ? "checking" : ""}</output>
+      <FieldRoot data-testid="query-root">
+        <Input aria-label="Query" onValueChange={(next) => { query := next }} />
+      </FieldRoot>
+      <output data-testid="found">{found}</output>
+      <output data-testid="finding">{pending? found ? "finding" : ""}</output>
+      <Input aria-label="Bio" value={bio} onValueChange={(next) => {
+        guess bio := next
+        try {
+          await save("bio", next)
+          bio := next
+        } catch (e) {
+        }
+      }} />
+    }}
+  </div>
+}

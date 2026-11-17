@@ -11,7 +11,7 @@
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether the button is disabled. It gets the native `disabled` attribute, or `aria-disabled` with `focusableWhenDisabled`."
+          "description": "Whether the button is disabled. It gets the native `disabled` attribute, or `aria-disabled` with `focusableWhenDisabled`. `disabled={pending? value}` disables it while a request is out. A natively disabled button that had focus takes it back when it is enabled again, if focus hasn't moved elsewhere."
         },
         {
           "name": "focusableWhenDisabled",

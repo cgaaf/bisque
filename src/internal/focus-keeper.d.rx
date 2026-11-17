@@ -1,0 +1,3 @@
+// How .rx may use ./focus-keeper.js (implemented in ./impl/focus-keeper.ts). One declaration per line:
+// scripts/gen-dts.mjs turns this file into ./focus-keeper.d.ts.
+export pure fn createFocusKeeper(ref element: HTMLElement | undefined, ref disabled: boolean) instantiates

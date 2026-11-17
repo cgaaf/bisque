@@ -1,0 +1,6 @@
+// How the "saving to a server" demos may use ./settings-server.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./settings-server.d.ts.
+export fn dropNetwork(): void
+export pure fn loadSetting(key: string, fallback: any): Promise<any>
+export fn saveSetting(key: string, value: any): Promise<any>
+export pure fn messageOf(error: unknown): string

@@ -1,4 +1,5 @@
-import { mergeProps, createId } from "../internal/props.js"
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { formatNumberValue, parseNumberText, isNumberText, validateNumber, isFocused, focusInputEnd, restoreInputText, createPressAndHold, createScrub } from "../internal/number-field.js"
 import { field, FieldContext, fieldControlProps, fieldStateAttributes } from "../field/field.rx"
 import { DivProps, InputProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
@@ -98,10 +99,21 @@ export component NumberFieldRoot(props: NumberFieldRootProps) {
   source scrubbing := false
   source input: HTMLInputElement | undefined := undefined
   source ownInputId: string | undefined := undefined
+  // The value this field moved to and is showing until its owner has answered the commit: from a step, a key or
+  // typing until `onValueCommitted` has run. An owner that saves only what is committed (`value={saved}`, written
+  // or guessed in `onValueCommitted`) leaves `value` where it was until then; the field shows what it moved to
+  // meanwhile, then what the owner decided: its guess, its new value, or its old one while its save is out.
+  source local: { value: number | null } | undefined := undefined
   // Controlled whenever `value` is given, null (empty) included.
-  current = props.value != undefined ? props.value : uncontrolled
-  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
-  isReadOnly = props.readOnly ?? false
+  // `value`, `disabled` and `readOnly` are often read from an answer that can fail (`value={setting}` with
+  // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the field's.
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenReadOnly = (props.readOnly ?? false) catch (e) => false
+  owned = givenValue != undefined ? givenValue : uncontrolled
+  current = local != undefined ? local.value : owned
+  isDisabled = givenDisabled || (f?.disabled ?? false)
+  isReadOnly = givenReadOnly
   isRequired = props.required ?? false
   stepSize = props.step ?? 1
   formatted = formatNumberValue(current, props.locale, props.format)
@@ -109,12 +121,33 @@ export component NumberFieldRoot(props: NumberFieldRootProps) {
 
   effect (current) { if (f) { f.setValue($0) } }
 
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that updates this field: a
+  // handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the field would be held with it.
   action change(next: number | null, reason: NumberFieldChangeReason) {
+    local := { value: next }
     uncontrolled := next
-    if (props.onValueChange) { props.onValueChange(next, { reason: reason }) }
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next, { reason: reason }) })
+    }
   }
+  action endLocal(next: number | null) {
+    // Tested through a local: narrowing `local` itself would type the write below (rx-tsc).
+    let shown = local
+    if (shown != undefined && shown.value == next) { local := undefined }
+  }
+  // Every change is followed by a commit (a key, a stepper's release, a blur after typing). The value shown is let go
+  // in a change of its own right after the owner's commit handler has run (a nested `onFlush`): by then an
+  // optimistic owner's guess is showing, and an owner that waits for its server shows its own value until it writes
+  // the new one. Never in the owner's change: a write there would join its hold, and the next change's with it. A
+  // newer value is left for its own commit to let go.
   action commitValue(next: number | null, reason: NumberFieldChangeReason) {
-    if (props.onValueCommitted) { props.onValueCommitted(next, { reason: reason }) }
+    let report = props.onValueCommitted
+    onFlush(() => {
+      if (report) { report(next, { reason: reason }) }
+      onFlush(() => { endLocal(next) })
+    })
   }
   action commit(reason: NumberFieldChangeReason) { commitValue(current, reason) }
   action stepFrom(base: number | null, direction: number, times: number, modifiers: StepModifiers | undefined, reason: NumberFieldChangeReason, commitNow: boolean) {
@@ -233,6 +266,14 @@ fn stepBase(ref c: NumberFieldContext): number | null => c.editing ? parseNumber
 // The text input. Arrow Up/Down step (Shift: large step, Alt: small step), Home/End go to min/max when set,
 // the wheel steps while focused (with `allowWheelScrub`), and blur parses, clamps and formats what was typed.
 export fn numberFieldInput(ref c: NumberFieldContext): PartProps {
+  source element: HTMLInputElement | undefined := undefined
+  action writeInput(input: HTMLInputElement) {
+    element := input
+    c.setInput(input)
+  }
+  setInput = createRef(writeInput)
+  // Disabled while it had focus (`disabled={pending? setting}`), the input takes focus back when re-enabled.
+  _focus = createFocusKeeper(element, c.disabled)
   base = fieldControlProps(c.field)
   state = numberFieldState(c)
   start = stepBase(c)
@@ -279,7 +320,7 @@ export fn numberFieldInput(ref c: NumberFieldContext): PartProps {
     onInput: input,
     onBlur: blur,
     onWheel: wheel,
-    ref: c.setInput,
+    ref: setInput,
   }
   mergeProps(base, own)
 }

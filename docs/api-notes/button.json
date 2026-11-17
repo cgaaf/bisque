@@ -2,7 +2,7 @@
   "Button": {
     "description": "A native `<button>` with `type=\"button\"` by default. While disabled your own click, pointer-down, mouse-down and key handlers don't run. For another element, spread the `button` props function on it.",
     "props": {
-      "disabled": "Whether the button is disabled. It gets the native `disabled` attribute, or `aria-disabled` with `focusableWhenDisabled`.",
+      "disabled": "Whether the button is disabled. It gets the native `disabled` attribute, or `aria-disabled` with `focusableWhenDisabled`. `disabled={pending? value}` disables it while a request is out. A natively disabled button that had focus takes it back when it is enabled again, if focus hasn't moved elsewhere.",
       "focusableWhenDisabled": "Whether a disabled button stays focusable and keeps its place in the Tab order. It is then disabled with `aria-disabled=\"true\"` and ignores presses, Enter and Space."
     },
     "dataAttributes": {

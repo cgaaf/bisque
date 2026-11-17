@@ -1,0 +1,32 @@
+import { SwitchRoot, SwitchThumb } from "../../../src/switch/switch.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+export component SwitchSaving() {
+  // What the server holds. `-> false` is shown until the first answer.
+  alerts = await loadSetting("alerts", false) -> false
+  source failure := ""
+  <div class="SwitchSaving">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      <label class="Label">
+        <SwitchRoot class="Switch" checked={alerts} onCheckedChange={(next) => {
+          // Shows at once; goes back by itself if the save fails.
+          guess alerts := next
+          onFlush(() => { failure := "" })
+          affects alerts
+          try {
+            await saveSetting("alerts", next)
+            // Ask the server again: with saves crossing, what it holds is what shows.
+            refresh alerts
+          } catch (error) {
+            failure := messageOf(error)
+          }
+        }}>
+          <SwitchThumb class="Thumb" />
+        </SwitchRoot>
+        Email alerts
+        <span class="Status" aria-live="polite">{pending? alerts ? "Saving…" : failure}</span>
+      </label>
+    }}
+    <button type="button" class="Drop" onClick={() => { dropNetwork() }}>Drop the network for 3 seconds</button>
+  </div>
+}

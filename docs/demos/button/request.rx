@@ -1,0 +1,29 @@
+import { Button } from "../../../src/button/button.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+export component ButtonRequest() {
+  // How many reminders the server has sent. `-> 0` is shown until the first answer.
+  sent = await loadSetting("reminders", 0) -> 0
+  source failure := ""
+  <div class="ButtonRequest">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      // `pending? sent` is true from the press until the request ends (`affects sent`): the button is disabled
+      // for exactly that long, and a second press can't send twice.
+      <Button class="Button" disabled={pending? sent} focusableWhenDisabled aria-busy={pending? sent ? "true" : undefined} onClick={() => {
+        onFlush(() => { failure := "" })
+        affects sent
+        try {
+          await saveSetting("reminders", sent + 1)
+          refresh sent
+        } catch (error) {
+          failure := messageOf(error)
+        }
+      }}>
+        {if pending? sent { <span class="Spinner" aria-hidden="true" /> }}
+        {pending? sent ? "Sending" : "Send reminder"}
+      </Button>
+      <span class="State" aria-live="polite">{failure != "" ? failure : sent == 0 ? "None sent yet" : `${sent} sent`}</span>
+    }}
+    <button type="button" class="Drop" onClick={() => { dropNetwork() }}>Drop the network for 3 seconds</button>
+  </div>
+}

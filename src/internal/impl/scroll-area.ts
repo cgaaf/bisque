@@ -98,10 +98,15 @@ export function createScrollMetrics(
         lastLeft = vp.scrollLeft;
         read();
       };
-      read();
       vp.addEventListener("scroll", onScroll, { passive: true });
+      // The first reading comes from the observer, which reports every element it starts observing once layout
+      // has run, before the next paint. Reading here instead would write the snapshot from inside this effect: a
+      // scrollbar that mounts because the content grew (an answer landed) would re-run everything that reads the
+      // snapshot twice, once against the old one (EFFECT_RELAY_TEAR).
       const observer = typeof ResizeObserver === "function" ? new ResizeObserver(read) : undefined;
-      for (const el of [vp, ...vp.children, barY, barX]) if (el instanceof Element) observer?.observe(el);
+      if (observer) {
+        for (const el of [vp, ...vp.children, barY, barX]) if (el instanceof Element) observer.observe(el);
+      } else read();
       return () => {
         vp.removeEventListener("scroll", onScroll);
         observer?.disconnect();

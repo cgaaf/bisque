@@ -2,12 +2,12 @@
   "CheckboxRoot": {
     "description": "The box: a native `<input type=\"checkbox\">`. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:indeterminate`, `:disabled`, `:focus-visible` and `:user-invalid`.",
     "props": {
-      "checked": "Whether the box is checked. Pass it with `onCheckedChange` to control the box.",
+      "checked": "Whether the box is checked. Pass it with `onCheckedChange` to control the box. It may be read from an answer that is loading or guessed over (`checked={setting}`); one that fails is left to the app's `errored` region.",
       "defaultChecked": "Whether the box is checked at first, when it isn't controlled. Also its `checked` attribute: what a form reset puts back.",
-      "onCheckedChange": "Called with the new state when the user checks or clears the box, and once when a form reset changes an uncontrolled box.",
+      "onCheckedChange": "Called with the new state when the user checks or clears the box, and once when a form reset changes an uncontrolled box. It is called in a change of its own, so it may be an action that saves: the box is never held by it. A controlled box shows `checked` until the owner writes the new state, or guesses it.",
       "indeterminate": "Shows the box as neither checked nor unchecked; `:indeterminate` matches it. A press clears it and toggles the box, as the browser does, and the box is set back to indeterminate while this stays true.",
-      "disabled": "Disables the box natively: it can't be focused or pressed, and `:disabled` matches it.",
-      "readOnly": "Keeps the box focusable but cancels a press or Space, so its state doesn't change. Sets `aria-readonly` and `data-readonly`.",
+      "disabled": "Disables the box natively: it can't be focused or pressed, and `:disabled` matches it. A box disabled while it has focus (`disabled={pending? setting}`) takes focus back when it is enabled again, if focus hasn't moved elsewhere.",
+      "readOnly": "Keeps the box focusable but cancels a press or Space, so its state doesn't change. Sets `aria-readonly` and `data-readonly`. `readOnly={pending? setting}` locks it while a save is out without losing focus.",
       "required": "Sets the native `required` attribute: the box must be checked for its form, or its Field, to be valid.",
       "name": "The name the box submits `value` under while it is checked. Inside a FieldRoot, the field's `name` is used when this is absent.",
       "value": "What the box submits with its form while checked; the browser's default is `\"on\"`. Inside a CheckboxGroup, the value the group's list holds while this box is checked.",

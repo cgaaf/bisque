@@ -11,7 +11,7 @@
           "type": "number | null",
           "default": null,
           "required": false,
-          "description": "The value: a number, or `null` for an empty input. Pass it with `onValueChange` to control the number field."
+          "description": "The value: a number, or `null` for an empty input. Pass it with `onValueChange` to control the number field. Or pass it with only `onValueCommitted`: the field then shows each step and what is typed by itself, and shows `value` again as soon as the owner's `onValueCommitted` has run: the owner's guess, or its old value until it writes the new one. It may be read from an answer that is loading or guessed over; one that fails is left to the app's `errored` region."
         },
         {
           "name": "defaultValue",
@@ -25,14 +25,14 @@
           "type": "(value: number | null, details: NumberFieldChangeDetails) => void",
           "default": null,
           "required": false,
-          "description": "Called whenever the value changes: as typed text parses, on each step, while a stepper is held or the scrub area is dragged. Receives the value and details whose `reason` is `input-change`, `input-clear`, `input-blur`, `keyboard`, `increment-press`, `decrement-press`, `wheel` or `scrub`."
+          "description": "Called whenever the value changes: as typed text parses, on each step, while a stepper is held or the scrub area is dragged. Receives the value and details whose `reason` is `input-change`, `input-clear`, `input-blur`, `keyboard`, `increment-press`, `decrement-press`, `wheel` or `scrub`. It is called in a change of its own, after the one that updated the field, so it may write something a loading question reads without holding the field or overwriting what is typed."
         },
         {
           "name": "onValueCommitted",
           "type": "(value: number | null, details: NumberFieldChangeDetails) => void",
           "default": null,
           "required": false,
-          "description": "Called when a change is final: on blur after typing; on each key, wheel turn and stepper click; and on release after holding a stepper or scrubbing. Receives the value and the `reason`."
+          "description": "Called when a change is final: on blur after typing; on each key, wheel turn and stepper click; and on release after holding a stepper or scrubbing. Receives the value and the `reason`. It is called in a change of its own, so it may be an action that saves: the field is never held by it, and steps on from what it shows while the save is out."
         },
         {
           "name": "min",
@@ -95,14 +95,14 @@
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether the number field can't be changed or focused. Also true inside a disabled FieldRoot."
+          "description": "Whether the number field can't be changed or focused. Also true inside a disabled FieldRoot. A field disabled while its input has focus (`disabled={pending? setting}`) gives focus back to the input when it is enabled again, if focus hasn't moved elsewhere."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether the value can be focused and read but not changed."
+          "description": "Whether the value can be focused and read but not changed. `readOnly={pending? setting}` locks the field while a save is out without losing focus."
         },
         {
           "name": "required",

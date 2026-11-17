@@ -1,0 +1,3 @@
+// How the async fixtures call ./settings-server.js. One declaration per line: scripts/gen-dts.mjs writes the .d.ts.
+export fn save(key: string, value: any): Promise<any>
+export pure fn load(key: string, fallback: any): Promise<any>

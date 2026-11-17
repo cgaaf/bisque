@@ -1,0 +1,36 @@
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+export component CheckboxSaving() {
+  // What the server holds. `-> false` is shown until the first answer.
+  digest = await loadSetting("digest", false) -> false
+  source failure := ""
+  <div class="CheckboxSaving">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      <label class="Label">
+        <CheckboxRoot class="Checkbox" checked={digest} onCheckedChange={(next) => {
+          // Shows at once; goes back by itself if the save fails.
+          guess digest := next
+          onFlush(() => { failure := "" })
+          affects digest
+          try {
+            await saveSetting("digest", next)
+            // Ask the server again: with saves crossing, what it holds is what shows.
+            refresh digest
+          } catch (error) {
+            failure := messageOf(error)
+          }
+        }}>
+          <CheckboxIndicator class="Indicator">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+              <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </CheckboxIndicator>
+        </CheckboxRoot>
+        Weekly digest
+        <span class="Status" aria-live="polite">{pending? digest ? "Saving…" : failure}</span>
+      </label>
+    }}
+    <button type="button" class="Drop" onClick={() => { dropNetwork() }}>Drop the network for 3 seconds</button>
+  </div>
+}

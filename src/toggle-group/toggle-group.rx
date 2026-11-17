@@ -37,8 +37,12 @@ export component ToggleGroup(props: ToggleGroupProps) {
   bar = use toolbar
   barGroup = use toolbarGroup
   source uncontrolled: string[] := peek(props.defaultValue ?? [])
-  current = props.value ?? uncontrolled
-  isDisabled = bar.disabled || barGroup.disabled || (props.disabled ?? false)
+  // `value` and `disabled` are often read from an answer that can fail (`value={setting}` with
+  // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the group's.
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  current = givenValue ?? uncontrolled
+  isDisabled = bar.disabled || barGroup.disabled || givenDisabled
   isMultiple = props.multiple ?? false
   dir = props.orientation ?? "horizontal"
   source element: HTMLElement | undefined := undefined
@@ -49,7 +53,11 @@ export component ToggleGroup(props: ToggleGroupProps) {
     let others = current.filter((v) => v != value)
     let next = pressed ? (isMultiple ? [...others, value] : [value]) : (isMultiple ? others : [])
     uncontrolled := next
-    if (props.onValueChange) { props.onValueChange(next) }
+    // In a change of its own: a handler that saves would hold the group with it (see Toggle).
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
   }
 
   provide toggleGroup = { present: true, disabled: isDisabled, value: current, setPressed: setPressed }

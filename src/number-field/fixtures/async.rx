@@ -1,0 +1,122 @@
+import { NumberFieldRoot, NumberFieldGroup, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement } from "../number-field.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// A number field's value is a number or null; `load` is typed by its fallback (../../test/settings-server.ts).
+fn fieldValue(value: number | null): number | null => value
+
+// Number fields whose value is saved to a server, written as an app would (../../test/settings-server.ts). Each
+// saves only what is committed (blur after typing, a key, a stepper click).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  quantity = await load("quantity", fieldValue(1)) -> 1
+  source quantityError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source seats: number | null := 1
+  source seatsError := ""
+  // The plainest optimistic save: guess, save, write the value.
+  source guests: number | null = 1
+  // Disabled while its save is out.
+  rooms = await load("rooms", fieldValue(1)) -> 1
+  // Read-only while its save is out.
+  nights = await load("nights", fieldValue(1)) -> 1
+  // Follows every change in the app's state, which a loading question reads.
+  source count: number | null := 1
+  estimate = await load(`estimate-${count}`, count) -> 1
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted: number | null := 1
+  preview = await load(`preview-${wanted}`, wanted) -> 1
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <NumberFieldRoot value={quantity} min={0} onValueCommitted={(next) => {
+      guess quantity := next
+      onFlush(() => { quantityError := "" })
+      affects quantity
+      try {
+        await save("quantity", next)
+        refresh quantity
+      } catch (e) {
+        quantityError := "failed"
+      }
+    }}>
+      <label for="quantity">Quantity</label>
+      <NumberFieldGroup>
+        <NumberFieldDecrement data-testid="quantity-decrement">−</NumberFieldDecrement>
+        <NumberFieldInput id="quantity" />
+        <NumberFieldIncrement data-testid="quantity-increment">+</NumberFieldIncrement>
+      </NumberFieldGroup>
+    </NumberFieldRoot>
+    <output data-testid="quantity">{quantity}</output>
+    <output data-testid="quantity-saving">{pending? quantity ? "saving" : ""}</output>
+    <output data-testid="quantity-error">{quantityError}</output>
+
+    <NumberFieldRoot value={seats} onValueCommitted={(next) => {
+      onFlush(() => { seatsError := "" })
+      try {
+        await save("seats", next)
+        seats := next
+      } catch (e) {
+        seatsError := "failed"
+      }
+    }}>
+      <label for="seats">Seats</label>
+      <NumberFieldInput id="seats" />
+      <NumberFieldIncrement data-testid="seats-increment">+</NumberFieldIncrement>
+    </NumberFieldRoot>
+    <output data-testid="seats">{seats}</output>
+    <output data-testid="seats-error">{seatsError}</output>
+
+    <NumberFieldRoot value={guests} onValueCommitted={(next) => {
+      guess guests := next
+      try {
+        await save("guests", next)
+        guests := next
+      } catch (e) {
+      }
+    }}>
+      <label for="guests">Guests</label>
+      <NumberFieldInput id="guests" />
+    </NumberFieldRoot>
+
+    <NumberFieldRoot value={rooms} disabled={pending? rooms} onValueCommitted={(next) => {
+      guess rooms := next
+      affects rooms
+      try {
+        await save("rooms", next)
+        refresh rooms
+      } catch (e) {
+      }
+    }}>
+      <label for="rooms">Rooms</label>
+      <NumberFieldInput id="rooms" />
+    </NumberFieldRoot>
+
+    <NumberFieldRoot value={nights} readOnly={pending? nights} onValueCommitted={(next) => {
+      guess nights := next
+      affects nights
+      try {
+        await save("nights", next)
+        refresh nights
+      } catch (e) {
+      }
+    }}>
+      <label for="nights">Nights</label>
+      <NumberFieldInput id="nights" />
+    </NumberFieldRoot>
+
+    <NumberFieldRoot value={count} onValueChange={(next) => { count := next }}>
+      <label for="count">Count</label>
+      <NumberFieldInput id="count" />
+    </NumberFieldRoot>
+    <output data-testid="estimate">{estimate}</output>
+    <output data-testid="estimating">{pending? estimate ? "loading" : ""}</output>
+
+    <NumberFieldRoot defaultValue={1} onValueChange={(next) => { wanted := next }}>
+      <label for="preview">Preview</label>
+      <NumberFieldInput id="preview" />
+      <NumberFieldIncrement data-testid="preview-increment">+</NumberFieldIncrement>
+    </NumberFieldRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

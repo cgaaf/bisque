@@ -3,6 +3,7 @@ import { SliderHero } from "../../demos/slider/hero.rx"
 import { SliderRange } from "../../demos/slider/range.rx"
 import { SliderVertical } from "../../demos/slider/vertical.rx"
 import { SliderControlled } from "../../demos/slider/controlled.rx"
+import { SliderSaving } from "../../demos/slider/saving.rx"
 
 export default component Page() {
   <DocsPage title="Slider" subtitle="A range input with any number of thumbs that you can style.">
@@ -74,6 +75,31 @@ export default component Page() {
       and a <code>details</code> object whose <code>reason</code> says what made the change.
     </p>
     <Demo source="slider/controlled"><SliderControlled /></Demo>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      A setting that saves when it changes needs only what is committed: save in{" "}
+      <code>onValueCommitted</code>, and leave <code>onValueChange</code> out. The slider follows the pointer and
+      the keys by itself while <code>value</code> stays where it was, and shows the owner's value again as soon as
+      the owner's <code>onValueCommitted</code> has run. Write the handler as an action with a{" "}
+      <code>guess</code>, and the thumb stays where it was released, says it is saving through{" "}
+      <code>pending?</code>, and goes back by itself if the save fails. Ending a save with <code>refresh</code>{" "}
+      asks the server what it holds, so when the slider is moved again while a save is out, the last value
+      committed is what stays.
+    </p>
+    <Demo source="slider/saving"><SliderSaving /></Demo>
+    <p>
+      The slider calls its handlers in a change of their own, so a handler that waits for a server, or writes
+      something a loading question reads, never holds the slider: it can be dragged again at once, and each key
+      goes on from what the slider shows. Without a guess, the thumb goes back to the owner's value when the drag
+      or key press is committed, and moves when the owner writes the new one.
+    </p>
+    <p>
+      A slider disabled while its save is out (<code>disabled={"{"}pending? setting{"}"}</code>) loses focus, as
+      every disabled control does, and gives it back to the thumb when it is enabled again if focus hasn't moved
+      elsewhere. A <code>value</code> read from an answer that fails doesn't stop the slider: the failure is the
+      app's to show, in an <code>errored</code> region around it.
+    </p>
 
     <h3 id="forms">In a form</h3>
     <p>

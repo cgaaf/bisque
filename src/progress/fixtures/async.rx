@@ -1,0 +1,21 @@
+import { ProgressRoot, ProgressLabel, ProgressTrack, ProgressIndicator, ProgressValue } from "../progress.rx"
+import { load } from "../../test/settings-server.js"
+
+// A progress bar whose value comes from a server (../../test/settings-server.ts): indeterminate until the first
+// answer (`-> null`), asked again, and failing.
+export default component Fixture() {
+  done = await load("done", 40) -> null
+  source clicks := 0
+  <div>
+    {errored fallback(e) { <p data-testid="error">{e.message} <button type="button" onClick={() => { refresh done }}>Retry</button></p> } {
+      <ProgressRoot value={done} data-testid="progress">
+        <ProgressLabel>Upload</ProgressLabel>
+        <ProgressTrack style="width: 100px; height: 4px"><ProgressIndicator data-testid="indicator" /></ProgressTrack>
+        <ProgressValue data-testid="value" />
+      </ProgressRoot>
+      <button type="button" onClick={() => { refresh done }}>Reload</button>
+    }}
+    <button type="button" onClick={() => { clicks := clicks + 1 }}>Count</button>
+    <output data-testid="clicks">{clicks}</output>
+  </div>
+}

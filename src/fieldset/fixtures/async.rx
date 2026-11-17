@@ -1,0 +1,24 @@
+import { FieldsetRoot, FieldsetLegend } from "../fieldset.rx"
+import { Input } from "../../input/input.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// A section of a form locked while its save is out, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  source city := ""
+  stored = await load("city", "") -> ""
+  <div>
+    <FieldsetRoot data-testid="address" disabled={pending? stored}>
+      <FieldsetLegend>Address</FieldsetLegend>
+      <Input aria-label="City" value={city} onValueChange={(next) => { city := next }} />
+      <button type="button" onClick={() => {
+        affects stored
+        try {
+          await save("city", city)
+          refresh stored
+        } catch (e) {
+        }
+      }}>Save</button>
+    </FieldsetRoot>
+    <output data-testid="stored">{stored catch (e) => "failed"}</output>
+  </div>
+}

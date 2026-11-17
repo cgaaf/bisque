@@ -1,4 +1,5 @@
-import { mergeProps, createId } from "../internal/props.js"
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { isRangeValue, sliderValues, formatSliderValue, valueToPercent, sameValues, hasMinDistance, moveThumb, thumbKeyValue, createSliderPointer } from "../internal/slider.js"
 import { field, FieldContext, fieldControlProps, fieldStateAttributes } from "../field/field.rx"
 import { DivProps, OutputProps, PartProps } from "../internal/types.rx"
@@ -92,14 +93,24 @@ export component SliderRoot(props: SliderRootProps) {
   source dragging := false
   source activeThumb := -1
   source lastUsedThumb := -1
+  // The values this slider moved to and is showing until its owner has answered the commit: while a drag goes on,
+  // and after a commit until `onValueCommitted` has run. An owner that saves only what is committed (`value={saved}`,
+  // written or guessed in `onValueCommitted`) leaves `value` where it was during the drag; the thumb follows the
+  // pointer meanwhile, then shows what the owner decided: its guess, its new value, or its old one while its save is
+  // out.
+  source draft: number[] | undefined := undefined
   low = props.min ?? 0
   high = props.max ?? 100
   stepSize = props.step ?? 1
   minSteps = props.minStepsBetweenValues ?? 0
-  current = props.value ?? uncontrolled
+  // `value` and `disabled` are often read from an answer that can fail (`value={setting}` with
+  // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the slider's.
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  current = givenValue ?? uncontrolled
   range = isRangeValue(current)
-  values = sliderValues(current, low, high)
-  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+  values = draft ?? sliderValues(current, low, high)
+  isDisabled = givenDisabled || (f?.disabled ?? false)
   axis = props.orientation ?? "horizontal"
   formatted = values.map((v) => formatSliderValue(v, props.locale, props.format))
   inputIdPrefix = createId("slider-input")
@@ -109,13 +120,35 @@ export component SliderRoot(props: SliderRootProps) {
 
   effect (fieldValue) { if (f) { f.setValue($0) } }
 
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that moves this slider: a
+  // handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the thumb would be held with it.
   action emit(next: number[], thumb: number, reason: SliderChangeReason) {
     let value = range ? next : next[0]
+    draft := next
     uncontrolled := value
-    if (props.onValueChange) { props.onValueChange(value, { reason: reason, activeThumbIndex: thumb }) }
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(value, { reason: reason, activeThumbIndex: thumb }) })
+    }
   }
+  action endDraft(next: number[]) {
+    // Tested through a local: narrowing `draft` itself would type the write below (rx-tsc).
+    let shown = draft
+    if (shown != undefined && sameValues(shown, next)) { draft := undefined }
+  }
+  // Every change is followed by a commit (a key, a release, the input's own change). The draft is cleared in a
+  // change of its own right after the owner's commit handler has run (a nested `onFlush`): by then an optimistic
+  // owner's guess is showing, and an owner that waits for its server shows its own value until it writes the new
+  // one. Never in the owner's change: a write there would join its hold, and the next drag's draft with it. A newer
+  // draft is left for its own commit to clear.
   action commit(next: number[], reason: SliderChangeReason) {
-    if (props.onValueCommitted) { props.onValueCommitted(range ? next : next[0], { reason: reason }) }
+    let report = props.onValueCommitted
+    let value = range ? next : next[0]
+    onFlush(() => {
+      if (report) { report(value, { reason: reason }) }
+      onFlush(() => { endDraft(next) })
+    })
   }
   action pointerChange(next: number[], thumb: number, reason: "track-press" | "drag") { emit(next, thumb, reason) }
   action pointerCommit(next: number[], reason: "track-press" | "drag") { commit(next, reason) }
@@ -297,7 +330,14 @@ export fn sliderThumbInput(ref c: SliderContext, ref index: number, ref disabled
     c.setActiveThumb(-1)
     if (index != 0 && c.field) { c.field.setFocused(false) }
   }
-  action setInput(element: HTMLInputElement) { if (inField) { inField.setInput(element) } }
+  source element: HTMLInputElement | undefined := undefined
+  action writeInput(input: HTMLInputElement) {
+    element := input
+    if (inField) { inField.setInput(input) }
+  }
+  setInput = createRef(writeInput)
+  // Disabled while it had focus (`disabled={pending? setting}`), the thumb takes focus back when re-enabled.
+  _focus = createFocusKeeper(element, isDisabled)
   own = {
     type: "range",
     id: inField ? undefined : `${c.inputIdPrefix}-${index}`,

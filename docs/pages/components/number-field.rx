@@ -1,6 +1,7 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { NumberFieldHero } from "../../demos/number-field/hero.rx"
 import { NumberFieldFormat } from "../../demos/number-field/format.rx"
+import { NumberFieldSaving } from "../../demos/number-field/saving.rx"
 
 export default component Page() {
   <DocsPage title="Number Field" subtitle="A text input for numbers, with buttons and a scrub area to step the value.">
@@ -82,6 +83,32 @@ export default component Page() {
       change is final: on blur after typing, on each key, wheel turn and stepper click, and on release after holding
       a stepper or scrubbing. Both receive a <code>details</code> object whose <code>reason</code> says what made
       the change.
+    </p>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      A setting that saves when it changes needs only what is committed: save in{" "}
+      <code>onValueCommitted</code>, and leave <code>onValueChange</code> out. The field shows each step and what
+      is typed by itself while <code>value</code> stays where it was, and shows the owner's value again as soon as
+      the owner's <code>onValueCommitted</code> has run. Write the handler as an action with a{" "}
+      <code>guess</code>, and the new value stays, says it is saving through <code>pending?</code>, and goes back
+      by itself if the save fails. Ending a save with <code>refresh</code> asks the server what it holds, so when
+      the field is stepped again while a save is out, the last value committed is what stays.
+    </p>
+    <Demo source="number-field/saving"><NumberFieldSaving /></Demo>
+    <p>
+      The field calls its handlers in a change of their own, so a handler that waits for a server, or writes
+      something a loading question reads, never holds the field: each click of a stepper goes on from what it
+      shows, and an answer that lands while someone is typing leaves the typed text alone. Without a guess, the
+      field goes back to the owner's value once the change is committed, and shows the new one when the owner
+      writes it.
+    </p>
+    <p>
+      To stop changes while a save is out, pass <code>readOnly={"{"}pending? setting{"}"}</code>: the input keeps
+      focus and ignores keys and steppers. A field disabled the same way loses focus, as every disabled control
+      does, and takes it back when it is enabled again if focus hasn't moved elsewhere. A <code>value</code> read
+      from an answer that fails doesn't stop the field: the failure is the app's to show, in an{" "}
+      <code>errored</code> region around it.
     </p>
 
     <h3 id="range">Bounds</h3>

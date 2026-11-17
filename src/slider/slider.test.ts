@@ -20,6 +20,12 @@ function pointer(
   flush();
 }
 
+/** Lets the owner's handlers run: the slider calls them in a change of their own, after the one that moved it. */
+async function settled() {
+  await new Promise((resolve) => setTimeout(resolve));
+  flush();
+}
+
 function nextFrame() {
   return new Promise((resolve) => requestAnimationFrame(resolve));
 }
@@ -166,6 +172,7 @@ test("pressing the track moves the thumb there; dragging follows the pointer; re
   expect(getByTestId("commits").textContent).toBe("");
   pointer("pointerUp", document, { clientX: 400, clientY: 10, buttons: 0 });
   expect(getByTestId("single").hasAttribute("data-dragging")).toBe(false);
+  await settled();
   expect(getByTestId("changes").textContent).toBe("50:track-press 75:drag 100:drag");
   expect(getByTestId("commits").textContent).toBe("100:drag");
 
@@ -178,7 +185,7 @@ test("pressing the track moves the thumb there; dragging follows the pointer; re
   expect(input.getAttribute("aria-valuenow")).toBe("100");
 });
 
-test("dragging a thumb keeps where it was grabbed", () => {
+test("dragging a thumb keeps where it was grabbed", async () => {
   const { getByRole, getByTestId } = mount(basic);
   const control = getByTestId("single-control");
   const thumb = getByTestId("single-thumb");
@@ -191,10 +198,11 @@ test("dragging a thumb keeps where it was grabbed", () => {
   pointer("pointerMove", document, { clientX: 86, clientY: 10 });
   expect(getByRole("slider", { name: "Volume" }).getAttribute("aria-valuenow")).toBe("40");
   pointer("pointerUp", document, { buttons: 0 });
+  await settled();
   expect(getByTestId("commits").textContent).toBe("40:drag");
 });
 
-test("in a range, the nearest thumb moves and pushes the other past minStepsBetweenValues", () => {
+test("in a range, the nearest thumb moves and pushes the other past minStepsBetweenValues", async () => {
   const { getByTestId, getByRole } = mount(basic);
   const control = getByTestId("range-control");
   stubRect(control, 0, 0, 100, 10);
@@ -216,6 +224,7 @@ test("in a range, the nearest thumb moves and pushes the other past minStepsBetw
   expect(low.getAttribute("aria-valuenow")).toBe("120");
   expect(high.getAttribute("aria-valuenow")).toBe("160");
   pointer("pointerUp", document, { buttons: 0 });
+  await settled();
   expect(getByTestId("changes").textContent).toBe(
     "[120,170]:track-press:1 [110,120]:drag:1 [120,160]:drag:1",
   );

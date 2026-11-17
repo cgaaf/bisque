@@ -11,7 +11,7 @@
           "type": "number | number[]",
           "default": null,
           "required": false,
-          "description": "The value: a number for one thumb, an array for a range with a thumb per entry. Pass it with `onValueChange` to control the slider."
+          "description": "The value: a number for one thumb, an array for a range with a thumb per entry. Pass it with `onValueChange` to control the slider. Or pass it with only `onValueCommitted`: the slider then follows the pointer and keys by itself, and shows `value` again as soon as the owner's `onValueCommitted` has run: the owner's guess, or its old value until it writes the new one. It may be read from an answer that is loading or guessed over; one that fails is left to the app's `errored` region."
         },
         {
           "name": "defaultValue",
@@ -25,14 +25,14 @@
           "type": "(value: number | number[], details: SliderChangeDetails) => void",
           "default": null,
           "required": false,
-          "description": "Called on every change, many times during a drag, with the new value (a number or an array, as `value` is) and details: the `reason` (`track-press`, `drag`, `keyboard` or `input-change`) and the `activeThumbIndex`."
+          "description": "Called on every change, many times during a drag, with the new value (a number or an array, as `value` is) and details: the `reason` (`track-press`, `drag`, `keyboard` or `input-change`) and the `activeThumbIndex`. It is called in a change of its own, after the one that moved the thumb, so it may write something a loading question reads without holding the slider."
         },
         {
           "name": "onValueCommitted",
           "type": "(value: number | number[], details: SliderCommitDetails) => void",
           "default": null,
           "required": false,
-          "description": "Called when a change is final: on pointer release and on each key press. Receives the value and the `reason`."
+          "description": "Called when a change is final: on pointer release and on each key press. Receives the value and the `reason`. It is called in a change of its own, so it may be an action that saves: the slider is never held by it, and goes on from what it shows if moved again while the save is out."
         },
         {
           "name": "min",
@@ -81,7 +81,7 @@
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether the slider ignores the pointer and the keyboard. Its range inputs are disabled too. Also true inside a disabled FieldRoot."
+          "description": "Whether the slider ignores the pointer and the keyboard. Its range inputs are disabled too. Also true inside a disabled FieldRoot. A slider disabled while a thumb has focus (`disabled={pending? setting}`) gives focus back to that thumb when it is enabled again, if focus hasn't moved elsewhere."
         },
         {
           "name": "name",

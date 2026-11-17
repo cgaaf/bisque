@@ -11,7 +11,7 @@
           "type": "string",
           "default": null,
           "required": false,
-          "description": "The value of the checked radio. Pass it with `onValueChange` to control the group."
+          "description": "The value of the checked radio. Pass it with `onValueChange` to control the group. It may be read from an answer that is loading or guessed over (`value={setting}`); one that fails is left to the app's `errored` region."
         },
         {
           "name": "defaultValue",
@@ -25,21 +25,21 @@
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": "Called with the radio's value when the user checks another radio, and once when a form reset returns an uncontrolled group to its default (not when the reset clears a group that has none)."
+          "description": "Called with the radio's value when the user checks another radio, and once when a form reset returns an uncontrolled group to its default (not when the reset clears a group that has none). It is called in a change of its own, so it may be an action that saves: the radios are never held by it. A controlled group keeps its radio checked until the owner writes the new value, or guesses it."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Disables every radio in the group natively."
+          "description": "Disables every radio in the group natively. A radio disabled while it has focus (`disabled={pending? setting}`) takes focus back when it is enabled again, if focus hasn't moved elsewhere."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "The radios stay focusable and the arrow keys move between them, but none can be checked. Sets `aria-readonly` and `data-readonly`."
+          "description": "The radios stay focusable and the arrow keys move between them, but none can be checked. Sets `aria-readonly` and `data-readonly`. `readOnly={pending? setting}` locks the group while a save is out without losing focus."
         },
         {
           "name": "required",

@@ -8,7 +8,9 @@
 // An <input> can't have children, so RadioRoot renders its children right after the radio: RadioIndicator is the
 // radio's next sibling, styled from it (`input:checked + span`), or the radio draws its own mark (`::before`).
 import { mergeProps, createId, createRef } from "../internal/props.js"
-import { createCheckedInput, createFormReset } from "../internal/field.js"
+import { createFormReset } from "../internal/field.js"
+import { createCheckedInput } from "../internal/checked-input.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { field, fieldGroupProps } from "../field/field.rx"
 import { DivProps, InputProps, SpanProps } from "../internal/types.rx"
 
@@ -22,7 +24,7 @@ export type RadioGroupContext = {
   required: boolean
   // The value the group started with: a radio holding it is `defaultChecked`, what a form reset restores.
   initialValue: string | undefined
-  // Counts the browser's changes, so every radio is set back to the state after each one (createCheckedInput).
+  // Counts form resets, so every radio is set back to the state after one (createCheckedInput).
   revision: number
   select: (value: string) => void
   setInput: (element: HTMLInputElement) => void
@@ -51,32 +53,47 @@ export component RadioGroup(props: RadioGroupProps) {
   source revision := 0
   // A radio of the group, for the form it is in: the group answers a reset for all its radios.
   source anyRadio: HTMLInputElement | undefined := undefined
-  current = props.value ?? uncontrolled
+  // `value` and `disabled` are often read from an answer that can fail (`value={saved}` with
+  // `saved = await load()`): a failure there is the app's to show, in its `errored` region, not the group's.
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  current = givenValue ?? uncontrolled
   // The value a form reset puts back: each radio's `defaultChecked` is whether it holds this one.
   initialValue = peek(current)
-  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+  isDisabled = givenDisabled || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
   generatedName = createId("radio-group")
+  // A plain value, so the context below isn't rebuilt each time the field's context is.
+  groupName = props.name ?? f?.name ?? generatedName
 
   effect (current) { if (f) { f.setValue($0) } }
   _reset = createFormReset(anyRadio, reset)
 
-  // The browser has already checked the radio: report that, and let the state decide what is checked.
+  // The owner's handler is called in a change of its own (`onFlush`), never in the one that updates the group: a
+  // handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the radios would be held with it, showing the browser's choice whatever the owner decided.
+  action notify(value: string) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(value) })
+    }
+  }
+  // The browser has already checked the radio: report that, and let the state decide what is checked. The radios
+  // are set back to the state once the owner's change has run too (createCheckedInput).
   action select(value: string) {
-    revision := revision + 1
     if (isDisabled || isReadOnly || value == current) { return }
     uncontrolled := value
-    if (props.onValueChange) { props.onValueChange(value) }
+    notify(value)
   }
   // The browser has put every radio back to `defaultChecked`. Uncontrolled, the default is the new value, reported
   // once if it changed; controlled, the owner's value is written back over it.
   action reset() {
     revision := revision + 1
-    let next = props.value ?? initialValue
-    if (props.value == undefined && next != uncontrolled) {
+    let next = givenValue ?? initialValue
+    if (givenValue == undefined && next != uncontrolled) {
       uncontrolled := next
-      if (props.onValueChange && next != undefined) { props.onValueChange(next) }
+      if (next != undefined) { notify(next) }
     }
     if (f) { f.reset(next) }
   }
@@ -87,7 +104,7 @@ export component RadioGroup(props: RadioGroupProps) {
 
   provide radioGroup = {
     value: current,
-    name: props.name ?? f?.name ?? generatedName,
+    name: groupName,
     disabled: isDisabled,
     readOnly: isReadOnly,
     required: isRequired,
@@ -132,18 +149,29 @@ export type RadioRootProps = {
 export component RadioRoot(props: RadioRootProps) {
   g = use radioGroup
   source element: HTMLInputElement | undefined := undefined
+  // The group's context is a new object whenever its value changes. Each radio reads it into plain values first,
+  // so its own objects (`self`, `own`) are rebuilt only when something about this radio changed, not for every
+  // radio on every choice.
+  isChecked = g.value == props.value
+  isDisabled = g.disabled || (props.disabled ?? false)
+  isReadOnly = g.readOnly || (props.readOnly ?? false)
+  isRequired = g.required
+  groupName = g.name
+  isDefault = g.initialValue == props.value
   self = {
-    checked: g.value == props.value,
-    disabled: g.disabled || (props.disabled ?? false),
-    readOnly: g.readOnly || (props.readOnly ?? false),
-    required: g.required,
+    checked: isChecked,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
   }
-  _input = createCheckedInput(element, self.checked, false, g.revision)
+  _input = createCheckedInput(element, isChecked, false, g.revision)
+  // Disabled while it had focus (`disabled={pending? setting}`), it takes focus back when re-enabled.
+  _focus = createFocusKeeper(element, isDisabled)
 
   action change() { g.select(props.value) }
   // Cancelling the click keeps the radios as they were: the browser restores them and fires no change. The arrow
   // keys dispatch a click too (in all three engines), so focus still moves through a read-only group.
-  action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
+  action click(event: MouseEvent) { if (isReadOnly) { event.preventDefault() } }
   action writeElement(input: HTMLInputElement) {
     element := input
     g.setInput(input)
@@ -155,12 +183,12 @@ export component RadioRoot(props: RadioRootProps) {
   { value, disabled, readOnly, children, ...rest } = props
   own = {
     type: "radio",
-    name: g.name,
+    name: groupName,
     value: value,
-    defaultChecked: g.initialValue == value,
-    disabled: self.disabled ? true : undefined,
-    required: self.required ? true : undefined,
-    "data-readonly": self.readOnly ? "" : undefined,
+    defaultChecked: isDefault,
+    disabled: isDisabled ? true : undefined,
+    required: isRequired ? true : undefined,
+    "data-readonly": isReadOnly ? "" : undefined,
     ref: setElement,
     onChange: change,
     onClick: click,

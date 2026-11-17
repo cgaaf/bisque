@@ -1,0 +1,3 @@
+// How .rx may use ./checked-input.js (implemented in ./impl/checked-input.ts): the state of a native checkbox or
+// radio. One declaration per line: scripts/gen-dts.mjs turns this file into ./checked-input.d.ts.
+export pure fn createCheckedInput(ref element: HTMLInputElement | undefined, ref checked: boolean, ref indeterminate: boolean, ref revision: number) instantiates

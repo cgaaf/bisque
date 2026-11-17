@@ -1,0 +1,74 @@
+.ButtonRequest {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+
+  .Button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 7.5rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    background: light-dark(#18181b, #f4f4f5);
+    color: light-dark(#fff, #18181b);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Button:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 2px;
+  }
+
+  /* Disabled with focusableWhenDisabled: `aria-disabled` instead of `disabled`, so focus stays on it. */
+  .Button[data-disabled] {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  .Spinner {
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: button-request-spin 700ms linear infinite;
+  }
+
+  .State {
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff8a80);
+  }
+
+  .Drop {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Drop:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}
+
+@keyframes button-request-spin {
+  to {
+    rotate: 1turn;
+  }
+}

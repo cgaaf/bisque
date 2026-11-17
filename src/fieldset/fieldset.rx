@@ -1,7 +1,8 @@
 // A native <fieldset> named by its native <legend>. The browser provides the group role, the name (from the
 // fieldset's first <legend> child), and disabling: a disabled fieldset disables every form control inside it, and
 // `:disabled` matches the fieldset and those controls. This family tells the Fields inside that they are disabled.
-import { mergeProps } from "../internal/props.js"
+import { mergeProps, createRef } from "../internal/props.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { FieldsetProps, LegendProps } from "../internal/types.rx"
 
 // Read optionally: a Field inside a disabled fieldset is disabled.
@@ -17,12 +18,19 @@ export type FieldsetRootProps = {
 } & FieldsetProps
 
 export component FieldsetRoot(props: FieldsetRootProps) {
-  isDisabled = props.disabled ?? false
+  source element: HTMLElement | undefined := undefined
+  // Often `disabled={pending? save}`, or read from an answer that can fail: a failure there is the app's to show.
+  isDisabled = (props.disabled ?? false) catch (e) => false
+  // Disabled while a control inside had focus (a section locked while its save is out), that control takes focus
+  // back when the fieldset is enabled again.
+  _focus = createFocusKeeper(element, isDisabled)
+  action writeElement(fieldset: HTMLElement) { element := fieldset }
+  setElement = createRef(writeElement)
 
   provide fieldset = { disabled: isDisabled }
 
   { disabled, children, ...rest } = props
-  merged = mergeProps({ disabled: isDisabled ? true : undefined }, rest)
+  merged = mergeProps({ disabled: isDisabled ? true : undefined, ref: setElement }, rest)
   <fieldset {...merged}>{children}</fieldset>
 }
 

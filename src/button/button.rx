@@ -1,4 +1,5 @@
-import { mergeProps } from "../internal/props.js"
+import { mergeProps, createRef } from "../internal/props.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { clickElement } from "../internal/dom.js"
 import { ButtonProps, PartProps } from "../internal/types.rx"
 
@@ -21,6 +22,12 @@ export fn button(ref o: ButtonOptions): PartProps {
   focusable = o.focusableWhenDisabled ?? false
   native = o.native ?? true
   composite = o.composite ?? false
+  source element: HTMLElement | undefined := undefined
+  action writeElement(el: HTMLElement) { element := el }
+  setElement = createRef(writeElement)
+  // A native button disabled while it has focus (`disabled={pending? request}`) loses it; it takes focus back when
+  // re-enabled, if focus hasn't moved elsewhere.
+  _focus = createFocusKeeper(element, native && disabled && !focusable)
 
   action click(event: MouseEvent) {
     if (disabled) { event.preventDefault() }
@@ -60,6 +67,7 @@ export fn button(ref o: ButtonOptions): PartProps {
     onPointerDown: pointerDown,
     onKeyDown: keyDown,
     onKeyUp: keyUp,
+    ref: setElement,
   }
 }
 

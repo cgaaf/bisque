@@ -1,0 +1,110 @@
+import { Toggle } from "../toggle.rx"
+import { ToggleGroup } from "../../toggle-group/toggle-group.rx"
+import { ToolbarRoot } from "../../toolbar/toolbar.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Toggles whose change is saved to a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  bold = await load("bold", false) -> false
+  source boldError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source italic: boolean := false
+  // The plainest optimistic save: guess, save, write the value.
+  source plain: boolean = false
+  // Optimistic, and disabled while its save is out.
+  pin = await load("pin", false) -> false
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted: boolean := false
+  preview = await load(wanted ? "preview-on" : "preview-off", wanted) -> false
+  // A group whose value saves.
+  align = await load("align", ["left"]) -> ["left"]
+  // An uncontrolled group whose handler writes what a loading question reads.
+  source view := "list"
+  layout = await load(`layout-${view}`, view) -> "list"
+  // A toggle in a toolbar whose state saves.
+  wrap = await load("wrap", false) -> false
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <Toggle pressed={bold} onPressedChange={(next) => {
+      guess bold := next
+      onFlush(() => { boldError := "" })
+      affects bold
+      try {
+        await save("bold", next)
+        refresh bold
+      } catch (e) {
+        boldError := "failed"
+      }
+    }}>Bold</Toggle>
+    <output data-testid="bold">{bold ? "on" : "off"}</output>
+    <output data-testid="bold-saving">{pending? bold ? "saving" : ""}</output>
+    <output data-testid="bold-error">{boldError}</output>
+
+    <Toggle pressed={italic} onPressedChange={(next) => {
+      try {
+        await save("italic", next)
+        italic := next
+      } catch (e) {
+      }
+    }}>Italic</Toggle>
+
+    <Toggle pressed={plain} onPressedChange={(next) => {
+      guess plain := next
+      try {
+        await save("plain", next)
+        plain := next
+      } catch (e) {
+      }
+    }}>Plain</Toggle>
+
+    <Toggle pressed={pin} disabled={pending? pin} onPressedChange={(next) => {
+      guess pin := next
+      affects pin
+      try {
+        await save("pin", next)
+        refresh pin
+      } catch (e) {
+      }
+    }}>Pin</Toggle>
+
+    <Toggle onPressedChange={(next) => { wanted := next }}>Preview</Toggle>
+    <output data-testid="preview">{preview ? "on" : "off"}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+
+    <ToggleGroup aria-label="Alignment" value={align} onValueChange={(next) => {
+      guess align := next
+      affects align
+      try {
+        await save("align", next)
+        refresh align
+      } catch (e) {
+      }
+    }}>
+      <Toggle value="left">Left</Toggle>
+      <Toggle value="center">Center</Toggle>
+      <Toggle value="right">Right</Toggle>
+    </ToggleGroup>
+    <output data-testid="align">{align.join(",")}</output>
+
+    <ToggleGroup aria-label="View" defaultValue={["list"]} onValueChange={(next) => { view := next.join(",") }}>
+      <Toggle value="list">List</Toggle>
+      <Toggle value="grid">Grid</Toggle>
+    </ToggleGroup>
+    <output data-testid="layout">{layout}</output>
+    <output data-testid="laying-out">{pending? layout ? "loading" : ""}</output>
+
+    <ToolbarRoot aria-label="Format">
+      <Toggle pressed={wrap} onPressedChange={(next) => {
+        guess wrap := next
+        affects wrap
+        try {
+          await save("wrap", next)
+          refresh wrap
+        } catch (e) {
+        }
+      }}>Wrap</Toggle>
+    </ToolbarRoot>
+    }}
+  </div>
+}

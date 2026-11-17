@@ -1,0 +1,32 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../../../src/radio/radio.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+export component RadioSaving() {
+  // What the server holds. `-> "comfortable"` is shown until the first answer.
+  density = await loadSetting("density", "comfortable") -> "comfortable"
+  source failure := ""
+  <div class="RadioSaving">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      <div class="Caption" id="radio-saving-caption">Density</div>
+      <RadioGroup class="Group" aria-labelledby="radio-saving-caption" value={density} onValueChange={(next) => {
+        // Shows at once; goes back by itself if the save fails.
+        guess density := next
+        onFlush(() => { failure := "" })
+        affects density
+        try {
+          await saveSetting("density", next)
+          // Ask the server again: with saves crossing, what it holds is what shows.
+          refresh density
+        } catch (error) {
+          failure := messageOf(error)
+        }
+      }}>
+        <label class="Item"><RadioRoot class="Radio" value="compact"><RadioIndicator class="Indicator" /></RadioRoot>Compact</label>
+        <label class="Item"><RadioRoot class="Radio" value="comfortable"><RadioIndicator class="Indicator" /></RadioRoot>Comfortable</label>
+        <label class="Item"><RadioRoot class="Radio" value="spacious"><RadioIndicator class="Indicator" /></RadioRoot>Spacious</label>
+      </RadioGroup>
+      <span class="Status" aria-live="polite">{pending? density ? "Saving…" : failure}</span>
+    }}
+    <button type="button" class="Drop" onClick={() => { dropNetwork() }}>Drop the network for 3 seconds</button>
+  </div>
+}

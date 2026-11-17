@@ -1,0 +1,104 @@
+.RadioSaving {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+
+  .Caption {
+    margin-bottom: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .Group {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .Item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.625rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  .Item:has(:disabled) {
+    color: light-dark(#8e8e99, #6e6e7a);
+    cursor: not-allowed;
+  }
+
+  /* Each radio is a native <input type="radio">: `appearance: none` removes the browser's circle. */
+  .Radio {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border: 1px solid light-dark(#c4c4cc, #4a4a54);
+    border-radius: 50%;
+    background: light-dark(#fff, #16161a);
+    cursor: inherit;
+    transition: background-color 120ms;
+  }
+
+  .Radio:checked {
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Radio:disabled {
+    border-color: light-dark(#e4e4e8, #2c2c33);
+    background: light-dark(#f2f2f5, #1c1c21);
+  }
+
+  .Radio:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  /* The indicator is the radio's next sibling, drawn over it: a dot that grows in when checked. */
+  .Indicator {
+    grid-area: 1 / 1;
+    place-self: center;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: light-dark(#fff, #17171a);
+    pointer-events: none;
+    scale: 0;
+    transition: scale 120ms;
+  }
+
+  .Radio:checked + .Indicator {
+    scale: 1;
+  }
+
+  /* "Saving…" while the save is out, the failure once the choice has gone back. */
+  .Status {
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff8a80);
+  }
+
+  .Drop {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Drop:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}

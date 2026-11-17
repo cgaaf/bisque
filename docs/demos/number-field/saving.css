@@ -1,0 +1,96 @@
+.NumberFieldSaving {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+
+  .Field {
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    gap: 0.375rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Group {
+    display: flex;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    overflow: hidden;
+  }
+
+  .Group:has(.Input:focus-visible) {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Input {
+    width: 6rem;
+    height: 2.5rem;
+    padding: 0 0.5rem;
+    border: 0;
+    border-inline: 1px solid light-dark(#d4d4dc, #3a3a43);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    outline: none;
+  }
+
+  /* The steppers are left out of the tab order: the arrow keys step from the input. */
+  .Stepper {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .Stepper:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  /* A stepper is disabled at its bound. */
+  .Stepper:disabled {
+    color: light-dark(#b4b4be, #4a4a55);
+    background: transparent;
+    cursor: default;
+  }
+
+  /* "Saving…" while the save is out, the failure once the value has gone back. Keeps its line either way. */
+  .Status {
+    min-height: 1.25em;
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    margin: 0;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff8a80);
+  }
+
+  .Drop {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Drop:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}

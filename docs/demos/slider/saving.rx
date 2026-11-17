@@ -1,0 +1,38 @@
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../../../src/slider/slider.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+export component SliderSaving() {
+  // What the server holds. `-> 40` is shown until the first answer.
+  volume = await loadSetting("volume", 40) -> 40
+  source failure := ""
+  <div class="SliderSaving">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      <SliderRoot class="Slider" value={volume} onValueCommitted={(next) => {
+        // Only what is committed is saved: a release, or a key. The thumb follows the drag on its own.
+        guess volume := next
+        onFlush(() => { failure := "" })
+        affects volume
+        try {
+          await saveSetting("volume", next)
+          // Ask the server again: with saves crossing, what it holds is what shows.
+          refresh volume
+        } catch (error) {
+          failure := messageOf(error)
+        }
+      }}>
+        <div class="Header">
+          <span class="Label">Volume</span>
+          <SliderValue class="Value" />
+        </div>
+        <SliderControl class="Control">
+          <SliderTrack class="Track">
+            <SliderIndicator class="Indicator" />
+            <SliderThumb class="Thumb" aria-label="Volume" />
+          </SliderTrack>
+        </SliderControl>
+      </SliderRoot>
+      <p class="Status" aria-live="polite">{pending? volume ? "Saving…" : failure}</p>
+    }}
+    <button type="button" class="Drop" onClick={() => { dropNetwork() }}>Drop the network for 3 seconds</button>
+  </div>
+}

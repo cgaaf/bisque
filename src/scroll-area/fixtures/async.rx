@@ -1,0 +1,21 @@
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb } from "../scroll-area.rx"
+import { load } from "../../test/settings-server.js"
+
+// A scroll area whose content comes from a server (../../test/settings-server.ts): empty until the answer lands.
+export default component Fixture() {
+  rows = await load("rows", []) -> []
+  <ScrollAreaRoot data-testid="root" style="height: 100px; width: 200px">
+    <ScrollAreaViewport data-testid="viewport" style="height: 100%">
+      <ScrollAreaContent>
+        {errored fallback(e) { <p>{e.message}</p> } {
+          {for row in rows {
+            <p style="margin: 0; height: 20px">{row}</p>
+          }}
+        }}
+      </ScrollAreaContent>
+    </ScrollAreaViewport>
+    <ScrollAreaScrollbar data-testid="scrollbar">
+      <ScrollAreaThumb data-testid="thumb" />
+    </ScrollAreaScrollbar>
+  </ScrollAreaRoot>
+}

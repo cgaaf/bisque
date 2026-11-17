@@ -7,7 +7,9 @@
 // any element of the consumer's, is the box's next sibling and is styled from it (`input:checked + span`), or the
 // box draws its own mark (`input:checked::before`).
 import { mergeProps, createRef } from "../internal/props.js"
-import { createCheckedInput, createFormReset } from "../internal/field.js"
+import { createFormReset } from "../internal/field.js"
+import { createCheckedInput } from "../internal/checked-input.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
 import { field, fieldInputProps } from "../field/field.rx"
 import { checkboxGroup } from "../checkbox-group/checkbox-group.rx"
 import { InputProps, SpanProps } from "../internal/types.rx"
@@ -48,7 +50,7 @@ export component CheckboxRoot(props: CheckboxRootProps) {
   f = use field
   group = use checkboxGroup
   source uncontrolled := peek(props.defaultChecked ?? false)
-  // Counts the browser's changes, so the box is set back to the state after each one (createCheckedInput).
+  // Counts form resets, so the box is set back to the state after one (createCheckedInput).
   source revision := 0
   source element: HTMLInputElement | undefined := undefined
   isParent = group != undefined && (props.parent ?? false)
@@ -56,13 +58,24 @@ export component CheckboxRoot(props: CheckboxRootProps) {
   inGroup = group != undefined && !isParent && props.value != undefined
   groupValue = group?.value ?? []
   groupAll = group?.allValues ?? []
-  isChecked = isParent ? groupAll.length > 0 && groupValue.length == groupAll.length : inGroup ? groupValue.includes(props.value ?? "") : props.checked ?? uncontrolled
+  // `checked`, `indeterminate` and `disabled` are often read from an answer that can fail (`checked={setting}` with
+  // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the box's.
+  givenChecked = props.checked catch (e) => undefined
+  givenIndeterminate = (props.indeterminate ?? false) catch (e) => false
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  isChecked = isParent ? groupAll.length > 0 && groupValue.length == groupAll.length : inGroup ? groupValue.includes(props.value ?? "") : givenChecked ?? uncontrolled
+  // Plain values first, then the objects built from them: a group's context is a new object on every change, and
+  // a box's own objects (`self`, `own`) should be rebuilt only when something about this box changed.
+  isIndeterminate = isParent ? groupValue.length > 0 && groupValue.length < groupAll.length : givenIndeterminate
+  isDisabled = givenDisabled || (f?.disabled ?? false) || (group?.disabled ?? false)
+  isReadOnly = props.readOnly ?? false
+  isRequired = props.required ?? false
   self = {
     checked: isChecked,
-    indeterminate: isParent ? groupValue.length > 0 && groupValue.length < groupAll.length : props.indeterminate ?? false,
-    disabled: (props.disabled ?? false) || (f?.disabled ?? false) || (group?.disabled ?? false),
-    readOnly: props.readOnly ?? false,
-    required: props.required ?? false,
+    indeterminate: isIndeterminate,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
   }
   fieldOf = group == undefined ? f : undefined
   inputName = isParent ? undefined : props.name ?? f?.name
@@ -70,14 +83,26 @@ export component CheckboxRoot(props: CheckboxRootProps) {
   initialChecked = peek(isChecked)
 
   effect (isChecked) { if (fieldOf) { fieldOf.setValue($0) } }
-  _input = createCheckedInput(element, isChecked, self.indeterminate, revision + (group?.revision ?? 0))
+  _input = createCheckedInput(element, isChecked, isIndeterminate, revision + (group?.revision ?? 0))
   // Inside a group, the group answers a reset for all its boxes.
   _reset = createFormReset(group == undefined ? element : undefined, reset)
+  // Disabled while it had focus (`disabled={pending? setting}`), it takes focus back when re-enabled.
+  _focus = createFocusKeeper(element, isDisabled)
 
-  // The browser has already toggled the box: report that, and let the state decide what it shows.
+  // The owner's handler is called in a change of its own (`onFlush`), never in the one that updates this box: a
+  // handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the box would be held with it, showing the browser's toggle whatever the owner decided.
+  action notify(next: boolean) {
+    if (props.onCheckedChange) {
+      let report = props.onCheckedChange
+      onFlush(() => { report(next) })
+    }
+  }
+
+  // The browser has already toggled the box: report that, and let the state decide what it shows. The box is set
+  // back to the state once the owner's change has run too (createCheckedInput).
   action change(event: Event & { currentTarget: HTMLInputElement }) {
     let next = event.currentTarget.checked
-    revision := revision + 1
     if (isParent && group) {
       group.pressParent()
     } else if (inGroup && group) {
@@ -85,21 +110,21 @@ export component CheckboxRoot(props: CheckboxRootProps) {
     } else {
       uncontrolled := next
     }
-    if (props.onCheckedChange) { props.onCheckedChange(next) }
+    notify(next)
   }
   // The browser has put the box back to `defaultChecked`. Uncontrolled, that is the new state, reported once if it
   // changed; controlled, the owner's state is written back over it.
   action reset() {
     revision := revision + 1
-    let next = props.checked ?? initialChecked
-    if (props.checked == undefined && next != uncontrolled) {
+    let next = givenChecked ?? initialChecked
+    if (givenChecked == undefined && next != uncontrolled) {
       uncontrolled := next
-      if (props.onCheckedChange) { props.onCheckedChange(next) }
+      notify(next)
     }
     if (fieldOf) { fieldOf.reset(next) }
   }
   // Cancelling the click is what keeps a native box unchanged: the browser restores it and fires no change.
-  action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
+  action click(event: MouseEvent) { if (isReadOnly) { event.preventDefault() } }
   action writeElement(input: HTMLInputElement) {
     element := input
     if (fieldOf) { fieldOf.setInput(input) }
@@ -115,10 +140,10 @@ export component CheckboxRoot(props: CheckboxRootProps) {
     name: inputName,
     value: value,
     defaultChecked: initialChecked,
-    disabled: self.disabled ? true : undefined,
-    required: self.required ? true : undefined,
-    "aria-readonly": self.readOnly ? "true" : undefined,
-    "data-readonly": self.readOnly ? "" : undefined,
+    disabled: isDisabled ? true : undefined,
+    required: isRequired ? true : undefined,
+    "aria-readonly": isReadOnly ? "true" : undefined,
+    "data-readonly": isReadOnly ? "" : undefined,
     "data-parent": isParent ? "" : undefined,
     ref: setElement,
     onChange: change,
