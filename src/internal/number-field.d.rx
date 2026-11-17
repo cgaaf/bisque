@@ -1,0 +1,14 @@
+// How .rx may use ./number-field.js (implemented in ./impl/number-field.ts): the number field's parsing,
+// formatting and stepping, press-and-hold and scrubbing. A `ref` parameter is passed live; the others are read
+// once. Bind every call. The press-and-hold's functions are io (call them from an action); the scrub state is an
+// object whose fields track.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./number-field.d.ts.
+export pure fn formatNumberValue(value: number | null | undefined, locale: string | string[] | undefined, format: Intl.NumberFormatOptions | undefined): string
+export pure fn parseNumberText(text: string, locale: string | string[] | undefined, format: Intl.NumberFormatOptions | undefined): number | null
+export pure fn isNumberText(text: string, locale: string | string[] | undefined, format: Intl.NumberFormatOptions | undefined, allowNegative: boolean): boolean
+export pure fn validateNumber(value: number | null, step: number | undefined, min: number | undefined, max: number | undefined, format: Intl.NumberFormatOptions | undefined, snapOnStep: boolean, small: boolean, clamp: boolean): number | null
+export fn isFocused(element: HTMLElement | undefined): boolean
+export fn focusInputEnd(element: HTMLInputElement | undefined): void
+export fn restoreInputText(element: HTMLInputElement, text: string): void
+export pure fn createPressAndHold(ref disabled: boolean, tick: (event: MouseEvent) => void, onStop: (event: PointerEvent) => void): { press: (event: PointerEvent) => void; release: (event: PointerEvent) => void; move: (event: PointerEvent) => void; enter: (event: MouseEvent) => void; leave: () => void; skipClick: (event: MouseEvent) => boolean }
+export pure fn createScrub(ref area: HTMLElement | undefined, ref cursor: HTMLElement | undefined, ref options: { enabled: boolean; direction: "horizontal" | "vertical"; pixelSensitivity: number; teleportDistance: number | undefined }, onScrubbing: (scrubbing: boolean) => void, onStep: (delta: number, event: PointerEvent) => void, onEnd: (event: PointerEvent) => void): { scrubbing: boolean; x: number; y: number; cursor: boolean }

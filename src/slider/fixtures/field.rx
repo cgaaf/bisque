@@ -1,0 +1,25 @@
+import { SliderRoot, SliderControl, SliderThumb } from "../slider.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `brightness=${values.brightness}` }}>
+    <FieldRoot name="brightness" validate={(value) => value == 20 || value == 30 || value == 40 ? "Too dim" : null}>
+      <FieldLabel data-testid="label">Brightness</FieldLabel>
+      <SliderRoot data-testid="slider-root" defaultValue={20}>
+        <SliderControl><SliderThumb /></SliderControl>
+      </SliderRoot>
+      <FieldDescription data-testid="description">How bright the screen is.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <SliderRoot defaultValue={5}>
+        <SliderControl><SliderThumb /></SliderControl>
+      </SliderRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

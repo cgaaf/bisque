@@ -1,0 +1,26 @@
+import { NumberFieldRoot, NumberFieldGroup, NumberFieldInput, NumberFieldIncrement } from "../number-field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `age=${values.age}` }}>
+    <FieldRoot name="age">
+      <FieldLabel>Age</FieldLabel>
+      <NumberFieldRoot data-testid="number-root" required min={0}>
+        <NumberFieldGroup>
+          <NumberFieldInput />
+          <NumberFieldIncrement data-testid="increment" />
+        </NumberFieldGroup>
+      </NumberFieldRoot>
+      <FieldDescription data-testid="description">In years.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <NumberFieldRoot defaultValue={1}><NumberFieldInput /></NumberFieldRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

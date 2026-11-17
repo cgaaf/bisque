@@ -1,0 +1,25 @@
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../src/slider/slider.rx"
+
+export component SliderDemo() {
+  <div>
+    <SliderRoot defaultValue={40}>
+      <SliderValue />
+      <SliderControl style={{ padding: "8px 0", width: "200px" }}>
+        <SliderTrack style={{ height: "4px", background: "#ddd" }}>
+          <SliderIndicator style={{ background: "#36c" }} />
+          <SliderThumb aria-label="Volume" style={{ width: "14px", height: "14px", "border-radius": "50%", background: "#36c" }} />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+    <SliderRoot defaultValue={[20, 70]} minStepsBetweenValues={5} format={{ style: "currency", currency: "USD", maximumFractionDigits: 0 }}>
+      <SliderValue />
+      <SliderControl style={{ padding: "8px 0", width: "200px" }}>
+        <SliderTrack style={{ height: "4px", background: "#ddd" }}>
+          <SliderIndicator style={{ background: "#36c" }} />
+          <SliderThumb index={0} aria-label="Minimum price" style={{ width: "14px", height: "14px", "border-radius": "50%", background: "#36c" }} />
+          <SliderThumb index={1} aria-label="Maximum price" style={{ width: "14px", height: "14px", "border-radius": "50%", background: "#36c" }} />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+  </div>
+}

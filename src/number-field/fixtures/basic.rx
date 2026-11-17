@@ -1,0 +1,48 @@
+import { NumberFieldRoot, NumberFieldGroup, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement, NumberFieldScrubArea, NumberFieldScrubAreaCursor } from "../number-field.rx"
+
+export default component Fixture() {
+  source changes: string[] := []
+  source commits: string[] := []
+  source controlled: number | null := 5
+  <main>
+    <form data-testid="form">
+      <NumberFieldRoot data-testid="root" name="quantity" defaultValue={5} min={0} max={20} allowWheelScrub onValueChange={(v, d) => { changes := [...changes, `${v}:${d.reason}`] }} onValueCommitted={(v, d) => { commits := [...commits, `${v}:${d.reason}`] }}>
+        <NumberFieldScrubArea data-testid="scrub" pixelSensitivity={4}>
+          <label for="quantity-input">Quantity</label>
+          <NumberFieldScrubAreaCursor data-testid="cursor" />
+        </NumberFieldScrubArea>
+        <NumberFieldGroup data-testid="group">
+          <NumberFieldDecrement data-testid="decrement">−</NumberFieldDecrement>
+          <NumberFieldInput id="quantity-input" />
+          <NumberFieldIncrement data-testid="increment">+</NumberFieldIncrement>
+        </NumberFieldGroup>
+      </NumberFieldRoot>
+      <NumberFieldRoot name="price" defaultValue={1234.5} locale="de-DE" format={{ style: "currency", currency: "EUR" }} step={0.5}>
+        <label for="price-input">Price</label>
+        <NumberFieldInput id="price-input" />
+      </NumberFieldRoot>
+      <NumberFieldRoot name="ratio" defaultValue={0.25} format={{ style: "percent" }} step={0.01} snapOnStep>
+        <label for="ratio-input">Ratio</label>
+        <NumberFieldInput id="ratio-input" />
+      </NumberFieldRoot>
+    </form>
+    <NumberFieldRoot value={controlled} onValueChange={(v) => { controlled := v == null ? null : v > 10 ? 10 : v }}>
+      <label for="controlled-input">Controlled</label>
+      <NumberFieldInput id="controlled-input" />
+      <NumberFieldIncrement data-testid="controlled-increment" />
+    </NumberFieldRoot>
+    <NumberFieldRoot data-testid="disabled" disabled defaultValue={3}>
+      <label for="disabled-input">Disabled</label>
+      <NumberFieldInput id="disabled-input" />
+      <NumberFieldIncrement data-testid="disabled-increment" />
+    </NumberFieldRoot>
+    <NumberFieldRoot data-testid="readonly" readOnly defaultValue={3}>
+      <label for="readonly-input">Read only</label>
+      <NumberFieldInput id="readonly-input" />
+      <NumberFieldIncrement data-testid="readonly-increment" />
+    </NumberFieldRoot>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <output data-testid="commits">{commits.join(" ")}</output>
+    <button>Elsewhere</button>
+  </main>
+}

@@ -1,0 +1,443 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { formatNumberValue, parseNumberText, isNumberText, validateNumber, isFocused, focusInputEnd, restoreInputText, createPressAndHold, createScrub } from "../internal/number-field.js"
+import { field, FieldContext, fieldControlProps, fieldStateAttributes } from "../field/field.rx"
+import { DivProps, InputProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+
+// What changed the value.
+export type NumberFieldChangeReason = "input-change" | "input-clear" | "input-blur" | "keyboard" | "increment-press" | "decrement-press" | "wheel" | "scrub"
+export type NumberFieldChangeDetails = { reason: NumberFieldChangeReason }
+// The key state a step reads: Shift takes the large step, Alt the small one.
+export type StepModifiers = { shiftKey: boolean; altKey: boolean }
+
+export type NumberFieldContext = {
+  // null while the input is empty.
+  value: number | null
+  // What the input shows: the typed text while editing, else the formatted value.
+  inputValue: string
+  editing: boolean
+  min: number | undefined
+  max: number | undefined
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  scrubbing: boolean
+  locale: string | string[] | undefined
+  format: Intl.NumberFormatOptions | undefined
+  allowWheelScrub: boolean
+  // The text input's id: the steppers' `aria-controls` (the field's control id inside a field).
+  inputId: string
+  field: FieldContext | undefined
+  setInput: (element: HTMLInputElement) => void
+  setInputId: (id: string | undefined) => void
+  setScrubbing: (scrubbing: boolean) => void
+  focusInput: () => void
+  // Steps from `base` (or, if null, sets the in-range value nearest 0) by the step `modifiers` pick, `times` times,
+  // in `direction` (1 or -1); commits the change at once when `commitNow`.
+  stepFrom: (base: number | null, direction: number, times: number, modifiers: StepModifiers | undefined, reason: NumberFieldChangeReason, commitNow: boolean) => void
+  // The input's text changed.
+  type: (text: string) => void
+  // The input lost focus: parse what was typed, clamp it and show it formatted.
+  finishEditing: () => void
+  // Sets the value outright (Home and End).
+  jump: (next: number, reason: NumberFieldChangeReason) => void
+  commit: (reason: NumberFieldChangeReason) => void
+}
+
+export context numberField: NumberFieldContext
+
+export type NumberFieldRootProps = {
+  value?: number | null
+  defaultValue?: number | null
+  onValueChange?: (value: number | null, details: NumberFieldChangeDetails) => void
+  // When a change is final: on blur after typing, on each key, wheel turn and stepper click, and on release after
+  // holding a stepper or scrubbing.
+  onValueCommitted?: (value: number | null, details: NumberFieldChangeDetails) => void
+  min?: number
+  max?: number
+  // Arrow keys and the steppers. Default 1.
+  step?: number
+  // With Alt. Default 0.1.
+  smallStep?: number
+  // With Shift. Default 10.
+  largeStep?: number
+  // Snap a step to a multiple of the step from `min` (or 0).
+  snapOnStep?: boolean
+  // Let typed values outside [min, max] stand (steps still clamp); the field is then invalid, natively.
+  allowOutOfRange?: boolean
+  // Turn the wheel over the focused input to step.
+  allowWheelScrub?: boolean
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot), a hidden number input submits the value with the form.
+  name?: string
+  form?: string
+  // How the value is shown, and how typed text is read.
+  format?: Intl.NumberFormatOptions
+  locale?: string | string[]
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue" | "onChange">
+
+// The state attributes every part carries.
+fn numberFieldState(ref c: NumberFieldContext): PartProps {
+  attrs = fieldStateAttributes(c.field?.state)
+  {
+    ...attrs,
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-readonly": c.readOnly ? "" : undefined,
+    "data-required": c.required ? "" : undefined,
+    "data-scrubbing": c.scrubbing ? "" : undefined,
+  }
+}
+
+export component NumberFieldRoot(props: NumberFieldRootProps) {
+  f = use field
+  source uncontrolled: number | null := peek(props.defaultValue ?? null)
+  source draft := ""
+  source editing := false
+  source scrubbing := false
+  source input: HTMLInputElement | undefined := undefined
+  source ownInputId: string | undefined := undefined
+  // Controlled whenever `value` is given, null (empty) included.
+  current = props.value != undefined ? props.value : uncontrolled
+  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+  isReadOnly = props.readOnly ?? false
+  isRequired = props.required ?? false
+  stepSize = props.step ?? 1
+  formatted = formatNumberValue(current, props.locale, props.format)
+  generatedId = createId("number-field-input")
+
+  effect (current) { if (f) { f.setValue($0) } }
+
+  action change(next: number | null, reason: NumberFieldChangeReason) {
+    uncontrolled := next
+    if (props.onValueChange) { props.onValueChange(next, { reason: reason }) }
+  }
+  action commitValue(next: number | null, reason: NumberFieldChangeReason) {
+    if (props.onValueCommitted) { props.onValueCommitted(next, { reason: reason }) }
+  }
+  action commit(reason: NumberFieldChangeReason) { commitValue(current, reason) }
+  action stepFrom(base: number | null, direction: number, times: number, modifiers: StepModifiers | undefined, reason: NumberFieldChangeReason, commitNow: boolean) {
+    if (isDisabled || isReadOnly) { return }
+    let small = modifiers?.altKey ?? false
+    let amount = (small ? props.smallStep ?? 0.1 : modifiers?.shiftKey ? props.largeStep ?? 10 : stepSize) * times
+    let next = base == null ? validateNumber(0, undefined, props.min, props.max, props.format, false, false, true) : validateNumber(base + amount * direction, amount * direction, props.min, props.max, props.format, props.snapOnStep ?? false, small, true)
+    editing := false
+    if (next == current) { return }
+    change(next, reason)
+    if (commitNow) { commitValue(next, reason) }
+  }
+  action jump(next: number, reason: NumberFieldChangeReason) {
+    editing := false
+    if (next == current) { return }
+    change(next, reason)
+    commitValue(next, reason)
+  }
+  action type(text: string) {
+    if (text.trim() == "") {
+      draft := text
+      editing := true
+      if (current != null) { change(null, "input-clear") }
+      return
+    }
+    let allowNegative = (props.min ?? -1) < 0 || (props.allowOutOfRange ?? false)
+    if (!isNumberText(text, props.locale, props.format, allowNegative)) {
+      // Not a number: put back what was there.
+      if (input) { restoreInputText(input, editing ? draft : formatted) }
+      return
+    }
+    draft := text
+    editing := true
+    let parsed = parseNumberText(text, props.locale, props.format)
+    if (parsed == null) { return }
+    let next = validateNumber(parsed, undefined, props.min, props.max, props.format, false, false, !(props.allowOutOfRange ?? false))
+    if (next != current) { change(next, "input-change") }
+  }
+  action finishEditing() {
+    // Tested through a local: narrowing `editing` itself would type the write below as `true` (rx-tsc).
+    let wasEditing = editing
+    if (!wasEditing || isDisabled || isReadOnly) { return }
+    editing := false
+    if (draft.trim() == "") {
+      if (current != null) { change(null, "input-clear") }
+      commitValue(null, "input-clear")
+      return
+    }
+    let parsed = parseNumberText(draft, props.locale, props.format)
+    // Text that isn't a number (a lone separator): show the value again.
+    if (parsed == null) { return }
+    let next = validateNumber(parsed, undefined, props.min, props.max, props.format, false, false, !(props.allowOutOfRange ?? false))
+    if (next != current) { change(next, "input-blur") }
+    commitValue(next, "input-blur")
+  }
+  action setInput(element: HTMLInputElement) { input := element }
+  action setInputId(id: string | undefined) { ownInputId := id }
+  action setScrubbing(next: boolean) { scrubbing := next }
+  action focusInput() { focusInputEnd(input) }
+  action setHiddenInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+
+  self = {
+    value: current,
+    inputValue: editing ? draft : formatted,
+    editing: editing,
+    min: props.min,
+    max: props.max,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    scrubbing: scrubbing,
+    locale: props.locale,
+    format: props.format,
+    allowWheelScrub: props.allowWheelScrub ?? false,
+    inputId: ownInputId ?? (f ? f.controlId : generatedId),
+    field: f,
+    setInput: setInput,
+    setInputId: setInputId,
+    setScrubbing: setScrubbing,
+    focusInput: focusInput,
+    stepFrom: stepFrom,
+    type: type,
+    finishEditing: finishEditing,
+    jump: jump,
+    commit: commit,
+  }
+
+  provide numberField = self
+
+  { value, defaultValue, onValueChange, onValueCommitted, min, max, step, smallStep, largeStep, snapOnStep, allowOutOfRange, allowWheelScrub, disabled, readOnly, required, name, form, format, locale, children, ...rest } = props
+  inputName = name ?? f?.name
+  state = numberFieldState(self)
+  merged = mergeProps(state, rest)
+  <div {...merged}>{children}</div>
+  {if inputName != undefined || f != undefined {
+    <input type="number" hidden aria-hidden="true" tabindex="-1" name={inputName} form={form} min={min} max={max} step="any" value={current == null ? "" : `${current}`} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setHiddenInput} />
+  }}
+}
+
+// Groups the input and the steppers.
+export fn numberFieldGroup(ref c: NumberFieldContext): PartProps {
+  state = numberFieldState(c)
+  { ...state, role: "group" }
+}
+
+export component NumberFieldGroup({ children, ...rest }: DivProps) {
+  c = use numberField
+  own = numberFieldGroup(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// What a step from the input starts from: the typed text while editing, else the value.
+fn stepBase(ref c: NumberFieldContext): number | null => c.editing ? parseNumberText(c.inputValue, c.locale, c.format) ?? c.value : c.value
+
+// The text input. Arrow Up/Down step (Shift: large step, Alt: small step), Home/End go to min/max when set,
+// the wheel steps while focused (with `allowWheelScrub`), and blur parses, clamps and formats what was typed.
+export fn numberFieldInput(ref c: NumberFieldContext): PartProps {
+  base = fieldControlProps(c.field)
+  state = numberFieldState(c)
+  start = stepBase(c)
+  action keyDown(event: KeyboardEvent) {
+    if (event.defaultPrevented || c.readOnly || c.disabled) { return }
+    if (event.key == "ArrowUp" || event.key == "ArrowDown") {
+      event.preventDefault()
+      c.stepFrom(start, event.key == "ArrowUp" ? 1 : -1, 1, event, "keyboard", true)
+    } else if (event.key == "Home" && c.min != undefined) {
+      event.preventDefault()
+      c.jump(c.min, "keyboard")
+    } else if (event.key == "End" && c.max != undefined) {
+      event.preventDefault()
+      c.jump(c.max, "keyboard")
+    }
+  }
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    if (c.readOnly || c.disabled) { return }
+    c.type(event.currentTarget.value)
+  }
+  action blur() { c.finishEditing() }
+  action wheel(event: WheelEvent & { currentTarget: HTMLInputElement }) {
+    if (!c.allowWheelScrub || c.disabled || c.readOnly || event.ctrlKey || !isFocused(event.currentTarget)) { return }
+    let horizontal = (event.deltaX < 0 ? -event.deltaX : event.deltaX) > (event.deltaY < 0 ? -event.deltaY : event.deltaY)
+    let delta = event.shiftKey && horizontal ? event.deltaX : event.deltaY
+    if (delta == 0 || (!event.shiftKey && horizontal)) { return }
+    event.preventDefault()
+    c.stepFrom(start, delta > 0 ? -1 : 1, 1, event, "wheel", true)
+  }
+  own = {
+    ...state,
+    id: c.inputId,
+    type: "text",
+    inputmode: "numeric",
+    autocomplete: "off",
+    autocorrect: "off",
+    spellcheck: "false",
+    "aria-roledescription": "Number field",
+    value: c.inputValue,
+    disabled: c.disabled ? true : undefined,
+    readonly: c.readOnly ? true : undefined,
+    required: c.required ? true : undefined,
+    onKeyDown: keyDown,
+    onInput: input,
+    onBlur: blur,
+    onWheel: wheel,
+    ref: c.setInput,
+  }
+  mergeProps(base, own)
+}
+
+export component NumberFieldInput(props: Omit<InputProps, "value" | "type">) {
+  c = use numberField
+  // An id of the consumer's is the one the steppers point at.
+  ownId = props.id ? `${props.id}` : undefined
+  effect (ownId) {
+    c.setInputId($0)
+    return () => { c.setInputId(undefined) }
+  }
+  own = numberFieldInput(c)
+  merged = mergeProps(own, props)
+  <input {...merged} />
+}
+
+// A stepper button: click to step once, hold to repeat. Disabled at its bound. Not in the tab order (the input
+// steps with the arrow keys), but not hidden from touch screen readers.
+export fn numberFieldStepper(ref c: NumberFieldContext, ref direction: number, ref disabled: boolean): PartProps {
+  state = numberFieldState(c)
+  atBound = c.value != null && (direction > 0 ? c.max != undefined && c.value >= c.max : c.min != undefined && c.value <= c.min)
+  isDisabled = disabled || c.disabled || atBound
+  reason: NumberFieldChangeReason = direction > 0 ? "increment-press" : "decrement-press"
+  start = stepBase(c)
+  action tick(event: MouseEvent) {
+    c.stepFrom(c.value, direction, 1, event, reason, false)
+  }
+  action stop(event: PointerEvent) { c.commit(reason) }
+  hold = createPressAndHold(isDisabled || c.readOnly, tick, stop)
+  action down(event: PointerEvent) {
+    if (event.defaultPrevented || event.button != 0 || isDisabled || c.readOnly) { return }
+    if (event.pointerType != "touch" && event.pointerType != "pen") {
+      // Keep focus in the input, so the keyboard can carry on.
+      event.preventDefault()
+      c.focusInput()
+      c.stepFrom(start, direction, 1, event, reason, false)
+    }
+    hold.press(event)
+  }
+  action click(event: MouseEvent) {
+    if (event.defaultPrevented || isDisabled || c.readOnly || hold.skipClick(event)) { return }
+    c.stepFrom(start, direction, 1, event, reason, true)
+  }
+  action up(event: PointerEvent) { hold.release(event) }
+  action move(event: PointerEvent) { hold.move(event) }
+  action enter(event: MouseEvent) { hold.enter(event) }
+  action leave() { hold.leave() }
+  {
+    ...state,
+    type: "button",
+    tabindex: "-1",
+    "aria-label": direction > 0 ? "Increase" : "Decrease",
+    "aria-controls": c.inputId,
+    disabled: isDisabled || c.readOnly ? true : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    style: { "user-select": "none", "-webkit-user-select": "none" },
+    onPointerDown: down,
+    onPointerUp: up,
+    onPointerMove: move,
+    onMouseEnter: enter,
+    onMouseLeave: leave,
+    onClick: click,
+  }
+}
+
+export component NumberFieldIncrement({ disabled = false, children, ...rest }: ButtonProps) {
+  c = use numberField
+  own = numberFieldStepper(c, 1, disabled == true)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export component NumberFieldDecrement({ disabled = false, children, ...rest }: ButtonProps) {
+  c = use numberField
+  own = numberFieldStepper(c, -1, disabled == true)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export type NumberFieldScrubAreaContext = {
+  scrubbing: boolean
+  // Where the virtual cursor is (its top-left corner, in px from the viewport's), and whether it shows.
+  x: number
+  y: number
+  cursor: boolean
+  direction: "horizontal" | "vertical"
+  setCursor: (element: HTMLElement) => void
+}
+
+export context numberFieldScrubArea: NumberFieldScrubAreaContext
+
+export type NumberFieldScrubAreaProps = {
+  // The axis the pointer moves along to scrub. Default "horizontal".
+  direction?: "horizontal" | "vertical"
+  // Px of movement per step. Default 2.
+  pixelSensitivity?: number
+  // How far, in px, the virtual cursor may go from the area before it wraps to the other side. Default: the
+  // viewport's edges.
+  teleportDistance?: number
+  children?: View
+} & Omit<SpanProps, "children">
+
+// Press and drag to change the value: right (or up, vertically) increases it. The pointer is locked while
+// scrubbing; NumberFieldScrubAreaCursor is the cursor shown instead.
+export component NumberFieldScrubArea(props: NumberFieldScrubAreaProps) {
+  c = use numberField
+  source area: HTMLElement | undefined := undefined
+  source cursorElement: HTMLElement | undefined := undefined
+  axis = props.direction ?? "horizontal"
+  action setArea(element: HTMLElement) { area := element }
+  action setCursor(element: HTMLElement) { cursorElement := element }
+  action scrubbingChange(next: boolean) { c.setScrubbing(next) }
+  action step(delta: number, event: PointerEvent) {
+    c.stepFrom(c.value, delta < 0 ? -1 : 1, delta < 0 ? -delta : delta, event, "scrub", false)
+  }
+  action end(event: PointerEvent) { c.commit("scrub") }
+  scrub = createScrub(area, cursorElement, { enabled: !c.disabled && !c.readOnly, direction: axis, pixelSensitivity: props.pixelSensitivity ?? 2, teleportDistance: props.teleportDistance }, scrubbingChange, step, end)
+
+  provide numberFieldScrubArea = {
+    scrubbing: scrub.scrubbing,
+    x: scrub.x,
+    y: scrub.y,
+    cursor: scrub.cursor,
+    direction: axis,
+    setCursor: setCursor,
+  }
+
+  { direction, pixelSensitivity, teleportDistance, children, ...rest } = props
+  state = numberFieldState(c)
+  own = {
+    ...state,
+    role: "presentation",
+    "data-direction": axis,
+    style: { "touch-action": "none", "user-select": "none", "-webkit-user-select": "none" },
+    ref: setArea,
+  }
+  merged = mergeProps(own, rest)
+  <span {...merged}>{children}</span>
+}
+
+// The cursor shown while scrubbing with a mouse (the real one is locked and hidden), rendered into the body and
+// positioned where the virtual pointer is. Give it a size and an icon.
+export component NumberFieldScrubAreaCursor({ children, ...rest }: SpanProps) {
+  c = use numberField
+  s = use numberFieldScrubArea
+  state = numberFieldState(c)
+  own = {
+    ...state,
+    role: "presentation",
+    "data-direction": s.direction,
+    style: { position: "fixed", top: "0", left: "0", "pointer-events": "none", transform: `translate3d(${s.x}px, ${s.y}px, 0)` },
+    ref: s.setCursor,
+  }
+  merged = mergeProps(own, rest)
+  {if s.scrubbing && s.cursor {
+    portal {
+      <span {...merged}>{children}</span>
+    }
+  }}
+}

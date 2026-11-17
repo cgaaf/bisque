@@ -1,0 +1,19 @@
+import { NumberFieldRoot, NumberFieldGroup, NumberFieldInput, NumberFieldIncrement, NumberFieldDecrement, NumberFieldScrubArea, NumberFieldScrubAreaCursor } from "../src/number-field/number-field.rx"
+
+export component NumberFieldDemo() {
+  source amount: number | null := 100
+  <div>
+    <NumberFieldRoot value={amount} onValueChange={(v) => { amount := v }} min={0} max={1000} step={5} format={{ style: "currency", currency: "EUR" }} allowWheelScrub>
+      <NumberFieldScrubArea style={{ cursor: "ew-resize" }}>
+        <label for="demo-amount">Amount</label>
+        <NumberFieldScrubAreaCursor>↔</NumberFieldScrubAreaCursor>
+      </NumberFieldScrubArea>
+      <NumberFieldGroup style={{ display: "flex" }}>
+        <NumberFieldDecrement>−</NumberFieldDecrement>
+        <NumberFieldInput id="demo-amount" />
+        <NumberFieldIncrement>+</NumberFieldIncrement>
+      </NumberFieldGroup>
+    </NumberFieldRoot>
+    <p>Value: {amount == null ? "empty" : `${amount}`}</p>
+  </div>
+}

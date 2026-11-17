@@ -1,0 +1,343 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { isRangeValue, sliderValues, formatSliderValue, valueToPercent, sameValues, hasMinDistance, moveThumb, thumbKeyValue, createSliderPointer } from "../internal/slider.js"
+import { field, FieldContext, fieldControlProps, fieldStateAttributes } from "../field/field.rx"
+import { DivProps, OutputProps, PartProps } from "../internal/types.rx"
+
+export type SliderOrientation = "horizontal" | "vertical"
+// What changed the value: a press on the track, a drag, a key on a thumb, or the thumb's native range input
+// (assistive technology, autofill).
+export type SliderChangeReason = "track-press" | "drag" | "keyboard" | "input-change"
+export type SliderChangeDetails = { reason: SliderChangeReason; activeThumbIndex: number }
+export type SliderCommitDetails = { reason: SliderChangeReason }
+
+export type SliderContext = {
+  // The thumbs' values, clamped and sorted: one entry for a single-value slider.
+  values: number[]
+  // Each value formatted with `format` and `locale`.
+  formatted: string[]
+  // The value is an array (a range with a thumb per entry).
+  range: boolean
+  min: number
+  max: number
+  step: number
+  largeStep: number
+  minStepsBetweenValues: number
+  orientation: SliderOrientation
+  disabled: boolean
+  // A pointer is pressing the control or dragging a thumb.
+  dragging: boolean
+  // The thumb whose input has focus, else -1; and the last one that had it.
+  activeThumb: number
+  lastUsedThumb: number
+  // Thumb `i`'s range input has the id `${inputIdPrefix}-${i}` (thumb 0 takes the field's control id in a field).
+  inputIdPrefix: string
+  name: string | undefined
+  form: string | undefined
+  locale: string | string[] | undefined
+  format: Intl.NumberFormatOptions | undefined
+  // What labels the thumbs' inputs when they have no `aria-label`: the root's `aria-labelledby`, else the field's
+  // label.
+  labelledBy: string | undefined
+  field: FieldContext | undefined
+  setControl: (element: HTMLElement) => void
+  setActiveThumb: (index: number) => void
+  changeThumb: (index: number, value: number, reason: "keyboard" | "input-change") => void
+}
+
+export context slider: SliderContext
+
+export type SliderRootProps = {
+  // A number for one thumb, an array for a range with a thumb per entry.
+  value?: number | number[]
+  defaultValue?: number | number[]
+  // Every change, while dragging too. `value` is a number or an array, as `value`/`defaultValue` is.
+  onValueChange?: (value: number | number[], details: SliderChangeDetails) => void
+  // When a change is final: on pointer release, and on each key press.
+  onValueCommitted?: (value: number | number[], details: SliderCommitDetails) => void
+  // Default 0 and 100.
+  min?: number
+  max?: number
+  // The values are multiples of `step` from `min`. Default 1.
+  step?: number
+  // Page Up/Down and Shift+arrow. Default 10.
+  largeStep?: number
+  // How many steps apart a range's thumbs must stay. Default 0.
+  minStepsBetweenValues?: number
+  orientation?: SliderOrientation
+  disabled?: boolean
+  // With a name (or inside a named FieldRoot), each thumb's range input submits its value with the form.
+  name?: string
+  form?: string
+  // How SliderValue shows the values and the thumbs announce them.
+  format?: Intl.NumberFormatOptions
+  locale?: string | string[]
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue" | "onChange">
+
+// The state attributes every part carries.
+fn sliderState(ref c: SliderContext): PartProps {
+  attrs = fieldStateAttributes(c.field?.state)
+  {
+    ...attrs,
+    "data-orientation": c.orientation,
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-dragging": c.dragging ? "" : undefined,
+  }
+}
+
+export component SliderRoot(props: SliderRootProps) {
+  f = use field
+  source uncontrolled: number | number[] := peek(props.defaultValue ?? props.min ?? 0)
+  source control: HTMLElement | undefined := undefined
+  source dragging := false
+  source activeThumb := -1
+  source lastUsedThumb := -1
+  low = props.min ?? 0
+  high = props.max ?? 100
+  stepSize = props.step ?? 1
+  minSteps = props.minStepsBetweenValues ?? 0
+  current = props.value ?? uncontrolled
+  range = isRangeValue(current)
+  values = sliderValues(current, low, high)
+  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+  axis = props.orientation ?? "horizontal"
+  formatted = values.map((v) => formatSliderValue(v, props.locale, props.format))
+  inputIdPrefix = createId("slider-input")
+  ownLabelledBy = props["aria-labelledby"]
+  labelledBy = ownLabelledBy ? `${ownLabelledBy}` : f?.labelId
+  fieldValue = range ? values : values[0]
+
+  effect (fieldValue) { if (f) { f.setValue($0) } }
+
+  action emit(next: number[], thumb: number, reason: SliderChangeReason) {
+    let value = range ? next : next[0]
+    uncontrolled := value
+    if (props.onValueChange) { props.onValueChange(value, { reason: reason, activeThumbIndex: thumb }) }
+  }
+  action commit(next: number[], reason: SliderChangeReason) {
+    if (props.onValueCommitted) { props.onValueCommitted(range ? next : next[0], { reason: reason }) }
+  }
+  action pointerChange(next: number[], thumb: number, reason: "track-press" | "drag") { emit(next, thumb, reason) }
+  action pointerCommit(next: number[], reason: "track-press" | "drag") { commit(next, reason) }
+  action setDragging(next: boolean) { dragging := next }
+  action changeThumb(index: number, raw: number, reason: "keyboard" | "input-change") {
+    if (isDisabled) { return }
+    let next = moveThumb(values, index, raw, low, high)
+    if (sameValues(next, values) || !hasMinDistance(next, stepSize, minSteps)) { return }
+    emit(next, index, reason)
+    commit(next, reason)
+  }
+  action setActiveThumb(index: number) {
+    activeThumb := index
+    if (index >= 0) { lastUsedThumb := index }
+  }
+  action setControl(element: HTMLElement) { control := element }
+
+  _pointer = createSliderPointer(control, { values: values, min: low, max: high, step: stepSize, minStepsBetweenValues: minSteps, orientation: axis, disabled: isDisabled }, pointerChange, pointerCommit, setDragging)
+
+  self = {
+    values: values,
+    formatted: formatted,
+    range: range,
+    min: low,
+    max: high,
+    step: stepSize,
+    largeStep: props.largeStep ?? 10,
+    minStepsBetweenValues: minSteps,
+    orientation: axis,
+    disabled: isDisabled,
+    dragging: dragging,
+    activeThumb: activeThumb,
+    lastUsedThumb: lastUsedThumb,
+    inputIdPrefix: inputIdPrefix,
+    name: props.name ?? f?.name,
+    form: props.form,
+    locale: props.locale,
+    format: props.format,
+    labelledBy: labelledBy,
+    field: f,
+    setControl: setControl,
+    setActiveThumb: setActiveThumb,
+    changeThumb: changeThumb,
+  }
+
+  provide slider = self
+
+  { value, defaultValue, onValueChange, onValueCommitted, min, max, step, largeStep, minStepsBetweenValues, orientation, disabled, name, form, format, locale, children, ...rest } = props
+  state = sliderState(self)
+  own = {
+    role: "group",
+    "aria-labelledby": f?.labelId,
+    ...state,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The area that takes pointer presses: a press moves the nearest thumb there, then dragging moves it. Thumbs
+// must be inside it.
+export fn sliderControl(ref c: SliderContext): PartProps {
+  state = sliderState(c)
+  { ...state, style: { "touch-action": "none" }, ref: c.setControl }
+}
+
+export component SliderControl({ children, ...rest }: DivProps) {
+  c = use slider
+  own = sliderControl(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The rail the thumbs move along: they and the indicator are positioned within it (`position: relative`).
+export fn sliderTrack(ref c: SliderContext): PartProps {
+  state = sliderState(c)
+  { ...state, style: { position: "relative" } }
+}
+
+export component SliderTrack({ children, ...rest }: DivProps) {
+  c = use slider
+  own = sliderTrack(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The filled part of the track: from the start to the value, or between a range's first and last thumbs.
+export fn sliderIndicator(ref c: SliderContext): PartProps {
+  state = sliderState(c)
+  vertical = c.orientation == "vertical"
+  start = c.range ? valueToPercent(c.values[0], c.min, c.max) : 0
+  end = valueToPercent(c.values[c.values.length - 1], c.min, c.max)
+  {
+    ...state,
+    style: vertical ? { position: "absolute", width: "inherit", bottom: `${start}%`, height: `${end - start}%` } : { position: "relative", height: "inherit", "inset-inline-start": `${start}%`, width: `${end - start}%` },
+  }
+}
+
+export component SliderIndicator({ children, ...rest }: DivProps) {
+  c = use slider
+  own = sliderIndicator(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The values, formatted (a range's joined with " – "), as an <output> for the thumbs' inputs. Not announced
+// while it changes (`aria-live="off"`): the focused thumb announces its own value.
+export fn sliderValue(ref c: SliderContext): PartProps {
+  state = sliderState(c)
+  ids = c.values.map((v, i) => i == 0 && c.field != undefined ? c.field.controlId : `${c.inputIdPrefix}-${i}`)
+  { ...state, "aria-live": "off", for: ids.join(" ") }
+}
+
+export component SliderValue(props: Omit<OutputProps, "children">) {
+  c = use slider
+  own = sliderValue(c)
+  merged = mergeProps(own, props)
+  <output {...merged}>{c.formatted.join(" – ")}</output>
+}
+
+export type SliderThumbProps = {
+  // Which value this thumb shows: 0 for a single-value slider, its position in the array for a range.
+  index?: number
+  disabled?: boolean
+  // Name the thumb's input; for a range, `getAriaLabel(index)` names each thumb.
+  "aria-label"?: string
+  getAriaLabel?: (index: number) => string
+  // The input's announced value, from the formatted value, the value and the thumb's index. Default: the
+  // formatted value with a `format`; for a two-thumb range, "<value> start range" and "<value> end range".
+  getAriaValueText?: (formattedValue: string, value: number, index: number) => string
+  children?: View
+} & Omit<DivProps, "children" | "aria-label">
+
+// The thumb is a positioned <div> around a visually hidden <input type="range">, which is what takes focus,
+// carries the slider ARIA and submits the value. `index` picks the thumb's value.
+export fn sliderThumb(ref c: SliderContext, ref index: number, ref disabled: boolean): PartProps {
+  state = sliderState(c)
+  vertical = c.orientation == "vertical"
+  percent = valueToPercent(c.values[index] ?? c.min, c.min, c.max)
+  // The thumb being dragged or focused stays above its neighbours, then the last one used.
+  layer = c.activeThumb == index ? "2" : c.range && c.lastUsedThumb == index ? "1" : undefined
+  {
+    ...state,
+    "data-rs-ui-slider-thumb": "",
+    "data-index": `${index}`,
+    "data-disabled": disabled || c.disabled ? "" : undefined,
+    style: vertical ? { position: "absolute", bottom: `${percent}%`, left: "50%", translate: "-50% 50%", "z-index": layer } : { position: "absolute", "inset-inline-start": `${percent}%`, top: "50%", translate: "-50% -50%", "z-index": layer },
+  }
+}
+
+fn defaultValueText(ref c: SliderContext, ref index: number): string | undefined {
+  text = c.formatted[index] ?? ""
+  c.values.length == 2 ? `${text} ${index == 0 ? "start" : "end"} range` : c.format != undefined ? text : undefined
+}
+
+// The thumb's range input. Inside a field, thumb 0's input is the field's control (FieldLabel's `for`).
+export fn sliderThumbInput(ref c: SliderContext, ref index: number, ref disabled: boolean, ref label: string | undefined, ref valueText: string | undefined): PartProps {
+  inField = index == 0 ? c.field : undefined
+  base = fieldControlProps(inField)
+  isDisabled = disabled || c.disabled
+  value = c.values[index] ?? c.min
+  fallbackText = defaultValueText(c, index)
+  action keyDown(event: KeyboardEvent) {
+    if (event.defaultPrevented) { return }
+    let next = thumbKeyValue(event.key, event.shiftKey, c.values, index, c.min, c.max, c.step, c.largeStep, c.minStepsBetweenValues)
+    if (next == null) { return }
+    // The native range input would step itself as well.
+    event.preventDefault()
+    c.changeThumb(index, next, "keyboard")
+  }
+  action change(event: Event & { currentTarget: HTMLInputElement }) {
+    c.changeThumb(index, event.currentTarget.valueAsNumber, "input-change")
+  }
+  action focus() {
+    c.setActiveThumb(index)
+    if (index != 0 && c.field) { c.field.setFocused(true) }
+  }
+  action blur() {
+    c.setActiveThumb(-1)
+    if (index != 0 && c.field) { c.field.setFocused(false) }
+  }
+  action setInput(element: HTMLInputElement) { if (inField) { inField.setInput(element) } }
+  own = {
+    type: "range",
+    id: inField ? undefined : `${c.inputIdPrefix}-${index}`,
+    name: c.name,
+    form: c.form,
+    // Before `value`: the browser clamps a value to the min and max it has at the time.
+    min: c.min,
+    max: c.max,
+    step: c.step,
+    value: `${value}`,
+    disabled: isDisabled ? true : undefined,
+    "aria-label": label,
+    "aria-labelledby": label == undefined ? c.labelledBy : undefined,
+    // Thumb 0 has these from the field already (fieldControlProps); the others take them too.
+    "aria-describedby": inField == undefined ? c.field?.describedBy : undefined,
+    "aria-invalid": inField == undefined && c.field?.state.valid == false ? "true" : undefined,
+    "aria-orientation": c.orientation,
+    "aria-valuenow": value,
+    "aria-valuetext": valueText ?? fallbackText,
+    style: { position: "absolute", width: "100%", height: "100%", margin: "-1px", padding: "0", border: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "clip-path": "inset(50%)", "white-space": "nowrap" },
+    onKeyDown: keyDown,
+    onChange: change,
+    onFocus: focus,
+    onBlur: blur,
+    ref: setInput,
+  }
+  mergeProps(base, own)
+}
+
+export component SliderThumb(props: SliderThumbProps) {
+  c = use slider
+  { index = 0, disabled = false, getAriaLabel, getAriaValueText, children, ...others } = props
+  // These belong on the input, which has the slider role, not on the thumb's <div>.
+  rest = { ...others, "aria-label": undefined, "aria-labelledby": undefined, "aria-describedby": undefined, "aria-valuetext": undefined }
+  inputAria = { "aria-labelledby": props["aria-labelledby"], "aria-describedby": props["aria-describedby"] }
+  ownValueText = props["aria-valuetext"]
+  label = getAriaLabel ? getAriaLabel(index) : props["aria-label"]
+  valueText = getAriaValueText ? getAriaValueText(c.formatted[index] ?? "", c.values[index] ?? c.min, index) : ownValueText ? `${ownValueText}` : undefined
+  own = sliderThumb(c, index, disabled)
+  merged = mergeProps(own, rest)
+  ownInput = sliderThumbInput(c, index, disabled, label, valueText)
+  input = mergeProps(ownInput, inputAria)
+  <div {...merged}>{children}<input {...input} /></div>
+}

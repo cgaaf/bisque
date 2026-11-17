@@ -1,0 +1,12 @@
+// How .rx may use ./slider.js (implemented in ./impl/slider.ts): the slider's number work and pointer dragging.
+// A `ref` parameter is passed live; the others are read once. Bind every call: `_drag = createSliderPointer(…)`.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./slider.d.ts.
+export pure fn isRangeValue(value: number | number[] | undefined): boolean
+export pure fn sliderValues(value: number | number[] | undefined, min: number, max: number): number[]
+export pure fn formatSliderValue(value: number, locale: string | string[] | undefined, format: Intl.NumberFormatOptions | undefined): string
+export pure fn valueToPercent(value: number, min: number, max: number): number
+export pure fn sameValues(a: number[], b: number[]): boolean
+export pure fn hasMinDistance(values: number[], step: number, minStepsBetweenValues: number): boolean
+export pure fn moveThumb(values: number[], index: number, value: number, min: number, max: number): number[]
+export pure fn thumbKeyValue(key: string, shift: boolean, values: number[], index: number, min: number, max: number, step: number, largeStep: number, minStepsBetweenValues: number): number | null
+export pure fn createSliderPointer(ref control: HTMLElement | undefined, ref options: { values: number[]; min: number; max: number; step: number; minStepsBetweenValues: number; orientation: "horizontal" | "vertical"; disabled: boolean }, onChange: (values: number[], thumb: number, reason: "track-press" | "drag") => void, onCommit: (values: number[], reason: "track-press" | "drag") => void, onDragging: (dragging: boolean) => void) instantiates

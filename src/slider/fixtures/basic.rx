@@ -1,0 +1,50 @@
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "../slider.rx"
+
+export default component Fixture() {
+  source changes: string[] := []
+  source commits: string[] := []
+  source controlled: number := 40
+  <main>
+    <form data-testid="form">
+      <SliderRoot data-testid="single" name="volume" defaultValue={30} onValueChange={(v, d) => { changes := [...changes, `${v}:${d.reason}`] }} onValueCommitted={(v, d) => { commits := [...commits, `${v}:${d.reason}`] }}>
+        <SliderValue data-testid="single-value" />
+        <SliderControl data-testid="single-control">
+          <SliderTrack data-testid="single-track">
+            <SliderIndicator data-testid="single-indicator" />
+            <SliderThumb data-testid="single-thumb" aria-label="Volume" />
+          </SliderTrack>
+        </SliderControl>
+      </SliderRoot>
+      <SliderRoot data-testid="range" name="price" defaultValue={[120, 180]} min={100} max={200} step={5} largeStep={20} minStepsBetweenValues={2} format={{ style: "currency", currency: "USD", maximumFractionDigits: 0 }} locale="en-US" onValueChange={(v, d) => { changes := [...changes, `${v}:${d.reason}:${d.activeThumbIndex}`] }}>
+        <SliderValue data-testid="range-value" />
+        <SliderControl data-testid="range-control">
+          <SliderTrack>
+            <SliderIndicator data-testid="range-indicator" />
+            <SliderThumb index={0} data-testid="range-thumb-0" getAriaLabel={(i) => i == 0 ? "Minimum price" : "Maximum price"} />
+            <SliderThumb index={1} data-testid="range-thumb-1" getAriaLabel={(i) => i == 0 ? "Minimum price" : "Maximum price"} />
+          </SliderTrack>
+        </SliderControl>
+      </SliderRoot>
+    </form>
+    <SliderRoot data-testid="vertical" orientation="vertical" defaultValue={0.5} min={0} max={1} step={0.1} largeStep={0.5}>
+      <SliderControl data-testid="vertical-control">
+        <SliderTrack>
+          <SliderIndicator data-testid="vertical-indicator" />
+          <SliderThumb data-testid="vertical-thumb" aria-label="Opacity" aria-describedby="opacity-help" getAriaValueText={(text, v, i) => `${text} opaque`} />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+    <SliderRoot data-testid="controlled" value={controlled} onValueChange={(v) => { controlled := v == 90 ? 90 : 50 }}>
+      <SliderControl>
+        <SliderThumb aria-label="Controlled" />
+      </SliderControl>
+    </SliderRoot>
+    <SliderRoot data-testid="disabled" disabled defaultValue={10}>
+      <SliderControl data-testid="disabled-control">
+        <SliderThumb aria-label="Locked" />
+      </SliderControl>
+    </SliderRoot>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <output data-testid="commits">{commits.join(" ")}</output>
+  </main>
+}
