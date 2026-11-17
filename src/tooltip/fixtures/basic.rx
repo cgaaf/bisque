@@ -1,4 +1,4 @@
-import { TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
+import { TooltipRoot, TooltipTrigger, TooltipPopup, TooltipArrow } from "../tooltip.rx"
 
 // Room above the triggers, where the tooltips go by default.
 export default component Fixture() {
@@ -7,7 +7,7 @@ export default component Fixture() {
     <button>Before</button>
     <TooltipRoot onOpenChange={(open) => { changes := changes + 1 }}>
       <TooltipTrigger style="width: 40px; height: 20px; padding: 0">Bold</TooltipTrigger>
-      <TooltipPopup data-testid="popup" sideOffset={10} style="width: 120px; height: 40px; border: 0; padding: 0">Make the selection bold</TooltipPopup>
+      <TooltipPopup data-testid="popup" sideOffset={10} style="width: 120px; height: 40px; border: 0; padding: 0">Make the selection bold<TooltipArrow data-testid="arrow" style="width: 8px; height: 8px" /></TooltipPopup>
     </TooltipRoot>
     <TooltipRoot disableHoverablePopup>
       <TooltipTrigger delay={0}>Italic</TooltipTrigger>

@@ -8,7 +8,7 @@
 // positioned element, styled with `:popover-open` and `@starting-style`.
 import { mergeProps } from "../internal/props.js"
 import { createHoverIntent, createManualDismiss } from "../internal/overlay.js"
-import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, AnchorProps, PartProps } from "../internal/types.rx"
 
 export type PreviewCardContext = PopoverState
@@ -77,6 +77,20 @@ export fn previewCardPopup(ref c: PreviewCardContext, ref side: "top" | "bottom"
 export component PreviewCardPopup({ side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: PreviewCardPopupProps) {
   c = use previewCard
   own = previewCardPopup(c, side, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
+// trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
+export fn previewCardArrow(ref c: PreviewCardContext): PartProps {
+  base = popoverArrowProps(c)
+  base
+}
+
+export component PreviewCardArrow({ children, ...rest }: DivProps) {
+  c = use previewCard
+  own = previewCardArrow(c)
   merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

@@ -6,7 +6,7 @@
 // popup is the positioned element, styled with `:popover-open` and `@starting-style`.
 import { mergeProps } from "../internal/props.js"
 import { createHoverGroup, createHoverIntent, createManualDismiss } from "../internal/overlay.js"
-import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
 
 type HoverGroup = import("../internal/impl/overlay.ts").HoverGroup
@@ -132,6 +132,20 @@ export fn tooltipPopup(ref c: TooltipContext, ref side: "top" | "bottom" | "left
 export component TooltipPopup({ side = "top", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: TooltipPopupProps) {
   c = use tooltip
   own = tooltipPopup(c, side, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
+// trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
+export fn tooltipArrow(ref c: TooltipContext): PartProps {
+  base = popoverArrowProps(c)
+  base
+}
+
+export component TooltipArrow({ children, ...rest }: DivProps) {
+  c = use tooltip
+  own = tooltipArrow(c)
   merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

@@ -145,6 +145,16 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
   TypeScript primitive.
 - WebKit leaves focus on a popover that has just been hidden if a button press opened it. The part moves focus.
 - WebKit's native radio group doesn't wrap at its ends with the arrow keys; Chromium and Firefox do.
+- An author `display` rule that matches a closed popover (`.menu > * { display: block }`) overrides the
+  browser's `display: none` and renders it in place. Exclude `[popover]` in fixture styles.
+- A `<style>` inside a component's root element is refused (`STYLE_PLACEMENT`): put it at the top of the view.
+- Solid delegates `onKeyDown` to the document, so a native listener on a container (roving focus) runs before
+  an item's handler.
+- WebKit's Tab skips links as well as buttons: use an `<input>` where a test needs a Tab stop.
+- `user.hover` moves the pointer in one step. Code that watches the pointer's path (a safe area) sees only the
+  end point, so hover twice.
+- Two popovers shown by script with no user gesture both close on one Escape, in all three engines. Open them
+  with real input in tests.
 - A popup can't be written inside a `<p>`: the compiler refuses it (`CONTENT_MODEL`), as the HTML parser would
   close the paragraph.
 

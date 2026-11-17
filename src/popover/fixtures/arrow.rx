@@ -1,0 +1,25 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverArrow } from "../popover.rx"
+
+// Popovers with an arrow: one that fits below its trigger, one that the browser flips above, one to the right.
+export default component Fixture() {
+  <main>
+    <PopoverRoot>
+      <PopoverTrigger style="position: fixed; top: 40px; left: 60px; width: 80px">Below</PopoverTrigger>
+      <PopoverPopup aria-label="Below panel" side="bottom" align="start" sideOffset={8} style="width: 200px; height: 60px; border: 0; padding: 0">
+        <PopoverArrow data-testid="below-arrow" style="width: 10px; height: 10px" />
+      </PopoverPopup>
+    </PopoverRoot>
+    <PopoverRoot>
+      <PopoverTrigger style="position: fixed; bottom: 4px; left: 200px; width: 80px">Low</PopoverTrigger>
+      <PopoverPopup aria-label="Flipped panel" side="bottom" sideOffset={8} style="width: 120px; height: 150px; border: 0; padding: 0">
+        <PopoverArrow data-testid="flipped-arrow" style="width: 10px; height: 10px" />
+      </PopoverPopup>
+    </PopoverRoot>
+    <PopoverRoot>
+      <PopoverTrigger style="position: fixed; top: 200px; left: 20px; width: 80px">Beside</PopoverTrigger>
+      <PopoverPopup aria-label="Beside panel" side="right" align="start" sideOffset={8} style="width: 120px; height: 150px; border: 0; padding: 0">
+        <PopoverArrow data-testid="beside-arrow" style="width: 10px; height: 10px" />
+      </PopoverPopup>
+    </PopoverRoot>
+  </main>
+}

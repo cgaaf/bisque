@@ -39,8 +39,16 @@ on the "not yet" list, because features move off it with each release.
   an `auto` popup. Combobox and Autocomplete use `popover="manual"` and close themselves.
 - **Roving focus** (`focusgroup`: Chrome only). Menu, Tabs, Toolbar and ToggleGroup keep `createRovingFocus`.
 - **Styleable `<select>`** (`appearance: base-select`: not in Firefox). Select stays a custom listbox.
-- **Knowing which fallback position was used.** There is no shipped way to read it, so popups have no
-  `data-side` after a flip and no arrow part.
+- **Knowing which fallback position was used.** There is no shipped way to read it, so `createPlacement`
+  (`native.*`) reads it back from the layout while a popup is open: the popup is on the side whose anchor edge
+  it lies wholly beyond. That gives the popup its `data-side` and the Arrow part its place.
+- **Placing an arrow in CSS.** `anchor()` on an element inside a popover resolves to `0px` in Chromium and
+  Firefox and to viewport coordinates in WebKit, so the arrow's offset comes from the same measurement.
+- **Opening a popover during a press.** A release (the primary button in all three, the right button in Firefox
+  and WebKit) light-dismisses a popover that was shown during its own press. ContextMenu opens after the
+  release, in a later task.
+- **Returning focus from a nested popover.** After Escape closes a nested popover, no engine puts focus back on
+  the item that opened it. Menu does.
 
 Always the library's: ARIA roles and relationships the elements don't imply, typeahead, `aria-activedescendant`
 lists, multi-thumb sliders, number parsing, toast queues and timers, and Field's label/description/error wiring.
@@ -56,4 +64,9 @@ lists, multi-thumb sliders, number parsing, toast queues and timers, and Field's
   Add a `data-*` attribute only for state that has no selector (`data-highlighted`, `data-ending-style`).
 - **Fewer parts than Base UI.** A Positioner exists there because JavaScript positions a wrapper; here the popup
   is the positioned element. Parts that only existed to carry behaviour the platform now has are dropped.
+- **A trigger that toggles its own popup still carries `popovertarget`**, and prevents its click. The attribute
+  is what exempts it from light dismiss; a prevented click doesn't toggle. Nested popovers work as the platform
+  defines: a child declared inside its parent, opened with `source`, stays open with it and closes first.
+- **Don't write to an element's inline style from a primitive.** Solid rewrites the whole `style` attribute when
+  a part's props recompute, and the write is lost. Put the declaration in the part's props.
 - **Tests run in real browsers.** jsdom implements none of `showModal()`, `popover` or anchor positioning.

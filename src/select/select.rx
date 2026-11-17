@@ -6,7 +6,7 @@
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
 import { createRovingFocus, focusElement, focusListItem, clickElement } from "../internal/dom.js"
 import { createTypeahead, elementText, itemValue, createOnShow } from "../internal/listbox.js"
-import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { createPopoverState, popoverTriggerProps, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
 
@@ -445,4 +445,18 @@ export component SelectGroupLabel({ children, ...rest }: DivProps) {
 export component SelectSeparator(props: DivProps) {
   merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
   <div {...merged} />
+}
+
+// Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
+// trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
+export fn selectArrow(ref c: SelectContext): PartProps {
+  base = popoverArrowProps(c)
+  base
+}
+
+export component SelectArrow({ children, ...rest }: DivProps) {
+  c = use select
+  own = selectArrow(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
 }

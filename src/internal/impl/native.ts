@@ -1,6 +1,6 @@
 // Thin drivers for the browser's own widgets. The browser does the work (top layer, focus, Escape, placement);
 // these only keep a native element in step with a component's `open` state and report what the user did to it.
-import { createEffect, untrack, type Accessor } from "solid-js";
+import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
 
 function nextFrame(callback: () => void): () => void {
   const id = requestAnimationFrame(callback);
@@ -212,4 +212,104 @@ export function anchoredStyle(
     style[`margin-${edge}`] = `${alignOffset}px`;
   }
   return style;
+}
+
+export type Placement = {
+  side: Side;
+  /** The point of the popup's edge nearest the anchor's centre, in pixels from the popup's padding box. */
+  x: number;
+  y: number;
+};
+
+const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
+
+/**
+ * Where the browser placed an open popup against its anchor, or undefined while it is closed or overlaps it.
+ *
+ * CSS anchor positioning flips a popup that doesn't fit (`position-try-fallbacks`) without telling anyone, so the
+ * side is read back from the layout: the popup is on the side whose anchor edge it lies wholly beyond. The same
+ * two boxes give the arrow its place; `anchor()` can't, because no engine resolves it correctly for an element
+ * inside a popover. It is measured when the popup opens and again after a scroll, a window resize, or a size
+ * change of either element. A layout shift that moves the anchor some other way is not seen until one of those
+ * happens.
+ */
+export function createPlacement(
+  element: Accessor<HTMLElement | undefined>,
+  anchor: Accessor<HTMLElement | undefined>,
+  open: Accessor<boolean>,
+): Accessor<Placement | undefined> {
+  const [placement, setPlacement] = createSignal<Placement | undefined>(undefined, {
+    equals: (a, b) => a === b || (!!a && !!b && a.side === b.side && a.x === b.x && a.y === b.y),
+  });
+
+  const measure = (popup: HTMLElement, against: HTMLElement) => {
+    if (!popup.isConnected || !shown(popup)) return;
+    const p = popup.getBoundingClientRect();
+    const a = against.getBoundingClientRect();
+    // Half a pixel of slack: engines round the two boxes independently.
+    const side: Side | undefined =
+      p.top >= a.bottom - 0.5
+        ? "bottom"
+        : p.bottom <= a.top + 0.5
+          ? "top"
+          : p.left >= a.right - 0.5
+            ? "right"
+            : p.right <= a.left + 0.5
+              ? "left"
+              : undefined;
+    if (!side) return setPlacement(undefined);
+    // An absolutely positioned child is placed from the padding box. Clamping each axis to that box puts the
+    // point on the edge that faces the anchor.
+    setPlacement({
+      side,
+      x: clamp(a.left + a.width / 2 - p.left - popup.clientLeft, popup.clientWidth),
+      y: clamp(a.top + a.height / 2 - p.top - popup.clientTop, popup.clientHeight),
+    });
+  };
+
+  createEffect(
+    () => [element(), anchor(), open()] as const,
+    ([popup, against, isOpen]) => {
+      if (!popup || !against || !isOpen) return;
+      let cancel: (() => void) | undefined;
+      const schedule = () => {
+        cancel ??= nextFrame(() => {
+          cancel = undefined;
+          measure(popup, against);
+        });
+      };
+      // The popup may not be shown yet (the effect that shows it can run after this one): `toggle` covers that.
+      measure(popup, against);
+      schedule();
+      const sizes = new ResizeObserver(schedule);
+      sizes.observe(popup);
+      sizes.observe(against);
+      popup.addEventListener("toggle", schedule);
+      document.addEventListener("scroll", schedule, { capture: true, passive: true });
+      window.addEventListener("resize", schedule);
+      return () => {
+        cancel?.();
+        sizes.disconnect();
+        popup.removeEventListener("toggle", schedule);
+        document.removeEventListener("scroll", schedule, { capture: true });
+        window.removeEventListener("resize", schedule);
+        setPlacement(undefined);
+      };
+    },
+  );
+
+  return placement;
+}
+
+/**
+ * The inline style of an arrow inside an anchored popup: its centre on the popup's edge that faces the anchor,
+ * level with the anchor's centre. A stylesheet rotates or offsets it from there (`[data-side]`).
+ */
+export function arrowStyle(placement: Placement | undefined): Record<string, string> {
+  return {
+    position: "absolute",
+    left: `${placement?.x ?? 0}px`,
+    top: `${placement?.y ?? 0}px`,
+    translate: "-50% -50%",
+  };
 }

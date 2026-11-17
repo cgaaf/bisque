@@ -315,3 +315,17 @@ test("provider: within the timeout the next opens at once; after it, it waits ag
   expect(shown(undo)).toBe(false);
   await expect.poll(() => shown(undo), { timeout: 600 }).toBe(true);
 });
+
+test("the popup carries the side it is on, and its arrow sits on the edge facing the trigger", async () => {
+  const { getByRole, getByTestId, user } = await start(basic);
+  const trigger = getByRole("button", { name: "Bold" });
+  const popup = getByTestId("popup");
+  const arrow = getByTestId("arrow");
+  expect(popup.getAttribute("data-side")).toBe("top");
+  await keyboardFocus(user, trigger);
+  await expect.poll(() => arrow.getAttribute("data-side")).toBe("top");
+  const box = arrow.getBoundingClientRect();
+  const anchor = trigger.getBoundingClientRect();
+  expect(Math.abs(box.left + box.width / 2 - (anchor.left + anchor.width / 2))).toBeLessThanOrEqual(1);
+  expect(Math.abs(box.top + box.height / 2 - popup.getBoundingClientRect().bottom)).toBeLessThanOrEqual(1);
+});

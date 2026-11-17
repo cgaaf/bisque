@@ -10,7 +10,7 @@
 import { mergeProps, withoutHandlers, createId, createRef } from "../internal/props.js"
 import { focusElement } from "../internal/dom.js"
 import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, elementText, matchesFilter, createOnShow, createOutsidePress } from "../internal/listbox.js"
-import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, InputProps, PartProps } from "../internal/types.rx"
 
@@ -746,4 +746,18 @@ export component ComboboxChipRemove({ children, ...rest }: ButtonProps) {
   own = comboboxChipRemove(c, chip.value)
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>
+}
+
+// Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
+// trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
+export fn comboboxArrow(ref c: ComboboxContext): PartProps {
+  base = popoverArrowProps(c)
+  base
+}
+
+export component ComboboxArrow({ children, ...rest }: DivProps) {
+  c = use combobox
+  own = comboboxArrow(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
 }

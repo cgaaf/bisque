@@ -1,7 +1,7 @@
 // A popover on the native `popover` attribute. The browser provides the top layer, closing on Escape and on a
 // press outside, focus order (the popup follows its trigger), and the placement against the trigger with CSS
-// anchor positioning. This family adds the open state and ARIA labelling. There is no Portal, Positioner,
-// Backdrop or Arrow part: the popup is the positioned element, styled with `:popover-open`, `::backdrop` and
+// anchor positioning. This family adds the open state and ARIA labelling. There is no Portal, Positioner or
+// Backdrop part: the popup is the positioned element, styled with `:popover-open`, `::backdrop` and
 // `@starting-style`. For a modal popup that traps focus, use Dialog.
 //
 // With `openOnHover` on the trigger it also opens when the pointer rests on the trigger, and closes when the
@@ -9,7 +9,7 @@
 // part is the library's hover intent (../internal/overlay.js).
 import { mergeProps, createId } from "../internal/props.js"
 import { createHoverIntent } from "../internal/overlay.js"
-import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { createPopoverState, popoverTriggerProps, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
 export type PopoverContext = PopoverState & {
@@ -131,4 +131,18 @@ export component PopoverClose({ children, ...rest }: ButtonProps) {
   own = popoverClose(c)
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>
+}
+
+// Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
+// trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
+export fn popoverArrow(ref c: PopoverContext): PartProps {
+  base = popoverArrowProps(c)
+  base
+}
+
+export component PopoverArrow({ children, ...rest }: DivProps) {
+  c = use popover
+  own = popoverArrow(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
 }

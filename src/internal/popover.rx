@@ -2,14 +2,17 @@
 // trigger and popup elements, and a native `popover` element kept in step with that state. The browser provides
 // the top layer, light dismiss, Escape and the placement against the trigger (../internal/native.js).
 import { createId, createRef } from "./props.js"
-import { createNativePopover, anchoredStyle } from "./native.js"
-import { PartProps } from "./types.rx"
+import { createNativePopover, createPlacement, anchoredStyle, arrowStyle } from "./native.js"
+import { PartProps, Placement } from "./types.rx"
 
 export type PopoverState = {
   open: boolean
   popupId: string
   trigger: HTMLElement | undefined
   popup: HTMLElement | undefined
+  // Where the browser put the open popup: the side of the trigger it is on after any flip, and the point of its
+  // edge nearest the trigger's centre (for the arrow). Undefined while it is closed or covers the trigger.
+  placement: Placement | undefined
   setOpen: (open: boolean) => void
   setTrigger: (element: HTMLElement) => void
   setPopup: (element: HTMLElement) => void
@@ -34,12 +37,14 @@ export fn createPopoverState(ref controlled: boolean | undefined, initial: boole
   setPopup = createRef(writePopup)
 
   _native = createNativePopover(popup, isOpen, trigger, setOpen)
+  placed = createPlacement(popup, trigger, isOpen)
 
   {
     open: isOpen,
     popupId: popupId,
     trigger: trigger,
     popup: popup,
+    placement: placed,
     setOpen: setOpen,
     setTrigger: setTrigger,
     setPopup: setPopup,
@@ -60,12 +65,24 @@ export fn popoverTriggerProps(ref p: PopoverState): PartProps {
 }
 
 // For the popup element. `mode` is "auto" (light dismiss and Escape close it) or "manual" (only the part does).
-// Style it with `:popover-open`, `::backdrop` and `@starting-style`.
+// Style it with `:popover-open`, `::backdrop` and `@starting-style`. `data-side` is the side it is on: the one
+// asked for until it opens, then the one the browser placed it on.
 export fn popoverPopupProps(ref p: PopoverState, ref mode: "auto" | "manual", ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   {
     id: p.popupId,
     popover: mode,
+    "data-side": p.placement?.side ?? side,
     style: anchoredStyle(side, align, sideOffset, alignOffset),
     ref: p.setPopup,
+  }
+}
+
+// For an arrow element inside the popup: it sits on the popup's edge that faces the trigger, centred on the
+// trigger, and follows the popup when the browser flips it. `data-side` is the popup's side, for rotating it.
+export fn popoverArrowProps(ref p: PopoverState): PartProps {
+  {
+    "aria-hidden": "true",
+    "data-side": p.placement?.side,
+    style: arrowStyle(p.placement),
   }
 }

@@ -2,7 +2,7 @@
 // underneath (InputListRoot in ../combobox/combobox.rx, with the same list navigation): the parts read the
 // `combobox` context, so a custom part imports `combobox` and the `combobox*` props functions from there. The
 // popup is the same native `popover="manual"` element, anchored to the input with CSS anchor positioning.
-import { InputListRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator, AutocompleteMode } from "../combobox/combobox.rx"
+import { InputListRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPopup, ComboboxArrow, ComboboxList, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator, AutocompleteMode } from "../combobox/combobox.rx"
 import { DivProps, ButtonProps, SpanProps, InputProps } from "../internal/types.rx"
 
 export type AutocompleteRootProps = {
@@ -89,4 +89,8 @@ export component AutocompleteStatus({ children, ...rest }: DivProps) {
 
 export component AutocompleteSeparator(props: DivProps) {
   <ComboboxSeparator {...props} />
+}
+
+export component AutocompleteArrow({ children, ...rest }: DivProps) {
+  <ComboboxArrow {...rest}>{children}</ComboboxArrow>
 }
