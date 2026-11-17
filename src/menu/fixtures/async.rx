@@ -1,0 +1,122 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuGroup, MenuGroupLabel, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../menu.rx"
+import { fetchList, save } from "../../test/slow-server.js"
+
+// Menus used against a slow server, as an app would write them.
+export default component Fixture() {
+  // 1. Items that load when the menu first opens (`onOpenChange` writes what the loading question reads), in groups
+  // with labels, and replaced by a reload.
+  source wanted: boolean := false
+  files = wanted ? await fetchList("files") : []
+  source chosen := ""
+
+  // 2. Items whose choice starts a save (an action), a checkbox and a radio group whose handlers are actions, and
+  // an `onOpenChange` that is an action.
+  source saved := ""
+  action saveAs(key: string) {
+    affects saved
+    try {
+      let answer = await save(key)
+      saved := answer
+    } catch (e) {
+      saved := "failed"
+    }
+  }
+  action changeWrap(next: boolean) { saveAs(next ? "wrap on" : "wrap off") }
+  action changeSort(next: string) { saveAs("sort " + next) }
+  action log(next: boolean) { saveAs(next ? "opened" : "closed") }
+
+  // 3. A submenu whose items load when it opens, and whose `onOpenChange` also saves (an action).
+  source wantedRecent: boolean := false
+  recent = wantedRecent ? await fetchList("recent") : []
+  action openRecent(open: boolean) {
+    // Asked for now, not when the save ends: the save makes this one action.
+    if (open) { onFlush(() => { wantedRecent := true }) }
+    saveAs(open ? "recent opened" : "recent closed")
+  }
+
+  // 4. A controlled menu whose owner agrees late, and one whose owner guesses.
+  source late: boolean := false
+  action changeLate(next: boolean) {
+    affects late
+    try {
+      await save(next ? "open late" : "close late")
+      late := next
+    } catch (e) {
+      saved := e.message
+    }
+  }
+  source pinned: boolean = false
+  action changePinned(next: boolean) {
+    try {
+      guess pinned := next
+      await save(next ? "pin" : "unpin")
+      pinned := next
+    } catch (e) {
+      saved := e.message
+    }
+  }
+
+  <style>
+    :global(.menu) { margin: 0; padding: 0; border: 0; width: 140px }
+    :global(.menu > :not([popover])) { display: block; box-sizing: border-box; width: 100%; font: inherit; border: 0; padding: 2px; text-align: start }
+  </style>
+  <main style="padding: 8px">
+    <MenuRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <MenuTrigger>Files</MenuTrigger>
+      <MenuPopup class="menu" data-testid="files-popup">
+        {loading on(wanted) fallback { <p data-testid="loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="error">{e.message}</p> <MenuItem closeOnClick={false} onClick={() => { refresh files }}>Retry</MenuItem> } {
+            {for file in files {
+              <MenuGroup>
+                <MenuGroupLabel>Group {file}</MenuGroupLabel>
+                <MenuItem onClick={() => { chosen := file }}>{file}</MenuItem>
+              </MenuGroup>
+            }}
+            <MenuItem closeOnClick={false} onClick={() => { refresh files }}>Reload</MenuItem>
+          }}
+        }}
+      </MenuPopup>
+    </MenuRoot>
+    <output data-testid="chosen">{chosen}</output>
+
+    <MenuRoot onOpenChange={log}>
+      <MenuTrigger>Edit</MenuTrigger>
+      <MenuPopup class="menu" data-testid="edit-popup">
+        <MenuItem onClick={() => { saveAs("draft") }}>Save draft</MenuItem>
+        <MenuCheckboxItem onCheckedChange={changeWrap}>Wrap</MenuCheckboxItem>
+        <MenuRadioGroup defaultValue="name" onValueChange={changeSort}>
+          <MenuRadioItem value="name">By name</MenuRadioItem>
+          <MenuRadioItem value="date">By date</MenuRadioItem>
+        </MenuRadioGroup>
+        <MenuSubmenuRoot onOpenChange={openRecent}>
+          <MenuSubmenuTrigger>Recent</MenuSubmenuTrigger>
+          <MenuPopup class="menu" data-testid="recent-popup">
+            {loading on(wantedRecent) fallback { <p data-testid="recent-loading">Loading…</p> } {
+              {errored fallback(e) { <p>{e.message}</p> } {
+                {for file in recent {
+                  <MenuItem onClick={() => { chosen := file }}>{file}</MenuItem>
+                }}
+              }}
+            }}
+          </MenuPopup>
+        </MenuSubmenuRoot>
+      </MenuPopup>
+    </MenuRoot>
+    <output data-testid="saved">{pending? saved ? "" : saved}</output>
+
+    <MenuRoot open={late} onOpenChange={changeLate}>
+      <MenuTrigger>Late</MenuTrigger>
+      <MenuPopup class="menu" data-testid="late-popup">
+        <MenuItem>Late item</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+
+    <MenuRoot open={pinned} onOpenChange={changePinned}>
+      <MenuTrigger>Pinned</MenuTrigger>
+      <MenuPopup class="menu" data-testid="pinned-popup">
+        <MenuItem>Pinned item</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+    <output data-testid="busy-late">{pending? late ? "busy" : ""}</output>
+  </main>
+}

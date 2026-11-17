@@ -103,7 +103,7 @@ function take(value: unknown): Waiting {
   const index = server.waiting.findIndex((request) => same(request.value, value));
   if (index === -1)
     throw new Error(
-      `No save waiting for ${JSON.stringify(value)}: ${server.waiting.map((r) => JSON.stringify(r.value))}`,
+      `No save waiting for ${JSON.stringify(value)}: ${server.waiting.map((r) => JSON.stringify(r.value)).join(", ")}`,
     );
   return server.waiting.splice(index, 1)[0];
 }
@@ -132,7 +132,7 @@ export function answered(): Promise<void> {
  * Records every value the program writes to `element[property]` (a native input's `checked` or `value`), so a
  * test can tell whether the element ever showed a state it shouldn't have, however briefly.
  */
-export function recordWrites<E extends object>(element: E, property: string): unknown[] {
+export function recordWrites(element: object, property: string): unknown[] {
   const writes: unknown[] = [];
   let proto: object | null = Object.getPrototypeOf(element);
   let descriptor: PropertyDescriptor | undefined;

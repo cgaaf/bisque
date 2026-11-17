@@ -1,0 +1,43 @@
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem } from "../context-menu.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// context menu is computed from that write. The menu must still open at the pointer and close while the request is
+// out.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <style>
+    :global(.held-popup) { margin: 0; padding: 0; border: 0; width: 120px }
+    :global(.held-popup > :not([popover])) { display: block; box-sizing: border-box; width: 100%; height: 20px; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
+  <main>
+    <div style="height: 40px; display: flex; gap: 8px">
+      <button onClick={() => { next() }}>Next</button>
+      <output data-testid="step">{step}</output>
+      <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+    </div>
+
+    // 1. An attribute of the trigger area, the one part of its own.
+    <ContextMenuRoot>
+      <ContextMenuTrigger data-testid="attribute-area" class={step == 2 ? "second" : "first"} style="height: 150px">Attribute area</ContextMenuTrigger>
+      <ContextMenuPopup class="held-popup" data-testid="attribute-popup">
+        <ContextMenuItem>Attribute item</ContextMenuItem>
+      </ContextMenuPopup>
+    </ContextMenuRoot>
+
+    // 2. A prop of the root, which Menu's root reads. It has to change: a prop computed from the held write that comes
+    // out equal holds nothing. The test opens the menu before the write, so the disabled menu is open while the request
+    // is out.
+    <ContextMenuRoot disabled={step == 2}>
+      <ContextMenuTrigger data-testid="prop-area" style="height: 150px">Prop area</ContextMenuTrigger>
+      <ContextMenuPopup class="held-popup" data-testid="prop-popup">
+        <ContextMenuItem>Prop item</ContextMenuItem>
+      </ContextMenuPopup>
+    </ContextMenuRoot>
+  </main>
+}

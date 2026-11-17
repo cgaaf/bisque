@@ -1,0 +1,36 @@
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "../collapsible.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// collapsible is computed from that write. The collapsible's own state must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. An attribute passed through to the trigger's element.
+    <CollapsibleRoot data-testid="trigger-attribute">
+      <CollapsibleTrigger class={step == 2 ? "second" : "first"}>Trigger attribute</CollapsibleTrigger>
+      <CollapsiblePanel>Content</CollapsiblePanel>
+    </CollapsibleRoot>
+
+    // 2. An attribute passed through to the panel's element.
+    <CollapsibleRoot data-testid="panel-attribute">
+      <CollapsibleTrigger>Panel attribute</CollapsibleTrigger>
+      <CollapsiblePanel class={step == 2 ? "second" : "first"}>Content</CollapsiblePanel>
+    </CollapsibleRoot>
+
+    // 3. A prop of the root: disabled until the app moves on, so the trigger works only once it reads the new value.
+    <CollapsibleRoot data-testid="root-prop" disabled={step == 1}>
+      <CollapsibleTrigger>Root prop</CollapsibleTrigger>
+      <CollapsiblePanel>Content</CollapsiblePanel>
+    </CollapsibleRoot>
+  </main>
+}

@@ -1,0 +1,83 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverClose } from "../popover.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// Popovers used against a slow server, as an app would write them.
+export default component Fixture() {
+  // 1. Content that loads when the popover first opens: `onOpenChange` writes what the loading question reads.
+  source wanted: boolean := false
+  details = wanted ? await fetchText("profile") : ""
+
+  // 2. An uncontrolled popover whose `onOpenChange` is itself an action that awaits (it logs the change).
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let answer = await save(next ? "opened" : "closed")
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+
+  // 3. A controlled popover whose owner agrees late: it saves first, and writes `open` once the server answers.
+  source late: boolean := false
+  action changeLate(next: boolean) {
+    affects late
+    try {
+      await save(next ? "open late" : "close late")
+      late := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  // 4. A controlled popover whose owner guesses: the change shows at once, and reverts if the request fails.
+  source pinned: boolean = false
+  action changePinned(next: boolean) {
+    try {
+      guess pinned := next
+      await save(next ? "pin" : "unpin")
+      pinned := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  <main style="padding: 8px">
+    <PopoverRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <PopoverTrigger>Profile</PopoverTrigger>
+      <PopoverPopup aria-label="Profile card" data-testid="profile">
+        {loading on(wanted) fallback { <p data-testid="loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="error">{e.message}</p> <button onClick={() => { refresh details }}>Retry</button> } {
+            <p data-testid="details">{details}</p>
+            <button>Edit profile</button>
+          }}
+        }}
+        <PopoverClose>Close profile</PopoverClose>
+      </PopoverPopup>
+    </PopoverRoot>
+
+    <PopoverRoot onOpenChange={log}>
+      <PopoverTrigger>Logged</PopoverTrigger>
+      <PopoverPopup aria-label="Logged card" data-testid="logged-popup">
+        <PopoverClose>Close logged</PopoverClose>
+      </PopoverPopup>
+    </PopoverRoot>
+    <output data-testid="logged">{pending? logged ? "" : logged}</output>
+
+    <PopoverRoot open={late} onOpenChange={changeLate}>
+      <PopoverTrigger>Late</PopoverTrigger>
+      <PopoverPopup aria-label="Late card" data-testid="late-popup">
+        <PopoverClose>Close late</PopoverClose>
+      </PopoverPopup>
+    </PopoverRoot>
+
+    <PopoverRoot open={pinned} onOpenChange={changePinned}>
+      <PopoverTrigger>Pinned</PopoverTrigger>
+      <PopoverPopup aria-label="Pinned card" data-testid="pinned-popup">
+        <PopoverClose>Close pinned</PopoverClose>
+      </PopoverPopup>
+    </PopoverRoot>
+    <output data-testid="busy">{pending? late ? "late" : ""}</output>
+  </main>
+}

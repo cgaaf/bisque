@@ -1,0 +1,73 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../tabs.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to tabs
+// is computed from that write. The tabs' own state (the selected tab, its panel, the tab stop) must not wait for the
+// app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root.
+    <TabsRoot data-testid="root-prop" orientation={step == 1 ? "horizontal" : "vertical"}>
+      <TabsList>
+        <TabsTab value="a">Root prop A</TabsTab>
+        <TabsTab value="b">Root prop B</TabsTab>
+        <TabsIndicator />
+      </TabsList>
+      <TabsPanel value="a">Root prop panel A</TabsPanel>
+      <TabsPanel value="b">Root prop panel B</TabsPanel>
+    </TabsRoot>
+
+    // 2. An attribute of the list. (Its props, `loopFocus` and `activateOnFocus`, reach only the roving focus options
+    // and a provision of props alone: a change to them held holds nothing of the tabs' state.)
+    <TabsRoot data-testid="list-attribute">
+      <TabsList class={step == 2 ? "second" : "first"}>
+        <TabsTab value="a">List attribute A</TabsTab>
+        <TabsTab value="b">List attribute B</TabsTab>
+      </TabsList>
+      <TabsPanel value="a">List attribute panel A</TabsPanel>
+      <TabsPanel value="b">List attribute panel B</TabsPanel>
+    </TabsRoot>
+
+    // 3. A prop of a tab. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <TabsRoot data-testid="tab-prop">
+      <TabsList>
+        <TabsTab value="a">Tab prop A</TabsTab>
+        <TabsTab value="b">Tab prop B</TabsTab>
+        <TabsTab value="c" disabled={step == 2}>Tab prop C</TabsTab>
+      </TabsList>
+      <TabsPanel value="a">Tab prop panel A</TabsPanel>
+      <TabsPanel value="b">Tab prop panel B</TabsPanel>
+      <TabsPanel value="c">Tab prop panel C</TabsPanel>
+    </TabsRoot>
+
+    // 4. A prop of a panel.
+    <TabsRoot data-testid="panel-prop">
+      <TabsList>
+        <TabsTab value="a">Panel prop A</TabsTab>
+        <TabsTab value="b">Panel prop B</TabsTab>
+      </TabsList>
+      <TabsPanel value="a" keepMounted={step == 2}>Panel prop panel A</TabsPanel>
+      <TabsPanel value="b">Panel prop panel B</TabsPanel>
+    </TabsRoot>
+
+    // 5. An attribute passed through to a tab's element.
+    <TabsRoot data-testid="tab-attribute">
+      <TabsList>
+        <TabsTab value="a">Tab attribute A</TabsTab>
+        <TabsTab value="b" class={step == 2 ? "second" : "first"}>Tab attribute B</TabsTab>
+      </TabsList>
+      <TabsPanel value="a">Tab attribute panel A</TabsPanel>
+      <TabsPanel value="b">Tab attribute panel B</TabsPanel>
+    </TabsRoot>
+  </main>
+}

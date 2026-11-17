@@ -15,6 +15,7 @@ export pure fn matchesFilter(filter: ((label: string, query: string) => boolean)
 export pure fn createOnShow(ref popup: HTMLElement | undefined, onShown: () => void) instantiates
 export pure fn createOutsidePress(ref active: boolean, ref inside: (HTMLElement | undefined)[], onOutside: () => void) instantiates
 export pure fn createLabels(): [ref ItemLabel[], (value: string, label: string) => void]
+export pure fn createItemLabels(ref container: HTMLElement | undefined): [ref ItemLabel[], (value: string, label: string) => void] instantiates
 export pure fn createItemObserver(ref container: HTMLElement | undefined, onChange: (count: number) => void) instantiates
 export pure fn createInputValue(ref input: HTMLElement | undefined, ref value: string) instantiates
 export fn hasFocus(element: HTMLElement | undefined): boolean

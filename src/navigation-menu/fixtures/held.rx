@@ -1,0 +1,64 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink } from "../navigation-menu.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// navigation menu is computed from that write. Which item is open must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <style>
+    :global(.held-list) { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0 }
+    :global(.held-content) { margin: 0; padding: 0; border: 0; width: 160px }
+  </style>
+  <main style="padding-bottom: 200px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. Each case has to change: a prop computed from the held write that comes out equal holds
+    // nothing.
+    <NavigationMenuRoot delay={step == 1 ? 50 : 60}>
+      <NavigationMenuList class="held-list">
+        <NavigationMenuItem value="root-prop">
+          <NavigationMenuTrigger>Root prop</NavigationMenuTrigger>
+          <NavigationMenuContent class="held-content"><NavigationMenuLink href="#a">Root prop link</NavigationMenuLink></NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+
+    // 2. A prop of the item.
+    <NavigationMenuRoot>
+      <NavigationMenuList class="held-list">
+        <NavigationMenuItem value={step == 1 ? "a" : "b"}>
+          <NavigationMenuTrigger>Item prop</NavigationMenuTrigger>
+          <NavigationMenuContent class="held-content"><NavigationMenuLink href="#a">Item prop link</NavigationMenuLink></NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+
+    // 3. A prop of the trigger. The test opens the item before the write, so the disabled trigger's item is open
+    // while the request is out.
+    <NavigationMenuRoot>
+      <NavigationMenuList class="held-list">
+        <NavigationMenuItem value="trigger-prop">
+          <NavigationMenuTrigger disabled={step == 2}>Trigger prop</NavigationMenuTrigger>
+          <NavigationMenuContent class="held-content"><NavigationMenuLink href="#a">Trigger prop link</NavigationMenuLink></NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+
+    // 4. An attribute of the trigger.
+    <NavigationMenuRoot>
+      <NavigationMenuList class="held-list">
+        <NavigationMenuItem value="trigger-attribute">
+          <NavigationMenuTrigger class={step == 2 ? "second" : "first"}>Trigger attribute</NavigationMenuTrigger>
+          <NavigationMenuContent class="held-content"><NavigationMenuLink href="#a">Trigger attribute link</NavigationMenuLink></NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+  </main>
+}

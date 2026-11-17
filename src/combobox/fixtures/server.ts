@@ -18,7 +18,7 @@ const FRUITS = [
   "Plum",
 ].map((label) => ({ value: label.toLowerCase(), label }));
 
-type Fruit = { value: string; label: string; query: string };
+type Fruit = { value: string; label: string; query: string; answer: number };
 type Waiting = { query: string; settle: () => void };
 
 export const server: {
@@ -52,14 +52,19 @@ export function resetServer(): void {
   server.waiting = [];
 }
 
+// Numbers the answers, as a search API stamps each response.
+let answers = 0;
+
 const answer = (query: string): Fruit[] => {
   if (server.failing.includes(query)) throw new Error(`Search failed for "${query}"`);
   const q = query.trim().toLowerCase();
-  // Each answer is new objects carrying the query, as a search API's rows carry their score or matched text: a
-  // `for` over a new answer renders new options even for the values it already showed.
+  const stamp = ++answers;
+  // Each answer is new objects carrying the query and the answer's number, as a search API's rows carry their score
+  // or matched text: a `for` over a new answer renders new options even for the values it already showed, also
+  // when the same query is asked again (Solid reports a list rebuilt from rows equal to the ones it replaced).
   return FRUITS.filter(
     (fruit) => fruit.label.toLowerCase().includes(q) && !server.hide.includes(fruit.value),
-  ).map((fruit) => Object.assign({ query }, fruit));
+  ).map((fruit) => Object.assign({ query, answer: stamp }, fruit));
 };
 
 const settle = (query: string, resolve: (fruits: Fruit[]) => void, reject: (error: unknown) => void) => {
@@ -88,7 +93,7 @@ export function loadAll(): Promise<Fruit[]> {
 export function release(query: string): void {
   const index = server.waiting.findIndex((request) => request.query === query);
   if (index === -1)
-    throw new Error(`No request waiting for "${query}": ${server.waiting.map((r) => r.query)}`);
+    throw new Error(`No request waiting for "${query}": ${server.waiting.map((r) => r.query).join(", ")}`);
   const [request] = server.waiting.splice(index, 1);
   request.settle();
 }

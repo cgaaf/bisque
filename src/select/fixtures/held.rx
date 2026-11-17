@@ -1,0 +1,49 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectPopup, SelectItem, SelectItemText } from "../select.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// select is computed from that write. The select's own state (open, highlighted item, selected value) must not wait
+// for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="padding: 40px 0 0 40px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of an item. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <SelectRoot>
+      <SelectTrigger data-testid="item-prop" style="width: 160px"><SelectValue data-testid="item-prop-value" placeholder="Pick" /></SelectTrigger>
+      <SelectPopup style="padding: 0; border: 0">
+        <SelectItem value="apple">Apple</SelectItem>
+        <SelectItem value="banana" label={step == 1 ? "Banana" : "Banana (saved)"}>Banana</SelectItem>
+        <SelectItem value="cherry">Cherry</SelectItem>
+      </SelectPopup>
+    </SelectRoot>
+
+    // 2. An attribute passed through to the trigger's element.
+    <SelectRoot>
+      <SelectTrigger data-testid="trigger-attribute" class={step == 2 ? "second" : "first"} style="width: 160px"><SelectValue data-testid="trigger-attribute-value" placeholder="Pick" /></SelectTrigger>
+      <SelectPopup style="padding: 0; border: 0">
+        <SelectItem value="apple">Apple</SelectItem>
+        <SelectItem value="banana">Banana</SelectItem>
+        <SelectItem value="cherry">Cherry</SelectItem>
+      </SelectPopup>
+    </SelectRoot>
+
+    // 3. An attribute passed through to an item's element.
+    <SelectRoot>
+      <SelectTrigger data-testid="item-attribute" style="width: 160px"><SelectValue data-testid="item-attribute-value" placeholder="Pick" /></SelectTrigger>
+      <SelectPopup style="padding: 0; border: 0">
+        <SelectItem value="apple">Apple</SelectItem>
+        <SelectItem value="banana" class={step == 2 ? "second" : "first"}>Banana</SelectItem>
+        <SelectItem value="cherry">Cherry</SelectItem>
+      </SelectPopup>
+    </SelectRoot>
+  </main>
+}

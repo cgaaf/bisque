@@ -1,0 +1,32 @@
+import { ToggleGroup } from "../toggle-group.rx"
+import { Toggle } from "../../toggle/toggle.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// toggle group is computed from that write. Which toggles are pressed must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // Nothing the group root takes holds the group unfixed: `disabled` (false to undefined), `orientation`, a `class`
+    // on it and the `orientation` of a toolbar around it reach only equations whose result doesn't change, or none
+    // beside the group's value. What does is a prop or an attribute of a toggle in it.
+
+    // 1. A prop of a toggle. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <ToggleGroup>
+      <Toggle value={step == 1 ? "a" : "b"}>Toggle prop</Toggle>
+    </ToggleGroup>
+    // 2. An attribute passed through to a toggle's element.
+    <ToggleGroup>
+      <Toggle value="a" class={step == 2 ? "second" : "first"}>Toggle attribute</Toggle>
+    </ToggleGroup>
+  </main>
+}

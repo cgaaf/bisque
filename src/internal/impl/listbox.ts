@@ -62,7 +62,7 @@ export function createTypeahead(): [
       current !== undefined
         ? items.findIndex((item) => item.getAttribute("data-value") === current)
         : items.findIndex((item) => item === focused);
-    const repeated = [...typed].every((character) => character === typed[0]);
+    const repeated = Array.from(typed).every((character) => character === typed[0]);
     const query = (repeated ? typed[0] : typed).toLowerCase();
     const from = repeated ? index + 1 : Math.max(index, 0);
     const ordered = [...items.slice(from), ...items.slice(0, from)];
@@ -228,6 +228,67 @@ export function createLabels(): [Accessor<ItemLabel[]>, (value: string, label: s
         ? current
         : [...current.filter((entry) => entry.value !== value), { value, label }],
     );
+  return [labels, register];
+}
+
+/**
+ * The label each value's item last showed in `container`, read from the items themselves (`data-value`, and
+ * `data-label` else the text), and kept after the item is gone, as `createLabels` keeps them. Returns the labels and
+ * `register`, for an item a consumer renders some other way.
+ *
+ * The items aren't asked to register: an item whose label is its text measures it after it renders, and an effect
+ * that passed it on to a registry would make everything that reads both the item and the labels run twice for one
+ * change, the first time with the old labels (`EFFECT_RELAY_TEAR`). The labels are read when the items change,
+ * from a MutationObserver, and first in a microtask: outside the flush, so readers see each change once.
+ */
+export function createItemLabels(
+  container: Accessor<MaybeElement>,
+): [Accessor<ItemLabel[]>, (value: string, label: string) => void] {
+  const [labels, setLabels] = createSignal<ItemLabel[]>([]);
+  const register = (value: string, label: string) =>
+    setLabels((current) =>
+      current.some((entry) => entry.value === value && entry.label === label)
+        ? current
+        : [...current.filter((entry) => entry.value !== value), { value, label }],
+    );
+  createEffect(
+    () => container(),
+    (el) => {
+      if (!el) return;
+      const read = () => {
+        const found: ItemLabel[] = [];
+        for (const item of el.querySelectorAll<HTMLElement>(ITEM)) {
+          const value = item.getAttribute("data-value");
+          if (value !== null) found.push({ value, label: labelOf(item) });
+        }
+        if (found.length === 0) return;
+        setLabels((current) => {
+          const changed = found.filter(
+            (entry) => !current.some((known) => known.value === entry.value && known.label === entry.label),
+          );
+          if (changed.length === 0) return current;
+          const values = new Set(changed.map((entry) => entry.value));
+          return [...current.filter((entry) => !values.has(entry.value)), ...changed];
+        });
+      };
+      let live = true;
+      queueMicrotask(() => {
+        if (live) read();
+      });
+      const observer = new MutationObserver(read);
+      observer.observe(el, {
+        childList: true,
+        subtree: true,
+        characterData: true,
+        attributes: true,
+        attributeFilter: ["data-value", "data-label"],
+      });
+      return () => {
+        live = false;
+        observer.disconnect();
+      };
+    },
+  );
   return [labels, register];
 }
 

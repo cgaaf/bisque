@@ -9,8 +9,9 @@
 // Positioner part, and the options stay in the document while it is closed.
 import { mergeProps, withoutHandlers, createId, createRef } from "../internal/props.js"
 import { focusElement } from "../internal/dom.js"
-import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, itemValueById, elementText, matchesFilter, createOnShow, createOutsidePress, createLabels, createItemObserver, createInputValue } from "../internal/listbox.js"
-import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
+import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, itemValueById, elementText, matchesFilter, createOnShow, createOutsidePress, createItemLabels, createItemObserver, createInputValue } from "../internal/listbox.js"
+import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { arrowStyle } from "../internal/native.js"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, InputProps, PartProps } from "../internal/types.rx"
 
@@ -66,11 +67,12 @@ export type ComboboxContext = PopoverState & {
   remove: (value: string) => void
   removeLast: () => void
   clear: () => void
-  // An option names its value: the label is kept after the option is gone, for the selected value.
+  // Names a value, for an option the root can't read a label from: the root reads each rendered option's
+  // `data-value` and `data-label` itself, and keeps the label after the option is gone, for the selected value.
   registerLabel: (value: string, label: string) => void
 }
 
-export context combobox: ComboboxContext
+export context combobox: lane ComboboxContext
 
 // Everything ComboboxRoot and AutocompleteRoot take, for the root both of them render.
 export type InputListRootProps = {
@@ -121,7 +123,6 @@ export component InputListRoot(props: InputListRootProps) {
   // Whether the highlight was put on the first option by `autoHighlight`, not by the user.
   source autoHighlighted: boolean := false
   source visibleCount := 0
-  [registered, registerLabel] = createLabels()
   source input: HTMLElement | undefined := undefined
   source list: HTMLElement | undefined := undefined
   source chips: HTMLElement | undefined := undefined
@@ -179,12 +180,14 @@ export component InputListRoot(props: InputListRootProps) {
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
-  loop = props.loop ?? true
+  loop = latest props.loop ?? true
   listId = createId("combobox-list")
-  hiddenName = isAutocomplete ? undefined : props.name ?? f?.name
+  hiddenName = isAutocomplete ? undefined : latest props.name ?? f?.name
   // Where the options are found: the popup, which stays while an app's `errored` or `loading` region replaces the
   // list inside it; the list itself when there is no popup.
   host = state.popup ?? list
+  // What names each value, read from the options in `host` and kept after an option is gone.
+  [registered, registerLabel] = createItemLabels(host)
 
   action endEcho(text: string) {
     // Tested through a local: narrowing `echo` itself would type the write below as `string` (rx-tsc).
@@ -462,12 +465,21 @@ export component ComboboxRoot(props: ComboboxRootProps) {
 }
 
 // The state attributes the input, trigger, clear button and value share.
+//
+// The parts read each field of the context through an equation of its own. The context is one object, rebuilt
+// whenever any field changes (the highlight, every keystroke): a props object built straight from it would be
+// rebuilt each time with the same content, and everything spread from it would run again
+// (`UNSTABLE_MEMO_OUTPUT`). An equation of one field stops the change when that field didn't.
 fn comboboxState(ref c: ComboboxContext): PartProps {
+  open = c.open
+  disabled = c.disabled
+  readOnly = c.readOnly
+  required = c.required
   {
-    "data-popup-open": c.open ? "" : undefined,
-    "data-disabled": c.disabled ? "" : undefined,
-    "data-readonly": c.readOnly ? "" : undefined,
-    "data-required": c.required ? "" : undefined,
+    "data-popup-open": open ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    "data-readonly": readOnly ? "" : undefined,
+    "data-required": required ? "" : undefined,
   }
 }
 
@@ -495,19 +507,26 @@ export fn comboboxInput(ref c: ComboboxContext): PartProps {
     }
   }
   state = comboboxState(c)
+  mode = c.mode
+  open = c.open
+  listId = c.listId
+  activeId = c.activeId
+  readOnly = c.readOnly
+  disabled = c.disabled
+  setInput = c.setInput
   {
     type: "text",
     role: "combobox",
     autocomplete: "off",
-    "aria-autocomplete": c.mode,
-    "aria-expanded": c.open ? "true" : "false",
+    "aria-autocomplete": mode,
+    "aria-expanded": open ? "true" : "false",
     "aria-haspopup": "listbox",
-    "aria-controls": c.listId,
-    "aria-activedescendant": c.open ? c.activeId : undefined,
-    "aria-readonly": c.readOnly ? "true" : undefined,
-    disabled: c.disabled ? true : undefined,
-    readonly: c.readOnly ? true : undefined,
-    ref: c.setInput,
+    "aria-controls": listId,
+    "aria-activedescendant": open ? activeId : undefined,
+    "aria-readonly": readOnly ? "true" : undefined,
+    disabled: disabled ? true : undefined,
+    readonly: readOnly ? true : undefined,
+    ref: setInput,
     onInput: input,
     onClick: click,
     onKeyDown: keyDown,
@@ -522,9 +541,12 @@ export component ComboboxInput(props: InputProps) {
   own = comboboxInput(c)
   // An autocomplete's input is its value: it carries the name and the constraints the field validates.
   action setFieldInput(element: HTMLInputElement) { if (f && c.kind == "autocomplete") { f.setInput(element) } }
-  forAutocomplete = c.kind == "autocomplete" ? { name: f?.name, required: c.required ? true : undefined, ref: setFieldInput } : {}
+  isAutocomplete = c.kind == "autocomplete"
+  fieldName = f?.name
+  required = c.required
+  forAutocomplete = isAutocomplete ? { name: fieldName, required: required ? true : undefined, ref: setFieldInput } : {}
   withField = mergeProps(mergeProps(inField, own), forAutocomplete)
-  merged = mergeProps(withField, props)
+  merged = latest mergeProps(withField, props)
   <input {...merged} />
 }
 
@@ -537,14 +559,18 @@ export fn comboboxTrigger(ref c: ComboboxContext): PartProps {
   }
   action mouseDown(event: MouseEvent) { event.preventDefault() }
   state = comboboxState(c)
+  open = c.open
+  listId = c.listId
+  disabled = c.disabled
+  setButton = c.setButton
   {
     type: "button",
     tabindex: "-1",
     "aria-haspopup": "listbox",
-    "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.listId,
-    disabled: c.disabled ? true : undefined,
-    ref: c.setButton,
+    "aria-expanded": open ? "true" : "false",
+    "aria-controls": listId,
+    disabled: disabled ? true : undefined,
+    ref: setButton,
     onMouseDown: mouseDown,
     onClick: press,
     ...state,
@@ -554,7 +580,7 @@ export fn comboboxTrigger(ref c: ComboboxContext): PartProps {
 export component ComboboxTrigger({ children, ...rest }: ButtonProps) {
   c = use combobox
   own = comboboxTrigger(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
@@ -562,11 +588,13 @@ export fn comboboxClear(ref c: ComboboxContext): PartProps {
   action mouseDown(event: MouseEvent) { event.preventDefault() }
   action press() { c.clear() }
   state = comboboxState(c)
+  disabled = c.disabled
+  setClear = c.setClear
   {
     type: "button",
     tabindex: "-1",
-    disabled: c.disabled ? true : undefined,
-    ref: c.setClear,
+    disabled: disabled ? true : undefined,
+    ref: setClear,
     onMouseDown: mouseDown,
     onClick: press,
     ...state,
@@ -577,8 +605,9 @@ export fn comboboxClear(ref c: ComboboxContext): PartProps {
 export component ComboboxClear({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & ButtonProps) {
   c = use combobox
   own = comboboxClear(c)
-  merged = mergeProps(own, rest)
-  {if keepMounted || c.selected.length > 0 || c.inputValue != "" {
+  merged = latest mergeProps(own, rest)
+  shown = latest keepMounted || c.selected.length > 0 || c.inputValue != ""
+  {if shown {
     <button {...merged}>{children}</button>
   }}
 }
@@ -592,9 +621,10 @@ export type ComboboxValueProps = {
 export component ComboboxValue({ placeholder, children, ...rest }: ComboboxValueProps) {
   c = use combobox
   text = c.kind == "autocomplete" ? c.inputValue : c.selected.map((value) => labelFor(c.labels, value)).join(", ")
+  isEmpty = text == ""
   state = comboboxState(c)
-  merged = mergeProps({ "data-placeholder": text == "" ? "" : undefined, ...state }, rest)
-  <span {...merged}>{text == "" ? placeholder ?? "" : text}</span>
+  merged = latest mergeProps({ "data-placeholder": isEmpty ? "" : undefined, ...state }, rest)
+  <span {...merged}>{isEmpty ? placeholder ?? "" : text}</span>
 }
 
 export type ComboboxPopupProps = {
@@ -612,39 +642,46 @@ export type ComboboxPopupProps = {
 // focus in the input.
 export fn comboboxPopup(ref c: ComboboxContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   base = popoverPopupProps(c, "manual", side, align, sideOffset, alignOffset)
+  empty = c.visibleCount == 0
+  isLoading = c.loading
   action mouseDown(event: MouseEvent) { event.preventDefault() }
   {
     ...base,
     style: { ...base.style, "min-width": "anchor-size(width)" },
-    "data-empty": c.visibleCount == 0 ? "" : undefined,
-    "data-loading": c.loading ? "" : undefined,
+    "data-empty": empty ? "" : undefined,
+    "data-loading": isLoading ? "" : undefined,
     onMouseDown: mouseDown,
   }
 }
 
 export component ComboboxPopup({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: ComboboxPopupProps) {
   c = use combobox
-  own = comboboxPopup(c, side, align, sideOffset, alignOffset)
-  merged = mergeProps(own, rest)
+  own = comboboxPopup(c, latest side, latest align, latest sideOffset, latest alignOffset)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
 export fn comboboxList(ref c: ComboboxContext): PartProps {
+  listId = c.listId
+  multiple = c.multiple
+  isLoading = c.loading
+  empty = c.visibleCount == 0
+  setList = c.setList
   {
-    id: c.listId,
+    id: listId,
     role: "listbox",
-    "aria-multiselectable": c.multiple ? "true" : undefined,
-    "aria-busy": c.loading ? "true" : undefined,
-    "data-empty": c.visibleCount == 0 ? "" : undefined,
-    "data-loading": c.loading ? "" : undefined,
-    ref: c.setList,
+    "aria-multiselectable": multiple ? "true" : undefined,
+    "aria-busy": isLoading ? "true" : undefined,
+    "data-empty": empty ? "" : undefined,
+    "data-loading": isLoading ? "" : undefined,
+    ref: setList,
   }
 }
 
 export component ComboboxList({ children, ...rest }: DivProps) {
   c = use combobox
   own = comboboxList(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -661,7 +698,7 @@ export type ComboboxItemContext = {
   disabled: boolean
 }
 
-export context comboboxItemState: ComboboxItemContext
+export context comboboxItemState: lane ComboboxItemContext
 
 export type ComboboxItemProps = {
   value: string
@@ -673,13 +710,14 @@ export type ComboboxItemProps = {
 export fn comboboxItem(ref c: ComboboxContext, ref id: string, ref value: string, ref label: string, ref disabled: boolean): PartProps {
   isSelected = c.selected.includes(value)
   highlighted = c.activeId == id
+  isAutocomplete = c.kind == "autocomplete"
   action click() { if (!disabled) { c.choose(value, label) } }
   action mouseDown(event: MouseEvent) { event.preventDefault() }
   action pointerMove() { if (!disabled && c.activeId != id) { c.highlight(id) } }
   {
     id: id,
     role: "option",
-    "aria-selected": c.kind == "autocomplete" ? undefined : isSelected ? "true" : "false",
+    "aria-selected": isAutocomplete ? undefined : isSelected ? "true" : "false",
     "aria-disabled": disabled ? "true" : undefined,
     "data-rs-ui-item": "",
     "data-value": value,
@@ -700,22 +738,23 @@ export component ComboboxItem(props: ComboboxItemProps) {
   source text: string | undefined := undefined
   id = createId("combobox-item")
   isDisabled = props.disabled ?? false
-  label = props.label ?? (text != undefined && text != "" ? text : props.value)
+  label = latest props.label ?? (text != undefined && text != "" ? text : latest props.value)
+  // Booleans read straight from the context: they re-run on each of its changes, and stop there when unchanged.
   visible = !c.filtering || matchesFilter(c.filter, label, c.query)
+  isSelected = c.selected.includes(props.value)
+  highlighted = c.activeId == id
   action setElement(el: HTMLElement) { element := el }
   action setText(next: string) { text := next }
 
+  // The root reads the label from the option's `data-label` (createItemLabels): it isn't registered from here.
   effect (element) { if ($0) { setText(elementText($0)) } }
-  // No cleanup: the label goes on naming the value after the option is gone, and an option removed with its `for`
-  // row can't call an action from a cleanup.
-  effect (label) { c.registerLabel(peek(props.value), $0) }
 
-  provide comboboxItemState = { selected: c.selected.includes(props.value), highlighted: c.activeId == id, disabled: isDisabled }
+  provide comboboxItemState = { selected: isSelected, highlighted: highlighted, disabled: isDisabled }
 
   { value, label: _label, disabled, children, ...rest } = props
-  own = comboboxItem(c, id, value, label, isDisabled)
+  own = comboboxItem(c, id, latest value, label, isDisabled)
   withRef = mergeProps(own, { ref: setElement })
-  merged = mergeProps(withRef, withoutHandlers(rest, isDisabled))
+  merged = latest mergeProps(withRef, withoutHandlers(rest, isDisabled))
   {if visible {
     <div {...merged}>{children}</div>
   }}
@@ -724,7 +763,7 @@ export component ComboboxItem(props: ComboboxItemProps) {
 // Shown while its option is selected, unless `keepMounted`.
 export component ComboboxItemIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
   item = use comboboxItemState
-  merged = mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
   {if item.selected || keepMounted {
     <span {...merged}>{children}</span>
   }}
@@ -742,7 +781,7 @@ export component ComboboxGroup(props: DivProps) {
   _items = createItemObserver(element, setCount)
   provide comboboxGroup = { labelId: labelId, setLabelId: setLabelId }
   { children, ...rest } = props
-  merged = mergeProps({ role: "group", "aria-labelledby": labelId, hidden: count == 0 ? true : undefined, ref: setElement }, rest)
+  merged = latest mergeProps({ role: "group", "aria-labelledby": labelId, hidden: count == 0 ? true : undefined, ref: setElement }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -751,7 +790,7 @@ export component ComboboxGroupLabel({ children, ...rest }: DivProps) {
   id = createId("combobox-group-label")
   // No cleanup: a label removed with a `for` row can't call an action from a cleanup, and its group goes with it.
   effect () { if (group) { group.setLabelId(id) } }
-  merged = mergeProps({ id: id }, rest)
+  merged = latest mergeProps({ id: id }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -759,7 +798,7 @@ export component ComboboxGroupLabel({ children, ...rest }: DivProps) {
 // for an answer that hasn't come. The element stays, so screen readers announce the change.
 export component ComboboxEmpty({ children, ...rest }: DivProps) {
   c = use combobox
-  merged = mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
+  merged = latest mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
   <div {...merged}>
     {if c.visibleCount == 0 && !c.loading {
       {children}
@@ -769,12 +808,12 @@ export component ComboboxEmpty({ children, ...rest }: DivProps) {
 
 // A polite live region for a message about the list ("3 results", "Loading…").
 export component ComboboxStatus({ children, ...rest }: DivProps) {
-  merged = mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
+  merged = latest mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
   <div {...merged}>{children}</div>
 }
 
 export component ComboboxSeparator(props: DivProps) {
-  merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
+  merged = latest mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
   <div {...merged} />
 }
 
@@ -782,7 +821,7 @@ export component ComboboxSeparator(props: DivProps) {
 export component ComboboxChips({ children, ...rest }: DivProps) {
   c = use combobox
   action setChips(element: HTMLElement) { c.setChips(element) }
-  merged = mergeProps({ ref: setChips }, rest)
+  merged = latest mergeProps({ ref: setChips }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -795,17 +834,20 @@ export component ComboboxChip(props: { value: string } & DivProps) {
   c = use combobox
   provide comboboxChip = { value: props.value }
   { value, children, ...rest } = props
-  merged = mergeProps({ "data-disabled": c.disabled ? "" : undefined, "data-readonly": c.readOnly ? "" : undefined }, rest)
+  disabled = c.disabled
+  readOnly = c.readOnly
+  merged = latest mergeProps({ "data-disabled": disabled ? "" : undefined, "data-readonly": readOnly ? "" : undefined }, rest)
   <div {...merged}>{children}</div>
 }
 
 export fn comboboxChipRemove(ref c: ComboboxContext, ref value: string): PartProps {
   action mouseDown(event: MouseEvent) { event.preventDefault() }
   action press() { c.remove(value) }
+  inert = c.disabled || c.readOnly
   {
     type: "button",
     tabindex: "-1",
-    disabled: c.disabled || c.readOnly ? true : undefined,
+    disabled: inert ? true : undefined,
     onMouseDown: mouseDown,
     onClick: press,
   }
@@ -816,20 +858,21 @@ export component ComboboxChipRemove({ children, ...rest }: ButtonProps) {
   c = use combobox
   chip = use comboboxChip
   own = comboboxChipRemove(c, chip.value)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
 // Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
 // trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
 export fn comboboxArrow(ref c: ComboboxContext): PartProps {
-  base = popoverArrowProps(c)
-  base
+  // As popoverArrowProps, from the placement alone: given the whole context, that would be rebuilt on every change.
+  placement = c.placement
+  { "aria-hidden": "true", "data-side": placement?.side, style: arrowStyle(placement) }
 }
 
 export component ComboboxArrow({ children, ...rest }: DivProps) {
   c = use combobox
   own = comboboxArrow(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

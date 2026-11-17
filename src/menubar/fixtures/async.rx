@@ -1,0 +1,48 @@
+import { MenubarRoot } from "../menubar.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem } from "../../menu/menu.rx"
+import { fetchList, save } from "../../test/slow-server.js"
+
+// A menubar whose File menu loads its items when it first opens, and whose Edit menu logs every open and close
+// with a request (its `onOpenChange` is an action).
+export default component Fixture() {
+  source wanted: boolean := false
+  files = wanted ? await fetchList("files") : []
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let answer = await save(next ? "edit opened" : "edit closed")
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+  <style>
+    :global(.bar-popup) { margin: 0; padding: 0; border: 0; width: 120px }
+    :global(.bar-popup > :not([popover])) { display: block; box-sizing: border-box; width: 100%; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
+  <main>
+    <MenubarRoot style="display: flex; gap: 8px">
+      <MenuRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+        <MenuTrigger>File</MenuTrigger>
+        <MenuPopup class="bar-popup" data-testid="file-popup">
+          {loading on(wanted) fallback { <p data-testid="loading">Loading…</p> } {
+            {errored fallback(e) { <p>{e.message}</p> } {
+              {for name in files {
+                <MenuItem>{name}</MenuItem>
+              }}
+            }}
+          }}
+        </MenuPopup>
+      </MenuRoot>
+      <MenuRoot onOpenChange={log}>
+        <MenuTrigger>Edit</MenuTrigger>
+        <MenuPopup class="bar-popup" data-testid="edit-popup">
+          <MenuItem>Undo</MenuItem>
+          <MenuItem>Redo</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+    </MenubarRoot>
+    <output data-testid="logged">{pending? logged ? "" : logged}</output>
+  </main>
+}

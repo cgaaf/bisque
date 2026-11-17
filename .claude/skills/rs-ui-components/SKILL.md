@@ -63,6 +63,14 @@ Conventions the existing families follow, and consumers will rely on:
   `data-ending-style`, `data-disabled` on a non-native control. ARIA states are the strings `"true"`/`"false"`.
 - Controlled or uncontrolled, the same way everywhere: `source uncontrolled := peek(props.defaultX ?? …)`,
   `current = props.x ?? uncontrolled`, and an action that writes `uncontrolled` and calls `props.onXChange`.
+- **What the app supplies is read through `latest` where the family's tests allow it**, so a part's own state
+  doesn't wait for the app's server: `merged = latest mergeProps(own, rest)`, and `latest props.x` for a prop read
+  in an equation (not the controlled prop, not reads in an action). An exported context whose provision then reads
+  `latest` is declared `lane`. This is not yet a rule that holds everywhere: on a prop that reaches a provision it
+  often makes the equations below run twice per action (`UNSTABLE_MEMO_OUTPUT`, typed text overwritten), and
+  Dialog can't take it at all. Where it breaks a family's tests the read stays plain, and the case is a
+  `test.fails` in `<family>.held.browser.test.ts`. `references/language-notes.md`, "Actions, holds and
+  components", has what was measured.
 - A part accepts every attribute of its element (`DivProps`, `ButtonProps` from `src/internal/types.rx`) and
   merges them with `mergeProps(own, rest)`, so the consumer's `class`, `style`, handlers and `ref` are kept.
 - Parts ship no styles. The exception is placement: a popup's anchoring declarations are written inline
@@ -147,8 +155,8 @@ each way to change it (pointer and every key), controlled and uncontrolled, disa
 the part has a value. A test that passes on its first run has not yet been shown to fail: break the behaviour
 once and watch it go red.
 
-Each family also has a demo, `demo/<family>.rx`: one exported component showing typical use, added to
-`demo/app.rx`. The demo build is what proves a family bundles.
+Each family also has a docs page with demos (`references/docs.md`). The docs build, `pnpm build:docs`, is what
+proves a family bundles.
 
 A component is done when its tests pass in all three engines, `pnpm typecheck` and `pnpm lint` are clean, and
 the test output has no Solid diagnostics. `pnpm check` is the whole suite; run it when a stage of work is

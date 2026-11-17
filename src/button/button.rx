@@ -18,10 +18,10 @@ export type ButtonOptions = {
 // Button behaviour for the element that plays one. The consumer's activation handlers must be dropped while it
 // is disabled: `mergeProps(button(o), gateButtonHandlers(rest, disabled))`.
 export fn button(ref o: ButtonOptions): PartProps {
-  disabled = o.disabled ?? false
-  focusable = o.focusableWhenDisabled ?? false
-  native = o.native ?? true
-  composite = o.composite ?? false
+  disabled = latest o.disabled ?? false
+  focusable = latest o.focusableWhenDisabled ?? false
+  native = latest o.native ?? true
+  composite = latest o.composite ?? false
   source element: HTMLElement | undefined := undefined
   action writeElement(el: HTMLElement) { element := el }
   setElement = createRef(writeElement)
@@ -87,8 +87,8 @@ export type ButtonRootProps = {
 } & Omit<ButtonProps, "disabled">
 
 export component Button({ disabled = false, focusableWhenDisabled = false, children, ...rest }: ButtonRootProps) {
-  own = button({ disabled: disabled, focusableWhenDisabled: focusableWhenDisabled })
-  external = gateButtonHandlers(rest, disabled)
-  merged = mergeProps(own, external)
+  own = button({ disabled: latest disabled, focusableWhenDisabled: latest focusableWhenDisabled })
+  external = gateButtonHandlers(rest, latest disabled)
+  merged = latest mergeProps(own, external)
   <button {...merged}>{children}</button>
 }

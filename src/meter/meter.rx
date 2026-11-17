@@ -12,7 +12,7 @@ export type MeterContext = {
   setLabelId: (id: string | undefined) => void
 }
 
-export context meter: MeterContext
+export context meter: lane MeterContext
 
 export type MeterRootProps = {
   value: number
@@ -30,14 +30,14 @@ export type MeterRootProps = {
 export component MeterRoot(props: MeterRootProps) {
   source labelId: string | undefined := undefined
   action setLabelId(id: string | undefined) { labelId := id }
-  low = props.min ?? 0
-  high = props.max ?? 100
-  range = rangeValue(props.value, low, high, props.locale, props.format)
+  low = latest props.min ?? 0
+  high = latest props.max ?? 100
+  range = rangeValue(latest props.value, low, high, latest props.locale, latest props.format)
   // A value that isn't a number reads as the minimum.
   clamped = range.clamped ?? low
   percent = range.percent ?? 0
 
-  provide meter = { value: props.value, clamped: clamped, percent: percent, formatted: range.formatted, setLabelId: setLabelId }
+  provide meter = { value: latest props.value, clamped: clamped, percent: percent, formatted: range.formatted, setLabelId: setLabelId }
 
   { value, min, max, format, locale, getAriaValueText, children, ...rest } = props
   own = {
@@ -45,10 +45,10 @@ export component MeterRoot(props: MeterRootProps) {
     "aria-valuemin": low,
     "aria-valuemax": high,
     "aria-valuenow": clamped,
-    "aria-valuetext": getAriaValueText ? getAriaValueText(range.formatted, value) : range.formatted,
+    "aria-valuetext": getAriaValueText ? getAriaValueText(range.formatted, latest value) : range.formatted,
     "aria-labelledby": labelId,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -64,7 +64,7 @@ export fn meterIndicator(ref c: MeterContext): PartProps {
 export component MeterIndicator({ children, ...rest }: DivProps) {
   c = use meter
   own = meterIndicator(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -76,7 +76,7 @@ export fn meterValue(): PartProps {
 
 export component MeterValue(props: Omit<SpanProps, "children">) {
   c = use meter
-  merged = mergeProps(meterValue(), props)
+  merged = latest mergeProps(meterValue(), props)
   <span {...merged}>{c.formatted}</span>
 }
 
@@ -92,7 +92,7 @@ export fn meterLabel(ref c: MeterContext, ref id: string): PartProps {
 export component MeterLabel({ id, children, ...rest }: SpanProps) {
   c = use meter
   generated = createId("meter-label")
-  own = meterLabel(c, id || generated)
-  merged = mergeProps(own, rest)
+  own = meterLabel(c, (latest id) || generated)
+  merged = latest mergeProps(own, rest)
   <span {...merged}>{children}</span>
 }

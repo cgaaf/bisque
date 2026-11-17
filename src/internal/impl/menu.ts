@@ -52,13 +52,52 @@ export function createMenuFocus(
       if (!el) return;
       const previous = document.activeElement as HTMLElement | null;
       const initial = untrack(initialFocus);
+      const which = initial === "last-item" ? "last" : "first";
+      // Opened from the keyboard before its items exist (they load, or a `loading` region shows its fallback):
+      // focus waits on the popup and goes to the first (or last) item once one arrives, unless the user has moved it.
+      let awaitingItem = false;
+      // Items replaced while the menu is open (a new answer, an error shown in their place, a retry) can take the
+      // focused one with them, and the browser drops focus to the body: it goes back to the menu's first item.
+      let hadFocus = false;
+      const onFocusIn = () => {
+        hadFocus = true;
+      };
+      const onFocusOut = (event: FocusEvent) => {
+        const next = event.relatedTarget as Node | null;
+        if (next && !el.contains(next)) hadFocus = false;
+      };
+      const observer = new MutationObserver(() => {
+        const focused = document.activeElement;
+        if (awaitingItem) {
+          if (focused !== el) awaitingItem = false;
+          else if (listItems(el).length > 0) {
+            awaitingItem = false;
+            focusListItem(el, which);
+          }
+          return;
+        }
+        // A submenu open inside this menu looks after its own items.
+        if (!hadFocus || !el.matches(":popover-open") || el.querySelector("[popover]:popover-open")) return;
+        if (focused !== null && focused !== document.body && focused.isConnected) return;
+        focusListItem(el, "first");
+        // No item to take it yet (a fallback replaced them): the first one that arrives does.
+        awaitingItem = document.activeElement === el;
+      });
+      observer.observe(el, { childList: true, subtree: true });
+      el.addEventListener("focusin", onFocusIn);
+      el.addEventListener("focusout", onFocusOut);
+      // After the listeners: the popup may be shown already, and the focus this moves in must be seen.
       const cancel = whenShown(el, () => {
         if (initial === "none" || el.contains(document.activeElement)) return;
-        if (initial === "container") el.focus();
-        else focusListItem(el, initial === "last-item" ? "last" : "first");
+        if (initial === "container") return el.focus();
+        focusListItem(el, which);
+        awaitingItem = document.activeElement === el;
       });
       return () => {
         cancel();
+        observer.disconnect();
+        el.removeEventListener("focusin", onFocusIn);
+        el.removeEventListener("focusout", onFocusOut);
         if (!untrack(restore)) return;
         const focused = document.activeElement as HTMLElement | null;
         const inside =

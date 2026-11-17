@@ -30,7 +30,7 @@ export type MenuContext = PopoverState & {
   moveInMenubar: (direction: number) => void
 }
 
-export context menu: MenuContext
+export context menu: lane MenuContext
 
 // What a Menubar shares with the menus in it. `present` is false outside one.
 export type MenubarContext = {
@@ -45,7 +45,7 @@ export type MenubarContext = {
   setOpenMenu: (id: string | undefined, focus: MenuOpenFocus) => void
 }
 
-export context menubar: MenubarContext = {
+export context menubar: lane MenubarContext = {
   present: false,
   orientation: "horizontal",
   disabled: false,
@@ -74,12 +74,35 @@ export component MenuRoot(props: MenuRootProps) {
   inBar = bar.present
   isDisabled = (props.disabled ?? false) || bar.disabled
 
+  // The app's handler is called in a change of its own (`onFlush`), never in the one that opens or closes the menu:
+  // a handler that writes what a loading question reads (items that load when it opens), or that is an action
+  // awaiting a request, holds its change until the answer lands, and the menu (and the browser's popover, put back
+  // in step with the held state) would wait with it.
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
   action changed(next: boolean) {
     if (inBar) {
       if (next) { bar.setOpenMenu(menuId, localFocus) } else if (bar.openMenu == menuId) { bar.setOpenMenu(undefined, "container") }
+    } else {
+      notifyOpen(next)
     }
-    if (props.onOpenChange) { props.onOpenChange(next) }
   }
+  // In a menubar the bar holds which menu is open, and it changes in more ways than this menu sees (ArrowLeft and
+  // ArrowRight move to a neighbour, opening one closes the other), so the handler follows the bar's state.
+  barOpen = inBar && bar.openMenu == menuId
+  source reported: boolean := false
+  action reportBar(next: boolean) {
+    let was = reported
+    if (next != was) {
+      reported := next
+      notifyOpen(next)
+    }
+  }
+  effect (barOpen) { if (inBar) { reportBar($0) } }
 
   state = createPopoverState(inBar ? bar.openMenu == menuId : props.open, peek(props.defaultOpen ?? false), changed)
   openFocus = inBar ? bar.openFocus : localFocus
@@ -89,7 +112,6 @@ export component MenuRoot(props: MenuRootProps) {
     if (inBar) {
       if (bar.openMenu == menuId) { return }
       bar.setOpenMenu(menuId, focus)
-      if (props.onOpenChange) { props.onOpenChange(true) }
       return
     }
     localFocus := focus
@@ -185,7 +207,7 @@ export component MenuTrigger({ children, ...rest }: ButtonProps) {
   c = use menu
   bar = use menubar
   own = menuTrigger(c, bar)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
@@ -234,9 +256,9 @@ export fn menuPopup(ref c: MenuContext, ref bar: MenubarContext, ref side: "top"
 export component MenuPopup({ side, align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: MenuPopupProps) {
   c = use menu
   bar = use menubar
-  usedSide = side ?? (c.isSubmenu || (bar.present && bar.orientation == "vertical") ? "right" : "bottom")
-  own = menuPopup(c, bar, usedSide, align, sideOffset, alignOffset)
-  merged = mergeProps(own, rest)
+  usedSide = latest side ?? (c.isSubmenu || (bar.present && bar.orientation == "vertical") ? "right" : "bottom")
+  own = menuPopup(c, bar, usedSide, latest align, latest sideOffset, latest alignOffset)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -276,16 +298,19 @@ export type MenuItemProps = {
 
 export fn menuItem(ref c: MenuContext, ref disabled: boolean, ref closeOnClick: boolean): PartProps {
   base = itemBase(disabled)
+  // The consumer's `onClick` runs first, in the same instant: when it starts an action (a save), a plain close here
+  // would join that action's hold and the menu would stay open until the server answered. Closing is its own change.
+  action close() { c.closeTree() }
   action click() {
-    if (!disabled && closeOnClick) { c.closeTree() }
+    if (!disabled && closeOnClick) { onFlush(() => { close() }) }
   }
   { role: "menuitem", ...base, onClick: click }
 }
 
 export component MenuItem({ disabled = false, closeOnClick = true, children, ...rest }: MenuItemProps) {
   c = use menu
-  own = menuItem(c, disabled, closeOnClick)
-  merged = mergeProps(own, withoutHandlers(rest, disabled))
+  own = menuItem(c, latest disabled, latest closeOnClick)
+  merged = latest mergeProps(own, withoutHandlers(rest, disabled))
   <div {...merged}>{children}</div>
 }
 
@@ -297,16 +322,18 @@ export type MenuLinkItemProps = {
 // A menu item that is a link: Enter follows it.
 export fn menuLinkItem(ref c: MenuContext, ref closeOnClick: boolean): PartProps {
   base = itemBase(false)
+  // Its own change, as MenuItem's close.
+  action close() { c.closeTree() }
   action click() {
-    if (closeOnClick) { c.closeTree() }
+    if (closeOnClick) { onFlush(() => { close() }) }
   }
   { role: "menuitem", ...base, onClick: click }
 }
 
 export component MenuLinkItem({ closeOnClick = false, children, ...rest }: MenuLinkItemProps) {
   c = use menu
-  own = menuLinkItem(c, closeOnClick)
-  merged = mergeProps(own, rest)
+  own = menuLinkItem(c, latest closeOnClick)
+  merged = latest mergeProps(own, rest)
   <a {...merged}>{children}</a>
 }
 
@@ -323,14 +350,21 @@ export component MenuCheckboxItem(props: MenuCheckboxItemProps) {
   c = use menu
   source uncontrolled := peek(props.defaultChecked ?? false)
   isChecked = props.checked ?? uncontrolled
-  isDisabled = props.disabled ?? false
+  isDisabled = latest props.disabled ?? false
   base = itemBase(isDisabled)
+  // Its own change, as MenuItem's close.
+  action close() { c.closeTree() }
   action click() {
     if (isDisabled) { return }
     let next = !isChecked
     uncontrolled := next
-    if (props.onCheckedChange) { props.onCheckedChange(next) }
-    if (props.closeOnClick ?? false) { c.closeTree() }
+    // In a change of its own: a handler that saves (an action) or writes what a loading question reads must not
+    // hold the tick, the menu's highlight or its closing.
+    if (props.onCheckedChange) {
+      let report = props.onCheckedChange
+      onFlush(() => { report(next) })
+    }
+    if (props.closeOnClick ?? false) { onFlush(() => { close() }) }
   }
   { checked, defaultChecked, onCheckedChange, disabled, closeOnClick, children, ...rest } = props
   own = {
@@ -341,7 +375,7 @@ export component MenuCheckboxItem(props: MenuCheckboxItemProps) {
     ...base,
     onClick: click,
   }
-  merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  merged = latest mergeProps(own, withoutHandlers(rest, isDisabled))
   <div {...merged}>{children}</div>
 }
 
@@ -363,11 +397,15 @@ export component MenuRadioGroup(props: MenuRadioGroupProps) {
   current = props.value ?? uncontrolled
   action select(value: string) {
     uncontrolled := value
-    if (props.onValueChange) { props.onValueChange(value) }
+    // In a change of its own, as MenuCheckboxItem's handler.
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(value) })
+    }
   }
   provide menuRadioGroup = { value: current, select: select }
   { value, defaultValue, onValueChange, children, ...rest } = props
-  merged = mergeProps({ role: "group" }, rest)
+  merged = latest mergeProps({ role: "group" }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -380,12 +418,14 @@ export type MenuRadioItemProps = {
 export component MenuRadioItem({ value, disabled = false, closeOnClick = false, children, ...rest }: MenuRadioItemProps) {
   c = use menu
   group = use menuRadioGroup
-  base = itemBase(disabled)
-  isChecked = group.value == value
+  base = itemBase(latest disabled)
+  isChecked = group.value == latest value
+  // Its own change, as MenuItem's close.
+  action close() { c.closeTree() }
   action click() {
     if (disabled) { return }
     group.select(value)
-    if (closeOnClick) { c.closeTree() }
+    if (closeOnClick) { onFlush(() => { close() }) }
   }
   own = {
     role: "menuitemradio",
@@ -395,7 +435,7 @@ export component MenuRadioItem({ value, disabled = false, closeOnClick = false, 
     ...base,
     onClick: click,
   }
-  merged = mergeProps(own, withoutHandlers(rest, disabled))
+  merged = latest mergeProps(own, withoutHandlers(rest, disabled))
   <div {...merged}>{children}</div>
 }
 
@@ -411,23 +451,22 @@ export component MenuGroup(props: DivProps) {
   action setLabelId(id: string | undefined) { labelId := id }
   provide menuGroup = { labelId: labelId, setLabelId: setLabelId }
   { children, ...rest } = props
-  merged = mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
+  merged = latest mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
   <div {...merged}>{children}</div>
 }
 
 export component MenuGroupLabel({ children, ...rest }: DivProps) {
   group = use menuGroup
   id = createId("menu-group-label")
-  effect () {
-    group.setLabelId(id)
-    return () => { group.setLabelId(undefined) }
-  }
-  merged = mergeProps({ id: id, role: "presentation" }, rest)
+  // No cleanup: a label removed with its `for` row (items replaced by a new answer) can't call an action from a
+  // cleanup (ACTION_CALLED_IN_OWNED_SCOPE), and its group goes with it.
+  effect () { group.setLabelId(id) }
+  merged = latest mergeProps({ id: id, role: "presentation" }, rest)
   <div {...merged}>{children}</div>
 }
 
 export component MenuSeparator(props: DivProps) {
-  merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
+  merged = latest mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
   <div {...merged} />
 }
 
@@ -456,8 +495,15 @@ export component MenuSubmenuRoot(props: MenuSubmenuRootProps) {
 component SubmenuProvider(props: MenuSubmenuRootProps & { parent: MenuContext }) {
   parent = props.parent
   source openFocus: MenuOpenFocus := "none"
+  // The app's handler in a change of its own, as MenuRoot's.
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
   // The browser closes the submenu with its parent (it is nested in it) and reports it through `toggle`.
-  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
   isDisabled = (props.disabled ?? false) || parent.disabled
 
   action openWith(focus: MenuOpenFocus) {
@@ -547,8 +593,8 @@ export fn menuSubmenuTrigger(ref c: MenuContext, ref disabled: boolean, ref open
 export component MenuSubmenuTrigger({ disabled = false, openOnHover = true, delay = 100, closeDelay = 0, children, ...rest }: MenuSubmenuTriggerProps) {
   c = use menu
   isDisabled = disabled || c.disabled
-  own = menuSubmenuTrigger(c, isDisabled, openOnHover, delay, closeDelay)
-  merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  own = menuSubmenuTrigger(c, isDisabled, latest openOnHover, latest delay, latest closeDelay)
+  merged = latest mergeProps(own, withoutHandlers(rest, isDisabled))
   <button {...merged}>{children}</button>
 }
 
@@ -562,6 +608,6 @@ export fn menuArrow(ref c: MenuContext): PartProps {
 export component MenuArrow({ children, ...rest }: DivProps) {
   c = use menu
   own = menuArrow(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

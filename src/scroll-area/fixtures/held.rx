@@ -1,0 +1,81 @@
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb } from "../scroll-area.rx"
+import { save } from "../../test/slow-server.js"
+
+ROWS = ["Row 1", "Row 2", "Row 3", "Row 4", "Row 5", "Row 6", "Row 7", "Row 8", "Row 9", "Row 10"]
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// scroll area is computed from that write. The scroll area's own state (scroll position, overflow edges, hover)
+// must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <ScrollAreaRoot data-testid="root-prop" overflowEdgeThreshold={step == 1 ? 0 : 1} style="height: 60px; width: 200px">
+      <ScrollAreaViewport style="height: 100%">
+        <ScrollAreaContent>
+          {for row in ROWS { <p style="margin: 0; height: 20px">{row}</p> }}
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar>
+        <ScrollAreaThumb />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+
+    // 2. A prop of the scrollbar.
+    <ScrollAreaRoot data-testid="scrollbar-prop" style="height: 60px; width: 200px">
+      <ScrollAreaViewport style="height: 100%">
+        <ScrollAreaContent>
+          {for row in ROWS { <p style="margin: 0; height: 20px">{row}</p> }}
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar keepMounted={step == 2}>
+        <ScrollAreaThumb />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+
+    // 3. An attribute passed through to the root's element.
+    <ScrollAreaRoot data-testid="root-attribute" class={step == 2 ? "second" : "first"} style="height: 60px; width: 200px">
+      <ScrollAreaViewport style="height: 100%">
+        <ScrollAreaContent>
+          {for row in ROWS { <p style="margin: 0; height: 20px">{row}</p> }}
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar>
+        <ScrollAreaThumb />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+
+    // 4. An attribute passed through to the viewport's element.
+    <ScrollAreaRoot data-testid="viewport-attribute" style="height: 60px; width: 200px">
+      <ScrollAreaViewport class={step == 2 ? "second" : "first"} style="height: 100%">
+        <ScrollAreaContent>
+          {for row in ROWS { <p style="margin: 0; height: 20px">{row}</p> }}
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar>
+        <ScrollAreaThumb />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+
+    // 5. An attribute passed through to the scrollbar's element.
+    <ScrollAreaRoot data-testid="scrollbar-attribute" style="height: 60px; width: 200px">
+      <ScrollAreaViewport style="height: 100%">
+        <ScrollAreaContent>
+          {for row in ROWS { <p style="margin: 0; height: 20px">{row}</p> }}
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar class={step == 2 ? "second" : "first"}>
+        <ScrollAreaThumb />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+  </main>
+}

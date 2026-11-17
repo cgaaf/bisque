@@ -18,6 +18,6 @@ export component Input(props: InputComponentProps) {
     }
   }
   own = fieldControl(f, value, peek(defaultValue ?? ""), report, disabled == true)
-  merged = mergeProps(own, rest)
+  merged = mergeProps(own, latest rest)
   <input {...merged} />
 }

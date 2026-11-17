@@ -1,0 +1,4 @@
+// How fixtures call ./slow-server.js. One declaration per line: scripts/gen-dts.mjs writes ./slow-server.d.ts.
+export pure fn fetchText(key: string): Promise<string>
+export pure fn fetchList(key: string): Promise<string[]>
+export fn save(key: string): Promise<string>

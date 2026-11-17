@@ -1,0 +1,33 @@
+import { Form } from "../form.rx"
+import { FieldRoot, FieldLabel, FieldControl } from "../../field/field.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// form is computed from that write. The form's own state (a submit in flight) and its fields' state must not wait
+// for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // An attribute of the form. The form's props that its context reads (`errors`, `validationMode`, read plainly)
+    // held, didn't hold a field's typing or its revalidation after a submit: those cases proved nothing and were
+    // dropped.
+    <Form data-testid="form-attribute" class={step == 2 ? "second" : "first"} onFormSubmit={(values) => {
+      try { await save("attribute") } catch (e) { }
+    }}>
+      <FieldRoot data-testid="form-attribute-field" name="a" validationMode="onChange">
+        <FieldLabel>Form attribute</FieldLabel>
+        <FieldControl />
+      </FieldRoot>
+      <button type="submit">Submit form attribute</button>
+    </Form>
+  </main>
+}

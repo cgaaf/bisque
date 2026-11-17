@@ -36,8 +36,8 @@ test("a popover reports its state through beforetoggle and toggle", async () => 
   const host = render(`<div id="p" popover>Content</div>`);
   const popup = host.querySelector<HTMLElement>("#p")!;
   const seen: string[] = [];
-  popup.addEventListener("beforetoggle", (event) => seen.push(`before:${(event as ToggleEvent).newState}`));
-  popup.addEventListener("toggle", (event) => seen.push(`after:${(event as ToggleEvent).newState}`));
+  popup.addEventListener("beforetoggle", (event) => seen.push(`before:${event.newState}`));
+  popup.addEventListener("toggle", (event) => seen.push(`after:${event.newState}`));
   popup.showPopover();
   await frame();
   await frame();

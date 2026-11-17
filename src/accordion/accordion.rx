@@ -9,6 +9,7 @@
 // `<AccordionTrigger><h3>Shipping</h3></AccordionTrigger>`.
 import { mergeProps, createId, createRef } from "../internal/props.js"
 import { createDisclosure, focusAdjacentTrigger } from "../internal/disclosure.js"
+import { createKeptFocus } from "../internal/dom.js"
 import { DivProps, DetailsProps, SummaryProps, PartProps } from "../internal/types.rx"
 
 export type AccordionOrientation = "vertical" | "horizontal"
@@ -24,7 +25,7 @@ export type AccordionContext = {
   setItemOpen: (item: string, open: boolean) => void
 }
 
-export context accordion: AccordionContext
+export context accordion: lane AccordionContext
 
 export type AccordionRootProps = {
   value?: string[]
@@ -43,8 +44,8 @@ export type AccordionRootProps = {
 export component AccordionRoot(props: AccordionRootProps) {
   source uncontrolled: string[] := peek([...(props.defaultValue ?? [])])
   current = props.value ?? uncontrolled
-  isDisabled = props.disabled ?? false
-  axis = props.orientation ?? "vertical"
+  isDisabled = latest props.disabled ?? false
+  axis = latest props.orientation ?? "vertical"
   groupName = createId("accordion")
 
   action setItemOpen(item: string, open: boolean) {
@@ -52,15 +53,20 @@ export component AccordionRoot(props: AccordionRootProps) {
     let others = current.filter((v) => v != item)
     let next = open ? ((props.multiple ?? false) ? [...others, item] : [item]) : others
     uncontrolled := next
-    if (props.onValueChange) { props.onValueChange(next) }
+    // In a change of its own (`onFlush`): a handler that writes what a loading question reads, or that awaits, would
+    // otherwise hold this change, and the items (and the <details> the browser opened) with it.
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
   }
 
   provide accordion = {
     value: current,
     disabled: isDisabled,
     orientation: axis,
-    loopFocus: props.loopFocus ?? true,
-    name: (props.multiple ?? false) ? undefined : groupName,
+    loopFocus: latest props.loopFocus ?? true,
+    name: (latest props.multiple ?? false) ? undefined : groupName,
     setItemOpen: setItemOpen,
   }
 
@@ -70,7 +76,7 @@ export component AccordionRoot(props: AccordionRootProps) {
     "data-orientation": axis,
     "data-disabled": isDisabled ? "" : undefined,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -84,7 +90,7 @@ export type AccordionItemContext = {
   setPanel: (element: HTMLElement) => void
 }
 
-export context accordionItem: AccordionItemContext
+export context accordionItem: lane AccordionItemContext
 
 export type AccordionItemProps = {
   // Identifies the item in the root's `value`. Default: a generated id.
@@ -111,15 +117,19 @@ export component AccordionItem(props: AccordionItemProps) {
   fallbackValue = createId("accordion-item")
   triggerId = createId("accordion-trigger")
   panelId = createId("accordion-panel")
-  itemValue = props.value ?? fallbackValue
+  itemValue = latest props.value ?? fallbackValue
   isOpen = root.value.includes(itemValue)
-  isDisabled = (props.disabled ?? false) || root.disabled
+  isDisabled = (latest props.disabled ?? false) || root.disabled
   // Rendered once, so an open item doesn't animate in on mount; the driver keeps it in step after that.
   initiallyOpen = peek(isOpen)
 
   action setOpen(next: boolean) {
     if (next == isOpen) { return }
-    if (props.onOpenChange) { props.onOpenChange(next) }
+    // In a change of its own, as the root's `onValueChange` is, and before it.
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
     root.setItemOpen(itemValue, next)
   }
   action writeDetails(element: HTMLDetailsElement) { details := element }
@@ -128,6 +138,8 @@ export component AccordionItem(props: AccordionItemProps) {
   setPanel = createRef(writePanel)
 
   _details = createDisclosure(details, panel, isOpen, "accordion-panel", setOpen)
+  // Content that loads or fails inside the open panel replaces what had focus: focus stays in the panel.
+  _focus = createKeptFocus(panel, isOpen)
 
   self = {
     value: itemValue,
@@ -148,7 +160,7 @@ export component AccordionItem(props: AccordionItemProps) {
     open: initiallyOpen ? true : undefined,
     ref: setDetails,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <details {...merged}>{children}</details>
 }
 
@@ -178,7 +190,7 @@ export component AccordionTrigger({ children, ...rest }: SummaryProps) {
   root = use accordion
   item = use accordionItem
   own = accordionTrigger(root, item)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <summary {...merged}>{children}</summary>
 }
 
@@ -201,6 +213,6 @@ export component AccordionPanel({ children, ...rest }: DivProps) {
   root = use accordion
   item = use accordionItem
   own = accordionPanel(root, item)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

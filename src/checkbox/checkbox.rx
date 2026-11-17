@@ -23,7 +23,7 @@ export type CheckboxContext = {
   required: boolean
 }
 
-export context checkbox: CheckboxContext
+export context checkbox: lane CheckboxContext
 
 export type CheckboxRootProps = {
   checked?: boolean
@@ -53,23 +53,23 @@ export component CheckboxRoot(props: CheckboxRootProps) {
   // Counts form resets, so the box is set back to the state after one (createCheckedInput).
   source revision := 0
   source element: HTMLInputElement | undefined := undefined
-  isParent = group != undefined && (props.parent ?? false)
+  isParent = group != undefined && (latest props.parent ?? false)
   // A member of a group: a box with a value inside one. The group, not the box, is then the field's control.
-  inGroup = group != undefined && !isParent && props.value != undefined
+  inGroup = group != undefined && !isParent && (latest props.value) != undefined
   groupValue = group?.value ?? []
   groupAll = group?.allValues ?? []
   // `checked`, `indeterminate` and `disabled` are often read from an answer that can fail (`checked={setting}` with
   // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the box's.
   givenChecked = props.checked catch (e) => undefined
-  givenIndeterminate = (props.indeterminate ?? false) catch (e) => false
-  givenDisabled = (props.disabled ?? false) catch (e) => false
-  isChecked = isParent ? groupAll.length > 0 && groupValue.length == groupAll.length : inGroup ? groupValue.includes(props.value ?? "") : givenChecked ?? uncontrolled
+  givenIndeterminate = (latest props.indeterminate ?? false) catch (e) => false
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
+  isChecked = isParent ? groupAll.length > 0 && groupValue.length == groupAll.length : inGroup ? groupValue.includes(latest props.value ?? "") : givenChecked ?? uncontrolled
   // Plain values first, then the objects built from them: a group's context is a new object on every change, and
   // a box's own objects (`self`, `own`) should be rebuilt only when something about this box changed.
   isIndeterminate = isParent ? groupValue.length > 0 && groupValue.length < groupAll.length : givenIndeterminate
   isDisabled = givenDisabled || (f?.disabled ?? false) || (group?.disabled ?? false)
-  isReadOnly = props.readOnly ?? false
-  isRequired = props.required ?? false
+  isReadOnly = latest props.readOnly ?? false
+  isRequired = latest props.required ?? false
   self = {
     checked: isChecked,
     indeterminate: isIndeterminate,
@@ -78,7 +78,7 @@ export component CheckboxRoot(props: CheckboxRootProps) {
     required: isRequired,
   }
   fieldOf = group == undefined ? f : undefined
-  inputName = isParent ? undefined : props.name ?? f?.name
+  inputName = isParent ? undefined : latest props.name ?? f?.name
   // The box's `defaultChecked`: what a form reset puts back, which for an uncontrolled box is its default.
   initialChecked = peek(isChecked)
 
@@ -138,7 +138,7 @@ export component CheckboxRoot(props: CheckboxRootProps) {
   own = mergeProps(inField, {
     type: "checkbox",
     name: inputName,
-    value: value,
+    value: latest value,
     defaultChecked: initialChecked,
     disabled: isDisabled ? true : undefined,
     required: isRequired ? true : undefined,
@@ -149,7 +149,7 @@ export component CheckboxRoot(props: CheckboxRootProps) {
     onChange: change,
     onClick: click,
   })
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <input {...merged} />
   {children}
 }
@@ -158,6 +158,6 @@ export component CheckboxRoot(props: CheckboxRootProps) {
 // and show it with `input:checked + *` and `input:indeterminate + *`. Hidden from assistive technology, which
 // hears the box's own state.
 export component CheckboxIndicator({ children, ...rest }: SpanProps) {
-  merged = mergeProps({ "aria-hidden": "true" }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true" }, rest)
   <span {...merged}>{children}</span>
 }

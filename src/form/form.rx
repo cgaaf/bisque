@@ -1,5 +1,5 @@
 import { mergeProps, createRef } from "../internal/props.js"
-import { createFormRegistry, createSubmission, createFormReset, submitForm, focusFirstInvalid, withoutErrors, reportFailure } from "../internal/field.js"
+import { createFormRegistry, createSubmission, createFormReset, submitForm, focusFirstInvalid, createFormErrors, reportFailure } from "../internal/field.js"
 import { FormProps } from "../internal/types.rx"
 
 export type FormValidationMode = "onSubmit" | "onBlur" | "onChange"
@@ -24,7 +24,7 @@ export type FormContext = {
   clearError: (name: string) => void
 }
 
-export context form: FormContext | undefined = undefined
+export context form: lane FormContext | undefined = undefined
 
 export type FormRootProps = {
   // When fields validate, unless a FieldRoot says otherwise. Default: "onSubmit".
@@ -48,7 +48,6 @@ export type FormRootProps = {
 // A native <form> that validates its Fields on submit, focuses the first invalid one, waits for the handler that
 // sends it, and shows the errors that come back.
 export component Form(props: FormRootProps) {
-  source cleared: string[] := []
   // Numbers the submits: an answer carries its submit's number (FormAnswer.id), which fields compare.
   source submitCount := 0
   // A submit was attempted since the form was mounted or last reset.
@@ -57,13 +56,13 @@ export component Form(props: FormRootProps) {
   source awaitingErrors: boolean := false
   source element: HTMLFormElement | undefined := undefined
   registry = createFormRegistry()
-  errors = withoutErrors(props.errors, cleared)
+  // The `errors` prop minus the entries whose field has changed since it last changed (createFormErrors).
+  [errors, clearError] = createFormErrors(props.errors)
   // Whether `onFormSubmit` is out, and what the last one resolved to with the values it was sent. Kept outside
   // the reactive graph's actions (../internal/impl/field.ts says why), so fields stay live during a submit.
   [submission, send] = createSubmission()
 
   effect (props.errors) {
-    cleared := []
     // Tested through a local: narrowing `awaitingErrors` itself would type the write below as `true` (rx-tsc).
     let waiting = awaitingErrors
     if (waiting) {
@@ -72,9 +71,6 @@ export component Form(props: FormRootProps) {
     }
   }
 
-  action clearError(name: string) {
-    cleared := old => old.includes(name) ? old : [...old, name]
-  }
   action answered() { focusFirstInvalid(registry, undefined) }
   action failed(error: unknown) {
     if (props.onFormError) { props.onFormError(error) } else { reportFailure(error) }
@@ -122,6 +118,6 @@ export component Form(props: FormRootProps) {
   }
 
   { validationMode, errors: _errors, onFormSubmit, onFormError, onSubmit, children, ...rest } = props
-  merged = mergeProps({ novalidate: true, "data-submitting": submission.pending ? "" : undefined, "aria-busy": submission.pending ? "true" : undefined, onSubmit: submit, ref: setElement }, rest)
+  merged = latest mergeProps({ novalidate: true, "data-submitting": submission.pending ? "" : undefined, "aria-busy": submission.pending ? "true" : undefined, onSubmit: submit, ref: setElement }, rest)
   <form {...merged}>{children}</form>
 }

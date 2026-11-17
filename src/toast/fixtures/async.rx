@@ -1,0 +1,96 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast, ToastObject } from "../toast.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// A toast whose body loads when it appears (`data` is the key to load): a loading and an errored region inside it.
+component DetailToast(props: { t: ToastObject }) {
+  key: string = props.t.data
+  detail = await fetchText(key)
+  <ToastRoot toast={props.t} data-testid={props.t.id}>
+    <ToastContent>
+      <ToastTitle />
+      {loading fallback { <p data-testid="detail-loading">Loading…</p> } {
+        {errored fallback(e) { <p data-testid="detail-error">{e.message}</p> <button onClick={() => { refresh detail }}>Retry detail</button> } {
+          <p data-testid="detail">{detail}</p>
+        }}
+      }}
+      <ToastClose>Dismiss</ToastClose>
+    </ToastContent>
+  </ToastRoot>
+}
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    {if t.data != undefined {
+      <DetailToast t={t} />
+    } else {
+      <ToastRoot toast={t} data-testid={t.id}>
+        <ToastContent>
+          <ToastTitle />
+          <ToastDescription />
+          <ToastAction />
+          <ToastClose>Dismiss</ToastClose>
+        </ToastContent>
+      </ToastRoot>
+    }}
+  }
+}
+
+// Requests followed by toasts, written as an app would.
+component Requests() {
+  c = use toast
+  source saved := ""
+  source saveError := ""
+
+  // An action that awaits the promise toast: the loading toast must show while it waits.
+  action saveDraft() {
+    affects saved
+    try {
+      let answer = await c.manager.promise(save("draft"), { loading: "Saving…", success: "Saved", error: "Could not save" })
+      saved := answer
+    } catch (e) {
+      saveError := e.message
+    }
+  }
+  // A plain handler that starts a request and lets the toast follow it.
+  action send(key: string) {
+    c.manager.promise(save(key), { loading: `Sending ${key}…`, success: `Sent ${key}`, error: `Could not send ${key}` }).catch(() => {})
+  }
+  // A failure toast whose action button tries again: with an `id`, the same toast follows the retry.
+  action upload() {
+    c.manager.promise(save("upload"), { loading: { id: "upload", description: "Uploading…", actionProps: undefined }, success: "Uploaded", error: { description: "Upload failed", actionProps: { children: "Retry", onClick: upload } } }).catch(() => {})
+  }
+  // A toast whose `onClose` is an action that tells the server it was read.
+  source read := ""
+  action markRead() {
+    affects read
+    try {
+      let answer = await save("read")
+      read := answer
+    } catch (e) {
+      read := "failed"
+    }
+  }
+  <div>
+    <button onClick={() => { c.manager.add({ title: "Notice", onClose: markRead }) }}>Show notice</button>
+    <output data-testid="read">{pending? read ? "" : read}</output>
+    <button onClick={saveDraft}>Save draft</button>
+    <button onClick={() => { send("a") }}>Send a</button>
+    <button onClick={() => { send("b") }}>Send b</button>
+    <button onClick={upload}>Upload</button>
+    <button onClick={() => { c.manager.add({ title: "Report", data: "report" }) }}>Show report</button>
+    <output data-testid="saved">{pending? saved ? "" : saved}</output>
+    <output data-testid="save-error">{saveError}</output>
+  </div>
+}
+
+export default component Fixture() {
+  <main>
+    <ToastProvider timeout={0}>
+      <Requests />
+      <ToastViewport data-testid="viewport" style="inset: auto 0 0 auto; margin: 0">
+        <Toasts />
+      </ToastViewport>
+    </ToastProvider>
+  </main>
+}

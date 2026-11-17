@@ -1,0 +1,146 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "../dialog.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// Dialogs used against a slow server, as an app would write them.
+export default component Fixture() {
+  // 1. Content that loads when the dialog first opens: `onOpenChange` writes what the loading question reads.
+  source wanted: boolean := false
+  details = wanted ? await fetchText("project") : ""
+
+  // 2. A controlled dialog closed by a save: the owner writes `open` after the server answers.
+  source editing: boolean := false
+  source saved := ""
+  source saveError := ""
+  action submit() {
+    affects saved
+    try {
+      let answer = await save("draft")
+      saved := answer
+      editing := false
+    } catch (e) {
+      saveError := e.message
+    }
+  }
+
+  // 3. An uncontrolled dialog whose `onOpenChange` is itself an action that awaits (it logs the change).
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let answer = await save(next ? "opened" : "closed")
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+
+  // 4. One dialog for whichever row was opened: the selection is the open state.
+  source selected := ""
+  rowDetails = selected == "" ? "" : await fetchText(selected)
+
+  // 5. A controlled dialog whose owner agrees late: it saves first, and writes `open` once the server answers.
+  source late: boolean := false
+  action changeLate(next: boolean) {
+    affects late
+    try {
+      await save(next ? "open late" : "close late")
+      late := next
+    } catch (e) {
+      saveError := e.message
+    }
+  }
+
+  // 6. A controlled dialog whose owner guesses: it shows the change at once, and the guess reverts if the
+  // request fails.
+  source pinned: boolean = false
+  action changePinned(next: boolean) {
+    try {
+      guess pinned := next
+      await save(next ? "pin" : "unpin")
+      pinned := next
+    } catch (e) {
+      saveError := e.message
+    }
+  }
+
+  // 7. A dialog with nothing focusable until its content arrives: the app opens it and asks in one change.
+  source formOpen: boolean := false
+  source formVisit := 0
+  form = formVisit == 0 ? "" : await fetchText("form")
+  action changeForm(next: boolean) {
+    formOpen := next
+    if (next) { formVisit := formVisit + 1 }
+  }
+
+  <main>
+    <DialogRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <DialogTrigger>Open details</DialogTrigger>
+      <DialogPopup aria-label="Details" data-testid="details-dialog">
+        {loading on(wanted) fallback { <p data-testid="loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="error">{e.message}</p> <button onClick={() => { refresh details }}>Retry</button> } {
+            <p data-testid="details">{details}</p>
+            <button>Rename</button>
+          }}
+        }}
+        <DialogClose>Close details</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+
+    <DialogRoot open={editing} onOpenChange={(next) => { editing := next }}>
+      <DialogTrigger>Edit</DialogTrigger>
+      <DialogPopup aria-label="Edit">
+        <input aria-label="Name" />
+        <button onClick={submit}>Save</button>
+        <p data-testid="save-error">{saveError}</p>
+        <DialogClose>Cancel</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+    <output data-testid="saved">{pending? saved ? "" : saved}</output>
+
+    <DialogRoot onOpenChange={log}>
+      <DialogTrigger>Open logged</DialogTrigger>
+      <DialogPopup aria-label="Logged">
+        <DialogClose>Close logged</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+    <output data-testid="logged">{pending? logged ? "" : logged}</output>
+
+    <button onClick={() => { selected := "alpha" }}>Open alpha</button>
+    <button onClick={() => { selected := "beta" }}>Open beta</button>
+    <DialogRoot open={selected != ""} onOpenChange={(next) => { if (!next) { selected := "" } }}>
+      <DialogPopup aria-label="Row" data-testid="row-dialog">
+        {loading on(selected) fallback { <p data-testid="row-loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="row-error">{e.message}</p> <button onClick={() => { refresh rowDetails }}>Retry row</button> } {
+            <p data-testid="row-details">{rowDetails}</p>
+          }}
+        }}
+        <DialogClose>Close row</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+
+    <DialogRoot open={late} onOpenChange={changeLate}>
+      <DialogTrigger>Open late</DialogTrigger>
+      <DialogPopup aria-label="Late">
+        <DialogClose>Close late</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+
+    <DialogRoot open={pinned} onOpenChange={changePinned}>
+      <DialogTrigger>Open pinned</DialogTrigger>
+      <DialogPopup aria-label="Pinned">
+        <DialogClose>Close pinned</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+
+    <DialogRoot open={formOpen} onOpenChange={changeForm}>
+      <DialogTrigger>Open form</DialogTrigger>
+      <DialogPopup aria-label="Form" data-testid="form-dialog">
+        {loading on(formVisit) fallback { <p data-testid="form-loading">Loading…</p> } {
+          <p>{form catch (e) => e.message}</p>
+          <input aria-label="Title" />
+        }}
+      </DialogPopup>
+    </DialogRoot>
+    <output data-testid="busy">{pending? late ? "late" : ""}</output>
+  </main>
+}

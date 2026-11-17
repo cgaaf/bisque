@@ -88,9 +88,12 @@ function CachedImage() {
   return { complete: true, naturalWidth: 10, src: "", srcset: "", addEventListener() {} };
 }
 
-test("a cached image shows at once", () => {
+test("a cached image shows at once", async () => {
   window.Image = CachedImage as unknown as typeof window.Image;
   const { getAllByRole, queryByTestId } = mount(basic);
+  // Recorded in a microtask after the flush that mounted it, still before the first paint.
+  await Promise.resolve();
+  flush();
   expect(getAllByRole("img").length).toBe(2);
   expect(queryByTestId("fallback")).toBeNull();
 });

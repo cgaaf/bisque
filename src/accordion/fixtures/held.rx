@@ -1,0 +1,42 @@
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../accordion.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to an
+// accordion is computed from that write. The accordion's own state must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root.
+    <AccordionRoot loopFocus={step == 1}>
+      <AccordionItem value="a" data-testid="root-prop">
+        <AccordionTrigger>Root prop</AccordionTrigger>
+        <AccordionPanel>Content</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+
+    // 2. A prop of the item. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <AccordionRoot>
+      <AccordionItem value={step == 1 ? "a" : "b"} data-testid="item-prop">
+        <AccordionTrigger>Item prop</AccordionTrigger>
+        <AccordionPanel>Content</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+
+    // 3. An attribute passed through to a part's element.
+    <AccordionRoot>
+      <AccordionItem value="a" data-testid="item-attribute" class={step == 2 ? "second" : "first"}>
+        <AccordionTrigger>Item attribute</AccordionTrigger>
+        <AccordionPanel>Content</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+  </main>
+}

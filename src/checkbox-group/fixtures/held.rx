@@ -1,0 +1,36 @@
+import { CheckboxGroup, checkboxGroup } from "../checkbox-group.rx"
+import { CheckboxRoot } from "../../checkbox/checkbox.rx"
+import { save } from "../../test/slow-server.js"
+
+// What a box's own component reads: the group's value.
+component Value(props: { id: string }) {
+  g = use checkboxGroup
+  <output data-testid={props.id}>{(g?.value ?? []).join(",")}</output>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// checkbox group is computed from that write. The group's own state (which boxes are checked) must not wait for the
+// app's request. An attribute of the group holds nothing: the group's attributes carry none of its own state.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // A prop of the group, with a parent box that checks them all: the parent reads `allValues` beside the group's
+    // value. (Boxes checked one by one, with the same prop held, weren't held before the fix either: that case proved
+    // nothing and was dropped.)
+    <CheckboxGroup aria-label="Parent" allValues={step == 1 ? ["p", "q"] : ["q", "p"]}>
+      <CheckboxRoot aria-label="All" parent />
+      <CheckboxRoot aria-label="Box p" value="p" />
+      <CheckboxRoot aria-label="Box q" value="q" />
+      <Value id="parent" />
+    </CheckboxGroup>
+  </main>
+}

@@ -68,12 +68,19 @@ export fn popoverTriggerProps(ref p: PopoverState): PartProps {
 // Style it with `:popover-open`, `::backdrop` and `@starting-style`. `data-side` is the side it is on: the one
 // asked for until it opens, then the one the browser placed it on.
 export fn popoverPopupProps(ref p: PopoverState, ref mode: "auto" | "manual", ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  // Each read of the state is an equation of its own: the state object is rebuilt whenever the popup opens or
+  // closes, and a props object that read it directly was rebuilt with it, new but equal each time
+  // (UNSTABLE_MEMO_OUTPUT). An equation whose value didn't change stops that here.
+  popupId = p.popupId
+  setPopup = p.setPopup
+  placedSide = p.placement?.side ?? side
+  style = anchoredStyle(side, align, sideOffset, alignOffset)
   {
-    id: p.popupId,
+    id: popupId,
     popover: mode,
-    "data-side": p.placement?.side ?? side,
-    style: anchoredStyle(side, align, sideOffset, alignOffset),
-    ref: p.setPopup,
+    "data-side": placedSide,
+    style: style,
+    ref: setPopup,
   }
 }
 

@@ -58,7 +58,11 @@ export component DrawerRoot(props: DrawerRootProps) {
     if (next == isOpen) { return }
     uncontrolled := next
     if (next) { swipeDismissed := false }
-    if (props.onOpenChange) { props.onOpenChange(next) }
+    // In a change of its own, as DialogRoot does: a handler that loads or awaits would otherwise hold the drawer.
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
   }
   action swiped(towards: DrawerSwipeDirection) {
     swipeDismissed := true
@@ -113,13 +117,13 @@ export component DrawerPopup({ children, ...rest }: DialogElementProps) {
   c = use dialog
   d = use drawer
   own = drawerPopup(c, d)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <dialog {...merged}>{children}</dialog>
 }
 
 // Holds the drawer's content. A mouse press inside it selects text instead of starting a swipe.
 export component DrawerContent({ children, ...rest }: DivProps) {
-  merged = mergeProps({ "data-drawer-content": "" }, rest)
+  merged = latest mergeProps({ "data-drawer-content": "" }, rest)
   <div {...merged}>{children}</div>
 }
 

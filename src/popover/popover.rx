@@ -9,6 +9,7 @@
 // part is the library's hover intent (../internal/overlay.js).
 import { mergeProps, createId } from "../internal/props.js"
 import { createHoverIntent } from "../internal/overlay.js"
+import { createKeptFocus } from "../internal/dom.js"
 import { createPopoverState, popoverTriggerProps, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
@@ -33,7 +34,18 @@ export type PopoverRootProps = {
 export component PopoverRoot(props: PopoverRootProps) {
   source titleId: string | undefined := undefined
   source descriptionId: string | undefined := undefined
-  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
+  // The app's handler is called in a change of its own (`onFlush`): one that writes what a loading question reads,
+  // or that awaits, would otherwise hold the popover's own change, and the browser's open popover would be hidden
+  // again to match the held state.
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
+  // Content that loads or fails inside the open popup replaces what had focus: focus stays in the popup.
+  _focus = createKeptFocus(state.popup, state.open)
   action setTitleId(id: string | undefined) { titleId := id }
   action setDescriptionId(id: string | undefined) { descriptionId := id }
 
@@ -72,8 +84,8 @@ export fn popoverTrigger(ref c: PopoverContext, ref openOnHover: boolean, ref de
 
 export component PopoverTrigger({ openOnHover = false, delay = 300, closeDelay = 0, children, ...rest }: PopoverTriggerProps) {
   c = use popover
-  own = popoverTrigger(c, openOnHover, delay, closeDelay)
-  merged = mergeProps(own, rest)
+  own = popoverTrigger(c, latest openOnHover, latest delay, latest closeDelay)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
@@ -95,7 +107,7 @@ export fn popoverPopup(ref c: PopoverContext, ref side: "top" | "bottom" | "left
 export component PopoverPopup({ side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: PopoverPopupProps) {
   c = use popover
   own = popoverPopup(c, side, align, sideOffset, alignOffset)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -106,7 +118,7 @@ export component PopoverTitle({ children, ...rest }: HeadingProps) {
     c.setTitleId(id)
     return () => { c.setTitleId(undefined) }
   }
-  merged = mergeProps({ id: id }, rest)
+  merged = latest mergeProps({ id: id }, rest)
   <h2 {...merged}>{children}</h2>
 }
 
@@ -117,7 +129,7 @@ export component PopoverDescription({ children, ...rest }: ParagraphProps) {
     c.setDescriptionId(id)
     return () => { c.setDescriptionId(undefined) }
   }
-  merged = mergeProps({ id: id }, rest)
+  merged = latest mergeProps({ id: id }, rest)
   <p {...merged}>{children}</p>
 }
 
@@ -129,7 +141,7 @@ export fn popoverClose(ref c: PopoverContext): PartProps {
 export component PopoverClose({ children, ...rest }: ButtonProps) {
   c = use popover
   own = popoverClose(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
@@ -143,6 +155,6 @@ export fn popoverArrow(ref c: PopoverContext): PartProps {
 export component PopoverArrow({ children, ...rest }: DivProps) {
   c = use popover
   own = popoverArrow(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

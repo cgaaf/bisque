@@ -1,0 +1,38 @@
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup } from "../preview-card.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// Preview cards used against a slow server: one whose preview loads when it first opens (its `onOpenChange` writes
+// what the loading question reads), one whose `onOpenChange` is an action that awaits.
+export default component Fixture() {
+  source wanted: boolean := false
+  preview = wanted ? await fetchText("typography") : ""
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let answer = await save(next ? "opened" : "closed")
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+  <main style="padding: 40px 0 240px 20px">
+    <PreviewCardRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <p><PreviewCardTrigger href="#typography" delay={50}>Typography</PreviewCardTrigger></p>
+      <PreviewCardPopup data-testid="popup" sideOffset={8} style="width: 200px; border: 0; padding: 0">
+        {loading on(wanted) fallback { <p data-testid="loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="error">{e.message}</p> <button onClick={() => { refresh preview }}>Retry</button> } {
+            <p data-testid="preview">{preview}</p>
+            <a href="#more">Read more</a>
+          }}
+        }}
+      </PreviewCardPopup>
+    </PreviewCardRoot>
+    <PreviewCardRoot onOpenChange={log}>
+      <p><PreviewCardTrigger href="#logged" delay={50}>Logged</PreviewCardTrigger></p>
+      <PreviewCardPopup data-testid="logged-popup" style="width: 200px; border: 0; padding: 0">A card</PreviewCardPopup>
+    </PreviewCardRoot>
+    <output data-testid="logged">{pending? logged ? "" : logged}</output>
+    <p data-testid="outside" style="margin-top: 140px">Elsewhere</p>
+  </main>
+}

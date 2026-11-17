@@ -1,0 +1,31 @@
+import { AvatarRoot, AvatarImage, AvatarFallback } from "../avatar.rx"
+import { fetchList } from "../../test/slow-server.js"
+
+// A list of people from a server, each with an avatar: a picture that loads, one that is broken, and none.
+// A new answer replaces the rows (and so removes avatars), and a person's picture can change.
+fn picture(name: string, take: number): string => name.startsWith("broken") ? "data:image/png;base64,broken" : name.startsWith("none") ? "" : `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='8' height='8'><text>${name} ${take}</text></svg>`
+
+export default component Fixture() {
+  source group := "team"
+  people = await fetchList(group) -> []
+  source statuses := ""
+  source take := 1
+  <main>
+    <button onClick={() => { group := "other" }}>Other group</button>
+    <button onClick={() => { refresh people }}>Reload</button>
+    <button onClick={() => { take := take + 1 }}>New pictures</button>
+    {errored fallback(e) { <p data-testid="error">{e.message}</p> } {
+      <ul data-testid="list">
+        {for person in people {
+          <li>
+            <AvatarRoot data-testid={`avatar-${person}`}>
+              <AvatarImage alt={person} src={picture(person, take)} onLoadingStatusChange={(s) => { statuses := statuses + s + "," }} />
+              <AvatarFallback>{person.slice(0, 2)}</AvatarFallback>
+            </AvatarRoot>
+          </li>
+        }}
+      </ul>
+    }}
+    <output data-testid="statuses">{statuses}</output>
+  </main>
+}

@@ -166,7 +166,10 @@ test("the selected value keeps its label after its option is gone", async () => 
   expect(input.value).toBe("Apple");
   release("Apple");
   await user.clear(input);
-  await user.type(input, "zz");
+  release("");
+  // One key per change: a burst of keys against answers that are all held is another test's subject, and each key
+  // would abandon the request before it (Solid reports a burst of those, ABANDONED_FLIGHTS).
+  await user.type(input, "z");
   releaseAll();
   await answered();
   expect(options()).toEqual([]);
@@ -176,7 +179,7 @@ test("the selected value keeps its label after its option is gone", async () => 
   await answered();
   await user.click(getByRole("option", { name: "Cherry" }));
   release("Cherry");
-  await user.type(input, "{Backspace}x");
+  await user.type(input, "x");
   releaseAll();
   await answered();
   expect(options()).toEqual([]);

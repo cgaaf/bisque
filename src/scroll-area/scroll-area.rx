@@ -129,7 +129,7 @@ export component ScrollAreaRoot(props: ScrollAreaRootProps) {
     onPointerLeave: leave,
     ...state,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -158,7 +158,7 @@ export fn scrollAreaViewport(ref c: ScrollAreaContext): PartProps {
 export component ScrollAreaViewport({ children, ...rest }: DivProps) {
   c = use scrollArea
   own = scrollAreaViewport(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -167,7 +167,7 @@ export component ScrollAreaViewport({ children, ...rest }: DivProps) {
 export component ScrollAreaContent({ children, ...rest }: DivProps) {
   c = use scrollArea
   state = overflowState(c)
-  merged = mergeProps({ role: "presentation", style: { "min-width": "fit-content" }, ...state }, rest)
+  merged = latest mergeProps({ role: "presentation", style: { "min-width": "fit-content" }, ...state }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -175,7 +175,7 @@ export type ScrollAreaScrollbarContext = {
   orientation: ScrollAreaOrientation
 }
 
-export context scrollAreaScrollbarOptions: ScrollAreaScrollbarContext
+export context scrollAreaScrollbarOptions: lane ScrollAreaScrollbarContext
 
 export type ScrollAreaScrollbarProps = {
   orientation?: ScrollAreaOrientation
@@ -224,11 +224,11 @@ export fn scrollAreaScrollbar(ref c: ScrollAreaContext, ref orientation: ScrollA
 
 export component ScrollAreaScrollbar(props: ScrollAreaScrollbarProps) {
   c = use scrollArea
-  axis = props.orientation ?? "vertical"
+  axis = latest props.orientation ?? "vertical"
   provide scrollAreaScrollbarOptions = { orientation: axis }
   { orientation, keepMounted, children, ...rest } = props
   own = scrollAreaScrollbar(c, axis)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   {if (keepMounted ?? false) || (axis == "vertical" ? c.hasOverflowY : c.hasOverflowX) {
     <div {...merged}>{children}</div>
   }}
@@ -277,7 +277,7 @@ export component ScrollAreaThumb(props: DivProps) {
   c = use scrollArea
   s = use scrollAreaScrollbarOptions
   own = scrollAreaThumb(c, s.orientation)
-  merged = mergeProps(own, props)
+  merged = latest mergeProps(own, props)
   <div {...merged} />
 }
 
@@ -285,7 +285,7 @@ export component ScrollAreaThumb(props: DivProps) {
 // thickness, also exposed on the root as `--scroll-area-corner-width` and `--scroll-area-corner-height`.
 export component ScrollAreaCorner(props: DivProps) {
   c = use scrollArea
-  merged = mergeProps({ style: { width: `${c.cornerWidth}px`, height: `${c.cornerHeight}px` } }, props)
+  merged = latest mergeProps({ style: { width: `${c.cornerWidth}px`, height: `${c.cornerHeight}px` } }, props)
   {if c.hasOverflowX && c.hasOverflowY {
     <div {...merged} />
   }}

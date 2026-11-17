@@ -30,7 +30,7 @@ export type RadioGroupContext = {
   setInput: (element: HTMLInputElement) => void
 }
 
-export context radioGroup: RadioGroupContext
+export context radioGroup: lane RadioGroupContext
 
 export type RadioGroupProps = {
   value?: string
@@ -56,16 +56,16 @@ export component RadioGroup(props: RadioGroupProps) {
   // `value` and `disabled` are often read from an answer that can fail (`value={saved}` with
   // `saved = await load()`): a failure there is the app's to show, in its `errored` region, not the group's.
   givenValue = props.value catch (e) => undefined
-  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
   current = givenValue ?? uncontrolled
   // The value a form reset puts back: each radio's `defaultChecked` is whether it holds this one.
   initialValue = peek(current)
   isDisabled = givenDisabled || (f?.disabled ?? false)
-  isReadOnly = props.readOnly ?? false
-  isRequired = props.required ?? false
+  isReadOnly = latest props.readOnly ?? false
+  isRequired = latest props.required ?? false
   generatedName = createId("radio-group")
   // A plain value, so the context below isn't rebuilt each time the field's context is.
-  groupName = props.name ?? f?.name ?? generatedName
+  groupName = latest props.name ?? f?.name ?? generatedName
 
   effect (current) { if (f) { f.setValue($0) } }
   _reset = createFormReset(anyRadio, reset)
@@ -124,7 +124,7 @@ export component RadioGroup(props: RadioGroupProps) {
     "data-disabled": isDisabled ? "" : undefined,
     "data-readonly": isReadOnly ? "" : undefined,
   })
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -136,7 +136,7 @@ export type RadioContext = {
   required: boolean
 }
 
-export context radio: RadioContext
+export context radio: lane RadioContext
 
 export type RadioRootProps = {
   value: string
@@ -152,12 +152,12 @@ export component RadioRoot(props: RadioRootProps) {
   // The group's context is a new object whenever its value changes. Each radio reads it into plain values first,
   // so its own objects (`self`, `own`) are rebuilt only when something about this radio changed, not for every
   // radio on every choice.
-  isChecked = g.value == props.value
-  isDisabled = g.disabled || (props.disabled ?? false)
-  isReadOnly = g.readOnly || (props.readOnly ?? false)
+  isChecked = g.value == (latest props.value)
+  isDisabled = g.disabled || (latest props.disabled ?? false)
+  isReadOnly = g.readOnly || (latest props.readOnly ?? false)
   isRequired = g.required
   groupName = g.name
-  isDefault = g.initialValue == props.value
+  isDefault = g.initialValue == (latest props.value)
   self = {
     checked: isChecked,
     disabled: isDisabled,
@@ -184,7 +184,7 @@ export component RadioRoot(props: RadioRootProps) {
   own = {
     type: "radio",
     name: groupName,
-    value: value,
+    value: latest value,
     defaultChecked: isDefault,
     disabled: isDisabled ? true : undefined,
     required: isRequired ? true : undefined,
@@ -193,7 +193,7 @@ export component RadioRoot(props: RadioRootProps) {
     onChange: change,
     onClick: click,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <input {...merged} />
   {children}
 }
@@ -201,6 +201,6 @@ export component RadioRoot(props: RadioRootProps) {
 // A mark beside the radio, always in the document: place it in RadioRoot, where it is the radio's next sibling,
 // and show it with `input:checked + *`. Hidden from assistive technology.
 export component RadioIndicator({ children, ...rest }: SpanProps) {
-  merged = mergeProps({ "aria-hidden": "true" }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true" }, rest)
   <span {...merged}>{children}</span>
 }

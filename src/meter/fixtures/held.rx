@@ -1,0 +1,33 @@
+import { MeterRoot, MeterLabel, MeterIndicator } from "../meter.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// meter is computed from that write. The meter's own state (the label it is named by, registered when the label
+// mounts) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  source labelled := false
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <button onClick={() => { labelled := true }}>Label</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <MeterRoot data-testid="root-prop" value={step == 1 ? 10 : 20}>
+      {if labelled { <MeterLabel>Root prop</MeterLabel> }}
+      <MeterIndicator />
+    </MeterRoot>
+
+    // 2. An attribute passed through to the root's element.
+    <MeterRoot data-testid="root-attribute" value={10} class={step == 2 ? "second" : "first"}>
+      {if labelled { <MeterLabel>Root attribute</MeterLabel> }}
+      <MeterIndicator />
+    </MeterRoot>
+  </main>
+}

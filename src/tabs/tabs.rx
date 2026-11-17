@@ -1,5 +1,5 @@
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
-import { createPresence, createRovingFocus } from "../internal/dom.js"
+import { createPresence, createRovingFocus, createKeptFocus } from "../internal/dom.js"
 import { createSelectedTab } from "../internal/tab-indicator.js"
 import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
 
@@ -54,10 +54,17 @@ export component TabsRoot(props: TabsRootProps) {
   current = props.value != undefined ? props.value : chosenExists ? chosen : firstEnabled != undefined ? firstEnabled.value : chosen
   tabStop = entries.some((t) => t.value == current) ? current : firstEnabled != undefined ? firstEnabled.value : undefined
 
+  // The app's handler is called in a change of its own (`onFlush`), not in the one that selects the tab: a handler
+  // that writes what a loading question reads (`tab := next` with `panel = await load(tab)`), or that is an action
+  // awaiting a request, holds its change until the answer lands, and the selection, the roving focus and the
+  // indicator would wait with it.
   action select(next: string) {
     if (next == current) { return }
     uncontrolled := next
-    if (props.onValueChange) { props.onValueChange(next) }
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
   }
   action setList(element: HTMLElement) { list := element }
   action upsertTab(value: string, disabled: boolean) {
@@ -94,7 +101,7 @@ export type TabsListContext = {
   activateOnFocus: boolean
 }
 
-export context tabsListOptions: TabsListContext
+export context tabsListOptions: lane TabsListContext
 
 export type TabsListProps = {
   // Select a tab as soon as the arrow keys focus it (automatic activation). Default: false, so the focused tab
@@ -120,11 +127,11 @@ export component TabsList(props: TabsListProps) {
   // Through an equation, so the options object is rebuilt when the orientation changes, not with every change
   // of the context (the indicator's rect moves on each selection).
   axis = c.orientation
-  _roving = createRovingFocus(c.list, { orientation: axis, loop: props.loopFocus ?? true, typeahead: false, tabStop: false })
-  provide tabsListOptions = { activateOnFocus: props.activateOnFocus ?? false }
+  _roving = createRovingFocus(c.list, { orientation: axis, loop: latest props.loopFocus ?? true, typeahead: false, tabStop: false })
+  provide tabsListOptions = { activateOnFocus: latest props.activateOnFocus ?? false }
   { activateOnFocus, loopFocus, children, ...rest } = props
   own = tabsList(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -170,10 +177,10 @@ export fn tabsTab(ref c: TabsContext, ref l: TabsListContext, ref value: string,
 export component TabsTab(props: TabsTabProps) {
   c = use tabs
   l = use tabsListOptions
-  isDisabled = props.disabled ?? false
+  isDisabled = latest props.disabled ?? false
   { value, disabled, children, ...rest } = props
-  own = tabsTab(c, l, value, isDisabled)
-  merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  own = tabsTab(c, l, latest value, isDisabled)
+  merged = latest mergeProps(own, withoutHandlers(rest, isDisabled))
   <button {...merged}>{children}</button>
 }
 
@@ -189,6 +196,11 @@ export component TabsPanel({ value, keepMounted = false, children, ...rest }: Ta
   isSelected = c.value == value
   action setElement(el: HTMLElement) { element := el }
   [mounted, status] = createPresence(isSelected, element)
+  // Content that loads or fails inside the selected panel replaces what had focus: focus stays in the panel.
+  // Not understood, and relied on: without this effect (a TypeScript effect reading `element` and `isSelected`), a
+  // second switch made while the first tab's answer is out waits for that answer. tabs.async.browser.test.ts's
+  // first test goes red when it is removed; a `.rx` `effect (isSelected) {}` doesn't stand in for it.
+  _focus = createKeptFocus(element, isSelected)
   isHidden = !isSelected && !mounted
   own = {
     id: partId(c.rootId, "panel", value),
@@ -233,7 +245,7 @@ export fn tabsIndicator(ref c: TabsContext): PartProps {
 export component TabsIndicator(props: SpanProps) {
   c = use tabs
   own = tabsIndicator(c)
-  merged = mergeProps(own, props)
+  merged = latest mergeProps(own, props)
   {if c.value != undefined {
     <span {...merged} />
   }}

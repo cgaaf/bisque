@@ -3,6 +3,9 @@ import { FieldRoot, FieldLabel, FieldControl, FieldError } from "../../field/fie
 import { register } from "./server.js"
 
 // A form whose handler asks a server that takes 150ms: it refuses the username "taken" and fails for "offline".
+// The handler is the app's action, so what it writes is held until it ends; it says so (`affects saved`) and the
+// page shows it (`pending? saved`), as an app should: a hold nothing on screen acknowledges is reported
+// (SILENT_HOLD). The form's own `data-submitting` is the library's, outside the action.
 export default component Fixture() {
   source calls := 0
   source saved := ""
@@ -10,6 +13,7 @@ export default component Fixture() {
   <div>
     <Form data-testid="form" onFormSubmit={(values) => {
       onFlush(() => { calls := calls + 1; failure := "" })
+      affects saved
       try {
         let refused = await register(values, 150)
         if (!refused) { saved := `${values.username}` }
@@ -30,7 +34,7 @@ export default component Fixture() {
       <button type="submit">Submit</button>
     </Form>
     <output data-testid="calls">{calls}</output>
-    <output data-testid="saved">{saved}</output>
+    <output data-testid="saved" aria-busy={pending? saved ? "true" : undefined}>{saved}</output>
     <output data-testid="failure">{failure}</output>
   </div>
 }

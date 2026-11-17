@@ -8,6 +8,7 @@ export fn focusFirstInvalid(registry: import("./impl/field.ts").FormRegistry | u
 export fn focusControl(control: HTMLElement | undefined): void
 export pure fn formErrorsFor(errors: import("./impl/field.ts").FormErrors | undefined, name: string | undefined): string[]
 export pure fn withoutErrors(errors: import("./impl/field.ts").FormErrors | undefined, cleared: string[]): import("./impl/field.ts").FormErrors
+export pure fn createFormErrors(ref errors: import("./impl/field.ts").FormErrors | undefined): [ref import("./impl/field.ts").FormErrors, (name: string) => void]
 export pure fn sameValue(a: unknown, b: unknown): boolean
 export pure fn isFilled(value: unknown): boolean
 export pure fn isEmptyView(view: unknown): boolean

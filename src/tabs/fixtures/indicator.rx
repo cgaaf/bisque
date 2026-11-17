@@ -1,6 +1,6 @@
-import { TabsRoot, TabsList, TabsTab, TabsIndicator } from "../tabs.rx"
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../tabs.rx"
 
-// Tabs and an indicator, without panels: TabsPanel's presence is not what the indicator's tests are about.
+// Tabs, an indicator and panels: a selection moves the indicator and swaps the panels in one change.
 export default component Fixture() {
   <main>
     <TabsRoot data-testid="root">
@@ -11,6 +11,9 @@ export default component Fixture() {
         <TabsTab value="account">Account</TabsTab>
         <TabsIndicator data-testid="indicator" />
       </TabsList>
+      <TabsPanel value="overview">Overview panel</TabsPanel>
+      <TabsPanel value="projects">Projects panel</TabsPanel>
+      <TabsPanel value="account">Account panel</TabsPanel>
     </TabsRoot>
   </main>
 }

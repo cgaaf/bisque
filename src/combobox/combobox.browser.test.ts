@@ -29,7 +29,7 @@ test("the browser light-dismisses an auto popover on a press on its showPopover(
   host.append(input, popup);
   document.body.append(host);
   try {
-    popup.showPopover({ source: input } as ShowPopoverOptions);
+    popup.showPopover({ source: input });
     await userEvent.click(input);
     expect(shown(popup)).toBe(false);
   } finally {
@@ -331,7 +331,8 @@ test("disabled and read-only", async () => {
   expect(disabled.hasAttribute("data-disabled")).toBe(true);
 
   const readOnly = getByRole("combobox", { name: "Read only" }) as HTMLInputElement;
-  expect(readOnly.value).toBe("Y");
+  // The label is read from the option once it has rendered, after the mount's flush (createItemLabels).
+  await expect.poll(() => readOnly.value).toBe("Y");
   expect(readOnly.readOnly).toBe(true);
   await user.click(readOnly);
   await user.keyboard("{ArrowDown}");

@@ -1,0 +1,100 @@
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../accordion.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// Accordions used against a slow server, as an app would write them.
+export default component Fixture() {
+  // 1. The open item's content loads: `onValueChange` writes what the loading question reads, and the previous
+  // answer stays until the new one lands (no `loading on`), so the app's change is held.
+  source section := ""
+  answer = section == "" ? "" : await fetchText(section) -> ""
+  shown = answer catch (e) => "failed"
+
+  // 2. An item whose content shows a fallback while it loads, and fails, with a retry.
+  source askedFaq: boolean := false
+  faq = askedFaq ? await fetchText("faq") : ""
+
+  // 3. An item whose `onOpenChange` is itself an action that awaits.
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let saved = await save(next ? "opened" : "closed")
+      logged := saved
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+
+  // 4. A controlled accordion whose owner agrees late.
+  source late: string[] := []
+  action changeLate(next: string[]) {
+    affects late
+    try {
+      await save(`late ${next.join("+")}`)
+      late := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  // 5. A controlled accordion whose owner guesses.
+  source guessed: string[] = []
+  action changeGuessed(next: string[]) {
+    try {
+      guess guessed := next
+      await save(`guess ${next.join("+")}`)
+      guessed := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  <main>
+    <AccordionRoot data-testid="loads" onValueChange={(next) => { section := next.length > 0 ? next[0] : "" }}>
+      <AccordionItem value="shipping" data-testid="item-shipping">
+        <AccordionTrigger>Shipping</AccordionTrigger>
+        <AccordionPanel data-testid="panel-shipping">{shown}</AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="returns" data-testid="item-returns">
+        <AccordionTrigger>Returns</AccordionTrigger>
+        <AccordionPanel data-testid="panel-returns">{shown}</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+    <output data-testid="loading">{pending? shown ? "loading" : ""}</output>
+
+    <AccordionRoot multiple>
+      <AccordionItem value="faq" data-testid="item-faq" onOpenChange={(open) => { if (open) { askedFaq := true } }}>
+        <AccordionTrigger>FAQ</AccordionTrigger>
+        <AccordionPanel data-testid="panel-faq">
+          {loading on(askedFaq) fallback { <p data-testid="faq-loading">Loading…</p> } {
+            {errored fallback(e) { <p data-testid="faq-error">{e.message}</p> <button onClick={() => { refresh faq }}>Retry</button> } {
+              <p data-testid="faq-text">{faq}</p>
+              <button>Ask a question</button>
+            }}
+          }}
+        </AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="logged" data-testid="item-logged" onOpenChange={log}>
+        <AccordionTrigger>Logged</AccordionTrigger>
+        <AccordionPanel>Logged content</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+    <output data-testid="logged">{logged}</output>
+    <output data-testid="saving">{pending? logged ? "saving" : ""}</output>
+    <output data-testid="late-saving">{pending? late ? "saving" : ""}</output>
+
+    <AccordionRoot value={late} onValueChange={changeLate}>
+      <AccordionItem value="a" data-testid="late-a">
+        <AccordionTrigger>Late A</AccordionTrigger>
+        <AccordionPanel>Late content A</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+
+    <AccordionRoot value={guessed} onValueChange={changeGuessed}>
+      <AccordionItem value="a" data-testid="guess-a">
+        <AccordionTrigger>Guess A</AccordionTrigger>
+        <AccordionPanel>Guess content A</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+  </main>
+}

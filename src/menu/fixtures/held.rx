@@ -1,0 +1,85 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../menu.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// menu is computed from that write. The menu's own state (open, highlight, checked, submenu open) must not wait for
+// the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <style>
+    :global(.held-popup) { margin: 0; padding: 0; border: 0; width: 160px }
+    :global(.held-popup > :not([popover]):not([role="group"])), :global(.held-popup [role="menuitemradio"]) { display: block; box-sizing: border-box; width: 100%; height: 20px; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
+  <main style="display: flex; gap: 8px; padding-bottom: 240px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    // The test opens the menu before the write, so the disabled menu is open while the request is out.
+    <MenuRoot disabled={step == 2}>
+      <MenuTrigger>Root prop</MenuTrigger>
+      <MenuPopup class="held-popup" data-testid="root-prop-popup">
+        <MenuItem>Root prop one</MenuItem>
+        <MenuItem>Root prop two</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+
+    // 2. An attribute of the trigger.
+    <MenuRoot>
+      <MenuTrigger class={step == 2 ? "second" : "first"}>Trigger attribute</MenuTrigger>
+      <MenuPopup class="held-popup" data-testid="trigger-attribute-popup">
+        <MenuItem>Trigger attribute one</MenuItem>
+        <MenuItem>Trigger attribute two</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+
+    // 3. Props and attributes of the items. The test opens this menu before the write: every item in it is held, and
+    // the items read the menu's open state.
+    <MenuRoot>
+      <MenuTrigger>Items</MenuTrigger>
+      <MenuPopup class="held-popup" data-testid="items-popup">
+        <MenuItem>Plain item</MenuItem>
+        <MenuItem class={step == 2 ? "second" : "first"}>Item attribute</MenuItem>
+        // Highlighted before the write: `disabled` goes from false to true.
+        <MenuItem disabled={step == 2}>Item prop</MenuItem>
+        <MenuCheckboxItem class={step == 2 ? "second" : "first"}>Checkbox attribute</MenuCheckboxItem>
+        <MenuRadioGroup defaultValue="plain">
+          <MenuRadioItem value="plain">Plain radio</MenuRadioItem>
+          <MenuRadioItem value="attribute" class={step == 2 ? "second" : "first"}>Radio attribute</MenuRadioItem>
+        </MenuRadioGroup>
+        <MenuSubmenuRoot>
+          <MenuSubmenuTrigger class={step == 2 ? "second" : "first"}>Submenu attribute</MenuSubmenuTrigger>
+          <MenuPopup class="held-popup" data-testid="submenu-attribute-popup">
+            <MenuItem>Submenu attribute item</MenuItem>
+          </MenuPopup>
+        </MenuSubmenuRoot>
+        <MenuSubmenuRoot>
+          <MenuSubmenuTrigger delay={step == 1 ? 100 : 101}>Submenu prop</MenuSubmenuTrigger>
+          <MenuPopup class="held-popup" data-testid="submenu-prop-popup">
+            <MenuItem>Submenu prop item</MenuItem>
+          </MenuPopup>
+        </MenuSubmenuRoot>
+      </MenuPopup>
+    </MenuRoot>
+
+    // 4. A prop of a submenu's root. Opened before the write, as the root's case is.
+    <MenuRoot>
+      <MenuTrigger>Submenu root</MenuTrigger>
+      <MenuPopup class="held-popup">
+        <MenuItem>Submenu root plain item</MenuItem>
+        <MenuSubmenuRoot disabled={step == 2}>
+          <MenuSubmenuTrigger>Submenu root prop</MenuSubmenuTrigger>
+          <MenuPopup class="held-popup" data-testid="submenu-root-prop-popup">
+            <MenuItem>Submenu root prop item</MenuItem>
+          </MenuPopup>
+        </MenuSubmenuRoot>
+      </MenuPopup>
+    </MenuRoot>
+  </main>
+}

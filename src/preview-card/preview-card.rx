@@ -7,6 +7,7 @@
 // closes on Escape and on a press outside itself. There is no Portal or Positioner part: the popup is the
 // positioned element, styled with `:popover-open` and `@starting-style`.
 import { mergeProps } from "../internal/props.js"
+import { createKeptFocus } from "../internal/dom.js"
 import { createHoverIntent, createManualDismiss } from "../internal/overlay.js"
 import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, AnchorProps, PartProps } from "../internal/types.rx"
@@ -23,9 +24,20 @@ export type PreviewCardRootProps = {
 }
 
 export component PreviewCardRoot(props: PreviewCardRootProps) {
-  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
+  // The app's handler is called in a change of its own (`onFlush`): one that writes what a loading question reads,
+  // or that awaits, would otherwise hold this change, and the popup would wait for the answer (or be hidden again
+  // to match the held state after the browser showed it).
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
   action dismiss(reason: "escape-key" | "outside-press") { state.setOpen(false) }
   _dismiss = createManualDismiss(state.open, state.trigger, state.popup, dismiss)
+  // A card whose content loads or fails replaces what had focus (a link in it): focus stays in the card.
+  _focus = createKeptFocus(state.popup, state.open)
   provide previewCard = state
   {props.children}
 }
@@ -54,8 +66,8 @@ export fn previewCardTrigger(ref c: PreviewCardContext, ref delay: number, ref c
 
 export component PreviewCardTrigger({ delay = 600, closeDelay = 300, children, ...rest }: PreviewCardTriggerProps) {
   c = use previewCard
-  own = previewCardTrigger(c, delay, closeDelay)
-  merged = mergeProps(own, rest)
+  own = previewCardTrigger(c, latest delay, latest closeDelay)
+  merged = latest mergeProps(own, rest)
   <a {...merged}>{children}</a>
 }
 
@@ -76,8 +88,8 @@ export fn previewCardPopup(ref c: PreviewCardContext, ref side: "top" | "bottom"
 
 export component PreviewCardPopup({ side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: PreviewCardPopupProps) {
   c = use previewCard
-  own = previewCardPopup(c, side, align, sideOffset, alignOffset)
-  merged = mergeProps(own, rest)
+  own = previewCardPopup(c, latest side, latest align, latest sideOffset, latest alignOffset)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -91,6 +103,6 @@ export fn previewCardArrow(ref c: PreviewCardContext): PartProps {
 export component PreviewCardArrow({ children, ...rest }: DivProps) {
   c = use previewCard
   own = previewCardArrow(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

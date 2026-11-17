@@ -7,7 +7,8 @@ export pure fn subscribeToastManager(ref manager: import("./impl/toast.ts").Toas
 export pure fn newToastRecord(options: import("./impl/toast.ts").ToastOptions): import("./impl/toast.ts").ToastRecord
 export pure fn updatedToastRecord(previous: import("./impl/toast.ts").ToastRecord, updates: any, restart: boolean): import("./impl/toast.ts").ToastRecord
 export pure fn placeToasts(records: import("./impl/toast.ts").ToastRecord[], limit: number): import("./impl/toast.ts").PlacedToast[]
-export fn notifyToasts(records: import("./impl/toast.ts").ToastRecord[], id: string | undefined, which: "onClose" | "onRemove"): void
+export pure fn toastCallbacks(records: import("./impl/toast.ts").ToastRecord[], id: string | undefined, which: "onClose" | "onRemove"): (() => void)[]
+export fn callToasts(callbacks: (() => void)[]): void
 export pure fn createPausableTimeout(ref running: boolean, ref paused: boolean, ref duration: number, ref restartKey: number, onElapsed: () => void) instantiates
 export pure fn createWindowFocus(): ref boolean
 export pure fn createToastHotkey(ref active: boolean, ref viewport: HTMLElement | undefined) instantiates

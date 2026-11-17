@@ -193,7 +193,7 @@ test("a close by script that the owner accepts stays closed, and a close with no
   await user.click(getByRole("button", { name: "Open animated" }));
   const dialog = getByRole("dialog", { name: "Animated" }) as HTMLDialogElement;
   const opened: string[] = [];
-  dialog.addEventListener("toggle", (event) => opened.push((event as ToggleEvent).newState));
+  dialog.addEventListener("toggle", (event) => opened.push(event.newState));
   dialog.close();
   await frame();
   await frame();

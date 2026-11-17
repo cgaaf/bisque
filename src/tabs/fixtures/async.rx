@@ -1,0 +1,119 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../tabs.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// Tabs used against a slow server, as an app would write them.
+export default component Fixture() {
+  // 1. Each tab's panel loads when its tab is chosen: `onValueChange` writes what the loading question reads. The
+  // previous panel's answer stays until the new one lands (no `loading on`), so the app's change is held.
+  source tab := "overview"
+  panel = await fetchText(tab) -> ""
+  shown = panel catch (e) => "failed"
+
+  // 2. A panel that shows a fallback while it loads, and fails, with a retry.
+  source report := "sales"
+  reportText = await fetchText(report)
+
+  // 3. Tabs whose `onValueChange` is itself an action that awaits (it saves the choice).
+  source logged := ""
+  action log(next: string) {
+    affects logged
+    try {
+      let answer = await save(next)
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+
+  // 4. Controlled tabs whose owner agrees late: it saves first, and writes `value` once the server answers.
+  source late := "a"
+  action changeLate(next: string) {
+    affects late
+    try {
+      await save(`late ${next}`)
+      late := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  // 5. Controlled tabs whose owner guesses: the change shows at once, and reverts if the request fails.
+  source guessed: string = "a"
+  action changeGuessed(next: string) {
+    try {
+      guess guessed := next
+      await save(`guess ${next}`)
+      guessed := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  <main>
+    <TabsRoot data-testid="loads" onValueChange={(next) => { tab := next }}>
+      <TabsList data-testid="loads-list" style="display: flex; gap: 4px; position: relative">
+        <TabsTab value="overview">Overview</TabsTab>
+        <TabsTab value="projects">Projects</TabsTab>
+        <TabsTab value="account">Account</TabsTab>
+        <TabsIndicator data-testid="indicator" />
+      </TabsList>
+      <TabsPanel value="overview" data-testid="panel-overview">{shown}</TabsPanel>
+      <TabsPanel value="projects" data-testid="panel-projects">{shown}</TabsPanel>
+      <TabsPanel value="account" data-testid="panel-account">{shown}</TabsPanel>
+    </TabsRoot>
+    <output data-testid="loading">{pending? shown ? "loading" : ""}</output>
+
+    <TabsRoot onValueChange={(next) => { report := next }}>
+      <TabsList>
+        <TabsTab value="sales">Sales</TabsTab>
+        <TabsTab value="costs">Costs</TabsTab>
+      </TabsList>
+      <TabsPanel value="sales" data-testid="report-sales">
+        {loading on(report) fallback { <p data-testid="report-loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="report-error">{e.message}</p> <button onClick={() => { refresh reportText }}>Retry</button> } {
+            <p data-testid="report-text">{reportText}</p>
+            <button>Export</button>
+          }}
+        }}
+      </TabsPanel>
+      <TabsPanel value="costs" data-testid="report-costs">
+        {loading on(report) fallback { <p data-testid="report-loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="report-error">{e.message}</p> <button onClick={() => { refresh reportText }}>Retry</button> } {
+            <p data-testid="report-text">{reportText}</p>
+            <button>Export</button>
+          }}
+        }}
+      </TabsPanel>
+    </TabsRoot>
+
+    <TabsRoot onValueChange={log}>
+      <TabsList>
+        <TabsTab value="day">Day</TabsTab>
+        <TabsTab value="week">Week</TabsTab>
+      </TabsList>
+      <TabsPanel value="day">Day view</TabsPanel>
+      <TabsPanel value="week">Week view</TabsPanel>
+    </TabsRoot>
+    <output data-testid="logged">{logged}</output>
+    <output data-testid="saving">{pending? logged ? "saving" : ""}</output>
+    <output data-testid="late-saving">{pending? late ? "saving" : ""}</output>
+
+    <TabsRoot value={late} onValueChange={changeLate}>
+      <TabsList>
+        <TabsTab value="a">Late A</TabsTab>
+        <TabsTab value="b">Late B</TabsTab>
+      </TabsList>
+      <TabsPanel value="a">Late panel A</TabsPanel>
+      <TabsPanel value="b">Late panel B</TabsPanel>
+    </TabsRoot>
+
+    <TabsRoot value={guessed} onValueChange={changeGuessed}>
+      <TabsList>
+        <TabsTab value="a">Guess A</TabsTab>
+        <TabsTab value="b">Guess B</TabsTab>
+      </TabsList>
+      <TabsPanel value="a">Guess panel A</TabsPanel>
+      <TabsPanel value="b">Guess panel B</TabsPanel>
+    </TabsRoot>
+  </main>
+}

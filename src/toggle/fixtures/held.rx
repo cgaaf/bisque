@@ -1,0 +1,23 @@
+import { Toggle } from "../toggle.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// toggle is computed from that write. The toggle's own state (pressed) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // An attribute passed through to the toggle's element. No prop of a standalone toggle holds it: `value`,
+    // `disabled` (false to undefined), `defaultPressed` and its toolbar's `orientation` all leave the toggle free
+    // unfixed (each reaches only equations whose result doesn't change, or none beside the pressed state).
+    <Toggle class={step == 2 ? "second" : "first"}>Toggle attribute</Toggle>
+  </main>
+}

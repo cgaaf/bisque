@@ -1,0 +1,33 @@
+import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerClose } from "../drawer.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// drawer is computed from that write. The drawer's own state (open, and the swipe) must not wait for the app's
+// request. Each value computed from `step` has to change: one that comes out equal holds nothing.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  // A 300 x 200 drawer at the bottom edge, following the drag.
+  <style>
+    :global(.drawer) { margin: auto auto 0; width: 300px; height: 200px; padding: 0; border: 0; box-sizing: border-box; transform: translate(var(--drawer-swipe-movement-x), var(--drawer-swipe-movement-y)) }
+  </style>
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // An attribute passed through to the popup's element.
+    <DrawerRoot>
+      <DrawerTrigger>Popup attribute</DrawerTrigger>
+      <DrawerPopup data-testid="popup-attribute" class={step == 2 ? "drawer second" : "drawer first"}>
+        <div data-testid="popup-attribute-handle" style="height: 40px">Handle</div>
+        // The page behind an open modal drawer is inert: this one starts the app's action from inside it.
+        <DrawerContent><DrawerTitle>Two</DrawerTitle><DrawerClose>Close</DrawerClose><button onClick={() => { next() }}>Next inside</button></DrawerContent>
+      </DrawerPopup>
+    </DrawerRoot>
+  </main>
+}

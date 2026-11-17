@@ -1,0 +1,50 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "../dialog.rx"
+import { AlertDialogRoot, AlertDialogTrigger, AlertDialogPopup, AlertDialogTitle, AlertDialogClose } from "../../alert-dialog/alert-dialog.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// dialog is computed from that write. The dialog's own state must not wait for the app's request. Each value
+// computed from `step` has to change: one that comes out equal holds nothing.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root.
+    <DialogRoot role={step == 1 ? "dialog" : "alertdialog"}>
+      <DialogTrigger>Root prop</DialogTrigger>
+      <DialogPopup data-testid="root-prop"><DialogTitle>One</DialogTitle><DialogClose>Close</DialogClose></DialogPopup>
+    </DialogRoot>
+
+    // 2. An attribute passed through to the trigger's element.
+    <DialogRoot>
+      <DialogTrigger class={step == 2 ? "second" : "first"}>Trigger attribute</DialogTrigger>
+      <DialogPopup data-testid="trigger-attribute"><DialogTitle>Two</DialogTitle><DialogClose>Close</DialogClose></DialogPopup>
+    </DialogRoot>
+
+    // 3. An attribute passed through to the popup's element.
+    <DialogRoot>
+      <DialogTrigger>Popup attribute</DialogTrigger>
+      <DialogPopup data-testid="popup-attribute" class={step == 2 ? "second" : "first"}><DialogTitle>Three</DialogTitle><DialogClose>Close</DialogClose></DialogPopup>
+    </DialogRoot>
+
+    // 4. An attribute passed through to an alert dialog's trigger, which is Dialog's underneath.
+    <AlertDialogRoot>
+      <AlertDialogTrigger class={step == 2 ? "second" : "first"}>Alert trigger attribute</AlertDialogTrigger>
+      <AlertDialogPopup data-testid="alert-trigger-attribute"><AlertDialogTitle>Four</AlertDialogTitle><AlertDialogClose>Close</AlertDialogClose></AlertDialogPopup>
+    </AlertDialogRoot>
+
+    // 5. An attribute passed through to an alert dialog's popup.
+    <AlertDialogRoot>
+      <AlertDialogTrigger>Alert popup attribute</AlertDialogTrigger>
+      <AlertDialogPopup data-testid="alert-popup-attribute" class={step == 2 ? "second" : "first"}><AlertDialogTitle>Five</AlertDialogTitle><AlertDialogClose>Close</AlertDialogClose></AlertDialogPopup>
+    </AlertDialogRoot>
+  </main>
+}

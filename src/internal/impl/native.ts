@@ -140,6 +140,9 @@ export function createNativeDialog(
         requestClose(valueOf(event.source));
       };
       const onClose = () => {
+        // The event comes a task after `close()`. If the dialog has been opened again since (a guessed close
+        // reverted), it is stale: reporting it would ask the owner to close a dialog it has just reopened.
+        if (el.open) return;
         if (!untrack(open)) return;
         onRequestClose("close");
         // The owner's answer has landed by the next microtask: if it kept the dialog open, open the element again.

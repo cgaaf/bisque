@@ -1,22 +1,27 @@
 import { mergeProps } from "../internal/props.js"
 import { createPresence } from "../internal/dom.js"
-import { createImageLoadingStatus, createDelayPassed } from "../internal/image-loading.js"
+import { createImageSlot, createImageLoadingStatus, createDelayPassed } from "../internal/image-loading.js"
 import { SpanProps, ImageProps, PartProps } from "../internal/types.rx"
 
 export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error"
 
+// Where AvatarImage reports how it is loading (../internal/impl/image-loading.ts).
+export type AvatarImageSlot = { add: (status: any) => void; remove: (status: any) => void }
+
 export type AvatarContext = {
-  // How the image is doing: the fallback shows until it is "loaded".
+  // How the image is doing: the fallback shows until it is "loaded". "idle" while there is no AvatarImage.
   imageLoadingStatus: ImageLoadingStatus
-  setImageLoadingStatus: (status: ImageLoadingStatus) => void
+  // Where AvatarImage reports its status.
+  slot: AvatarImageSlot
 }
 
 export context avatar: AvatarContext
 
 export component AvatarRoot(props: SpanProps) {
-  source status: ImageLoadingStatus := "idle"
-  action setImageLoadingStatus(next: ImageLoadingStatus) { status := next }
-  provide avatar = { imageLoadingStatus: status, setImageLoadingStatus: setImageLoadingStatus }
+  // The image's status is kept in TypeScript: an avatar in a `for` row that a new answer removes can't call an
+  // action from its cleanup to say its image has gone.
+  [status, slot] = createImageSlot()
+  provide avatar = { imageLoadingStatus: status, slot: slot }
   { children, ...rest } = props
   <span {...rest}>{children}</span>
 }
@@ -33,11 +38,9 @@ export type AvatarImageProps = {
 // It animates in and out with `data-starting-style` and `data-ending-style`.
 export component AvatarImage({ src, srcset, crossorigin, referrerpolicy, onLoadingStatusChange, ...rest }: AvatarImageProps) {
   c = use avatar
-  status = createImageLoadingStatus(src, srcset, crossorigin, referrerpolicy)
+  status = createImageLoadingStatus(latest src, latest srcset, latest crossorigin, latest referrerpolicy, peek(c.slot))
   effect (status) {
-    c.setImageLoadingStatus($0)
     if ($0 != "idle" && onLoadingStatusChange) { onLoadingStatusChange($0) }
-    return () => { c.setImageLoadingStatus("idle") }
   }
   source element: HTMLElement | undefined := undefined
   action setElement(el: HTMLElement) { element := el }
@@ -47,7 +50,7 @@ export component AvatarImage({ src, srcset, crossorigin, referrerpolicy, onLoadi
     "data-starting-style": transition == "starting" ? "" : undefined,
     "data-ending-style": transition == "ending" ? "" : undefined,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   {if mounted {
     <img {...merged} crossorigin={crossorigin} referrerpolicy={referrerpolicy} srcset={srcset} src={src} />
   }}
@@ -61,7 +64,7 @@ export type AvatarFallbackProps = {
 // Shown while the image hasn't loaded: before it does, when it fails, and when there is no image at all.
 export component AvatarFallback({ delay = 0, children, ...rest }: AvatarFallbackProps) {
   c = use avatar
-  passed = createDelayPassed(delay)
+  passed = createDelayPassed(latest delay)
   {if c.imageLoadingStatus != "loaded" && passed {
     <span {...rest}>{children}</span>
   }}

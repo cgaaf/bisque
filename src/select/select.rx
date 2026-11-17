@@ -6,7 +6,8 @@
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
 import { createRovingFocus, focusElement, focusListItem, clickElement } from "../internal/dom.js"
 import { createTypeahead, elementText, itemValue, createOnShow, createLabels, createItemObserver, hasFocus } from "../internal/listbox.js"
-import { createPopoverState, popoverTriggerProps, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
+import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { arrowStyle } from "../internal/native.js"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
 
@@ -45,7 +46,7 @@ export type SelectContext = PopoverState & {
   registerLabel: (value: string, label: string) => void
 }
 
-export context select: SelectContext
+export context select: lane SelectContext
 
 export type SelectRootProps = {
   // Single selection: the selected value, null for none.
@@ -119,7 +120,7 @@ export component SelectRoot(props: SelectRootProps) {
   givenLabels = (props.items ?? []) catch (e) => []
   isLoading = (props.loading ?? false) catch (e) => false
   labels = [...givenLabels, ...registered]
-  inputName = props.name ?? f?.name
+  inputName = latest props.name ?? f?.name
   [match, resetMatch] = createTypeahead()
 
   action setOpenFocus(focus: SelectOpenFocus) { openFocus := focus }
@@ -213,21 +214,36 @@ export component SelectRoot(props: SelectRootProps) {
 }
 
 // The state attributes the trigger, value and icon share.
+//
+// The parts read each field of the context through an equation of its own. The context is one object, rebuilt
+// whenever any field changes: a props object built straight from it would be rebuilt each time with the same
+// content, and everything spread from it would run again (`UNSTABLE_MEMO_OUTPUT`). An equation of one field stops
+// the change when that field didn't.
 fn selectState(ref c: SelectContext): PartProps {
+  open = c.open
+  disabled = c.disabled
+  readOnly = c.readOnly
+  required = c.required
+  isLoading = c.loading
+  empty = c.selected.length == 0
   {
-    "data-popup-open": c.open ? "" : undefined,
-    "data-disabled": c.disabled ? "" : undefined,
-    "data-readonly": c.readOnly ? "" : undefined,
-    "data-required": c.required ? "" : undefined,
-    "data-loading": c.loading ? "" : undefined,
-    "data-placeholder": c.selected.length == 0 ? "" : undefined,
+    "data-popup-open": open ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    "data-readonly": readOnly ? "" : undefined,
+    "data-required": required ? "" : undefined,
+    "data-loading": isLoading ? "" : undefined,
+    "data-placeholder": empty ? "" : undefined,
   }
 }
 
 // Spread on a <button>: `popovertarget` makes the browser open and close the popup on a click, Enter and Space,
 // and anchor the popup to it. The arrow keys open it through the select, and typing on the closed trigger selects.
 export fn selectTrigger(ref c: SelectContext): PartProps {
-  base = popoverTriggerProps(c)
+  // popoverTriggerProps's fields, each read through its own equation: given the whole context it would be rebuilt
+  // on every change with the same content.
+  popupId = c.popupId
+  open = c.open
+  setTrigger = c.setTrigger
   // A click from the keyboard (Enter, Space) has no pointer detail: it opens on the selected item, else the
   // first. A pointer opens on the selected item, else on the list itself.
   action press(event: MouseEvent) {
@@ -250,13 +266,20 @@ export fn selectTrigger(ref c: SelectContext): PartProps {
     c.fieldBlur(event.relatedTarget)
   }
   state = selectState(c)
+  readOnly = c.readOnly
+  required = c.required
+  disabled = c.disabled
   {
-    ...base,
+    type: "button",
+    popovertarget: popupId,
+    "aria-expanded": open ? "true" : "false",
+    "aria-controls": popupId,
+    ref: setTrigger,
     role: "combobox",
     "aria-haspopup": "listbox",
-    "aria-readonly": c.readOnly ? "true" : undefined,
-    "aria-required": c.required ? "true" : undefined,
-    disabled: c.disabled ? true : undefined,
+    "aria-readonly": readOnly ? "true" : undefined,
+    "aria-required": required ? "true" : undefined,
+    disabled: disabled ? true : undefined,
     onClick: press,
     onKeyDown: keyDown,
     onFocus: focus,
@@ -274,7 +297,7 @@ export component SelectTrigger({ children, ...rest }: ButtonProps) {
   inField = withoutHandlers(fieldProps, true)
   own = selectTrigger(c)
   withField = mergeProps(inField, own)
-  merged = mergeProps(withField, rest)
+  merged = latest mergeProps(withField, rest)
   <button {...merged}>{children}</button>
 }
 
@@ -286,10 +309,9 @@ export type SelectValueProps = {
 // The selected item's label (labels joined by ", " when `multiple`), or the placeholder.
 export component SelectValue({ placeholder, children, ...rest }: SelectValueProps) {
   c = use select
-  names = c.selected.map((value) => nameFor(c.labels, value, c.loading)).filter((name) => name != "")
-  text = c.selected.length == 0 ? placeholder ?? "" : names.join(", ")
+  text = c.selected.length == 0 ? latest placeholder ?? "" : c.selected.map((value) => nameFor(c.labels, value, c.loading)).filter((name) => name != "").join(", ")
   state = selectState(c)
-  merged = mergeProps(state, rest)
+  merged = latest mergeProps(state, rest)
   <span {...merged}>{text}</span>
 }
 
@@ -297,7 +319,7 @@ export component SelectValue({ placeholder, children, ...rest }: SelectValueProp
 export component SelectIcon({ children, ...rest }: SpanProps) {
   c = use select
   state = selectState(c)
-  merged = mergeProps({ "aria-hidden": "true", ...state }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true", ...state }, rest)
   <span {...merged}>{children}</span>
 }
 
@@ -317,6 +339,9 @@ export type SelectPopupProps = {
 export fn selectPopup(ref c: SelectContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   _roving = createRovingFocus(c.popup, { orientation: "vertical", loop: false, typeahead: false, tabStop: false })
   base = popoverPopupProps(c, "auto", side, align, sideOffset, alignOffset)
+  multiple = c.multiple
+  readOnly = c.readOnly
+  isLoading = c.loading
   action keyDown(event: KeyboardEvent) {
     if (event.key == "Tab") {
       // Tab leaves the select, so it closes.
@@ -335,10 +360,10 @@ export fn selectPopup(ref c: SelectContext, ref side: "top" | "bottom" | "left" 
     style: { ...base.style, "min-width": "anchor-size(width)" },
     role: "listbox",
     tabindex: "-1",
-    "aria-multiselectable": c.multiple ? "true" : undefined,
-    "aria-readonly": c.readOnly ? "true" : undefined,
-    "aria-busy": c.loading ? "true" : undefined,
-    "data-loading": c.loading ? "" : undefined,
+    "aria-multiselectable": multiple ? "true" : undefined,
+    "aria-readonly": readOnly ? "true" : undefined,
+    "aria-busy": isLoading ? "true" : undefined,
+    "data-loading": isLoading ? "" : undefined,
     onKeyDown: keyDown,
     onFocusOut: focusOut,
   }
@@ -348,8 +373,8 @@ export fn selectPopup(ref c: SelectContext, ref side: "top" | "bottom" | "left" 
 // closed trigger.
 export component SelectPopup({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: SelectPopupProps) {
   c = use select
-  own = selectPopup(c, side, align, sideOffset, alignOffset)
-  merged = mergeProps(own, rest)
+  own = selectPopup(c, latest side, latest align, latest sideOffset, latest alignOffset)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -360,7 +385,7 @@ export type SelectItemContext = {
   setText: (element: HTMLElement) => void
 }
 
-export context selectItemState: SelectItemContext
+export context selectItemState: lane SelectItemContext
 
 export type SelectItemProps = {
   value: string
@@ -425,9 +450,9 @@ export component SelectItem(props: SelectItemProps) {
   provide selectItemState = { selected: isSelected, disabled: isDisabled, highlighted: highlighted, setText: setText }
 
   { value, label, disabled, children, ...rest } = props
-  own = selectItem(c, value, label, isDisabled, highlighted, highlight)
+  own = selectItem(c, latest value, latest label, isDisabled, highlighted, highlight)
   withRef = mergeProps(own, { ref: setElement })
-  merged = mergeProps(withRef, withoutHandlers(rest, isDisabled))
+  merged = latest mergeProps(withRef, withoutHandlers(rest, isDisabled))
   <div {...merged}>{children}</div>
 }
 
@@ -435,14 +460,14 @@ export component SelectItem(props: SelectItemProps) {
 export component SelectItemText({ children, ...rest }: SpanProps) {
   item = use selectItemState
   action setText(element: HTMLElement) { item.setText(element) }
-  merged = mergeProps({ ref: setText }, rest)
+  merged = latest mergeProps({ ref: setText }, rest)
   <span {...merged}>{children}</span>
 }
 
 // Shown while its item is selected, unless `keepMounted`.
 export component SelectItemIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
   item = use selectItemState
-  merged = mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
   {if item.selected || keepMounted {
     <span {...merged}>{children}</span>
   }}
@@ -460,7 +485,7 @@ export component SelectGroup(props: DivProps) {
   action setLabelId(id: string | undefined) { labelId := id }
   provide selectGroup = { labelId: labelId, setLabelId: setLabelId }
   { children, ...rest } = props
-  merged = mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
+  merged = latest mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -469,25 +494,26 @@ export component SelectGroupLabel({ children, ...rest }: DivProps) {
   id = createId("select-group-label")
   // No cleanup: a label removed with a `for` row can't call an action from a cleanup, and its group goes with it.
   effect () { group.setLabelId(id) }
-  merged = mergeProps({ id: id }, rest)
+  merged = latest mergeProps({ id: id }, rest)
   <div {...merged}>{children}</div>
 }
 
 export component SelectSeparator(props: DivProps) {
-  merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
+  merged = latest mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
   <div {...merged} />
 }
 
 // Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
 // trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
 export fn selectArrow(ref c: SelectContext): PartProps {
-  base = popoverArrowProps(c)
-  base
+  // As popoverArrowProps, from the placement alone: given the whole context, that would be rebuilt on every change.
+  placement = c.placement
+  { "aria-hidden": "true", "data-side": placement?.side, style: arrowStyle(placement) }
 }
 
 export component SelectArrow({ children, ...rest }: DivProps) {
   c = use select
   own = selectArrow(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

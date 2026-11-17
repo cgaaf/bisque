@@ -13,13 +13,13 @@ export type ToolbarContext = {
   orientation: ToolbarOrientation
 }
 
-export context toolbar: ToolbarContext = { present: false, disabled: false, orientation: "horizontal" }
+export context toolbar: lane ToolbarContext = { present: false, disabled: false, orientation: "horizontal" }
 
 export type ToolbarGroupContext = {
   disabled: boolean
 }
 
-export context toolbarGroup: ToolbarGroupContext = { disabled: false }
+export context toolbarGroup: lane ToolbarGroupContext = { disabled: false }
 
 export type ToolbarRootProps = {
   // Disables every item. Buttons and inputs stay focusable unless they set `focusableWhenDisabled={false}`.
@@ -35,9 +35,9 @@ export type ToolbarRootProps = {
 export component ToolbarRoot(props: ToolbarRootProps) {
   source element: HTMLElement | undefined := undefined
   action setElement(el: HTMLElement) { element := el }
-  dir = props.orientation ?? "horizontal"
-  isDisabled = props.disabled ?? false
-  _focus = createCompositeFocus(element, { orientation: dir, loop: props.loopFocus ?? true, homeEnd: false })
+  dir = latest props.orientation ?? "horizontal"
+  isDisabled = latest props.disabled ?? false
+  _focus = createCompositeFocus(element, { orientation: dir, loop: latest props.loopFocus ?? true, homeEnd: false })
 
   provide toolbar = { present: true, disabled: isDisabled, orientation: dir }
 
@@ -49,7 +49,7 @@ export component ToolbarRoot(props: ToolbarRootProps) {
     "data-disabled": isDisabled ? "" : undefined,
     ref: setElement,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -67,9 +67,9 @@ export type ToolbarButtonOptions = {
 }
 
 export fn toolbarButton(ref c: ToolbarContext, ref g: ToolbarGroupContext, ref o: ToolbarButtonOptions): PartProps {
-  isDisabled = c.disabled || g.disabled || (o.disabled ?? false)
-  focusable = o.focusableWhenDisabled ?? true
-  own = button({ disabled: isDisabled, focusableWhenDisabled: focusable, native: o.native ?? true, composite: true })
+  isDisabled = c.disabled || g.disabled || (latest o.disabled ?? false)
+  focusable = latest o.focusableWhenDisabled ?? true
+  own = button({ disabled: isDisabled, focusableWhenDisabled: focusable, native: latest o.native ?? true, composite: true })
   item = itemState(c)
   { ...own, ...item, "data-focusable": focusable ? "" : undefined }
 }
@@ -82,9 +82,9 @@ export type ToolbarButtonProps = {
 export component ToolbarButton({ disabled = false, focusableWhenDisabled = true, children, ...rest }: ToolbarButtonProps) {
   c = use toolbar
   g = use toolbarGroup
-  own = toolbarButton(c, g, { disabled: disabled, focusableWhenDisabled: focusableWhenDisabled })
-  external = gateButtonHandlers(rest, c.disabled || g.disabled || disabled)
-  merged = mergeProps(own, external)
+  own = toolbarButton(c, g, { disabled: latest disabled, focusableWhenDisabled: latest focusableWhenDisabled })
+  external = gateButtonHandlers(rest, c.disabled || g.disabled || latest disabled)
+  merged = latest mergeProps(own, external)
   <button {...merged}>{children}</button>
 }
 
@@ -97,7 +97,7 @@ export fn toolbarLink(ref c: ToolbarContext): PartProps {
 export component ToolbarLink({ children, ...rest }: AnchorProps) {
   c = use toolbar
   own = toolbarLink(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <a {...merged}>{children}</a>
 }
 
@@ -110,8 +110,8 @@ export type ToolbarInputOptions = {
 // In the input the arrow keys move the caret; they move to the next item only from the end of the text (or the
 // start, going back). Home and End stay with the input.
 export fn toolbarInput(ref c: ToolbarContext, ref g: ToolbarGroupContext, ref o: ToolbarInputOptions): PartProps {
-  isDisabled = c.disabled || g.disabled || (o.disabled ?? false)
-  focusable = o.focusableWhenDisabled ?? true
+  isDisabled = c.disabled || g.disabled || (latest o.disabled ?? false)
+  focusable = latest o.focusableWhenDisabled ?? true
   action keyDown(event: KeyboardEvent) {
     if (isDisabled && event.key != "Tab") { event.preventDefault() }
   }
@@ -139,9 +139,9 @@ export type ToolbarInputProps = {
 export component ToolbarInput({ disabled = false, focusableWhenDisabled = true, ...rest }: ToolbarInputProps) {
   c = use toolbar
   g = use toolbarGroup
-  own = toolbarInput(c, g, { disabled: disabled, focusableWhenDisabled: focusableWhenDisabled })
-  external = gateButtonHandlers(rest, c.disabled || g.disabled || disabled)
-  merged = mergeProps(own, external)
+  own = toolbarInput(c, g, { disabled: latest disabled, focusableWhenDisabled: latest focusableWhenDisabled })
+  external = gateButtonHandlers(rest, c.disabled || g.disabled || latest disabled)
+  merged = latest mergeProps(own, external)
   <input {...merged} />
 }
 
@@ -153,7 +153,7 @@ export type ToolbarGroupProps = {
 // Groups items for assistive technology; `disabled` disables the items in it.
 export component ToolbarGroup(props: ToolbarGroupProps) {
   c = use toolbar
-  isDisabled = c.disabled || (props.disabled ?? false)
+  isDisabled = c.disabled || (latest props.disabled ?? false)
   provide toolbarGroup = { disabled: isDisabled }
 
   { disabled, children, ...rest } = props
@@ -162,7 +162,7 @@ export component ToolbarGroup(props: ToolbarGroupProps) {
     "data-orientation": c.orientation,
     "data-disabled": isDisabled ? "" : undefined,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -170,7 +170,7 @@ export component ToolbarGroup(props: ToolbarGroupProps) {
 export component ToolbarSeparator({ orientation, ...rest }: { orientation?: SeparatorOrientation } & DivProps) {
   c = use toolbar
   across: SeparatorOrientation = c.orientation == "vertical" ? "horizontal" : "vertical"
-  own = separator(orientation ?? across)
-  merged = mergeProps(own, rest)
+  own = separator((latest orientation) ?? across)
+  merged = latest mergeProps(own, rest)
   <div {...merged} />
 }

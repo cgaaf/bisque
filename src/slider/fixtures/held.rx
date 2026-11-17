@@ -1,0 +1,55 @@
+import { SliderRoot, SliderControl, SliderTrack, SliderThumb } from "../slider.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// slider is computed from that write. The slider's own state (its value, dragging, the active thumb) must not wait
+// for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <SliderRoot defaultValue={50} largeStep={step == 1 ? 10 : 20}>
+      <SliderControl data-testid="root-prop">
+        <SliderTrack style={{ width: "200px", height: "10px" }}>
+          <SliderThumb aria-label="Root prop" />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+
+    // 2. A prop of the thumb.
+    <SliderRoot defaultValue={50}>
+      <SliderControl data-testid="thumb-prop">
+        <SliderTrack style={{ width: "200px", height: "10px" }}>
+          <SliderThumb aria-label={step == 1 ? "Thumb prop" : "Thumb prop, saved"} />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+
+    // 3. An attribute passed through to the thumb's element.
+    <SliderRoot defaultValue={50}>
+      <SliderControl data-testid="thumb-attribute">
+        <SliderTrack style={{ width: "200px", height: "10px" }}>
+          <SliderThumb aria-label="Thumb attribute" class={step == 2 ? "second" : "first"} />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+
+    // 4. An attribute passed through to the control's element.
+    <SliderRoot defaultValue={50}>
+      <SliderControl data-testid="control-attribute" class={step == 2 ? "second" : "first"}>
+        <SliderTrack style={{ width: "200px", height: "10px" }}>
+          <SliderThumb aria-label="Control attribute" />
+        </SliderTrack>
+      </SliderControl>
+    </SliderRoot>
+  </main>
+}

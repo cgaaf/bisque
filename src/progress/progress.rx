@@ -16,7 +16,7 @@ export type ProgressContext = {
   setLabelId: (id: string | undefined) => void
 }
 
-export context progress: ProgressContext
+export context progress: lane ProgressContext
 
 export type ProgressRootProps = {
   // null (or a value that isn't finite) is indeterminate: work is happening, but how much is unknown.
@@ -43,12 +43,12 @@ fn progressState(ref c: ProgressContext): PartProps {
 export component ProgressRoot(props: ProgressRootProps) {
   source labelId: string | undefined := undefined
   action setLabelId(id: string | undefined) { labelId := id }
-  low = props.min ?? 0
-  high = props.max ?? 100
-  range = rangeValue(props.value, low, high, props.locale, props.format)
+  low = latest props.min ?? 0
+  high = latest props.max ?? 100
+  range = rangeValue(latest props.value, low, high, latest props.locale, latest props.format)
   status: ProgressStatus = range.clamped == null ? "indeterminate" : range.clamped == high ? "complete" : "progressing"
   self = {
-    value: props.value,
+    value: latest props.value,
     clamped: range.clamped,
     percent: range.percent,
     formatted: range.formatted,
@@ -59,7 +59,7 @@ export component ProgressRoot(props: ProgressRootProps) {
   provide progress = self
 
   { value, min, max, format, locale, getAriaValueText, children, ...rest } = props
-  valueText = getAriaValueText ? getAriaValueText(range.formatted, value) : range.clamped == null ? "indeterminate progress" : range.formatted
+  valueText = getAriaValueText ? getAriaValueText(range.formatted, latest value) : range.clamped == null ? "indeterminate progress" : range.formatted
   state = progressState(self)
   own = {
     role: "progressbar",
@@ -70,7 +70,7 @@ export component ProgressRoot(props: ProgressRootProps) {
     "aria-labelledby": labelId,
     ...state,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -82,7 +82,7 @@ export fn progressTrack(ref c: ProgressContext): PartProps {
 export component ProgressTrack({ children, ...rest }: DivProps) {
   c = use progress
   own = progressTrack(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -98,7 +98,7 @@ export fn progressIndicator(ref c: ProgressContext): PartProps {
 export component ProgressIndicator({ children, ...rest }: DivProps) {
   c = use progress
   own = progressIndicator(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -112,7 +112,7 @@ export fn progressValue(ref c: ProgressContext): PartProps {
 export component ProgressValue(props: Omit<SpanProps, "children">) {
   c = use progress
   own = progressValue(c)
-  merged = mergeProps(own, props)
+  merged = latest mergeProps(own, props)
   <span {...merged}>{c.formatted}</span>
 }
 
@@ -129,7 +129,7 @@ export fn progressLabel(ref c: ProgressContext, ref id: string): PartProps {
 export component ProgressLabel({ id, children, ...rest }: SpanProps) {
   c = use progress
   generated = createId("progress-label")
-  own = progressLabel(c, id || generated)
-  merged = mergeProps(own, rest)
+  own = progressLabel(c, (latest id) || generated)
+  merged = latest mergeProps(own, rest)
   <span {...merged}>{children}</span>
 }

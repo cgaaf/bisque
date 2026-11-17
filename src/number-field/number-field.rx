@@ -44,7 +44,7 @@ export type NumberFieldContext = {
   commit: (reason: NumberFieldChangeReason) => void
 }
 
-export context numberField: NumberFieldContext
+export context numberField: lane NumberFieldContext
 
 export type NumberFieldRootProps = {
   value?: number | null
@@ -115,7 +115,7 @@ export component NumberFieldRoot(props: NumberFieldRootProps) {
   isDisabled = givenDisabled || (f?.disabled ?? false)
   isReadOnly = givenReadOnly
   isRequired = props.required ?? false
-  stepSize = props.step ?? 1
+  stepSize = latest props.step ?? 1
   formatted = formatNumberValue(current, props.locale, props.format)
   generatedId = createId("number-field-input")
 
@@ -238,9 +238,9 @@ export component NumberFieldRoot(props: NumberFieldRootProps) {
   provide numberField = self
 
   { value, defaultValue, onValueChange, onValueCommitted, min, max, step, smallStep, largeStep, snapOnStep, allowOutOfRange, allowWheelScrub, disabled, readOnly, required, name, form, format, locale, children, ...rest } = props
-  inputName = name ?? f?.name
+  inputName = (latest name) ?? f?.name
   state = numberFieldState(self)
-  merged = mergeProps(state, rest)
+  merged = latest mergeProps(state, rest)
   <div {...merged}>{children}</div>
   {if inputName != undefined || f != undefined {
     <input type="number" hidden aria-hidden="true" tabindex="-1" name={inputName} form={form} min={min} max={max} step="any" value={current == null ? "" : `${current}`} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setHiddenInput} />
@@ -256,7 +256,7 @@ export fn numberFieldGroup(ref c: NumberFieldContext): PartProps {
 export component NumberFieldGroup({ children, ...rest }: DivProps) {
   c = use numberField
   own = numberFieldGroup(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -328,13 +328,13 @@ export fn numberFieldInput(ref c: NumberFieldContext): PartProps {
 export component NumberFieldInput(props: Omit<InputProps, "value" | "type">) {
   c = use numberField
   // An id of the consumer's is the one the steppers point at.
-  ownId = props.id ? `${props.id}` : undefined
+  ownId = latest props.id ? `${latest props.id}` : undefined
   effect (ownId) {
     c.setInputId($0)
     return () => { c.setInputId(undefined) }
   }
   own = numberFieldInput(c)
-  merged = mergeProps(own, props)
+  merged = latest mergeProps(own, props)
   <input {...merged} />
 }
 
@@ -389,15 +389,15 @@ export fn numberFieldStepper(ref c: NumberFieldContext, ref direction: number, r
 
 export component NumberFieldIncrement({ disabled = false, children, ...rest }: ButtonProps) {
   c = use numberField
-  own = numberFieldStepper(c, 1, disabled == true)
-  merged = mergeProps(own, rest)
+  own = numberFieldStepper(c, 1, (latest disabled) == true)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
 export component NumberFieldDecrement({ disabled = false, children, ...rest }: ButtonProps) {
   c = use numberField
-  own = numberFieldStepper(c, -1, disabled == true)
-  merged = mergeProps(own, rest)
+  own = numberFieldStepper(c, -1, (latest disabled) == true)
+  merged = latest mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
 
@@ -411,7 +411,7 @@ export type NumberFieldScrubAreaContext = {
   setCursor: (element: HTMLElement) => void
 }
 
-export context numberFieldScrubArea: NumberFieldScrubAreaContext
+export context numberFieldScrubArea: lane NumberFieldScrubAreaContext
 
 export type NumberFieldScrubAreaProps = {
   // The axis the pointer moves along to scrub. Default "horizontal".
@@ -430,7 +430,7 @@ export component NumberFieldScrubArea(props: NumberFieldScrubAreaProps) {
   c = use numberField
   source area: HTMLElement | undefined := undefined
   source cursorElement: HTMLElement | undefined := undefined
-  axis = props.direction ?? "horizontal"
+  axis = latest props.direction ?? "horizontal"
   action setArea(element: HTMLElement) { area := element }
   action setCursor(element: HTMLElement) { cursorElement := element }
   action scrubbingChange(next: boolean) { c.setScrubbing(next) }
@@ -438,7 +438,7 @@ export component NumberFieldScrubArea(props: NumberFieldScrubAreaProps) {
     c.stepFrom(c.value, delta < 0 ? -1 : 1, delta < 0 ? -delta : delta, event, "scrub", false)
   }
   action end(event: PointerEvent) { c.commit("scrub") }
-  scrub = createScrub(area, cursorElement, { enabled: !c.disabled && !c.readOnly, direction: axis, pixelSensitivity: props.pixelSensitivity ?? 2, teleportDistance: props.teleportDistance }, scrubbingChange, step, end)
+  scrub = createScrub(area, cursorElement, { enabled: !c.disabled && !c.readOnly, direction: axis, pixelSensitivity: latest props.pixelSensitivity ?? 2, teleportDistance: latest props.teleportDistance }, scrubbingChange, step, end)
 
   provide numberFieldScrubArea = {
     scrubbing: scrub.scrubbing,
@@ -458,7 +458,7 @@ export component NumberFieldScrubArea(props: NumberFieldScrubAreaProps) {
     style: { "touch-action": "none", "user-select": "none", "-webkit-user-select": "none" },
     ref: setArea,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <span {...merged}>{children}</span>
 }
 
@@ -475,7 +475,7 @@ export component NumberFieldScrubAreaCursor({ children, ...rest }: SpanProps) {
     style: { position: "fixed", top: "0", left: "0", "pointer-events": "none", transform: `translate3d(${s.x}px, ${s.y}px, 0)` },
     ref: s.setCursor,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   {if s.scrubbing && s.cursor {
     portal {
       <span {...merged}>{children}</span>

@@ -1,0 +1,68 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink } from "../navigation-menu.rx"
+import { fetchList, save } from "../../test/slow-server.js"
+
+// Site navigation whose panels load their links the first time they open (`onValueChange` writes what each panel's
+// loading question reads), and a second menu whose `onValueChange` is an action (it records the visit).
+export default component Fixture() {
+  source wantProducts: boolean := false
+  source wantDocs: boolean := false
+  products = wantProducts ? await fetchList("products") : []
+  docs = wantDocs ? await fetchList("docs") : []
+  action opened(value: string | null) {
+    if (value == "products") { wantProducts := true }
+    if (value == "docs") { wantDocs := true }
+  }
+
+  source visited := ""
+  action visit(value: string | null) {
+    affects visited
+    try {
+      let answer = await save(value ?? "closed")
+      visited := answer
+    } catch (e) {
+      visited := "failed"
+    }
+  }
+  <main style="padding: 8px">
+    <NavigationMenuRoot onValueChange={opened}>
+      <NavigationMenuList style="display: flex; gap: 8px; list-style: none; margin: 0; padding: 0">
+        <NavigationMenuItem value="products">
+          <NavigationMenuTrigger>Products</NavigationMenuTrigger>
+          <NavigationMenuContent data-testid="products-content" style="margin: 0">
+            {loading on(wantProducts) fallback { <p data-testid="products-loading">Loading…</p> } {
+              {errored fallback(e) { <p data-testid="products-error">{e.message}</p> <button onClick={() => { refresh products }}>Retry</button> } {
+                {for name in products {
+                  <NavigationMenuLink href={"#" + name}>{name}</NavigationMenuLink>
+                }}
+              }}
+            }}
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem value="docs">
+          <NavigationMenuTrigger>Docs</NavigationMenuTrigger>
+          <NavigationMenuContent data-testid="docs-content" style="margin: 0">
+            {loading on(wantDocs) fallback { <p data-testid="docs-loading">Loading…</p> } {
+              {errored fallback(e) { <p>{e.message}</p> } {
+                {for name in docs {
+                  <NavigationMenuLink href={"#" + name}>{name}</NavigationMenuLink>
+                }}
+              }}
+            }}
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+
+    <NavigationMenuRoot onValueChange={visit}>
+      <NavigationMenuList style="display: flex; gap: 8px; list-style: none; margin: 40px 0 0; padding: 0">
+        <NavigationMenuItem value="about">
+          <NavigationMenuTrigger>About</NavigationMenuTrigger>
+          <NavigationMenuContent data-testid="about-content" style="margin: 0">
+            <NavigationMenuLink href="#team">Team</NavigationMenuLink>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+    <output data-testid="visited">{pending? visited ? "" : visited}</output>
+  </main>
+}

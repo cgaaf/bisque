@@ -1,0 +1,32 @@
+import { TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// A tooltip whose text loads when it first opens (its `onOpenChange` writes what the loading question reads), and one
+// whose `onOpenChange` is an action that awaits.
+export default component Fixture() {
+  source wanted: boolean := false
+  hint = wanted ? await fetchText("shortcut") -> null : null
+  shownHint = (hint ?? "…") catch (e) => "No hint"
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let answer = await save(next ? "opened" : "closed")
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+  <main style="padding: 160px 0 120px 200px">
+    <TooltipRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <TooltipTrigger delay={0}>Save</TooltipTrigger>
+      <TooltipPopup data-testid="popup">{pending? hint ? "…" : shownHint}</TooltipPopup>
+    </TooltipRoot>
+    <TooltipRoot onOpenChange={log}>
+      <TooltipTrigger delay={0}>Logged</TooltipTrigger>
+      <TooltipPopup data-testid="logged-popup">A hint</TooltipPopup>
+    </TooltipRoot>
+    <output data-testid="logged">{pending? logged ? "" : logged}</output>
+    <p data-testid="outside" style="margin-top: 80px">Elsewhere</p>
+  </main>
+}

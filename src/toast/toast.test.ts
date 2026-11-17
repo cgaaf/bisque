@@ -3,12 +3,13 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { createRoot, createSignal, flush } from "solid-js";
 import {
+  callToasts,
   createPausableTimeout,
   createToastManager,
   newToastRecord,
-  notifyToasts,
   placeToasts,
   swipeDirections,
+  toastCallbacks,
   updatedToastRecord,
   type ToastListener,
   type ToastRecord,
@@ -117,8 +118,8 @@ test("onClose skips toasts already closing; onRemove doesn't", () => {
     closing,
   });
   const records = [make("a", false), make("b", true)];
-  notifyToasts(records, undefined, "onClose");
-  notifyToasts(records, "b", "onRemove");
+  callToasts(toastCallbacks(records, undefined, "onClose"));
+  callToasts(toastCallbacks(records, "b", "onRemove"));
   expect(calls).toEqual(["close a", "remove b"]);
 });
 

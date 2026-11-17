@@ -45,7 +45,7 @@ export type SliderContext = {
   changeThumb: (index: number, value: number, reason: "keyboard" | "input-change") => void
 }
 
-export context slider: SliderContext
+export context slider: lane SliderContext
 
 export type SliderRootProps = {
   // A number for one thumb, an array for a range with a thumb per entry.
@@ -203,7 +203,7 @@ export component SliderRoot(props: SliderRootProps) {
     "aria-labelledby": f?.labelId,
     ...state,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -217,7 +217,7 @@ export fn sliderControl(ref c: SliderContext): PartProps {
 export component SliderControl({ children, ...rest }: DivProps) {
   c = use slider
   own = sliderControl(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -230,7 +230,7 @@ export fn sliderTrack(ref c: SliderContext): PartProps {
 export component SliderTrack({ children, ...rest }: DivProps) {
   c = use slider
   own = sliderTrack(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -249,7 +249,7 @@ export fn sliderIndicator(ref c: SliderContext): PartProps {
 export component SliderIndicator({ children, ...rest }: DivProps) {
   c = use slider
   own = sliderIndicator(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -264,7 +264,7 @@ export fn sliderValue(ref c: SliderContext): PartProps {
 export component SliderValue(props: Omit<OutputProps, "children">) {
   c = use slider
   own = sliderValue(c)
-  merged = mergeProps(own, props)
+  merged = latest mergeProps(own, props)
   <output {...merged}>{c.formatted.join(" – ")}</output>
 }
 
@@ -372,13 +372,13 @@ export component SliderThumb(props: SliderThumbProps) {
   { index = 0, disabled = false, getAriaLabel, getAriaValueText, children, ...others } = props
   // These belong on the input, which has the slider role, not on the thumb's <div>.
   rest = { ...others, "aria-label": undefined, "aria-labelledby": undefined, "aria-describedby": undefined, "aria-valuetext": undefined }
-  inputAria = { "aria-labelledby": props["aria-labelledby"], "aria-describedby": props["aria-describedby"] }
-  ownValueText = props["aria-valuetext"]
-  label = getAriaLabel ? getAriaLabel(index) : props["aria-label"]
-  valueText = getAriaValueText ? getAriaValueText(c.formatted[index] ?? "", c.values[index] ?? c.min, index) : ownValueText ? `${ownValueText}` : undefined
-  own = sliderThumb(c, index, disabled)
-  merged = mergeProps(own, rest)
-  ownInput = sliderThumbInput(c, index, disabled, label, valueText)
-  input = mergeProps(ownInput, inputAria)
+  inputAria = { "aria-labelledby": latest props["aria-labelledby"], "aria-describedby": latest props["aria-describedby"] }
+  ownValueText = latest props["aria-valuetext"]
+  label = getAriaLabel ? getAriaLabel(latest index) : latest props["aria-label"]
+  valueText = getAriaValueText ? getAriaValueText(c.formatted[latest index] ?? "", c.values[latest index] ?? c.min, latest index) : ownValueText ? `${ownValueText}` : undefined
+  own = sliderThumb(c, latest index, latest disabled)
+  merged = latest mergeProps(own, rest)
+  ownInput = sliderThumbInput(c, latest index, latest disabled, label, valueText)
+  input = latest mergeProps(ownInput, inputAria)
   <div {...merged}>{children}<input {...input} /></div>
 }

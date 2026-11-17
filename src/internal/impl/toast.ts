@@ -44,7 +44,11 @@ export type ToastRecord = Omit<ToastOptions, "id"> & {
 };
 
 export type ToastPromiseOptions<Value> = {
-  loading: string | ToastUpdate;
+  /**
+   * With an `id`, the loading toast is that toast: one still showing turns back to loading in place, so a retry
+   * started from a failed toast's action button is followed by the same toast.
+   */
+  loading: string | ToastOptions;
   success: string | ToastUpdate | ((value: Value) => string | ToastUpdate);
   // oxlint-disable-next-line typescript/no-explicit-any
   error: string | ToastUpdate | ((error: any) => string | ToastUpdate);
@@ -68,7 +72,8 @@ export type ToastManager = {
   close: (id?: string) => void;
   /**
    * Shows a `"loading"` toast until `promise` settles, then turns it into a `"success"` or `"error"` one. Returns
-   * the promise, still rejecting if it rejects.
+   * the promise, still rejecting if it rejects. Each call follows its own promise, so answers that arrive out of
+   * order each end their own toast. Safe to await inside an action: the loading toast shows at once.
    */
   promise: <Value>(promise: Promise<Value>, options: ToastPromiseOptions<Value>) => Promise<Value>;
   subscribe: (listener: ToastListener) => () => void;
@@ -77,9 +82,9 @@ export type ToastManager = {
 let nextToastId = 0;
 
 function asUpdate<Value>(
-  option: string | ToastUpdate | ((value: Value) => string | ToastUpdate),
+  option: string | ToastOptions | ((value: Value) => string | ToastUpdate),
   value: Value,
-) {
+): ToastOptions {
   const resolved = typeof option === "function" ? option(value) : option;
   return typeof resolved === "string" ? { description: resolved } : resolved;
 }
@@ -188,17 +193,29 @@ export function placeToasts(records: ToastRecord[], limit: number): PlacedToast[
   });
 }
 
-/** Calls `callback` of each toast in `records` whose id is in `ids` (or every one, without ids) and isn't closing. */
-export function notifyToasts(
+/**
+ * The `onClose` (or `onRemove`) callbacks of the toasts in `records` with id `id` (every one, without an id), leaving
+ * out toasts already closing when it is `onClose`. Collected now, called later (`callToasts`): the provider calls
+ * them in a change of their own, by which time its records already say the toasts are closing.
+ */
+export function toastCallbacks(
   records: ToastRecord[],
   id: string | undefined,
   which: "onClose" | "onRemove",
-): void {
+): (() => void)[] {
+  const callbacks: (() => void)[] = [];
   for (const record of records) {
     if (id !== undefined && record.id !== id) continue;
     if (which === "onClose" && record.closing) continue;
-    record[which]?.();
+    const callback = record[which];
+    if (callback) callbacks.push(callback);
   }
+  return callbacks;
+}
+
+/** Calls each of `callbacks`. */
+export function callToasts(callbacks: (() => void)[]): void {
+  for (const callback of callbacks) callback();
 }
 
 /**

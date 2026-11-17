@@ -65,7 +65,7 @@ export type FieldContext = {
   setErrorId: (id: string | undefined) => void
 }
 
-export context field: FieldContext | undefined = undefined
+export context field: lane FieldContext | undefined = undefined
 
 export type FieldRootProps = {
   // Names the value in the form's values and errors, and the control's hidden input.
@@ -116,15 +116,19 @@ export component FieldRoot(props: FieldRootProps) {
 
   isDisabled = (set?.disabled ?? false) || (props.disabled ?? false)
   // Outside a Form nothing submits the field through the library, so "onSubmit" would never run `validate`.
-  mode = props.validationMode ?? formCtx?.validationMode ?? "onBlur"
+  mode = latest props.validationMode ?? formCtx?.validationMode ?? "onBlur"
   // An error the form's handler came back with shows until the field changes, like any other. It is also about
   // the value that was sent, so it never shows on a field that was edited while the request was out.
-  answered = props.name != undefined && formCtx != undefined && formCtx.answer.id != retiredAnswer && sameValue(value, formCtx.answer.values[props.name]) ? formErrorsFor(formCtx.answer.errors, props.name) : []
-  passedIn = formErrorsFor(formCtx?.errors, props.name)
+  // The form's fields this one reads, each through its own equation: the form's context is rebuilt whenever any of
+  // its fields changes.
+  answer = formCtx?.answer
+  givenErrors = formCtx?.errors
+  answered = props.name != undefined && answer != undefined && answer.id != retiredAnswer && sameValue(value, answer.values[props.name]) ? formErrorsFor(answer.errors, props.name) : formErrorsFor(undefined, undefined)
+  passedIn = formErrorsFor(givenErrors, props.name)
   formErrors = answered.length > 0 ? answered : passedIn
   externalInvalid = props.invalid == true || formErrors.length > 0
   [checked, run] = createFieldValidation(formCtx?.registry, {
-    name: props.name,
+    name: latest props.name,
     input: input,
     control: control,
     validate: props.validate,
@@ -140,12 +144,16 @@ export component FieldRoot(props: FieldRootProps) {
     error: errors.length > 0 ? errors[0] : "",
     value: checked.value,
   }
+  // Equations of one value each, so `state` is rebuilt only when one of them changes, not on every keystroke.
+  isTouched = props.touched ?? touchedState
+  isDirty = props.dirty ?? (hasInitial && !sameValue(value, initial))
+  filled = isFilled(value)
   state = {
     disabled: isDisabled,
-    touched: props.touched ?? touchedState,
-    dirty: props.dirty ?? (hasInitial && !sameValue(value, initial)),
+    touched: isTouched,
+    dirty: isDirty,
     valid: valid,
-    filled: isFilled(value),
+    filled: filled,
     focused: focused,
   }
   describedIds = errorId != undefined ? [...descriptionIds, errorId] : descriptionIds
@@ -211,7 +219,7 @@ export component FieldRoot(props: FieldRootProps) {
 
   { name, disabled, validate, validationMode, invalid, dirty, touched, children, ...rest } = props
   attrs = fieldStateAttributes(state)
-  merged = mergeProps(attrs, rest)
+  merged = latest mergeProps(attrs, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -268,7 +276,7 @@ export component FieldLabel({ children, ...rest }: LabelProps) {
     return () => { if (f) { f.setLabelId(undefined) } }
   }
   attrs = fieldStateAttributes(f?.state)
-  merged = mergeProps({ id: id, for: f?.controlId, ...attrs }, rest)
+  merged = latest mergeProps({ id: id, for: f?.controlId, ...attrs }, rest)
   <label {...merged}>{children}</label>
 }
 
@@ -280,7 +288,7 @@ export component FieldDescription({ children, ...rest }: ParagraphProps) {
     return () => { if (f) { f.removeDescription(id) } }
   }
   attrs = fieldStateAttributes(f?.state)
-  merged = mergeProps({ id: id, ...attrs }, rest)
+  merged = latest mergeProps({ id: id, ...attrs }, rest)
   <p {...merged}>{children}</p>
 }
 
@@ -294,7 +302,7 @@ export type FieldErrorProps = {
 export component FieldError({ match, children, ...rest }: FieldErrorProps) {
   f = use field
   id = createId("field-error")
-  shown = f == undefined ? false : match == true ? true : match != undefined && match != false ? f.validity.state[match] : f.state.valid == false
+  shown = f == undefined ? false : (latest match) == true ? true : (latest match) != undefined && (latest match) != false ? f.validity.state[latest match] : f.state.valid == false
   messages = f?.validity.errors ?? []
   effect (shown) {
     if ($0 && f) {
@@ -303,7 +311,7 @@ export component FieldError({ match, children, ...rest }: FieldErrorProps) {
     }
   }
   attrs = fieldStateAttributes(f?.state)
-  merged = mergeProps({ id: id, ...attrs }, rest)
+  merged = latest mergeProps({ id: id, ...attrs }, rest)
   {if shown {
     <div {...merged}>
       {if !isEmptyView(children) {
@@ -326,7 +334,7 @@ export type FieldValidityState = {
   initialValue: unknown
 }
 
-export context fieldValidity: FieldValidityState
+export context fieldValidity: lane FieldValidityState
 
 export component FieldValidity(props: { children?: View }) {
   f = use field
@@ -360,7 +368,9 @@ export fn fieldControl(ref f: FieldContext | undefined, ref controlled: string |
   action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
     let next = event.currentTarget.value
     uncontrolled := next
-    if (onValueChange) { onValueChange(next) }
+    // In its own instant: an owner whose handler feeds a request must not hold the field's own state with it.
+    let report = onValueChange
+    if (report) { onFlush(() => { report(next) }) }
   }
   // The browser has put the input back to its `defaultValue`. Uncontrolled, that is the new value, reported once
   // if it changed; controlled, the owner's value is written back over it.
@@ -368,7 +378,8 @@ export fn fieldControl(ref f: FieldContext | undefined, ref controlled: string |
     if (controlled == undefined) {
       if (initial != uncontrolled) {
         uncontrolled := initial
-        if (onValueChange) { onValueChange(initial) }
+        let report = onValueChange
+        if (report) { onFlush(() => { report(initial) }) }
       }
     } else {
       setInputValue(element, controlled)
@@ -396,6 +407,6 @@ export component FieldControl(props: FieldControlProps) {
   f = use field
   { value, defaultValue, onValueChange, disabled, children, ...rest } = props
   own = fieldControl(f, value, peek(defaultValue ?? ""), onValueChange, disabled == true)
-  merged = mergeProps(own, rest)
+  merged = mergeProps(own, latest rest)
   <input {...merged} />
 }

@@ -1,0 +1,30 @@
+import { SwitchRoot, switchContext } from "../switch.rx"
+import { save } from "../../test/slow-server.js"
+
+// What a custom thumb reads: the switch's own state.
+component State(props: { id: string }) {
+  s = use switchContext
+  <span data-testid={props.id}>{s.checked ? "on" : "off"}</span>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// switch is computed from that write. The switch's own state (on or off) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root.
+    <SwitchRoot aria-label="Root prop" required={step == 2}><State id="root-prop" /></SwitchRoot>
+
+    // 2. An attribute of the root.
+    <SwitchRoot aria-label="Root attribute" class={step == 2 ? "second" : "first"}><State id="root-attribute" /></SwitchRoot>
+  </main>
+}

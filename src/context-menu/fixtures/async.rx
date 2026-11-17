@@ -1,0 +1,43 @@
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuGroup, ContextMenuGroupLabel } from "../context-menu.rx"
+import { fetchList, save } from "../../test/slow-server.js"
+
+// A context menu whose actions load when it first opens, grouped under labels, and whose choice starts a save.
+export default component Fixture() {
+  source wanted: boolean := false
+  actions = wanted ? await fetchList("actions") : []
+  source saved := ""
+  action run(key: string) {
+    affects saved
+    try {
+      let answer = await save(key)
+      saved := answer
+    } catch (e) {
+      saved := "failed"
+    }
+  }
+  <style>
+    :global(.context-popup) { margin: 0; padding: 0; border: 0; width: 140px }
+    :global(.context-popup > :not([popover])) { display: block; box-sizing: border-box; width: 100%; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
+  <main>
+    <ContextMenuRoot onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <ContextMenuTrigger data-testid="area" style="position: fixed; inset: 0 0 40px 0">
+        Right-click here <input aria-label="Field" />
+      </ContextMenuTrigger>
+      <ContextMenuPopup class="context-popup" data-testid="popup">
+        {loading on(wanted) fallback { <p data-testid="loading">Loading…</p> } {
+          {errored fallback(e) { <p>{e.message}</p> } {
+            {for name in actions {
+              <ContextMenuGroup>
+                <ContextMenuGroupLabel>Group {name}</ContextMenuGroupLabel>
+                <ContextMenuItem onClick={() => { run(name) }}>{name}</ContextMenuItem>
+              </ContextMenuGroup>
+            }}
+            <ContextMenuItem closeOnClick={false} onClick={() => { refresh actions }}>Reload</ContextMenuItem>
+          }}
+        }}
+      </ContextMenuPopup>
+    </ContextMenuRoot>
+    <output data-testid="saved" style="position: fixed; bottom: 0">{pending? saved ? "" : saved}</output>
+  </main>
+}

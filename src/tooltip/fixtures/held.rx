@@ -1,0 +1,39 @@
+import { TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// tooltip is computed from that write. The tooltip's own state must not wait for the app's request. Each value
+// computed from `step` has to change: one that comes out equal holds nothing.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="padding: 160px 0 120px 200px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root.
+    <TooltipRoot disableHoverablePopup={step == 2}>
+      <TooltipTrigger delay={0}>Root prop</TooltipTrigger>
+      <TooltipPopup data-testid="root-prop">One</TooltipPopup>
+    </TooltipRoot>
+
+    // 2. A prop of the popup.
+    <TooltipRoot>
+      <TooltipTrigger delay={0}>Popup prop</TooltipTrigger>
+      <TooltipPopup data-testid="popup-prop" side={step == 1 ? "top" : "bottom"}>Three</TooltipPopup>
+    </TooltipRoot>
+
+    // 3. An attribute passed through to the trigger's element.
+    <TooltipRoot>
+      <TooltipTrigger delay={0} class={step == 2 ? "second" : "first"}>Trigger attribute</TooltipTrigger>
+      <TooltipPopup data-testid="trigger-attribute">Five</TooltipPopup>
+    </TooltipRoot>
+
+    <p data-testid="outside" style="margin-top: 80px">Elsewhere</p>
+  </main>
+}

@@ -1,0 +1,43 @@
+import { AutocompleteRoot, AutocompleteInput, AutocompletePopup, AutocompleteList, AutocompleteItem } from "../autocomplete.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to an
+// autocomplete is computed from that write. The autocomplete's own state (open, the typed text and the filter, the
+// highlighted suggestion) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="padding: 40px 0 0 40px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of a suggestion. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <AutocompleteRoot openOnInputClick>
+      <AutocompleteInput aria-label="item-prop" style="width: 160px" />
+      <AutocompletePopup data-testid="item-prop-popup" style="padding: 0; border: 0">
+        <AutocompleteList>
+          <AutocompleteItem value="feature">feature</AutocompleteItem>
+          <AutocompleteItem value="fix" label={step == 1 ? "fix" : "fix (saved)"}>fix</AutocompleteItem>
+          <AutocompleteItem value="docs">docs</AutocompleteItem>
+        </AutocompleteList>
+      </AutocompletePopup>
+    </AutocompleteRoot>
+
+    // 2. An attribute passed through to the input's element.
+    <AutocompleteRoot openOnInputClick>
+      <AutocompleteInput aria-label="input-attribute" class={step == 2 ? "second" : "first"} style="width: 160px" />
+      <AutocompletePopup data-testid="input-attribute-popup" style="padding: 0; border: 0">
+        <AutocompleteList>
+          <AutocompleteItem value="feature">feature</AutocompleteItem>
+          <AutocompleteItem value="fix">fix</AutocompleteItem>
+          <AutocompleteItem value="docs">docs</AutocompleteItem>
+        </AutocompleteList>
+      </AutocompletePopup>
+    </AutocompleteRoot>
+  </main>
+}

@@ -255,7 +255,7 @@ test("outside a Form, a blurred field's `validate` message blocks a native submi
   const username = textbox(getByRole, "Username");
   await user.type(username, "admin");
   await user.click(getByRole("textbox", { name: "Other" }));
-  expect(username.validationMessage).toBe("That name is taken");
+  await expect.poll(() => username.validationMessage).toBe("That name is taken");
   await user.click(getByRole("button", { name: "Submit" }));
   expect(getByTestId("submits").textContent).toBe("0");
   expect(getByTestId("name-error").textContent).toBe("That name is taken");

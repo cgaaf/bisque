@@ -50,6 +50,6 @@ export component MenubarRoot(props: MenubarRootProps) {
     "data-has-submenu-open": openMenu != undefined ? "" : undefined,
     ref: setElement,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

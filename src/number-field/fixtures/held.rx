@@ -1,0 +1,46 @@
+import { NumberFieldRoot, NumberFieldGroup, NumberFieldInput, NumberFieldIncrement } from "../number-field.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// number field is computed from that write. The field's own state (its value, and the text being typed) must not
+// wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <NumberFieldRoot defaultValue={5} max={step == 1 ? 100 : 50}>
+      <label for="root-prop">Root prop</label>
+      <NumberFieldGroup>
+        <NumberFieldInput id="root-prop" />
+        <NumberFieldIncrement>+</NumberFieldIncrement>
+      </NumberFieldGroup>
+    </NumberFieldRoot>
+
+    // 2. An attribute passed through to the input's element.
+    <NumberFieldRoot defaultValue={5}>
+      <label for="input-attribute">Input attribute</label>
+      <NumberFieldGroup>
+        <NumberFieldInput id="input-attribute" class={step == 2 ? "second" : "first"} />
+        <NumberFieldIncrement>+</NumberFieldIncrement>
+      </NumberFieldGroup>
+    </NumberFieldRoot>
+
+    // 3. An attribute passed through to a stepper's element.
+    <NumberFieldRoot defaultValue={5}>
+      <label for="stepper-attribute">Stepper attribute</label>
+      <NumberFieldGroup>
+        <NumberFieldInput id="stepper-attribute" />
+        <NumberFieldIncrement class={step == 2 ? "second" : "first"}>+</NumberFieldIncrement>
+      </NumberFieldGroup>
+    </NumberFieldRoot>
+  </main>
+}

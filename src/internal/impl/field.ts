@@ -2,7 +2,7 @@
 // synchronously while a submit event is still cancelable. `.rx` keeps the field's own state (touched, dirty,
 // focused, filled) and decides when to validate; this module reads `input.validity`, runs the consumer's
 // `validate`, and keeps the form's registry of fields. `../field.d.rx` declares how `.rx` may call it.
-import { createEffect, createSignal, onCleanup, untrack, type Accessor } from "solid-js";
+import { createEffect, createMemo, createSignal, onCleanup, untrack, type Accessor } from "solid-js";
 import { tabbables } from "./dom.ts";
 
 export type ValidityFlags = {
@@ -238,11 +238,28 @@ export function reportFailure(error: unknown): void {
   reportError(error);
 }
 
-/** The messages `errors` holds for `name`, as a list. */
+const NO_ERRORS: string[] = Object.freeze([]) as unknown as string[];
+// The lists already handed out, per errors object and name.
+const errorLists = new WeakMap<object, Map<string, string[]>>();
+
+/**
+ * The messages `errors` holds for `name`, as a list. The same list each time for the same `errors` object (and one
+ * shared empty list): an equation built from it then stays unchanged while those errors do, rather than handing a
+ * new, equal list to everything that reads it on every change of the form (`UNSTABLE_MEMO_OUTPUT`).
+ */
 export function formErrorsFor(errors: FormErrors | undefined, name: string | undefined): string[] {
-  if (!errors || name === undefined || !Object.hasOwn(errors, name)) return [];
+  if (!errors || name === undefined || !Object.hasOwn(errors, name)) return NO_ERRORS;
   const entry = errors[name];
-  return (Array.isArray(entry) ? entry : [entry]).filter((message): message is string => !!message);
+  const found = (Array.isArray(entry) ? entry : [entry]).filter((message): message is string => !!message);
+  if (found.length === 0) return NO_ERRORS;
+  let lists = errorLists.get(errors);
+  if (!lists) errorLists.set(errors, (lists = new Map()));
+  const known = lists.get(name);
+  if (known && known.length === found.length && known.every((message, index) => message === found[index])) {
+    return known;
+  }
+  lists.set(name, found);
+  return found;
 }
 
 /** `errors` without the entries for the names in `cleared`. */
@@ -250,6 +267,49 @@ export function withoutErrors(errors: FormErrors | undefined, cleared: string[])
   const out: FormErrors = { ...errors };
   for (const name of cleared) delete out[name];
   return out;
+}
+
+const sameErrors = (a: FormErrors, b: FormErrors) => {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every((key) => Object.hasOwn(b, key) && sameValue(a[key], b[key]))
+  );
+};
+
+/**
+ * A form's `errors` prop as its fields show it: without the entries whose field has changed since (`clear`), until
+ * the errors themselves change. Derived, not reset by an effect when `errors` changes: an effect's reset would land
+ * a flush after the new errors, and every field reading both would show the new errors with the old clearings first
+ * (`EFFECT_RELAY_TEAR`). The errors are compared by content, as an object source is changed in place.
+ */
+export function createFormErrors(
+  errors: Accessor<FormErrors | undefined>,
+): [Accessor<FormErrors>, (name: string) => void] {
+  // Counts the changes of the errors' content: a clearing is about the errors as they were when it was made, and
+  // errors that change back to an earlier content are new errors all the same.
+  const content = createMemo(() => JSON.stringify(errors() ?? {}));
+  const generation = createMemo((previous: number | undefined) => {
+    content();
+    return (previous ?? 0) + 1;
+  });
+  const [cleared, setCleared] = createSignal<{ about: number; names: string[] }>({ about: 0, names: [] });
+  const shown = createMemo(
+    () => {
+      const about = generation();
+      const { about: madeFor, names } = cleared();
+      return withoutErrors(errors(), madeFor === about ? names : []);
+    },
+    { equals: sameErrors },
+  );
+  const clear = (name: string) => {
+    const about = untrack(generation);
+    setCleared((current) => {
+      const names = current.about === about ? current.names : [];
+      return names.includes(name) && current.about === about ? current : { about, names: [...names, name] };
+    });
+  };
+  return [shown, clear];
 }
 
 /** Whether two values are the same, comparing arrays (a checkbox group's value) element by element. */

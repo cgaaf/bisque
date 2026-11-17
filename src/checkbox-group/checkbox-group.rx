@@ -17,7 +17,7 @@ export type CheckboxGroupContext = {
   pressParent: () => void
 }
 
-export context checkboxGroup: CheckboxGroupContext | undefined = undefined
+export context checkboxGroup: lane CheckboxGroupContext | undefined = undefined
 
 export type CheckboxGroupProps = {
   value?: string[]
@@ -38,7 +38,7 @@ export component CheckboxGroup(props: CheckboxGroupProps) {
   // `value` and `disabled` are often read from an answer that can fail (`value={saved}` with
   // `saved = await load()`): a failure there is the app's to show, in its `errored` region, not the group's.
   givenValue = props.value catch (e) => undefined
-  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
   current = givenValue ?? uncontrolled
   // The selection the parent box returns to after all and none, and where it is in that cycle.
   source saved: string[] := peek([...(givenValue ?? props.defaultValue ?? [])])
@@ -47,7 +47,7 @@ export component CheckboxGroup(props: CheckboxGroupProps) {
   source element: HTMLElement | undefined := undefined
   // What a form reset puts back. Each box's `defaultChecked` is whether this list holds its value.
   initialValue = peek([...current])
-  all = props.allValues ?? []
+  all = latest props.allValues ?? []
   isDisabled = givenDisabled || (f?.disabled ?? false)
 
   effect (current) { if (f) { f.setValue($0) } }
@@ -111,6 +111,6 @@ export component CheckboxGroup(props: CheckboxGroupProps) {
   { value, defaultValue, onValueChange, allValues, disabled, children, ...rest } = props
   group = fieldGroupProps(f)
   own = mergeProps(group, { role: "group", "data-disabled": isDisabled ? "" : undefined, ref: setElement })
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

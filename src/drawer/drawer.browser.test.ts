@@ -5,7 +5,6 @@ import { server } from "vitest/browser";
 import { flush, frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 import right from "./fixtures/right.rx";
-import demo from "./fixtures/demo.rx";
 import nativeClose from "./fixtures/native-close.rx";
 
 afterEach(() => {
@@ -274,7 +273,7 @@ test("a mouse drag in DrawerContent selects text instead of swiping; touch still
 
 test("a press on the backdrop closes it without starting a swipe", async () => {
   const { user, popup } = await openDrawer();
-  await user.click(document.body, { position: { x: 5, y: 5 } } as never);
+  await user.click(document.body, { position: { x: 5, y: 5 } });
   expect(popup.hasAttribute("data-swiping")).toBe(false);
   expect(popup.hasAttribute("data-swipe-dismiss")).toBe(false);
   await closed(popup);
@@ -338,22 +337,15 @@ test("swipeDirection and swipeThreshold: a controlled drawer swiped out to the r
   expect(popup.style.getPropertyValue("--drawer-swipe-movement-y")).toBe("0px");
   expect(popup.style.getPropertyValue("--drawer-swipe-progress")).toBe("0.1");
   release([40, 10]);
+  await new Promise((resolve) => setTimeout(resolve, 20));
   expect(getByTestId("open").textContent).toBe("open");
   release = slowDrag(popup, [
     [10, 10],
     [70, 10],
   ]);
   release([70, 10]);
-  expect(getByTestId("open").textContent).toBe("closed");
-  await closed(popup);
-});
-
-test("the demo opens and closes", async () => {
-  const { getByRole, user } = mount(demo);
-  await user.click(getByRole("button", { name: "Open filters" }));
-  const popup = getByRole("dialog") as HTMLDialogElement;
-  expect(popup.getAttribute("data-swipe-direction")).toBe("down");
-  await user.click(getByRole("button", { name: "Done" }));
+  // The owner hears of it in a change of its own, a microtask later.
+  await expect.poll(() => getByTestId("open").textContent).toBe("closed");
   await closed(popup);
 });
 

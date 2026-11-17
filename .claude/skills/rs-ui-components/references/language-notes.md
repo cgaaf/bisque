@@ -82,19 +82,63 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 
 ## Actions, holds and components
 
-An action (anything that writes and awaits) is one change, held until it ends. That is right for an app's own
-state and wrong for a component's interactive state, so a component does not put an `await` in its own handlers.
-What was observed, with the Form's submit as the case:
+An action (anything that writes and awaits) is one change: what its run writes before the `await` is held until it
+ends. That is right for an app's own state and wrong for a component's interactive state. The rule for a
+component is not "no `await` in a handler" (a form written only in `.rx` that awaits its handler prop, shows
+`busy`, takes typing during the request and writes the returned error afterwards works). It is: **nothing the
+handler's run writes before the `await` may be state that must stay live, and that includes writes made by
+actions it calls.** `HELD_WRITE` doesn't see a called action's writes. What was observed:
 
-- **An action holds whatever it touched.** A submit that validated its fields inside an action made every field
-  part of the change: typing in one while the request was out did not register (no `data-dirty`, no validation)
-  until the server answered. Removing `affects` made no difference.
-- **A source the action writes after its `await` is held for the whole action**, including an earlier write to
-  it through `onFlush`. A "busy" flag set before the await and cleared after it never shows as set.
-- **`affects x` with `pending? x` is the language's busy flag**, but a context whose provision reads `pending?`
-  must be declared `lane` (`ROW_NARROWER_THAN_INFERRED`), and everything that reads the context then waits.
+- **An equation over a held value and a component's own state freezes that state.** Every equation is one memo,
+  so a write to a source waits for a change in flight whenever some equation reads that source beside something
+  the change holds (spec rule H-3), even an equation nothing reads. In a part, the held value is usually a prop:
+  the app wrote a source in an action and is waiting (`step := 2; await save()`), or wrote what a loading
+  question reads (`q := text` with `answer = await ask(q)` and no `loading on`), and passes the part something
+  computed from it. The part's own writes then wait for the app's server. Three places make such an equation:
+  - a provision, `provide menu = { open: open, disabled: props.disabled }`, and any `self = { … }` like it;
+  - a props object, `own = { "data-open": c.open ? "" : undefined, "data-disabled": c.disabled ? "" : undefined }`,
+    in a component or a props function. This is why one context per value, or functions in the provision
+    (`{ open: () => open }`), don't help here: the part that builds one object from both joins them again;
+  - `merged = mergeProps(own, rest)`, which reads every field, so the state in `own` waits on **any** attribute
+    the consumer passed (`class={saving ? "dim" : ""}`).
+
+  Attributes written one by one on an element, and two spreads (`{...own} {...rest}`), don't join. A prop
+  computed from the held write that comes out equal (`disabled={step == 3}`, false before and after) holds
+  nothing. An app that writes with `guess` is not affected.
+
+- **`latest e` reads past the hold**, wherever it is written: at the prop (`isDisabled = latest props.disabled ?? false`),
+  around a provision, or around the merge (`merged = latest mergeProps(own, rest)`). The part's state is then
+  live, at three costs. The part shows the prop's new value before the app's own screen does. A provision that
+  reads `latest`, directly or through an equation, is `lane`, and an **exported** context must say so
+  (`export context accordion: lane AccordionContext`, else `ROW_NARROWER_THAN_INFERRED`); readers of a `lane`
+  context do not wait. And the part stops counting as a reader that holds the app's change: where the part was
+  the only plain reader of a re-asked answer, the app's write (`q`) now shows at once while the part keeps the
+  previous answer. With a prop that is the answer to a request, `latest` keeps the previous answer while a new
+  one is out, lets a first load reach the `loading` fallback, and lets a failure reach `errored`.
+- **A plain equation below a `latest` one runs twice** each time an action writes a source it also reads: once
+  for the change in flight and once for the screen, the second time with equal content. Counted in a probe
+  (`provide menu = { n: n, d: d }` with `d = latest props.disabled ?? false`: 9 runs for 4 clicks, 5 without
+  `latest`; a write made in an inline handler, or to a source the equation doesn't read, adds none). Wrapping
+  that equation's whole right-hand side in `latest` brings it back to one run, and then the same is true of the
+  equations below it, through a context too. In the families this shows as `UNSTABLE_MEMO_OUTPUT` after four
+  actions in a row (Select, Combobox, Menu, Menubar, Navigation Menu, Tabs, Toast, Scroll Area, Popover, Drawer),
+  as text typed into a Field's input being overwritten (`UNCOMMITTED_INPUT_OVERWRITTEN`), and as failing
+  optimistic saves in Number Field and Slider. So `latest` is applied where a family's tests stay green, which
+  is every merge but Dialog's and most props that reach no provision; the rest are `test.fails` cases in the
+  families' `held` tests. A family with no test that acts four times in a row proves little about this.
+- **`latest x` on a store row copies the row on every run**, so its memo never settles (`t = latest props.toast`).
+  And `latest mergeProps(own, rest)` on an input whose `own` carries the controlled `value` shows the value
+  ahead of the keystroke: write `mergeProps(own, latest rest)` there (Input, FieldControl).
+- **A write made in `onFlush` is its own change, unless it has company.** A `busy` flag set in `onFlush` before
+  the `await` and cleared after it shows as set for the whole wait. It waits only if the same callback also
+  writes a source the action wrote before its `await` (the callback is one instant and joins the hold), or if
+  an equation reads the flag beside a held source (the first entry).
+- **`affects x` with `pending? x` is the language's busy flag.** A context whose provision reads `pending?` is
+  `lane`; it needs the declaration only when it is exported. Its readers do not wait: the `pending?` field shows
+  at once and the other fields keep updating.
 - **An action started inside a handler's run takes that run's writes with it.** Calling the consumer's
-  `onFormSubmit` (an action) directly from the submit handler froze the fields again.
+  `onFormSubmit` (an action) directly from the submit handler froze the fields. Call it in its own instant,
+  `onFlush(() => { props.onX(v) })`, or make the component's own write in `onFlush`.
 - **An awaiting handler must catch its failures**: the compiler refuses one that doesn't
   (`UNCAUGHT_ACTION_FAILURE`). Calling an action returns a promise of what its body returns, so JavaScript can
   wait for it.
@@ -124,11 +168,12 @@ What was observed, with the Form's submit as the case:
 - `loading` is a keyword and can't name an equation. `${error}` on a caught error renders `{}`: read
   `error.message` in TypeScript. An inline arrow's parameter can't be type-annotated: use a named action.
 
-So work that takes time goes in a TypeScript primitive that holds plain signals: it starts the consumer's
-handler in a microtask, sets `pending`, and writes the result when the promise settles. `createSubmission`
-(`src/internal/impl/field.ts`) is the model. The consumer's handler may be an action; its hold is its own. Test
-the three real cases with a fixture whose server takes time: a second request while one is out, input that
-changes while one is out, and a request that fails.
+`createSubmission` (`src/internal/impl/field.ts`) does a submit's waiting in TypeScript with plain signals: it
+starts the consumer's handler in a microtask, sets `pending`, and writes the result when the promise settles. The
+language does not require that (the rule at the top of this section is enough), and it can stay. The consumer's
+handler may be an action; its hold is its own. Test the real cases with a fixture whose server takes time: a
+second request while one is out, input that changes while one is out, a request that fails, and the part's own
+state while an app action that feeds one of its props is waiting (`src/accordion/fixtures/held.rx`).
 
 Solid's attribution engine finds a further class of bug (`EFFECT_RELAY_TEAR`, `STRICT_READ_UNTRACKED`,
 `SILENT_HOLD`). The docs dev server loads it; Vitest doesn't, so those show on a docs page and not in a test.

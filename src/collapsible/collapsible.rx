@@ -4,6 +4,7 @@
 // `details[open] > .panel`, and `[data-ending-style]` on the panel while it animates out.
 import { mergeProps, createId, createRef } from "../internal/props.js"
 import { createDisclosure } from "../internal/disclosure.js"
+import { createKeptFocus } from "../internal/dom.js"
 import { DetailsProps, SummaryProps, DivProps, PartProps } from "../internal/types.rx"
 
 export type CollapsibleContext = {
@@ -14,7 +15,7 @@ export type CollapsibleContext = {
   setPanel: (element: HTMLElement) => void
 }
 
-export context collapsible: CollapsibleContext
+export context collapsible: lane CollapsibleContext
 
 export type CollapsibleRootProps = {
   open?: boolean
@@ -30,15 +31,21 @@ export component CollapsibleRoot(props: CollapsibleRootProps) {
   source details: HTMLDetailsElement | undefined := undefined
   source panel: HTMLElement | undefined := undefined
   isOpen = props.open ?? uncontrolled
-  isDisabled = props.disabled ?? false
+  isDisabled = latest props.disabled ?? false
   // Rendered once, so an open disclosure doesn't animate in on mount; the driver keeps it in step after that.
   initiallyOpen = peek(isOpen)
   panelId = createId("collapsible-panel")
 
+  // The app's handler is called in a change of its own (`onFlush`): one that writes what a loading question reads,
+  // or that awaits, would otherwise hold this change, and the <details> the browser opened (find-in-page) would be
+  // closed again to match the held state.
   action setOpen(next: boolean) {
     if (next == isOpen) { return }
     uncontrolled := next
-    if (props.onOpenChange) { props.onOpenChange(next) }
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
   }
   action writeDetails(element: HTMLDetailsElement) { details := element }
   setDetails = createRef(writeDetails)
@@ -46,6 +53,8 @@ export component CollapsibleRoot(props: CollapsibleRootProps) {
   setPanel = createRef(writePanel)
 
   _details = createDisclosure(details, panel, isOpen, "collapsible-panel", setOpen)
+  // Content that loads or fails inside the open panel replaces what had focus: focus stays in the panel.
+  _focus = createKeptFocus(panel, isOpen)
 
   provide collapsible = {
     open: isOpen,
@@ -61,7 +70,7 @@ export component CollapsibleRoot(props: CollapsibleRootProps) {
     "data-disabled": isDisabled ? "" : undefined,
     ref: setDetails,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <details {...merged}>{children}</details>
 }
 
@@ -85,7 +94,7 @@ export fn collapsibleTrigger(ref c: CollapsibleContext): PartProps {
 export component CollapsibleTrigger({ children, ...rest }: SummaryProps) {
   c = use collapsible
   own = collapsibleTrigger(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <summary {...merged}>{children}</summary>
 }
 
@@ -100,6 +109,6 @@ export fn collapsiblePanel(ref c: CollapsibleContext): PartProps {
 export component CollapsiblePanel({ children, ...rest }: DivProps) {
   c = use collapsible
   own = collapsiblePanel(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

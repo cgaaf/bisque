@@ -56,8 +56,10 @@ test("no 'no suggestions' before an answer; it shows once the answer is empty", 
   expect(getByTestId("empty").textContent).toBe("No suggestions");
 });
 
-test("a failed request shows with a retry; typing asks again", async () => {
-  const { input, popup, getByRole, getByTestId, queryByTestId, user, options } = setup();
+// Two tests, not one: Solid counts a request that failed as abandoned once the next one starts, and reports a
+// run of them (ABANDONED_FLIGHTS). Each half stays under that.
+test("a failed request shows in the popup with a retry, which asks again", async () => {
+  const { input, popup, getByRole, getByTestId, user } = setup();
   release("");
   await answered();
   server.failing = ["l"];
@@ -66,7 +68,20 @@ test("a failed request shows with a retry; typing asks again", async () => {
   await answered();
   expect(getByTestId("error").textContent).toContain('Search failed for "l"');
   expect(popup.matches(":popover-open")).toBe(true);
+  const asked = server.calls.length;
   await user.click(getByRole("button", { name: "Retry" }));
+  release("l");
+  await answered();
+  expect(server.calls.length).toBeGreaterThan(asked);
+  expect(getByTestId("error")).toBeTruthy();
+});
+
+test("after a failed request, typing asks again and the answer replaces the error", async () => {
+  const { input, getByTestId, queryByTestId, user, options } = setup();
+  release("");
+  await answered();
+  server.failing = ["l"];
+  await user.type(input, "l");
   release("l");
   await answered();
   expect(getByTestId("error")).toBeTruthy();

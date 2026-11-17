@@ -28,13 +28,16 @@ export function containsTarget(elements: MaybeElement[], target: EventTarget | n
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
+function firstFocusable(container: HTMLElement): HTMLElement | undefined {
+  return [...container.querySelectorAll<HTMLElement>(FOCUSABLE)].find(
+    (element) => element.getClientRects().length > 0,
+  );
+}
+
 /** Moves focus to the first focusable element in `container`, else to the container itself. */
 export function focusFirstIn(container: MaybeElement): void {
   if (!container) return;
-  const first = [...container.querySelectorAll<HTMLElement>(FOCUSABLE)].find(
-    (element) => element.getClientRects().length > 0,
-  );
-  (first ?? container).focus();
+  (firstFocusable(container) ?? container).focus();
 }
 
 /**
@@ -60,9 +63,18 @@ export function createContentFocus(
       const onFocusOut = (event: FocusEvent) => {
         if (event.relatedTarget && !el.contains(event.relatedTarget as Node)) inside = false;
       };
+      // Content replaced while it is open (links that load, an error in their place, a retry) can take the
+      // focused element with it, and the browser drops focus to the body: it goes back into the content.
+      const observer = new MutationObserver(() => {
+        const focused = document.activeElement;
+        if (!inside || (focused !== null && focused !== document.body && focused.isConnected)) return;
+        focusFirstIn(el);
+      });
+      observer.observe(el, { childList: true, subtree: true });
       el.addEventListener("focusin", onFocusIn);
       el.addEventListener("focusout", onFocusOut);
       return () => {
+        observer.disconnect();
         el.removeEventListener("focusin", onFocusIn);
         el.removeEventListener("focusout", onFocusOut);
         const focused = document.activeElement;
@@ -76,9 +88,27 @@ export function createContentFocus(
     () => (active() && enter() ? content() : undefined),
     (el) => {
       if (!el) return;
-      return whenShown(el, () => {
-        if (!el.contains(document.activeElement)) focusFirstIn(el);
+      // Opened from the keyboard before its links exist (they load, or a `loading` region shows its fallback): focus
+      // waits on the content and moves to the first link once one arrives, unless the user has moved it.
+      let awaiting = false;
+      const observer = new MutationObserver(() => {
+        if (!awaiting) return;
+        if (document.activeElement !== el) awaiting = false;
+        else if (firstFocusable(el)) {
+          awaiting = false;
+          focusFirstIn(el);
+        }
       });
+      observer.observe(el, { childList: true, subtree: true });
+      const cancel = whenShown(el, () => {
+        if (el.contains(document.activeElement)) return;
+        focusFirstIn(el);
+        awaiting = document.activeElement === el;
+      });
+      return () => {
+        cancel();
+        observer.disconnect();
+      };
     },
   );
 }

@@ -10,7 +10,7 @@ export type FieldsetContext = {
   disabled: boolean
 }
 
-export context fieldset: FieldsetContext | undefined = undefined
+export context fieldset: lane FieldsetContext | undefined = undefined
 
 export type FieldsetRootProps = {
   // Disables every Field and control inside it. Default: false.
@@ -30,7 +30,7 @@ export component FieldsetRoot(props: FieldsetRootProps) {
   provide fieldset = { disabled: isDisabled }
 
   { disabled, children, ...rest } = props
-  merged = mergeProps({ disabled: isDisabled ? true : undefined, ref: setElement }, rest)
+  merged = latest mergeProps({ disabled: isDisabled ? true : undefined, ref: setElement }, rest)
   <fieldset {...merged}>{children}</fieldset>
 }
 

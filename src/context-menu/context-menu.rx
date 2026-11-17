@@ -110,7 +110,7 @@ export component ContextMenuTrigger({ children, ...rest }: DivProps) {
   _longPress = createLongPress(!c.disabled, element, 500, longPress)
   own = contextMenuTrigger(c, setElement, place)
   anchor = contextMenuAnchor(c, point)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}><span {...anchor} />{children}</div>
 }
 

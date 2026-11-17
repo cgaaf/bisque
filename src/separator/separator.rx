@@ -22,7 +22,7 @@ export fn separator(ref orientation: SeparatorOrientation): PartProps {
 }
 
 export component Separator({ orientation = "horizontal", ...rest }: SeparatorProps) {
-  own = { "aria-orientation": orientation == "vertical" ? "vertical" : undefined }
-  merged = mergeProps(own, rest)
+  own = { "aria-orientation": (latest orientation) == "vertical" ? "vertical" : undefined }
+  merged = latest mergeProps(own, rest)
   <hr {...merged} />
 }

@@ -1,0 +1,62 @@
+import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError } from "../field.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// field is computed from that write. The field's own state (what was typed, focused, touched, valid) must not wait
+// for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. An attribute of the root.
+    <FieldRoot data-testid="root-attribute" class={step == 2 ? "second" : "first"} validationMode="onChange" validate={(value) => value == "bad" ? "Bad" : null}>
+      <FieldLabel>Root attribute</FieldLabel>
+      <FieldControl />
+    </FieldRoot>
+
+    // 2. An attribute of the label.
+    <FieldRoot data-testid="label-attribute" validationMode="onChange" validate={(value) => value == "bad" ? "Bad" : null}>
+      <FieldLabel class={step == 2 ? "second" : "first"}>Label attribute</FieldLabel>
+      <FieldControl />
+    </FieldRoot>
+
+    // 3. An attribute of the description.
+    <FieldRoot data-testid="description-attribute" validationMode="onChange" validate={(value) => value == "bad" ? "Bad" : null}>
+      <FieldLabel>Description attribute</FieldLabel>
+      <FieldControl />
+      <FieldDescription class={step == 2 ? "second" : "first"}>Help</FieldDescription>
+    </FieldRoot>
+
+    // 4. A prop of the error (`undefined` and `false` both mean "while invalid").
+    <FieldRoot data-testid="error-prop" validationMode="onChange" validate={(value) => value == "bad" ? "Bad" : null}>
+      <FieldLabel>Error prop</FieldLabel>
+      <FieldControl />
+      <FieldError match={step == 1 ? undefined : false} />
+    </FieldRoot>
+
+    // 5. An attribute of the control.
+    <FieldRoot data-testid="control-attribute" validationMode="onChange" validate={(value) => value == "bad" ? "Bad" : null}>
+      <FieldLabel>Control attribute</FieldLabel>
+      <FieldControl class={step == 2 ? "second" : "first"} />
+    </FieldRoot>
+
+    // Somewhere for Tab to go from the last field.
+    <button>After</button>
+
+    // Still held (field.held.browser.test.ts says why), so after the others: a field that Tab moves focus to from
+    // another, with that focus held, would take the other's blur into the hold too.
+    // 6. A prop of the root.
+    <FieldRoot data-testid="root-prop" name={step == 1 ? "first" : "second"} validationMode="onChange" validate={(value) => value == "bad" ? "Bad" : null}>
+      <FieldLabel>Root prop</FieldLabel>
+      <FieldControl />
+    </FieldRoot>
+  </main>
+}

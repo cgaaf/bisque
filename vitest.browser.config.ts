@@ -17,7 +17,14 @@ export default defineConfig({
       provider: playwright(),
       headless: true,
       screenshotFailures: false,
-      instances: [{ browser: "chromium" }, { browser: "firefox" }, { browser: "webkit" }],
+      instances: [
+        { browser: "chromium" },
+        // One file at a time. With files running in several Firefox pages at once, a click is sometimes delivered
+        // to no page at all (Playwright reports it done; no `pointerdown` reaches the document), and a test fails
+        // that passes on its own. It costs about 80 seconds of a whole run.
+        { browser: "firefox", fileParallelism: false },
+        { browser: "webkit" },
+      ],
     },
   },
 });

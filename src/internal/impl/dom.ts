@@ -42,6 +42,8 @@ function nextFrame(callback: () => void): () => void {
 
 export type TransitionStatus = "starting" | "ending" | undefined;
 
+type Phase = { kind: "shown" | "hidden" | "starting" | "ending" };
+
 /**
  * Keeps an element mounted while it animates out.
  *
@@ -54,33 +56,47 @@ export function createPresence(
   present: Accessor<boolean>,
   element: Accessor<MaybeElement>,
 ): [Accessor<boolean>, Accessor<TransitionStatus>] {
-  const [left, setLeft] = createSignal(!untrack(present));
-  const [status, setStatus] = createSignal<TransitionStatus>(undefined);
-  const mounted = createMemo(() => present() || !left());
+  // Where the element is in its life: shown, hidden, or in the first frame after it appears ("starting") or in its
+  // exit animation ("ending"). It is derived from `present` and the last transition that finished (`done`, written
+  // only from a frame or an animation's end), never written in the flush where `present` changes: a status written
+  // by an effect there would make every reader of `present` run twice, the first time with the old status
+  // (`EFFECT_RELAY_TEAR`). A phase is left only when the transition it started has finished, so an element that
+  // goes away during its starting frame still animates out.
+  const [done, setDone] = createSignal<Phase | undefined>(undefined);
+  const phase = createMemo<Phase>((prev?: Phase) => {
+    const now = present();
+    const finished = done();
+    if (!prev) return { kind: now ? "shown" : "hidden" };
+    if (now) {
+      if (prev.kind === "shown") return prev;
+      if (prev.kind === "starting") return finished === prev ? { kind: "shown" } : prev;
+      return { kind: "starting" };
+    }
+    if (prev.kind === "hidden") return prev;
+    if (prev.kind === "ending") return finished === prev ? { kind: "hidden" } : prev;
+    return { kind: "ending" };
+  });
+  const mounted = createMemo(() => phase().kind !== "hidden");
+  const status = createMemo<TransitionStatus>(() => {
+    const kind = phase().kind;
+    return kind === "starting" || kind === "ending" ? kind : undefined;
+  });
 
   createEffect(
-    () => present(),
-    (now, before) => {
-      if (now) {
-        setLeft(false);
-        if (before === undefined) return;
-        setStatus("starting");
-        return nextFrame(() => setStatus(undefined));
-      }
-      if (before !== true) return;
+    () => phase(),
+    (current) => {
+      if (current.kind === "starting") return nextFrame(() => setDone(current));
+      if (current.kind !== "ending") return;
       const el = untrack(element);
-      setStatus("ending");
       let cancelled = false;
       const finish = () => {
-        if (cancelled) return;
-        setStatus(undefined);
-        setLeft(true);
+        if (!cancelled) setDone(current);
       };
       // The ending attribute has to reach the DOM before the animations it starts can be found.
       const cancelFrame = nextFrame(() => {
         const running = el?.getAnimations?.({ subtree: true }) ?? [];
         if (running.length === 0) finish();
-        else Promise.allSettled(running.map((animation) => animation.finished)).then(finish);
+        else void Promise.allSettled(running.map((animation) => animation.finished)).then(finish);
       });
       return () => {
         cancelled = true;
@@ -90,6 +106,59 @@ export function createPresence(
   );
 
   return [mounted, status];
+}
+
+/**
+ * While `active`, keeps focus inside `container` when the element that had it is removed.
+ *
+ * Content inside an open popup or panel can be replaced while the user is in it: a `loading` region shows its
+ * fallback, an `errored` region swaps the content for the error (or the error for the content, after a retry), a
+ * menu's items arrive. The browser then drops focus to the `<body>`, which takes a keyboard user out of the popup
+ * (and out of a modal dialog's focus containment). This moves it to the container's first tabbable element, or to
+ * the container itself when that is focusable. It acts only when focus has actually been lost: a removal that
+ * leaves focus somewhere else is left alone. And when the container has focus itself only because it had nothing
+ * focusable (a modal `<dialog>` opened while its content was loading), focus moves to the content when it arrives.
+ */
+export function createKeptFocus(container: Accessor<MaybeElement>, active: Accessor<boolean>): void {
+  createEffect(
+    () => [container(), active()] as const,
+    ([el, isActive]) => {
+      if (!el || !isActive) return;
+      let had: Element | null = el.contains(document.activeElement) ? document.activeElement : null;
+      const onFocusIn = (event: FocusEvent) => {
+        had = event.target as Element;
+      };
+      const onFocusOut = (event: FocusEvent) => {
+        const next = event.relatedTarget as Node | null;
+        // Focus that moves out on purpose (Tab, a click elsewhere) is no longer ours to keep. A removal gives no
+        // relatedTarget, and Chromium fires no focusout at all for it.
+        if (next && !el.contains(next)) had = null;
+      };
+      const observer = new MutationObserver(() => {
+        // Focus left on the container itself because nothing in it could take it (a <dialog> opened while its
+        // content loads gets focus itself) moves to the content once something focusable arrives. A container made
+        // focusable on purpose (`tabindex`, a tab panel) keeps it.
+        if (document.activeElement === el && !el.hasAttribute("tabindex")) {
+          tabbables(el)[0]?.focus();
+          return;
+        }
+        if (!had || had.isConnected) return;
+        had = null;
+        const focused = document.activeElement;
+        if (focused && focused !== document.body && focused.isConnected) return;
+        const target = tabbables(el)[0] ?? (el.tabIndex >= 0 || el.hasAttribute("tabindex") ? el : undefined);
+        target?.focus();
+      });
+      observer.observe(el, { childList: true, subtree: true });
+      el.addEventListener("focusin", onFocusIn);
+      el.addEventListener("focusout", onFocusOut);
+      return () => {
+        observer.disconnect();
+        el.removeEventListener("focusin", onFocusIn);
+        el.removeEventListener("focusout", onFocusOut);
+      };
+    },
+  );
 }
 
 let scrollLocks = 0;

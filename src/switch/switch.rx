@@ -21,7 +21,7 @@ export type SwitchContext = {
 }
 
 // `switch` is a reserved word, so the family's context has a longer name.
-export context switchContext: SwitchContext
+export context switchContext: lane SwitchContext
 
 export type SwitchRootProps = {
   checked?: boolean
@@ -48,14 +48,14 @@ export component SwitchRoot(props: SwitchRootProps) {
   // `checked` and `disabled` are often read from an answer that can fail (`checked={setting}` with
   // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the switch's.
   givenChecked = props.checked catch (e) => undefined
-  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
   isChecked = givenChecked ?? uncontrolled
-  isReadOnly = props.readOnly ?? false
+  isReadOnly = latest props.readOnly ?? false
   self = {
     checked: isChecked,
     disabled: givenDisabled || (f?.disabled ?? false),
     readOnly: isReadOnly,
-    required: props.required ?? false,
+    required: latest props.required ?? false,
   }
 
   // The input's `defaultChecked`: what a form reset puts back, which for an uncontrolled switch is its default.
@@ -109,8 +109,8 @@ export component SwitchRoot(props: SwitchRootProps) {
   own = mergeProps(inField, {
     type: "checkbox",
     role: "switch",
-    name: name ?? f?.name,
-    value: value,
+    name: latest name ?? f?.name,
+    value: latest value,
     defaultChecked: initialChecked,
     disabled: self.disabled ? true : undefined,
     required: self.required ? true : undefined,
@@ -120,7 +120,7 @@ export component SwitchRoot(props: SwitchRootProps) {
     onChange: change,
     onClick: click,
   })
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <input {...merged} />
   {children}
 }
@@ -128,6 +128,6 @@ export component SwitchRoot(props: SwitchRootProps) {
 // The moving part, always in the document: place it in SwitchRoot, where it is the input's next sibling, and
 // style it with `input:checked + *`. Hidden from assistive technology.
 export component SwitchThumb({ children, ...rest }: SpanProps) {
-  merged = mergeProps({ "aria-hidden": "true" }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true" }, rest)
   <span {...merged}>{children}</span>
 }

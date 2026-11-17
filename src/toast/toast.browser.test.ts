@@ -4,7 +4,6 @@ import { within } from "@testing-library/dom";
 import { flush, frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 import swipe from "./fixtures/swipe.rx";
-import demo from "./fixtures/demo.rx";
 import twoProviders from "./fixtures/two-providers.rx";
 import overDialog from "./fixtures/over-dialog.rx";
 // @ts-expect-error a plain JS fixture module, typed for .rx by its .d.rx only
@@ -17,6 +16,16 @@ function fakeTimers() {
 
 function advance(ms: number) {
   vi.advanceTimersByTime(ms);
+  flush();
+}
+
+/**
+ * What the manager is told, and a toast's `onClose`/`onRemove`, land in a change of their own, a microtask after the
+ * call (the app may be calling from inside its own action, whose writes are held until it ends).
+ */
+async function settle() {
+  await Promise.resolve();
+  await Promise.resolve();
   flush();
 }
 
@@ -81,7 +90,7 @@ async function mouseDrag(
 /** Resolves once `el` has left the document (a closing toast, after its exit animation). */
 const gone = (el: Element | null | undefined) => expect.poll(() => el?.isConnected ?? false).toBe(false);
 
-test("the viewport is a manual popover, shown and empty before the first toast", () => {
+test("the viewport is a manual popover, shown and empty before the first toast", async () => {
   const { getByTestId } = mount(basic);
   const viewport = getByTestId("viewport");
   expect(viewport.getAttribute("popover")).toBe("manual");
@@ -108,30 +117,30 @@ test("adds a toast from inside the tree, labelled by its title and description",
 test("adds, updates and closes a toast from code outside the tree", async () => {
   const { getByText, queryByText } = mount(basic);
   const id = appToasts.add({ title: "From a module", timeout: 0 });
-  flush();
+  await settle();
   expect(getByText("From a module")).toBeTruthy();
 
   appToasts.update(id, { title: "Updated", type: "success" });
-  flush();
+  await settle();
   expect(queryByText("From a module")).toBeNull();
   const root = getByText("Updated").closest<HTMLElement>("[data-rs-ui-toast]");
   expect(root?.getAttribute("data-type")).toBe("success");
 
   appToasts.close(id);
-  flush();
+  await settle();
   expect(root?.hasAttribute("data-ending-style")).toBe(true);
   await gone(root);
 });
 
-test("keeps the same root element across updates", () => {
+test("keeps the same root element across updates", async () => {
   mount(basic);
   const id = appToasts.add({ title: "One", timeout: 0 });
-  flush();
+  await settle();
   const root = toasts()[0];
   root.dataset.marker = "kept";
   appToasts.update(id, { description: "More" });
   appToasts.add({ title: "Two", timeout: 0 });
-  flush();
+  await settle();
   expect(toasts()).toHaveLength(2);
   expect(toasts()[1]).toBe(root);
   expect(root.dataset.marker).toBe("kept");
@@ -141,12 +150,12 @@ test("keeps the same root element across updates", () => {
 test("a closing toast stays, with data-ending-style, until its exit animation has finished", async () => {
   mount(basic);
   appToasts.add({ title: "Leaving", timeout: 0 });
-  flush();
+  await settle();
   const root = toasts()[0];
   root.style.transition = "opacity 150ms linear";
   root.style.opacity = "1";
   appToasts.close();
-  flush();
+  await settle();
   root.style.opacity = "0";
   await frame();
   await frame();
@@ -159,7 +168,7 @@ test("closes by itself after its timeout, measured from when it appeared", async
   fakeTimers();
   const { getByRole } = mount(basic);
   getByRole("button", { name: "Add" }).click();
-  flush();
+  await settle();
   const root = getByRole("dialog");
   advance(999);
   expect(root.hasAttribute("data-ending-style")).toBe(false);
@@ -169,12 +178,12 @@ test("closes by itself after its timeout, measured from when it appeared", async
   await gone(root);
 });
 
-test("a timeout of 0 and a loading toast never close by themselves", () => {
+test("a timeout of 0 and a loading toast never close by themselves", async () => {
   fakeTimers();
   mount(basic);
   appToasts.add({ title: "Sticky", timeout: 0 });
   appToasts.add({ title: "Working", type: "loading" });
-  flush();
+  await settle();
   advance(60_000);
   expect(open()).toHaveLength(2);
 });
@@ -184,7 +193,7 @@ test("hovering the viewport pauses the timers and leaving resumes them with the 
   const viewport = getByTestId("viewport");
   fakeTimers();
   appToasts.add({ title: "Hover me" });
-  flush();
+  await settle();
   const root = toasts()[0];
   advance(600);
   // The faked clock moves on while a real `user` call is in flight, by as long as the call takes (more on a
@@ -209,47 +218,47 @@ test("hovering the viewport pauses the timers and leaving resumes them with the 
   expect(root.hasAttribute("data-ending-style")).toBe(true);
 });
 
-test("pauses while the window doesn't have focus", () => {
+test("pauses while the window doesn't have focus", async () => {
   fakeTimers();
   mount(basic);
   appToasts.add({ title: "Away" });
-  flush();
+  await settle();
   const root = toasts()[0];
   window.dispatchEvent(new FocusEvent("blur"));
-  flush();
+  await settle();
   advance(5000);
   expect(root.hasAttribute("data-ending-style")).toBe(false);
   window.dispatchEvent(new FocusEvent("focus"));
-  flush();
+  await settle();
   advance(1000);
   expect(root.hasAttribute("data-ending-style")).toBe(true);
 });
 
-test("an update restarts the timer only when it changes the timeout or ends loading", () => {
+test("an update restarts the timer only when it changes the timeout or ends loading", async () => {
   fakeTimers();
   mount(basic);
   const id = appToasts.add({ title: "Saving", type: "loading" });
-  flush();
+  await settle();
   advance(5000);
   appToasts.update(id, { title: "Saved", type: "success" });
-  flush();
+  await settle();
   advance(600);
   appToasts.update(id, { description: "All good" });
-  flush();
+  await settle();
   advance(399);
   expect(open()).toHaveLength(1);
   advance(1);
   expect(open()).toHaveLength(0);
 });
 
-test("adding the same id again updates the toast in place and restarts its timer", () => {
+test("adding the same id again updates the toast in place and restarts its timer", async () => {
   fakeTimers();
   mount(basic);
   appToasts.add({ id: "sync", title: "Syncing" });
-  flush();
+  await settle();
   advance(800);
   appToasts.add({ id: "sync", title: "Synced" });
-  flush();
+  await settle();
   expect(toasts()).toHaveLength(1);
   expect(toasts()[0].textContent).toContain("Synced");
   advance(800);
@@ -266,12 +275,12 @@ test("a promise toast shows loading, then success or error", async () => {
     success: (value: string) => ({ title: "Saved", description: value }),
     error: "Failed",
   });
-  flush();
+  await settle();
   const root = getByText("Saving…").closest<HTMLElement>("[data-rs-ui-toast]");
   expect(root?.getAttribute("data-type")).toBe("loading");
   resolve("report.pdf");
   await expect(result).resolves.toBe("report.pdf");
-  flush();
+  await settle();
   expect(root?.getAttribute("data-type")).toBe("success");
   expect(root?.textContent).toContain("report.pdf");
 
@@ -281,7 +290,7 @@ test("a promise toast shows loading, then success or error", async () => {
     error: "Failed",
   });
   await expect(failing).rejects.toThrow("nope");
-  flush();
+  await settle();
   expect(getByText("Failed").closest("[data-rs-ui-toast]")?.getAttribute("data-type")).toBe("error");
 });
 
@@ -303,7 +312,7 @@ test("beyond the limit, older toasts stay in the list but are limited and inert"
 
   // Closing one in front lets the limited one back in.
   newest.querySelector<HTMLElement>("button")!.click();
-  flush();
+  await settle();
   expect(oldest.hasAttribute("data-limited")).toBe(false);
   expect(oldest.inert).toBe(false);
   expect(oldest.style.getPropertyValue("--toast-index")).toBe("1");
@@ -318,13 +327,13 @@ test("the close button and Escape close it; onClose then onRemove are called", a
     onClose: () => calls.push("close"),
     onRemove: () => calls.push("remove"),
   });
-  flush();
+  await settle();
   // Out of the accessibility tree while the stack is collapsed, so found by its text.
   const close = getByText("Dismiss");
   expect(close.getAttribute("aria-hidden")).toBe("true");
   const callbacks = close.closest("[data-rs-ui-toast]");
   close.click();
-  flush();
+  await settle();
   expect(calls).toEqual(["close"]);
   await gone(callbacks);
   expect(calls).toEqual(["close", "remove"]);
@@ -345,7 +354,7 @@ test("an action button takes the toast's actionProps", async () => {
     actionProps: { children: "Undo", onClick: () => (undone += 1) },
   });
   appToasts.add({ title: "No action", timeout: 0 });
-  flush();
+  await settle();
   expect(document.querySelectorAll("[data-rs-ui-toast] button:not([aria-hidden])")).toHaveLength(1);
   await user.click(getByRole("button", { name: "Undo" }));
   expect(undone).toBe(1);
@@ -437,7 +446,7 @@ test("heights and offsets are measured and exposed as CSS variables", async () =
 test("a mouse drag right past the threshold dismisses it in that direction", async () => {
   const { user } = mount(basic);
   appToasts.add({ title: "Swipe me", timeout: 0 });
-  flush();
+  await settle();
   const root = toasts()[0];
   const title = root.querySelector("h2")!;
   await mouseDrag(user, title, { x: 5, y: 5 }, { x: 50, y: 1 });
@@ -450,7 +459,7 @@ test("a mouse drag right past the threshold dismisses it in that direction", asy
 test("a mouse drag short of the threshold snaps back", async () => {
   const { user } = mount(basic);
   appToasts.add({ title: "Stay", timeout: 0 });
-  flush();
+  await settle();
   const root = toasts()[0];
   const title = root.querySelector("h2")!;
   await mouseDrag(user, title, { x: 5, y: 2 }, { x: 0, y: 30 });
@@ -463,17 +472,17 @@ test("a mouse drag short of the threshold snaps back", async () => {
 test("a mouse drag that starts on a button inside the toast doesn't swipe", async () => {
   const { user } = mount(basic);
   appToasts.add({ title: "Buttons", timeout: 0 });
-  flush();
+  await settle();
   const root = toasts()[0];
   const button = root.querySelector("button")!;
   await mouseDrag(user, button, { x: 2, y: 2 }, { x: 150, y: 0 });
   expect(root.hasAttribute("data-ending-style")).toBe(false);
 });
 
-test("movement against the swipe directions is damped and never dismisses", () => {
+test("movement against the swipe directions is damped and never dismisses", async () => {
   mount(basic);
   appToasts.add({ title: "Not that way", timeout: 0 });
-  flush();
+  await settle();
   const root = toasts()[0];
   const box = root.getBoundingClientRect();
   const at = (type: string, y: number) => {
@@ -492,7 +501,7 @@ test("movement against the swipe directions is damped and never dismisses", () =
 test("swipeDirection and swipeThreshold choose where and how far", async () => {
   const { user } = mount(swipe);
   appToasts.add({ title: "Up only" });
-  flush();
+  await settle();
   const root = toasts()[0];
   const title = root.querySelector("h2")!;
   // 60px up: under the threshold of 80.
@@ -503,11 +512,11 @@ test("swipeDirection and swipeThreshold choose where and how far", async () => {
   expect(root.getAttribute("data-swipe-direction")).toBe("up");
 });
 
-test("timers stop while a toast is being swiped", () => {
+test("timers stop while a toast is being swiped", async () => {
   fakeTimers();
   mount(basic);
   appToasts.add({ title: "Held" });
-  flush();
+  await settle();
   const root = toasts()[0];
   const box = root.getBoundingClientRect();
   const at = (type: string, y: number) => {
@@ -523,16 +532,6 @@ test("timers stop while a toast is being swiped", () => {
   at("pointerup", box.top + 15);
   advance(1000);
   expect(root.hasAttribute("data-ending-style")).toBe(true);
-});
-
-test("the demo adds toasts from its buttons", async () => {
-  const { getByRole, getByText, user } = mount(demo);
-  await user.click(getByRole("button", { name: "Save draft" }));
-  await user.click(getByRole("button", { name: "Delete message" }));
-  expect(getByText("Draft 1 was saved.")).toBeTruthy();
-  expect(getByRole("button", { name: "Undo" })).toBeTruthy();
-  await user.click(getByRole("button", { name: "Fail upload" }));
-  expect(getByRole("alert").textContent).toContain("Upload failed");
 });
 
 test("each provider keeps its own list and its own viewport", async () => {

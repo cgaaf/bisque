@@ -100,7 +100,7 @@ export function createRovingFocus(container: Accessor<MaybeElement>, options: Ac
           typed = now - typedAt > 500 ? event.key : typed + event.key;
           typedAt = now;
           // The same letter again cycles through the items that start with it; other input narrows the search.
-          const repeated = [...typed].every((character) => character === typed[0]);
+          const repeated = Array.from(typed).every((character) => character === typed[0]);
           const query = (repeated ? typed[0] : typed).toLowerCase();
           const from = repeated ? index + 1 : Math.max(index, 0);
           const ordered = [...items.slice(from), ...items.slice(0, from)];

@@ -6,6 +6,7 @@ export declare function focusFirstInvalid(registry: import("./impl/field.ts").Fo
 export declare function focusControl(control: HTMLElement | undefined): void;
 export declare function formErrorsFor(errors: import("./impl/field.ts").FormErrors | undefined, name: string | undefined): string[];
 export declare function withoutErrors(errors: import("./impl/field.ts").FormErrors | undefined, cleared: string[]): import("./impl/field.ts").FormErrors;
+export declare function createFormErrors(errors: import("./impl/field.ts").FormErrors | undefined): [import("./impl/field.ts").FormErrors, (name: string) => void];
 export declare function sameValue(a: unknown, b: unknown): boolean;
 export declare function isFilled(value: unknown): boolean;
 export declare function isEmptyView(view: unknown): boolean;

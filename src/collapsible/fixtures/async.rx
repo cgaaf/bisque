@@ -1,0 +1,89 @@
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "../collapsible.rx"
+import { fetchText, save } from "../../test/slow-server.js"
+
+// Collapsibles used against a slow server, as an app would write them.
+export default component Fixture() {
+  // 1. Content that loads when it first opens: `onOpenChange` writes what the loading question reads, and the
+  // previous answer stays until the new one lands (no `loading on`), so the app's change is held.
+  source wanted: boolean := false
+  details = wanted ? await fetchText("notes") -> "" : ""
+  shown = details catch (e) => "failed"
+
+  // 2. Content behind a fallback that fails, with a retry.
+  source asked: boolean := false
+  history = asked ? await fetchText("history") : ""
+
+  // 3. An `onOpenChange` that is itself an action that awaits.
+  source logged := ""
+  action log(next: boolean) {
+    affects logged
+    try {
+      let answer = await save(next ? "opened" : "closed")
+      logged := answer
+    } catch (e) {
+      logged := "failed"
+    }
+  }
+
+  // 4. A controlled collapsible whose owner agrees late.
+  source late: boolean := false
+  action changeLate(next: boolean) {
+    affects late
+    try {
+      await save(next ? "open late" : "close late")
+      late := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  // 5. A controlled collapsible whose owner guesses.
+  source guessed: boolean = false
+  action changeGuessed(next: boolean) {
+    try {
+      guess guessed := next
+      await save(next ? "guess open" : "guess close")
+      guessed := next
+    } catch (e) {
+      logged := e.message
+    }
+  }
+
+  <main>
+    <CollapsibleRoot data-testid="notes" onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <CollapsibleTrigger>Notes</CollapsibleTrigger>
+      <CollapsiblePanel data-testid="notes-panel">{shown}</CollapsiblePanel>
+    </CollapsibleRoot>
+    <output data-testid="notes-loading">{pending? shown ? "loading" : ""}</output>
+
+    <CollapsibleRoot data-testid="history" onOpenChange={(open) => { if (open) { asked := true } }}>
+      <CollapsibleTrigger>History</CollapsibleTrigger>
+      <CollapsiblePanel data-testid="history-panel">
+        {loading on(asked) fallback { <p data-testid="history-loading">Loading…</p> } {
+          {errored fallback(e) { <p data-testid="history-error">{e.message}</p> <button onClick={() => { refresh history }}>Retry</button> } {
+            <p data-testid="history-text">{history}</p>
+            <button>Show more</button>
+          }}
+        }}
+      </CollapsiblePanel>
+    </CollapsibleRoot>
+
+    <CollapsibleRoot data-testid="logged-root" onOpenChange={log}>
+      <CollapsibleTrigger>Logged</CollapsibleTrigger>
+      <CollapsiblePanel>Logged content</CollapsiblePanel>
+    </CollapsibleRoot>
+    <output data-testid="logged">{logged}</output>
+    <output data-testid="saving">{pending? logged ? "saving" : ""}</output>
+    <output data-testid="late-saving">{pending? late ? "saving" : ""}</output>
+
+    <CollapsibleRoot data-testid="late" open={late} onOpenChange={changeLate}>
+      <CollapsibleTrigger>Late</CollapsibleTrigger>
+      <CollapsiblePanel>Late content</CollapsiblePanel>
+    </CollapsibleRoot>
+
+    <CollapsibleRoot data-testid="guessed" open={guessed} onOpenChange={changeGuessed}>
+      <CollapsibleTrigger>Guessed</CollapsibleTrigger>
+      <CollapsiblePanel>Guessed content</CollapsiblePanel>
+    </CollapsibleRoot>
+  </main>
+}

@@ -25,8 +25,8 @@ async function relayTears(primitive: string, run: () => Promise<void>): Promise<
     .map((event) => event.message);
 }
 
-// The fixture has no panels: `createPresence`, which TabsPanel uses, relays its status the same way and isn't
-// part of this family.
+// The fixture has panels: `createPresence`, which TabsPanel uses, must not relay its status through an effect
+// either (src/test/browser-setup.ts fails the test on any diagnostic).
 test("the indicator follows the selected tab without relaying the change through an effect", async () => {
   const tears = await relayTears("createSelectedTab", async () => {
     const { getByRole, getByTestId, user } = mount(indicatorFixture);

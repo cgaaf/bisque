@@ -33,7 +33,7 @@ export type NavigationMenuContext = {
   setValue: (value: string | undefined, reason: NavigationMenuOpenReason, trigger: HTMLElement | undefined) => void
 }
 
-export context navigationMenu: NavigationMenuContext
+export context navigationMenu: lane NavigationMenuContext
 
 export type NavigationMenuRootProps = {
   // The open item's value; `null` for closed. Leave it out to let the menu keep its own.
@@ -72,7 +72,14 @@ export component NavigationMenuRoot(props: NavigationMenuRootProps) {
     }
     if (next == current) { return }
     uncontrolled := next
-    if (props.onValueChange) { props.onValueChange(next ?? null) }
+    // The app's handler is called in a change of its own (`onFlush`): one that writes what a panel's loading
+    // question reads, or that is an action awaiting a request, would otherwise hold the menu's own change, and the
+    // browser's open popover would be hidden again to match the held state.
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      let value = next ?? null
+      onFlush(() => { report(value) })
+    }
   }
 
   provide navigationMenu = {
@@ -87,7 +94,7 @@ export component NavigationMenuRoot(props: NavigationMenuRootProps) {
   }
 
   { value, defaultValue, onValueChange, orientation, delay, closeDelay, children, ...rest } = props
-  merged = mergeProps({ "aria-orientation": dir, "data-orientation": dir }, rest)
+  merged = latest mergeProps({ "aria-orientation": dir, "data-orientation": dir }, rest)
   <nav {...merged}>{children}</nav>
 }
 
@@ -104,7 +111,7 @@ export component NavigationMenuList({ children, ...rest }: ListProps) {
   action setElement(el: HTMLElement) { element := el }
   _focus = createCompositeFocus(element, { orientation: nav.orientation, loop: false, homeEnd: true })
   own = navigationMenuList(nav, setElement)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <ul {...merged}>{children}</ul>
 }
 
@@ -114,7 +121,7 @@ export type NavigationMenuItemContext = PopoverState & {
   active: boolean
 }
 
-export context navigationMenuItem: NavigationMenuItemContext
+export context navigationMenuItem: lane NavigationMenuItemContext
 
 export type NavigationMenuItemProps = {
   // Identifies the item; the root's `value` names the open one. Default: a generated id.
@@ -125,7 +132,7 @@ export type NavigationMenuItemProps = {
 export component NavigationMenuItem(props: NavigationMenuItemProps) {
   nav = use navigationMenu
   generated = createId("navigation-menu-item")
-  itemValue = props.value ?? generated
+  itemValue = latest props.value ?? generated
   active = nav.value == itemValue
   // The browser closed this item's content (Escape, a press outside, focus elsewhere is the trigger's job).
   action changed(next: boolean) {
@@ -210,15 +217,15 @@ export fn navigationMenuTrigger(ref nav: NavigationMenuContext, ref item: Naviga
 export component NavigationMenuTrigger({ disabled = false, children, ...rest }: NavigationMenuTriggerProps) {
   nav = use navigationMenu
   item = use navigationMenuItem
-  own = navigationMenuTrigger(nav, item, disabled)
-  merged = mergeProps(own, withoutHandlers(rest, disabled))
+  own = navigationMenuTrigger(nav, item, latest disabled)
+  merged = latest mergeProps(own, withoutHandlers(rest, disabled))
   <button {...merged}>{children}</button>
 }
 
 // Shows whether its item is open (a chevron, say), with `data-popup-open`. Hidden from assistive technology.
 export component NavigationMenuIcon({ children, ...rest }: SpanProps) {
   item = use navigationMenuItem
-  merged = mergeProps({ "aria-hidden": "true", "data-popup-open": item.active ? "" : undefined }, rest)
+  merged = latest mergeProps({ "aria-hidden": "true", "data-popup-open": item.active ? "" : undefined }, rest)
   <span {...merged}>{children}</span>
 }
 
@@ -245,6 +252,9 @@ export type NavigationMenuContentProps = {
 // open item was ("left" or "right"; "up" or "down" when vertical) while it is open.
 export fn navigationMenuContent(ref nav: NavigationMenuContext, ref item: NavigationMenuItemContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   base = popoverPopupProps(item, "auto", side, align, sideOffset, alignOffset)
+  // Its own equation: the contexts are rebuilt on every open and close, and a props object that read them directly
+  // was rebuilt with them, new but equal (UNSTABLE_MEMO_OUTPUT).
+  direction = item.active ? nav.activationDirection : undefined
   action focusOut(event: FocusEvent) {
     // Tab past its end, or focus moving anywhere else but its trigger, closes it.
     if (item.active && event.relatedTarget != null && !containsTarget([item.popup, item.trigger], event.relatedTarget)) {
@@ -257,7 +267,7 @@ export fn navigationMenuContent(ref nav: NavigationMenuContext, ref item: Naviga
     tabindex: "-1",
     // A list of its own, so the list's arrow keys leave the links inside alone.
     "data-rs-ui-list": "",
-    "data-activation-direction": item.active ? nav.activationDirection : undefined,
+    "data-activation-direction": direction,
     onFocusOut: focusOut,
   }
 }
@@ -267,8 +277,8 @@ export component NavigationMenuContent(props: NavigationMenuContentProps) {
   item = use navigationMenuItem
   provide navigationMenuContentScope = { inside: true }
   { side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest } = props
-  own = navigationMenuContent(nav, item, side, align, sideOffset, alignOffset)
-  merged = mergeProps(own, rest)
+  own = navigationMenuContent(nav, item, latest side, latest align, latest sideOffset, latest alignOffset)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -294,8 +304,8 @@ export fn navigationMenuLink(ref nav: NavigationMenuContext, ref content: Naviga
 export component NavigationMenuLink({ active = false, closeOnClick = false, children, ...rest }: NavigationMenuLinkProps) {
   nav = use navigationMenu
   content = use navigationMenuContentScope
-  own = navigationMenuLink(nav, content, active, closeOnClick)
-  merged = mergeProps(own, rest)
+  own = navigationMenuLink(nav, content, latest active, latest closeOnClick)
+  merged = latest mergeProps(own, rest)
   <a {...merged}>{children}</a>
 }
 
@@ -309,6 +319,6 @@ export fn navigationMenuArrow(ref c: NavigationMenuItemContext): PartProps {
 export component NavigationMenuArrow({ children, ...rest }: DivProps) {
   c = use navigationMenuItem
   own = navigationMenuArrow(c)
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

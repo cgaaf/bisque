@@ -13,6 +13,7 @@ export declare function matchesFilter(filter: ((label: string, query: string) =>
 export declare function createOnShow(popup: HTMLElement | undefined, onShown: () => void): void;
 export declare function createOutsidePress(active: boolean, inside: (HTMLElement | undefined)[], onOutside: () => void): void;
 export declare function createLabels(): [ItemLabel[], (value: string, label: string) => void];
+export declare function createItemLabels(container: HTMLElement | undefined): [ItemLabel[], (value: string, label: string) => void];
 export declare function createItemObserver(container: HTMLElement | undefined, onChange: (count: number) => void): void;
 export declare function createInputValue(input: HTMLElement | undefined, value: string): void;
 export declare function hasFocus(element: HTMLElement | undefined): boolean;

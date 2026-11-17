@@ -1,0 +1,67 @@
+import { ComboboxRoot, ComboboxInput, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// combobox is computed from that write. The combobox's own state (open, the typed text and the filter, the
+// highlighted option, the selected value) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="padding: 40px 0 0 40px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the popup.
+    <ComboboxRoot>
+      <ComboboxInput aria-label="popup-prop" style="width: 160px" />
+      <ComboboxPopup data-testid="popup-prop-popup" sideOffset={step == 1 ? 4 : 8} style="padding: 0; border: 0">
+        <ComboboxList>
+          <ComboboxItem value="apple">Apple</ComboboxItem>
+          <ComboboxItem value="banana">Banana</ComboboxItem>
+          <ComboboxItem value="cherry">Cherry</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+
+    // 2. A prop of an item. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <ComboboxRoot>
+      <ComboboxInput aria-label="item-prop" style="width: 160px" />
+      <ComboboxPopup data-testid="item-prop-popup" style="padding: 0; border: 0">
+        <ComboboxList>
+          <ComboboxItem value="apple">Apple</ComboboxItem>
+          <ComboboxItem value="banana" label={step == 1 ? "Banana" : "Banana (saved)"}>Banana</ComboboxItem>
+          <ComboboxItem value="cherry">Cherry</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+
+    // 3. An attribute passed through to the input's element.
+    <ComboboxRoot>
+      <ComboboxInput aria-label="input-attribute" class={step == 2 ? "second" : "first"} style="width: 160px" />
+      <ComboboxPopup data-testid="input-attribute-popup" style="padding: 0; border: 0">
+        <ComboboxList>
+          <ComboboxItem value="apple">Apple</ComboboxItem>
+          <ComboboxItem value="banana">Banana</ComboboxItem>
+          <ComboboxItem value="cherry">Cherry</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+
+    // 4. An attribute passed through to an item's element.
+    <ComboboxRoot>
+      <ComboboxInput aria-label="item-attribute" style="width: 160px" />
+      <ComboboxPopup data-testid="item-attribute-popup" style="padding: 0; border: 0">
+        <ComboboxList>
+          <ComboboxItem value="apple">Apple</ComboboxItem>
+          <ComboboxItem value="banana" class={step == 2 ? "second" : "first"}>Banana</ComboboxItem>
+          <ComboboxItem value="cherry">Cherry</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+  </main>
+}

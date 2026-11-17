@@ -4,7 +4,8 @@ export declare function subscribeToastManager(manager: import("./impl/toast.ts")
 export declare function newToastRecord(options: import("./impl/toast.ts").ToastOptions): import("./impl/toast.ts").ToastRecord;
 export declare function updatedToastRecord(previous: import("./impl/toast.ts").ToastRecord, updates: any, restart: boolean): import("./impl/toast.ts").ToastRecord;
 export declare function placeToasts(records: import("./impl/toast.ts").ToastRecord[], limit: number): import("./impl/toast.ts").PlacedToast[];
-export declare function notifyToasts(records: import("./impl/toast.ts").ToastRecord[], id: string | undefined, which: "onClose" | "onRemove"): void;
+export declare function toastCallbacks(records: import("./impl/toast.ts").ToastRecord[], id: string | undefined, which: "onClose" | "onRemove"): (() => void)[];
+export declare function callToasts(callbacks: (() => void)[]): void;
 export declare function createPausableTimeout(running: boolean, paused: boolean, duration: number, restartKey: number, onElapsed: () => void): void;
 export declare function createWindowFocus(): boolean;
 export declare function createToastHotkey(active: boolean, viewport: HTMLElement | undefined): void;

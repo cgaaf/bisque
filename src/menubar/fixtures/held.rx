@@ -1,0 +1,55 @@
+import { MenubarRoot } from "../menubar.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem } from "../../menu/menu.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// menubar is computed from that write. Which menu of the bar is open must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <style>
+    :global(.held-popup) { margin: 0; padding: 0; border: 0; width: 100px }
+    :global(.held-popup > :not([popover])) { display: block; box-sizing: border-box; width: 100%; height: 20px; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
+  <main style="padding-bottom: 200px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <MenubarRoot loopFocus={step == 1} style="display: flex; gap: 8px">
+      <MenuRoot>
+        <MenuTrigger>Prop File</MenuTrigger>
+        <MenuPopup class="held-popup">
+          <MenuItem>Prop New</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+      <MenuRoot>
+        <MenuTrigger>Prop Edit</MenuTrigger>
+        <MenuPopup class="held-popup">
+          <MenuItem>Prop Undo</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+    </MenubarRoot>
+
+    // 2. An attribute of the root.
+    <MenubarRoot class={step == 2 ? "second" : "first"} style="display: flex; gap: 8px">
+      <MenuRoot>
+        <MenuTrigger>Attribute File</MenuTrigger>
+        <MenuPopup class="held-popup">
+          <MenuItem>Attribute New</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+      <MenuRoot>
+        <MenuTrigger>Attribute Edit</MenuTrigger>
+        <MenuPopup class="held-popup">
+          <MenuItem>Attribute Undo</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+    </MenubarRoot>
+  </main>
+}

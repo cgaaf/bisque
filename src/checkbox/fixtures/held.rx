@@ -1,0 +1,29 @@
+import { CheckboxRoot, checkbox } from "../checkbox.rx"
+import { save } from "../../test/slow-server.js"
+
+// What a custom indicator reads: the checkbox's own state.
+component State(props: { id: string }) {
+  s = use checkbox
+  <span data-testid={props.id}>{s.checked ? "on" : "off"}</span>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// checkbox is computed from that write. The checkbox's own state (checked) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // A prop of the root that `self` (the context) reads beside the checked state. An attribute holds nothing here:
+    // the box's attributes carry none of its own state (checked reaches the input through createCheckedInput), and
+    // inside a field one held in them didn't hold the field's `data-dirty` (the only field state that case checked).
+    <CheckboxRoot aria-label="Root prop" required={step == 2}><State id="root-prop" /></CheckboxRoot>
+  </main>
+}

@@ -1,0 +1,33 @@
+import { RadioGroup, RadioRoot, radioGroup } from "../radio.rx"
+import { save } from "../../test/slow-server.js"
+
+// What a radio's own component reads: the group's value.
+component Value(props: { id: string }) {
+  g = use radioGroup
+  <output data-testid={props.id}>{g.value ?? ""}</output>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// radio group is computed from that write. The group's own state (the checked radio) must not wait for the app's
+// request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // A prop of the group. An attribute of the group holds nothing (the group's attributes carry none of its own
+    // state), and neither did one of a radio before the fix: those cases proved nothing and were dropped.
+    <RadioGroup aria-label="Group prop" required={step == 2}>
+      <RadioRoot aria-label="Group prop a" value="a" />
+      <RadioRoot aria-label="Group prop b" value="b" />
+      <Value id="group-prop" />
+    </RadioGroup>
+  </main>
+}

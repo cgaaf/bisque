@@ -15,7 +15,7 @@ export type ToggleGroupContext = {
 
 fn ignorePress(value: string, pressed: boolean): void => undefined
 
-export context toggleGroup: ToggleGroupContext = { present: false, disabled: false, value: [], setPressed: ignorePress }
+export context toggleGroup: lane ToggleGroupContext = { present: false, disabled: false, value: [], setPressed: ignorePress }
 
 export type ToggleGroupProps = {
   // The values of the pressed toggles.
@@ -40,14 +40,14 @@ export component ToggleGroup(props: ToggleGroupProps) {
   // `value` and `disabled` are often read from an answer that can fail (`value={setting}` with
   // `setting = await load()`): a failure there is the app's to show, in its `errored` region, not the group's.
   givenValue = props.value catch (e) => undefined
-  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
   current = givenValue ?? uncontrolled
   isDisabled = bar.disabled || barGroup.disabled || givenDisabled
-  isMultiple = props.multiple ?? false
-  dir = props.orientation ?? "horizontal"
+  isMultiple = latest props.multiple ?? false
+  dir = latest props.orientation ?? "horizontal"
   source element: HTMLElement | undefined := undefined
   action setElement(el: HTMLElement) { element := el }
-  _focus = createCompositeFocus(bar.present ? undefined : element, { orientation: dir, loop: props.loopFocus ?? true, homeEnd: true })
+  _focus = createCompositeFocus(bar.present ? undefined : element, { orientation: dir, loop: latest props.loopFocus ?? true, homeEnd: true })
 
   action setPressed(value: string, pressed: boolean) {
     let others = current.filter((v) => v != value)
@@ -70,6 +70,6 @@ export component ToggleGroup(props: ToggleGroupProps) {
     "data-multiple": isMultiple ? "" : undefined,
     ref: setElement,
   }
-  merged = mergeProps(own, rest)
+  merged = latest mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

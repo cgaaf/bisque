@@ -1,0 +1,30 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle } from "../popover.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// popover is computed from that write. The popover's own state must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="padding: 120px 0 0 160px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. An attribute passed through to the trigger's element.
+    <PopoverRoot>
+      <PopoverTrigger class={step == 2 ? "second" : "first"}>Trigger attribute</PopoverTrigger>
+      <PopoverPopup data-testid="trigger-attribute"><PopoverTitle>Three</PopoverTitle></PopoverPopup>
+    </PopoverRoot>
+
+    // 2. An attribute passed through to the popup's element.
+    <PopoverRoot>
+      <PopoverTrigger>Popup attribute</PopoverTrigger>
+      <PopoverPopup data-testid="popup-attribute" class={step == 2 ? "second" : "first"}><PopoverTitle>Four</PopoverTitle></PopoverPopup>
+    </PopoverRoot>
+  </main>
+}
