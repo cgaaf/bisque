@@ -68,7 +68,7 @@
   "NavigationMenuArrow": {
     "description": "An element placed on the content's edge that faces the trigger, centred on the trigger. It follows the content when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
     "dataAttributes": {
-      "data-side": "Which side of the trigger the content is on. Absent while the content is closed."
+      "data-side": "Which side of the trigger the content is on. Absent until the content first opens; a close keeps the last side."
     }
   }
 }

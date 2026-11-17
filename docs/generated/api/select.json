@@ -411,7 +411,7 @@
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of the trigger the popup is on. Absent while the popup is closed."
+          "description": "Which side of the trigger the popup is on. Absent until the popup first opens; a close keeps the last side."
         }
       ],
       "cssVariables": []

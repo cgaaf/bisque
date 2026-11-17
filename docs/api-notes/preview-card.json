@@ -32,7 +32,7 @@
   "PreviewCardArrow": {
     "description": "An element placed on the card's edge that faces the link, centred on the link. It follows the card when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
     "dataAttributes": {
-      "data-side": "Which side of the link the card is on. Absent while the card is closed."
+      "data-side": "Which side of the link the card is on. Absent until the card first opens; a close keeps the last side."
     }
   }
 }

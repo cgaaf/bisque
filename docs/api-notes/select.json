@@ -108,7 +108,7 @@
   "SelectArrow": {
     "description": "An element placed on the popup's edge that faces the trigger, centred on the trigger. It follows the popup when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
     "dataAttributes": {
-      "data-side": "Which side of the trigger the popup is on. Absent while the popup is closed."
+      "data-side": "Which side of the trigger the popup is on. Absent until the popup first opens; a close keeps the last side."
     }
   }
 }

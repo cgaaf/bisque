@@ -11,7 +11,8 @@ export type PopoverState = {
   trigger: HTMLElement | undefined
   popup: HTMLElement | undefined
   // Where the browser put the open popup: the side of the trigger it is on after any flip, and the point of its
-  // edge nearest the trigger's centre (for the arrow). Undefined while it is closed or covers the trigger.
+  // edge nearest the trigger's centre (for the arrow). Undefined until it first opens, or while it covers the
+  // trigger; a close keeps the last one, so the arrow stays put while the popup animates out.
   placement: Placement | undefined
   setOpen: (open: boolean) => void
   setTrigger: (element: HTMLElement) => void
@@ -66,7 +67,7 @@ export fn popoverTriggerProps(ref p: PopoverState): PartProps {
 
 // For the popup element. `mode` is "auto" (light dismiss and Escape close it) or "manual" (only the part does).
 // Style it with `:popover-open`, `::backdrop` and `@starting-style`. `data-side` is the side it is on: the one
-// asked for until it opens, then the one the browser placed it on.
+// asked for until it first opens, then the one the browser placed it on, kept after it closes.
 export fn popoverPopupProps(ref p: PopoverState, ref mode: "auto" | "manual", ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   // Each read of the state is an equation of its own: the state object is rebuilt whenever the popup opens or
   // closes, and a props object that read it directly was rebuilt with it, new but equal each time

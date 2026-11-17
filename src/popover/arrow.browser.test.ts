@@ -46,11 +46,19 @@ test("on an inline side the arrow is on the popup's near edge, level with the tr
   expect(Math.abs(centre(arrow).y - centre(trigger).y)).toBeLessThanOrEqual(1);
 });
 
-test("closing puts data-side back to the side asked for", async () => {
-  const { popup, user } = await openPopover("Low", "flipped-arrow");
+test("closing keeps data-side and the arrow's place, so nothing moves while the popup animates out", async () => {
+  const { arrow, popup, user } = await openPopover("Low", "flipped-arrow");
   await expect.poll(() => popup.getAttribute("data-side")).toBe("top");
+  await expect.poll(() => arrow.getAttribute("data-side")).toBe("top");
+  const placed = [arrow.style.left, arrow.style.top];
+  expect(placed).not.toEqual(["0px", "0px"]);
   await user.keyboard("{Escape}");
-  await expect.poll(() => popup.getAttribute("data-side")).toBe("bottom");
+  await expect.poll(() => popup.matches(":popover-open")).toBe(false);
+  await frame();
+  await frame();
+  expect(popup.getAttribute("data-side")).toBe("top");
+  expect(arrow.getAttribute("data-side")).toBe("top");
+  expect([arrow.style.left, arrow.style.top]).toEqual(placed);
 });
 
 test("data-side and the arrow follow a flip that scrolling causes while the popup is open", async () => {
@@ -76,4 +84,60 @@ test("data-side and the arrow follow a flip that scrolling causes while the popu
   } finally {
     window.scrollTo(0, 0);
   }
+});
+
+/** Adds `css` to the page for the length of `run`. */
+async function withStyle(css: string, run: () => Promise<void>) {
+  const style = document.createElement("style");
+  style.textContent = css;
+  document.head.append(style);
+  try {
+    await run();
+  } finally {
+    style.remove();
+  }
+}
+
+test("a popup that scales in is measured as laid out: the arrow is centred on the trigger once it settles", async () => {
+  // The origin is far from the trigger's centre, so a box measured mid-scale would put the arrow well off it.
+  await withStyle(
+    `[aria-label="Below panel"] { transform-origin: right top; transition: scale 300ms; }
+     @starting-style { [aria-label="Below panel"]:popover-open { scale: 0.8; } }`,
+    async () => {
+      const { trigger, arrow, popup } = await openPopover("Below", "below-arrow");
+      expect(popup.getAnimations().length).toBeGreaterThan(0);
+      await expect.poll(() => arrow.getAttribute("data-side")).toBe("bottom");
+      const first = arrow.style.left;
+      await Promise.allSettled(popup.getAnimations().map((animation) => animation.finished));
+      await frame();
+      expect(arrow.style.left).toBe(first);
+      expect(Math.abs(centre(arrow).x - centre(trigger).x)).toBeLessThanOrEqual(1);
+    },
+  );
+});
+
+test("a popup that slides in over its trigger keeps its side and the arrow its place while it moves", async () => {
+  // Drawn 20px lower at the start, the flipped popup overlaps its trigger until the slide ends.
+  await withStyle(
+    `[aria-label="Flipped panel"] { transition: translate 300ms; }
+     @starting-style { [aria-label="Flipped panel"]:popover-open { translate: 0 20px; } }`,
+    async () => {
+      const { trigger, arrow, popup } = await openPopover("Low", "flipped-arrow");
+      expect(popup.getAnimations().length).toBeGreaterThan(0);
+      // Mid-slide, where the engine's computed style reports the translate being drawn (Firefox's doesn't, for a
+      // flipped popup: the measurement when the slide ends corrects it there).
+      if (getComputedStyle(popup).translate !== "none") {
+        expect(popup.getAttribute("data-side")).toBe("top");
+        expect(arrow.getAttribute("data-side")).toBe("top");
+        expect(arrow.style.left).not.toBe("0px");
+      }
+      await Promise.allSettled(popup.getAnimations().map((animation) => animation.finished));
+      await frame();
+      await frame();
+      expect(popup.getAttribute("data-side")).toBe("top");
+      expect(arrow.getAttribute("data-side")).toBe("top");
+      expect(Math.abs(centre(arrow).x - centre(trigger).x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(centre(arrow).y - popup.getBoundingClientRect().bottom)).toBeLessThanOrEqual(1);
+    },
+  );
 });

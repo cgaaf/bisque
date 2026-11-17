@@ -109,7 +109,7 @@
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of the link the card is on. Absent while the card is closed."
+          "description": "Which side of the link the card is on. Absent until the card first opens; a close keeps the last side."
         }
       ],
       "cssVariables": []

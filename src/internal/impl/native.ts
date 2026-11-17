@@ -287,14 +287,62 @@ export type Placement = {
 
 const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
 
+type Box = { left: number; top: number; right: number; bottom: number };
+
+/** A computed `translate` component in pixels; a percentage is of the element's own size. */
+const length = (value: string | undefined, size: number) =>
+  value === undefined ? 0 : value.endsWith("%") ? (parseFloat(value) / 100) * size : parseFloat(value) || 0;
+
 /**
- * Where the browser placed an open popup against its anchor, or undefined while it is closed or overlaps it.
+ * The element's border box where layout put it, without its transform, in viewport coordinates.
+ *
+ * `getBoundingClientRect` includes the transform, and a popup that animates in (`@starting-style { scale: 0.95 }`)
+ * is measured while it is still scaled: a point read from that box is off by the scale's pull towards the
+ * `transform-origin`, and it stays off, since nothing re-measures when the animation ends. So the transform is
+ * composed from the computed `translate`, `scale` and `transform` and `transform-origin`, and taken back out. A
+ * rotation, skew, flip or zero scale has no box to take it out to: the transformed box is used as it is.
+ *
+ * The computed style is not always the value being drawn: in Firefox, a popup that anchor positioning has flipped
+ * reported its `@starting-style` scale (and `none` for a translate) all through the transition. The popup is
+ * measured again when its own transitions and animations end, which corrects that.
+ */
+function layoutBox(element: HTMLElement): Box {
+  const rect = element.getBoundingClientRect();
+  const style = getComputedStyle(element);
+  if (style.transform === "none" && style.translate === "none" && style.scale === "none") return rect;
+  if (style.rotate !== "none" && parseFloat(style.rotate.split(" ").pop()!) !== 0) return rect;
+  const [ox = 0, oy = 0] = style.transformOrigin.split(" ").map(parseFloat);
+  let matrix = new DOMMatrix().translate(ox, oy);
+  if (style.translate !== "none") {
+    const [tx, ty] = style.translate.split(" ");
+    matrix = matrix.translate(length(tx, element.offsetWidth), length(ty, element.offsetHeight));
+  }
+  if (style.scale !== "none") {
+    const [sx = 1, sy = sx] = style.scale.split(" ").map(parseFloat);
+    matrix = matrix.scale(sx, sy);
+  }
+  if (style.transform !== "none") matrix = matrix.multiply(new DOMMatrix(style.transform));
+  matrix = matrix.translate(-ox, -oy);
+  // A point of the border box at (x, y) is drawn at (left + a·x + e, top + d·y + f).
+  if (!matrix.is2D || matrix.b !== 0 || matrix.c !== 0 || !(matrix.a > 0) || !(matrix.d > 0)) return rect;
+  const left = rect.left - matrix.e;
+  const top = rect.top - matrix.f;
+  return { left, top, right: left + rect.width / matrix.a, bottom: top + rect.height / matrix.d };
+}
+
+/**
+ * Where the browser placed the popup against its anchor: undefined until it first opens, or while it overlaps the
+ * anchor. A close keeps the last measurement. A closed popup can still be on screen while it animates out
+ * (`display` and `overlay` transitions with `allow-discrete`), and dropping the placement there put an arrow in
+ * the popup's corner, unrotated, for the length of the exit. A popup that reopens also starts from where it was.
+ * It is not cleared once the exit ends: that write would rebuild every part's props for nothing, since the popup
+ * isn't rendered by then.
  *
  * CSS anchor positioning flips a popup that doesn't fit (`position-try-fallbacks`) without telling anyone, so the
  * side is read back from the layout: the popup is on the side whose anchor edge it lies wholly beyond. The same
  * two boxes give the arrow its place; `anchor()` can't, because no engine resolves it correctly for an element
- * inside a popover. It is measured when the popup opens and again after a scroll, a window resize, or a size
- * change of either element. A layout shift that moves the anchor some other way is not seen until one of those
+ * inside a popover. It is measured when the popup opens, when its own transitions and animations end, and after a
+ * scroll, a window resize, or a size change of either element. A layout shift that moves the anchor some other way is not seen until one of those
  * happens.
  */
 export function createPlacement(
@@ -303,12 +351,17 @@ export function createPlacement(
   open: Accessor<boolean>,
 ): Accessor<Placement | undefined> {
   const [placement, setPlacement] = createSignal<Placement | undefined>(undefined, {
-    equals: (a, b) => a === b || (!!a && !!b && a.side === b.side && a.x === b.x && a.y === b.y),
+    // Within a twentieth of a pixel is the same place: taking a transform back out leaves rounding noise, and a
+    // write for that would rebuild every part's props for nothing.
+    equals: (a, b) =>
+      a === b ||
+      (!!a && !!b && a.side === b.side && Math.abs(a.x - b.x) < 0.05 && Math.abs(a.y - b.y) < 0.05),
   });
 
   const measure = (popup: HTMLElement, against: HTMLElement) => {
     if (!popup.isConnected || !shown(popup)) return;
-    const p = popup.getBoundingClientRect();
+    // The popup's box as laid out, not as drawn mid-animation, so the first measurement is already the final one.
+    const p = layoutBox(popup);
     const a = against.getBoundingClientRect();
     // Half a pixel of slack: engines round the two boxes independently.
     const side: Side | undefined =
@@ -354,12 +407,20 @@ export function createPlacement(
       sizes.observe(popup);
       sizes.observe(against);
       popup.addEventListener("toggle", schedule);
+      // Once the popup has settled. Only its own: one inside it (a spinner) says nothing about its box.
+      const settled = (event: Event) => {
+        if (event.target === popup) schedule();
+      };
+      popup.addEventListener("transitionend", settled);
+      popup.addEventListener("animationend", settled);
       document.addEventListener("scroll", schedule, { capture: true, passive: true });
       window.addEventListener("resize", schedule);
       return () => {
         cancel?.();
         sizes.disconnect();
         popup.removeEventListener("toggle", schedule);
+        popup.removeEventListener("transitionend", settled);
+        popup.removeEventListener("animationend", settled);
         document.removeEventListener("scroll", schedule, { capture: true });
         window.removeEventListener("resize", schedule);
         live = false;
@@ -367,8 +428,7 @@ export function createPlacement(
     },
   );
 
-  // The last measurement is kept across a close, so a popup that reopens starts from where it was.
-  return () => (open() ? placement() : undefined);
+  return placement;
 }
 
 /**

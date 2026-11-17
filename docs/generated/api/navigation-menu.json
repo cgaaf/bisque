@@ -210,7 +210,7 @@
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of the trigger the content is on. Absent while the content is closed."
+          "description": "Which side of the trigger the content is on. Absent until the content first opens; a close keeps the last side."
         }
       ],
       "cssVariables": []
