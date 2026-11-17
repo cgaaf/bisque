@@ -1,0 +1,20 @@
+import { CheckboxRoot, CheckboxIndicator } from "../checkbox.rx"
+
+export default component Fixture() {
+  source agreed := false
+  source submitted := ""
+  <form data-testid="form">
+    <label>
+      <CheckboxRoot name="terms" value="yes" checked={agreed} onCheckedChange={(next) => { agreed := next }}>
+        <CheckboxIndicator data-testid="indicator">✓</CheckboxIndicator>
+      </CheckboxRoot>
+      Accept terms
+    </label>
+    <CheckboxRoot aria-label="Select all" indeterminate>
+      <CheckboxIndicator data-testid="mixed">–</CheckboxIndicator>
+    </CheckboxRoot>
+    <CheckboxRoot aria-label="Locked" disabled defaultChecked />
+    <CheckboxRoot aria-label="Fixed" readOnly />
+    <output data-testid="agreed">{agreed ? "yes" : "no"}</output>
+  </form>
+}

@@ -1,0 +1,33 @@
+import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuSeparator, MenuGroup, MenuGroupLabel, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem } from "../menu.rx"
+
+export default component Fixture() {
+  source chosen := "none"
+  source sort := "name"
+  source wrap := false
+  <main>
+    <MenuRoot>
+      <MenuTrigger>Actions</MenuTrigger>
+      <MenuPortal>
+        <MenuPositioner data-testid="positioner" sideOffset={4}>
+          <MenuPopup>
+            <MenuItem onClick={() => { chosen := "rename" }}>Rename</MenuItem>
+            <MenuItem disabled onClick={() => { chosen := "archive" }}>Archive</MenuItem>
+            <MenuItem onClick={() => { chosen := "delete" }}>Delete</MenuItem>
+            <MenuSeparator />
+            <MenuCheckboxItem checked={wrap} onCheckedChange={(next) => { wrap := next }}>Word wrap</MenuCheckboxItem>
+            <MenuGroup>
+              <MenuGroupLabel>Sort by</MenuGroupLabel>
+              <MenuRadioGroup value={sort} onValueChange={(next) => { sort := next }}>
+                <MenuRadioItem value="name">Name</MenuRadioItem>
+                <MenuRadioItem value="date">Date</MenuRadioItem>
+              </MenuRadioGroup>
+            </MenuGroup>
+          </MenuPopup>
+        </MenuPositioner>
+      </MenuPortal>
+    </MenuRoot>
+    <output data-testid="chosen">{chosen}</output>
+    <output data-testid="sort">{sort}</output>
+    <output data-testid="wrap">{wrap ? "on" : "off"}</output>
+  </main>
+}

@@ -1,4 +1,6 @@
 // How .rx may use ./props.js (implemented in ./impl/props.ts) (guide: node_modules/@reactivescript/compiler/guide/libraries.md).
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./props.d.ts.
 export pure fn mergeProps(internal: any, external: any): any
+export pure fn withoutHandlers(external: any, disabled: boolean): any
 export pure fn createId(prefix: string): string instantiates
 export fn preventDefaultBehavior(event: Event): void

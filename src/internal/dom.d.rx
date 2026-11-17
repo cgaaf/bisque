@@ -1,7 +1,12 @@
-// How .rx may use ./dom.js (implemented in ./impl/dom.ts) (guide: node_modules/@reactivescript/compiler/guide/libraries.md).
+// How .rx may use ./dom.js (implemented in ./impl/dom.ts, ./impl/floating.ts and ./impl/roving.ts).
 // A `ref` parameter is passed live; the others are read once. Bind every call: `_scope = createFocusScope(…)`.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./dom.d.ts.
 export pure fn createPresence(ref present: boolean, ref element: HTMLElement | undefined): [ref boolean, ref "starting" | "ending" | undefined]
-export pure fn createFocusScope(ref active: boolean, ref container: HTMLElement | undefined, ref trap: boolean) instantiates
+export pure fn createFocusScope(ref active: boolean, ref container: HTMLElement | undefined, ref trap: boolean, ref initialFocus: "auto" | "container" | "first-item" | "last-item" | "current-item") instantiates
 export pure fn createDismiss(ref active: boolean, ref inside: (HTMLElement | undefined)[], onDismiss: (reason: "escape-key" | "outside-press") => void) instantiates
 export pure fn createScrollLock(ref active: boolean) instantiates
+export pure fn createFloating(ref active: boolean, ref anchor: HTMLElement | undefined, ref floating: HTMLElement | undefined, ref options: { side: "top" | "bottom" | "left" | "right"; align: "start" | "center" | "end"; sideOffset: number; alignOffset: number; collisionPadding: number }): [ref "top" | "bottom" | "left" | "right", ref "start" | "center" | "end"]
+export pure fn createRovingFocus(ref container: HTMLElement | undefined, ref options: { orientation: "horizontal" | "vertical" | "both"; loop: boolean; typeahead: boolean; tabStop: boolean }) instantiates
 export fn focusElement(element: HTMLElement | undefined): void
+export fn clickElement(element: HTMLElement | undefined): void
+export fn focusListItem(container: HTMLElement | undefined, which: "first" | "last" | "current"): void

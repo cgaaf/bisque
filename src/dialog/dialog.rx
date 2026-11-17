@@ -53,7 +53,7 @@ export component DialogRoot(props: DialogRootProps) {
   action setDescriptionId(id: string | undefined) { descriptionId := id }
 
   [mounted, status] = createPresence(isOpen, popup)
-  _scope = createFocusScope(isOpen, popup, isModal)
+  _scope = createFocusScope(isOpen, popup, isModal, "auto")
   _dismiss = createDismiss(isOpen && (props.dismissible ?? true), [popup, trigger], dismiss)
   _lock = createScrollLock(isOpen && isModal)
 

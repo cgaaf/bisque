@@ -1,7 +1,8 @@
 // DOM behaviour the parts share: everything that needs `document`, focus or layout, which `.rx` can't reach.
 // Each `create*` is a Solid primitive: called once by a component, it owns its effects and cleans them up with
 // the component. `../dom.d.rx` declares how `.rx` may call them, through the `../dom.js` facade.
-import { createEffect, createMemo, createSignal, type Accessor } from "solid-js";
+import { createEffect, createMemo, createSignal, untrack, type Accessor } from "solid-js";
+import { focusListItem } from "./roving.ts";
 
 type MaybeElement = HTMLElement | undefined;
 
@@ -23,6 +24,11 @@ export function tabbables(container: HTMLElement): HTMLElement[] {
 
 export function focusElement(element: MaybeElement): void {
   element?.focus();
+}
+
+/** Activates an element as a click would: for Enter and Space on an item that is not a native button. */
+export function clickElement(element: MaybeElement): void {
+  element?.click();
 }
 
 /** After the browser has applied this frame's attributes: when a transition's start state must paint first. */
@@ -49,7 +55,7 @@ export function createPresence(
   present: Accessor<boolean>,
   element: Accessor<MaybeElement>,
 ): [Accessor<boolean>, Accessor<TransitionStatus>] {
-  const [left, setLeft] = createSignal(!present());
+  const [left, setLeft] = createSignal(!untrack(present));
   const [status, setStatus] = createSignal<TransitionStatus>(undefined);
   const mounted = createMemo(() => present() || !left());
 
@@ -63,7 +69,7 @@ export function createPresence(
         return nextFrame(() => setStatus(undefined));
       }
       if (before !== true) return;
-      const el = element();
+      const el = untrack(element);
       setStatus("ending");
       let cancelled = false;
       const finish = () => {
@@ -87,14 +93,20 @@ export function createPresence(
   return [mounted, status];
 }
 
+export type InitialFocus = "auto" | "container" | "first-item" | "last-item" | "current-item";
+
 /**
  * While `active`, keeps keyboard focus inside `container`: moves focus in when it activates, wraps Tab at both
  * ends when `trap` is true, and puts focus back where it was when it deactivates.
+ *
+ * `initialFocus` says where focus goes first: `"auto"` is the `[autofocus]` element, else the first tabbable
+ * one, else the container; the `-item` values pick an item of a list (see ./roving.ts).
  */
 export function createFocusScope(
   active: Accessor<boolean>,
   container: Accessor<MaybeElement>,
   trap: Accessor<boolean>,
+  initialFocus: Accessor<InitialFocus>,
 ): void {
   createEffect(
     () => (active() ? container() : undefined),
@@ -102,8 +114,15 @@ export function createFocusScope(
       if (!el) return;
       const previous = document.activeElement as HTMLElement | null;
       if (!el.contains(document.activeElement)) {
-        const target = el.querySelector<HTMLElement>("[autofocus]") ?? tabbables(el)[0] ?? el;
-        target.focus();
+        const initial = untrack(initialFocus);
+        if (initial === "container") el.focus();
+        else if (initial === "auto") {
+          (el.querySelector<HTMLElement>("[autofocus]") ?? tabbables(el)[0] ?? el).focus();
+        } else
+          focusListItem(
+            el,
+            initial === "last-item" ? "last" : initial === "current-item" ? "current" : "first",
+          );
       }
       const onKeyDown = (event: KeyboardEvent) => {
         if (event.key !== "Tab" || !trap()) return;

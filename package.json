@@ -24,7 +24,7 @@
     "typecheck": "pnpm typecheck:rx && pnpm typecheck:ts",
     "typecheck:rx": "node scripts/gen-dts.mjs --check && rx-tsc --noEmit -p tsconfig.json",
     "typecheck:ts": "tsrs --noEmit -p tsconfig.ts.json",
-    "lint": "oxlint",
+    "lint": "oxlint --deny-warnings",
     "format": "oxfmt",
     "format:check": "oxfmt --check",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test",

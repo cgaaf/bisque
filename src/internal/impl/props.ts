@@ -60,6 +60,18 @@ export function mergeProps(internal: Source, external: Source): PartProps {
   return out;
 }
 
+/**
+ * The consumer's props without their event handlers while `disabled` is true. A consumer's handler runs before the
+ * part's own, so a disabled part that is not a native control drops them instead: `onClick` on a disabled menu
+ * item must not fire.
+ */
+export function withoutHandlers(external: Source, disabled: boolean): Source {
+  if (!disabled || !external) return external;
+  const out: Props = {};
+  for (const [key, value] of Object.entries(external)) if (!isHandler(key)) out[key] = value;
+  return out;
+}
+
 function composeRefs(a: Handler, b: Handler): Handler {
   return (element) => {
     a(element);

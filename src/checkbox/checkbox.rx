@@ -1,0 +1,87 @@
+import { mergeProps } from "../internal/props.js"
+import { ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type CheckboxContext = {
+  checked: boolean
+  indeterminate: boolean
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+}
+
+export context checkbox: CheckboxContext
+
+export type CheckboxRootProps = {
+  checked?: boolean
+  defaultChecked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  // Neither checked nor unchecked: a parent box whose children are mixed. Pressing it checks it.
+  indeterminate?: boolean
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name, the box takes part in a <form>: it submits `value` (default "on") while checked.
+  name?: string
+  value?: string
+} & Omit<ButtonProps, "value" | "name" | "disabled">
+
+// The state attributes the root and its indicator share.
+fn checkboxState(ref c: CheckboxContext): PartProps {
+  {
+    "data-checked": c.checked && !c.indeterminate ? "" : undefined,
+    "data-unchecked": !c.checked && !c.indeterminate ? "" : undefined,
+    "data-indeterminate": c.indeterminate ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-readonly": c.readOnly ? "" : undefined,
+    "data-required": c.required ? "" : undefined,
+  }
+}
+
+export component CheckboxRoot(props: CheckboxRootProps) {
+  source uncontrolled := peek(props.defaultChecked ?? false)
+  isChecked = props.checked ?? uncontrolled
+  self = {
+    checked: isChecked,
+    indeterminate: props.indeterminate ?? false,
+    disabled: props.disabled ?? false,
+    readOnly: props.readOnly ?? false,
+    required: props.required ?? false,
+  }
+
+  action toggle() {
+    if (self.disabled || self.readOnly) { return }
+    let next = self.indeterminate ? true : !isChecked
+    uncontrolled := next
+    if (props.onCheckedChange) { props.onCheckedChange(next) }
+  }
+
+  provide checkbox = self
+
+  { checked, defaultChecked, onCheckedChange, indeterminate, disabled, readOnly, required, name, value, children, ...rest } = props
+  state = checkboxState(self)
+  own = {
+    type: "button",
+    role: "checkbox",
+    "aria-checked": self.indeterminate ? "mixed" : isChecked ? "true" : "false",
+    "aria-readonly": self.readOnly ? "true" : undefined,
+    "aria-required": self.required ? "true" : undefined,
+    disabled: self.disabled ? true : undefined,
+    onClick: toggle,
+    ...state,
+  }
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+  {if name != undefined {
+    <input type="checkbox" hidden aria-hidden="true" tabindex="-1" name={name} value={value ?? "on"} checked={isChecked} disabled={self.disabled} required={self.required} />
+  }}
+}
+
+// Shown only while the box is checked or indeterminate, unless `keepMounted`.
+export component CheckboxIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
+  c = use checkbox
+  state = checkboxState(c)
+  merged = mergeProps(state, rest)
+  {if c.checked || c.indeterminate || keepMounted {
+    <span {...merged}>{children}</span>
+  }}
+}

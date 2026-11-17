@@ -1,0 +1,282 @@
+import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
+import { createFocusScope, createFloating, createRovingFocus, focusElement, clickElement } from "../internal/dom.js"
+import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
+
+export type MenuContext = PopupState & {
+  popupId: string
+  // Where focus goes when the popup opens: the first or last item after a key press, else the popup itself.
+  openFocus: "container" | "first-item" | "last-item"
+  openWith: (focus: "container" | "first-item" | "last-item") => void
+}
+
+export context menu: MenuContext
+
+export type MenuRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children?: View
+}
+
+export component MenuRoot(props: MenuRootProps) {
+  source openFocus: "container" | "first-item" | "last-item" := "container"
+  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
+  popupId = createId("menu")
+
+  action openWith(focus: "container" | "first-item" | "last-item") {
+    openFocus := focus
+    state.setOpen(true)
+  }
+
+  _scope = createFocusScope(state.open, state.popup, false, openFocus)
+
+  provide menu = { ...state, popupId: popupId, openFocus: openFocus, openWith: openWith }
+
+  {props.children}
+}
+
+export fn menuTrigger(ref c: MenuContext): PartProps {
+  action press() {
+    if (c.open) { c.setOpen(false) } else { c.openWith("container") }
+  }
+  action keyDown(event: KeyboardEvent) {
+    if (event.key == "ArrowDown" || event.key == "Enter" || event.key == " ") {
+      event.preventDefault()
+      c.openWith("first-item")
+    } else if (event.key == "ArrowUp") {
+      event.preventDefault()
+      c.openWith("last-item")
+    }
+  }
+  {
+    type: "button",
+    "aria-haspopup": "menu",
+    "aria-expanded": c.open ? "true" : "false",
+    "aria-controls": c.mounted ? c.popupId : undefined,
+    "data-popup-open": c.open ? "" : undefined,
+    ref: c.setTrigger,
+    onClick: press,
+    onKeyDown: keyDown,
+  }
+}
+
+export component MenuTrigger({ children, ...rest }: ButtonProps) {
+  c = use menu
+  own = menuTrigger(c)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// Renders its children at the end of <body> while the menu is mounted.
+export component MenuPortal(props: { keepMounted?: boolean; children?: View }) {
+  c = use menu
+  {if c.mounted || (props.keepMounted ?? false) {
+    portal { {props.children} }
+  }}
+}
+
+export type MenuPositionerProps = {
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
+  sideOffset?: number
+  alignOffset?: number
+  collisionPadding?: number
+} & DivProps
+
+// Positions the popup against the trigger. Carries `data-side` and `data-align`: where it ended up.
+export component MenuPositioner({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, collisionPadding = 5, children, ...rest }: MenuPositionerProps) {
+  c = use menu
+  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
+    side: side,
+    align: align,
+    sideOffset: sideOffset,
+    alignOffset: alignOffset,
+    collisionPadding: collisionPadding,
+  })
+  state = popupStateAttributes(c)
+  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component MenuPopup({ children, ...rest }: DivProps) {
+  c = use menu
+  _roving = createRovingFocus(c.popup, { orientation: "vertical", loop: true, typeahead: true, tabStop: false })
+  state = popupStateAttributes(c)
+  action keyDown(event: KeyboardEvent) {
+    // Tab leaves the menu, so it closes: focus returns to the trigger and moves on from there.
+    if (event.key == "Tab") { c.setOpen(false) }
+  }
+  merged = mergeProps({ id: c.popupId, role: "menu", tabindex: "-1", "aria-orientation": "vertical", ref: c.setPopup, onKeyDown: keyDown, ...state }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// What every kind of item shares: it is a roving-focus item, highlights under the pointer, and activates on
+// Enter and Space.
+fn itemBase(ref disabled: boolean): PartProps {
+  source highlighted := false
+  action focus() { highlighted := true }
+  action blur() { highlighted := false }
+  action pointerMove(event: PointerEvent & { currentTarget: HTMLElement }) {
+    if (!disabled) { focusElement(event.currentTarget) }
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    if (event.key == "Enter" || event.key == " ") {
+      event.preventDefault()
+      clickElement(event.currentTarget)
+    }
+  }
+  {
+    tabindex: "-1",
+    "data-rs-ui-item": "",
+    "data-highlighted": highlighted ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    "aria-disabled": disabled ? "true" : undefined,
+    onFocus: focus,
+    onBlur: blur,
+    onPointerMove: pointerMove,
+    onKeyDown: keyDown,
+  }
+}
+
+export type MenuItemProps = {
+  disabled?: boolean
+  // Whether choosing the item closes the menu. Default: true.
+  closeOnClick?: boolean
+} & DivProps
+
+export fn menuItem(ref c: MenuContext, ref disabled: boolean, ref closeOnClick: boolean): PartProps {
+  base = itemBase(disabled)
+  action click() {
+    if (!disabled && closeOnClick) { c.setOpen(false) }
+  }
+  { role: "menuitem", ...base, onClick: click }
+}
+
+export component MenuItem({ disabled = false, closeOnClick = true, children, ...rest }: MenuItemProps) {
+  c = use menu
+  own = menuItem(c, disabled, closeOnClick)
+  merged = mergeProps(own, withoutHandlers(rest, disabled))
+  <div {...merged}>{children}</div>
+}
+
+export type MenuCheckboxItemProps = {
+  checked?: boolean
+  defaultChecked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  disabled?: boolean
+  // Default: false, so several boxes can be ticked without reopening the menu.
+  closeOnClick?: boolean
+} & DivProps
+
+export component MenuCheckboxItem(props: MenuCheckboxItemProps) {
+  c = use menu
+  source uncontrolled := peek(props.defaultChecked ?? false)
+  isChecked = props.checked ?? uncontrolled
+  isDisabled = props.disabled ?? false
+  base = itemBase(isDisabled)
+  action click() {
+    if (isDisabled) { return }
+    let next = !isChecked
+    uncontrolled := next
+    if (props.onCheckedChange) { props.onCheckedChange(next) }
+    if (props.closeOnClick ?? false) { c.setOpen(false) }
+  }
+  { checked, defaultChecked, onCheckedChange, disabled, closeOnClick, children, ...rest } = props
+  own = {
+    role: "menuitemcheckbox",
+    "aria-checked": isChecked ? "true" : "false",
+    "data-checked": isChecked ? "" : undefined,
+    "data-unchecked": isChecked ? undefined : "",
+    ...base,
+    onClick: click,
+  }
+  merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  <div {...merged}>{children}</div>
+}
+
+export type MenuRadioGroupContext = {
+  value: string | undefined
+  select: (value: string) => void
+}
+
+export context menuRadioGroup: MenuRadioGroupContext
+
+export type MenuRadioGroupProps = {
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+} & DivProps
+
+export component MenuRadioGroup(props: MenuRadioGroupProps) {
+  source uncontrolled: string | undefined := peek(props.defaultValue)
+  current = props.value ?? uncontrolled
+  action select(value: string) {
+    uncontrolled := value
+    if (props.onValueChange) { props.onValueChange(value) }
+  }
+  provide menuRadioGroup = { value: current, select: select }
+  { value, defaultValue, onValueChange, children, ...rest } = props
+  merged = mergeProps({ role: "group" }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type MenuRadioItemProps = {
+  value: string
+  disabled?: boolean
+  closeOnClick?: boolean
+} & DivProps
+
+export component MenuRadioItem({ value, disabled = false, closeOnClick = false, children, ...rest }: MenuRadioItemProps) {
+  c = use menu
+  group = use menuRadioGroup
+  base = itemBase(disabled)
+  isChecked = group.value == value
+  action click() {
+    if (disabled) { return }
+    group.select(value)
+    if (closeOnClick) { c.setOpen(false) }
+  }
+  own = {
+    role: "menuitemradio",
+    "aria-checked": isChecked ? "true" : "false",
+    "data-checked": isChecked ? "" : undefined,
+    "data-unchecked": isChecked ? undefined : "",
+    ...base,
+    onClick: click,
+  }
+  merged = mergeProps(own, withoutHandlers(rest, disabled))
+  <div {...merged}>{children}</div>
+}
+
+export type MenuGroupContext = {
+  labelId: string | undefined
+  setLabelId: (id: string | undefined) => void
+}
+
+export context menuGroup: MenuGroupContext
+
+export component MenuGroup(props: DivProps) {
+  source labelId: string | undefined := undefined
+  action setLabelId(id: string | undefined) { labelId := id }
+  provide menuGroup = { labelId: labelId, setLabelId: setLabelId }
+  { children, ...rest } = props
+  merged = mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component MenuGroupLabel({ children, ...rest }: DivProps) {
+  group = use menuGroup
+  id = createId("menu-group-label")
+  effect () {
+    group.setLabelId(id)
+    return () => { group.setLabelId(undefined) }
+  }
+  merged = mergeProps({ id: id, role: "presentation" }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component MenuSeparator(props: DivProps) {
+  merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
+  <div {...merged} />
+}

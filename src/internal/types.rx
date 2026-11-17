@@ -11,3 +11,4 @@ export type SpanProps = import("./impl/types.ts").HTMLProps<HTMLSpanElement>
 export type HeadingProps = import("./impl/types.ts").HTMLProps<HTMLHeadingElement>
 export type ParagraphProps = import("./impl/types.ts").HTMLProps<HTMLParagraphElement>
 export type TransitionStatus = "starting" | "ending" | undefined
+export type LabelProps = import("./impl/types.ts").HTMLProps<HTMLLabelElement>
