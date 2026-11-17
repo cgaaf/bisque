@@ -14,6 +14,12 @@ answers whether a feature qualifies, from the Baseline project's data. Check bef
 before assuming a newer feature is usable. `.claude/skills/rs-ui-components/references/platform.md` has what
 qualifies today and how each family uses it.
 
+## No runtime dependencies
+
+An app that uses the library installs nothing for it beyond ReactiveScript and Solid. `package.json` has no
+`dependencies`, and nothing under `src/` imports a third-party package outside tests. If a behaviour seems to
+need a library, the platform-first rule usually answers it; otherwise write the small piece it needs here.
+
 ## Where the language is documented
 
 Read these before writing `.rx`; they ship with the installed compiler, so they match its version:
