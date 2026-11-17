@@ -73,7 +73,7 @@ export component AccordionRoot(props: AccordionRootProps) {
 
   { value, defaultValue, onValueChange, multiple, disabled, orientation, loopFocus, children, ...rest } = props
   own = {
-    "data-rs-ui-accordion": "",
+    "data-bisque-accordion": "",
     "data-orientation": axis,
     "data-disabled": isDisabled ? "" : undefined,
   }
@@ -190,7 +190,7 @@ export fn accordionTrigger(ref root: AccordionContext, ref item: AccordionItemCo
     id: triggerId,
     "aria-disabled": disabled ? "true" : undefined,
     tabindex: disabled ? "-1" : undefined,
-    "data-rs-ui-accordion-trigger": "",
+    "data-bisque-accordion-trigger": "",
     onClick: press,
     onKeyDown: keyDown,
   }

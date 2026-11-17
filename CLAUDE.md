@@ -1,4 +1,4 @@
-# rs-ui
+# Bisque
 
 Headless, unstyled, accessible components written in ReactiveScript (`.rx`), which compiles to Solid 2.0.
 [Base UI](https://base-ui.com) is the feature goal: same parts, ARIA, keyboard behaviour and `data-*` state hooks.
@@ -11,7 +11,7 @@ If the latest shipped Chrome, Firefox and Safari all do something natively, the 
 JavaScript for it: `<dialog>`, `popover`, CSS anchor positioning, `<details>`, `@starting-style`, invoker
 commands, native inputs. A component may shrink to a few attributes; that is the intended result. `pnpm baseline`
 answers whether a feature qualifies, from the Baseline project's data. Check before adding a DOM primitive, and
-before assuming a newer feature is usable. `.claude/skills/rs-ui-components/references/platform.md` has what
+before assuming a newer feature is usable. `.claude/skills/bisque-components/references/platform.md` has what
 qualifies today and how each family uses it.
 
 ## No runtime dependencies
@@ -29,7 +29,7 @@ Read these before writing `.rx`; they ship with the installed compiler, so they 
 - `…/guide/diagnostics.md`: every error code, why, and the fix. Look a code up here before guessing.
 - `…/guide/async.md`: `await`, actions, guesses. Rarely needed in this library.
 
-`.claude/skills/rs-ui-components` covers writing a component here, including the 0.3 behaviour those guides
+`.claude/skills/bisque-components` covers writing a component here, including the 0.3 behaviour those guides
 don't mention. The `solid-2.0` skills (linked from `solid-js` by pnpm) cover the TypeScript in `src/internal/impl`.
 
 ## Things that will surprise you
@@ -49,7 +49,7 @@ don't mention. The `solid-2.0` skills (linked from `solid-js` by pnpm) cover the
 `docs/` is the documentation site, written in `.rx` with the library's own parts: a page per family
 (`docs/pages`), demos with their CSS (`docs/demos`), and an API reference that `pnpm gen:api` generates from the
 components' source plus `docs/api-notes`. A change to a part's props, parts or data attributes goes with its
-page; `.claude/skills/rs-ui-components/references/docs.md` says how a page is written and checked.
+page; `.claude/skills/bisque-components/references/docs.md` says how a page is written and checked.
 
 ## Commands
 

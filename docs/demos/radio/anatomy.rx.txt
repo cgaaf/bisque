@@ -1,4 +1,4 @@
-import { RadioGroup, RadioRoot, RadioIndicator } from "./rs-ui/radio/radio.rx"
+import { RadioGroup, RadioRoot, RadioIndicator } from "./bisque/radio/radio.rx"
 
 <RadioGroup>
   <label>

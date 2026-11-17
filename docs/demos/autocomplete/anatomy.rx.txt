@@ -1,4 +1,4 @@
-import { AutocompleteRoot, AutocompleteInput, AutocompleteTrigger, AutocompleteClear, AutocompleteValue, AutocompletePopup, AutocompleteArrow, AutocompleteStatus, AutocompleteEmpty, AutocompleteList, AutocompleteItem, AutocompleteSeparator, AutocompleteGroup, AutocompleteGroupLabel } from "./rs-ui/autocomplete/autocomplete.rx"
+import { AutocompleteRoot, AutocompleteInput, AutocompleteTrigger, AutocompleteClear, AutocompleteValue, AutocompletePopup, AutocompleteArrow, AutocompleteStatus, AutocompleteEmpty, AutocompleteList, AutocompleteItem, AutocompleteSeparator, AutocompleteGroup, AutocompleteGroupLabel } from "./bisque/autocomplete/autocomplete.rx"
 
 <AutocompleteRoot>
   <AutocompleteInput />

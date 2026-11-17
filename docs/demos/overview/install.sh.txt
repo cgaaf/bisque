@@ -1,2 +1,2 @@
-pnpm add rs-ui @reactivescript/runtime solid-js @solidjs/web
-pnpm dlx rs-ui copy src/rs-ui
+pnpm add bisque-ui @reactivescript/runtime solid-js @solidjs/web
+pnpm dlx bisque-ui copy src/bisque

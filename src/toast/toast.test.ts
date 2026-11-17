@@ -34,7 +34,7 @@ function listen() {
 test("the manager hands every call to its listeners, and gives each toast an id", () => {
   const { manager, calls, unsubscribe } = listen();
   const id = manager.add({ title: "One" });
-  expect(id).toMatch(/^rs-ui-toast-\d+$/);
+  expect(id).toMatch(/^bisque-toast-\d+$/);
   expect(manager.add({ id: "mine", title: "Two" })).toBe("mine");
   manager.update(id, { title: "Changed" });
   manager.close(id);

@@ -1,4 +1,4 @@
-import { AvatarRoot, AvatarImage, AvatarFallback } from "./rs-ui/avatar/avatar.rx"
+import { AvatarRoot, AvatarImage, AvatarFallback } from "./bisque/avatar/avatar.rx"
 
 <AvatarRoot>
   <AvatarImage />

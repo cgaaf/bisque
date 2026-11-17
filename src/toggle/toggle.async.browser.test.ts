@@ -172,7 +172,7 @@ test("a toggle group whose value saves: optimistic, crossing saves, a failure", 
 test("a toggle in a toolbar saves and stays an item of the toolbar", async () => {
   const { toggle, pressed, user } = await setup();
   const wrap = toggle("Wrap");
-  expect(wrap.hasAttribute("data-rs-ui-item")).toBe(true);
+  expect(wrap.hasAttribute("data-bisque-item")).toBe(true);
   await user.click(wrap);
   expect(pressed("Wrap")).toBe("true");
   refuse(true);

@@ -1,4 +1,4 @@
-import { ProgressRoot, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator } from "./rs-ui/progress/progress.rx"
+import { ProgressRoot, ProgressLabel, ProgressValue, ProgressTrack, ProgressIndicator } from "./bisque/progress/progress.rx"
 
 <ProgressRoot>
   <ProgressLabel />

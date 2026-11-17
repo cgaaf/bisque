@@ -1,4 +1,4 @@
-import { CheckboxRoot, checkbox } from "./rs-ui/checkbox/checkbox.rx"
+import { CheckboxRoot, checkbox } from "./bisque/checkbox/checkbox.rx"
 
 // CheckboxRoot provides its state to its children.
 component Mark() {

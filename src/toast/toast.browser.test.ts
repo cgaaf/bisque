@@ -34,7 +34,7 @@ afterEach(() => {
   appToasts.close();
 });
 
-const toasts = () => [...document.querySelectorAll<HTMLElement>("[data-rs-ui-toast]")];
+const toasts = () => [...document.querySelectorAll<HTMLElement>("[data-bisque-toast]")];
 const open = () => toasts().filter((el) => !el.hasAttribute("data-ending-style"));
 
 /** A pointer event of a mouse, on whatever is at the point, as a real one would be. */
@@ -123,7 +123,7 @@ test("adds, updates and closes a toast from code outside the tree", async () => 
   appToasts.update(id, { title: "Updated", type: "success" });
   await settle();
   expect(queryByText("From a module")).toBeNull();
-  const root = getByText("Updated").closest<HTMLElement>("[data-rs-ui-toast]");
+  const root = getByText("Updated").closest<HTMLElement>("[data-bisque-toast]");
   expect(root?.getAttribute("data-type")).toBe("success");
 
   appToasts.close(id);
@@ -276,7 +276,7 @@ test("a promise toast shows loading, then success or error", async () => {
     error: "Failed",
   });
   await settle();
-  const root = getByText("Saving…").closest<HTMLElement>("[data-rs-ui-toast]");
+  const root = getByText("Saving…").closest<HTMLElement>("[data-bisque-toast]");
   expect(root?.getAttribute("data-type")).toBe("loading");
   resolve("report.pdf");
   await expect(result).resolves.toBe("report.pdf");
@@ -291,7 +291,7 @@ test("a promise toast shows loading, then success or error", async () => {
   });
   await expect(failing).rejects.toThrow("nope");
   await settle();
-  expect(getByText("Failed").closest("[data-rs-ui-toast]")?.getAttribute("data-type")).toBe("error");
+  expect(getByText("Failed").closest("[data-bisque-toast]")?.getAttribute("data-type")).toBe("error");
 });
 
 test("beyond the limit, older toasts stay in the list but are limited and inert", async () => {
@@ -331,7 +331,7 @@ test("the close button and Escape close it; onClose then onRemove are called", a
   // Out of the accessibility tree while the stack is collapsed, so found by its text.
   const close = getByText("Dismiss");
   expect(close.getAttribute("aria-hidden")).toBe("true");
-  const callbacks = close.closest("[data-rs-ui-toast]");
+  const callbacks = close.closest("[data-bisque-toast]");
   close.click();
   await settle();
   expect(calls).toEqual(["close"]);
@@ -355,7 +355,7 @@ test("an action button takes the toast's actionProps", async () => {
   });
   appToasts.add({ title: "No action", timeout: 0 });
   await settle();
-  expect(document.querySelectorAll("[data-rs-ui-toast] button:not([aria-hidden])")).toHaveLength(1);
+  expect(document.querySelectorAll("[data-bisque-toast] button:not([aria-hidden])")).toHaveLength(1);
   await user.click(getByRole("button", { name: "Undo" }));
   expect(undone).toBe(1);
 });
@@ -543,8 +543,8 @@ test("each provider keeps its own list and its own viewport", async () => {
   const right = getByRole("region", { name: "Right" });
   expect(left.matches(":popover-open")).toBe(true);
   expect(right.matches(":popover-open")).toBe(true);
-  expect(left.querySelectorAll("[data-rs-ui-toast]")).toHaveLength(2);
-  expect(right.querySelectorAll("[data-rs-ui-toast]")).toHaveLength(1);
+  expect(left.querySelectorAll("[data-bisque-toast]")).toHaveLength(2);
+  expect(right.querySelectorAll("[data-bisque-toast]")).toHaveLength(1);
 });
 
 /** The colour the page shows at a point, from a screenshot: what is painted on top there. */

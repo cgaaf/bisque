@@ -1,10 +1,10 @@
 {
-  "name": "rs-ui",
+  "name": "bisque-ui",
   "version": "0.0.0",
   "description": "Headless, unstyled, accessible components for ReactiveScript (.rx).",
   "license": "MIT",
   "bin": {
-    "rs-ui": "./bin/rs-ui.mjs"
+    "bisque": "./bin/bisque.mjs"
   },
   "files": [
     "src",

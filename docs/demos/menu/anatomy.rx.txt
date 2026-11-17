@@ -1,4 +1,4 @@
-import { MenuRoot, MenuTrigger, MenuPopup, MenuArrow, MenuItem, MenuLinkItem, MenuSeparator, MenuGroup, MenuGroupLabel, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "./rs-ui/menu/menu.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuArrow, MenuItem, MenuLinkItem, MenuSeparator, MenuGroup, MenuGroupLabel, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "./bisque/menu/menu.rx"
 
 <MenuRoot>
   <MenuTrigger />

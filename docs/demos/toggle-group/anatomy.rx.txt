@@ -1,5 +1,5 @@
-import { ToggleGroup } from "./rs-ui/toggle-group/toggle-group.rx"
-import { Toggle } from "./rs-ui/toggle/toggle.rx"
+import { ToggleGroup } from "./bisque/toggle-group/toggle-group.rx"
+import { Toggle } from "./bisque/toggle/toggle.rx"
 
 <ToggleGroup>
   <Toggle value="…" />

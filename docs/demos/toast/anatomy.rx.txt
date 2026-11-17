@@ -1,4 +1,4 @@
-import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "./rs-ui/toast/toast.rx"
+import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "./bisque/toast/toast.rx"
 
 component Toasts() {
   c = use toast

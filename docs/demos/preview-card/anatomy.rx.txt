@@ -1,4 +1,4 @@
-import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup, PreviewCardArrow } from "./rs-ui/preview-card/preview-card.rx"
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup, PreviewCardArrow } from "./bisque/preview-card/preview-card.rx"
 
 <PreviewCardRoot>
   <PreviewCardTrigger />

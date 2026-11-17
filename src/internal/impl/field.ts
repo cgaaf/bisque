@@ -122,7 +122,7 @@ export function focusControl(control: HTMLElement | undefined): void {
   const target = focusable
     ? control
     : (control.querySelector<HTMLElement>(
-        'input[type="radio"]:checked:not(:disabled), [data-rs-ui-current]:not([data-disabled])',
+        'input[type="radio"]:checked:not(:disabled), [data-bisque-current]:not([data-disabled])',
       ) ??
       tabbables(control)[0] ??
       control);

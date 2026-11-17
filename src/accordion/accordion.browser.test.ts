@@ -190,7 +190,7 @@ test("`multiple` keeps several items open, controlled by `value`", async () => {
 
   // An item without a `value` gets one of its own.
   await user.click(trigger(getByText, "Gamma"));
-  expect(getByTestId("value").textContent).toMatch(/^rs-ui-accordion-item-\d+$/);
+  expect(getByTestId("value").textContent).toMatch(/^bisque-accordion-item-\d+$/);
   expect(details(getByTestId("item-c")).open).toBe(true);
 });
 

@@ -1,4 +1,4 @@
-import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "./rs-ui/drawer/drawer.rx"
+import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "./bisque/drawer/drawer.rx"
 
 <DrawerRoot>
   <DrawerTrigger />

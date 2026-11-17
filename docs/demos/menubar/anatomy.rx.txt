@@ -1,5 +1,5 @@
-import { MenubarRoot } from "./rs-ui/menubar/menubar.rx"
-import { MenuRoot, MenuTrigger, MenuPopup, MenuItem } from "./rs-ui/menu/menu.rx"
+import { MenubarRoot } from "./bisque/menubar/menubar.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem } from "./bisque/menu/menu.rx"
 
 <MenubarRoot>
   <MenuRoot>

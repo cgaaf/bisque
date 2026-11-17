@@ -1,4 +1,4 @@
-import { NumberFieldRoot, NumberFieldScrubArea, NumberFieldScrubAreaCursor, NumberFieldGroup, NumberFieldDecrement, NumberFieldInput, NumberFieldIncrement } from "./rs-ui/number-field/number-field.rx"
+import { NumberFieldRoot, NumberFieldScrubArea, NumberFieldScrubAreaCursor, NumberFieldGroup, NumberFieldDecrement, NumberFieldInput, NumberFieldIncrement } from "./bisque/number-field/number-field.rx"
 
 <NumberFieldRoot>
   <NumberFieldScrubArea>

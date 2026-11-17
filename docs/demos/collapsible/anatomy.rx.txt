@@ -1,4 +1,4 @@
-import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "./rs-ui/collapsible/collapsible.rx"
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "./bisque/collapsible/collapsible.rx"
 
 <CollapsibleRoot>
   <CollapsibleTrigger />

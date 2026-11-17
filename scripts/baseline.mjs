@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Answers "can rs-ui rely on this natively?" from the Baseline project's own data.
+// Answers "can Bisque rely on this natively?" from the Baseline project's own data.
 //
 // The library's rule is platform first: use a browser feature instead of JavaScript when the latest shipped
 // Chrome, Firefox and Safari all have it. That set moves with every browser release, so it is computed here

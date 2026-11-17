@@ -13,7 +13,7 @@ beforeEach(() => {
 });
 
 const toasts = () =>
-  [...document.querySelectorAll<HTMLElement>("[data-rs-ui-toast]")].filter(
+  [...document.querySelectorAll<HTMLElement>("[data-bisque-toast]")].filter(
     (el) => !el.hasAttribute("data-ending-style"),
   );
 const shown = () =>

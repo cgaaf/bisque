@@ -28,7 +28,7 @@ In this order, as Base UI's pages are:
 
 1. **Title and one-sentence subtitle**, then the **hero demo**: the component as someone would ship it.
 2. **Anatomy** (`h2#anatomy`): the import line and the parts nested as they are used, in a `.rx.txt` snippet.
-   Imports are written as an app would, `from "./rs-ui/popover/popover.rx"`.
+   Imports are written as an app would, `from "./bisque/popover/popover.rx"`.
 3. **What the browser does** (`h2#platform`): which native feature the family stands on, what the browser
    provides, what the library adds, and which Base UI parts don't exist here and why. This section is the
    library's point; get it from the family's source comments and `platform.md`, and state only what the source

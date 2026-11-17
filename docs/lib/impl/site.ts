@@ -178,7 +178,7 @@ export function headings(): Accessor<Heading[]> {
 }
 
 export function setTitle(title: string): void {
-  document.title = `${title} · rs-ui`;
+  document.title = `${title} · Bisque`;
 }
 
 export function toggleTheme(): void {
@@ -188,7 +188,7 @@ export function toggleTheme(): void {
     : matchMedia("(prefers-color-scheme: dark)").matches;
   rootElement.dataset.theme = dark ? "light" : "dark";
   try {
-    localStorage.setItem("rs-ui-theme", rootElement.dataset.theme);
+    localStorage.setItem("bisque-theme", rootElement.dataset.theme);
   } catch {
     // Storage can be unavailable (private mode); the theme then lasts for this page.
   }

@@ -1,4 +1,4 @@
-import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError, FieldValidity } from "./rs-ui/field/field.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError, FieldValidity } from "./bisque/field/field.rx"
 
 <FieldRoot>
   <FieldLabel />

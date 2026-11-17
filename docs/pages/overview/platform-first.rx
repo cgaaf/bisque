@@ -5,7 +5,7 @@ export default component Page() {
     <p>
       Headless component libraries have long rebuilt things the platform lacked: a layer above the page, focus
       containment, dismissal on a press outside, positioning a popup against its trigger. Browsers now do all of
-      these. rs-ui is written on the assumption that they do.
+      these. Bisque is written on the assumption that they do.
     </p>
 
     <h2 id="the-rule">The rule</h2>

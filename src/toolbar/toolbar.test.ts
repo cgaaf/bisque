@@ -108,7 +108,7 @@ test("buttons run the consumer's handler; the props work on a non-button element
 
 test("a toggle group inside is part of the toolbar's focus order, not its own", async () => {
   const { getByRole, getByTestId, user } = mount(basic);
-  expect(getByTestId("toggles").hasAttribute("data-rs-ui-list")).toBe(false);
+  expect(getByTestId("toggles").hasAttribute("data-bisque-list")).toBe(false);
   const left = getByRole("button", { name: "Left" });
   const right = getByRole("button", { name: "Right" });
   expect(left.getAttribute("tabindex")).toBe("-1");

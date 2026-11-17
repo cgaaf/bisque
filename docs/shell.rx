@@ -41,7 +41,7 @@ export component DocsPage(props: DocsPageProps) {
         </DialogTrigger>
         <DialogPopup class="nav-drawer">
           <div class="nav-drawer-bar">
-            <DialogTitle class="nav-drawer-title">rs-ui</DialogTitle>
+            <DialogTitle class="nav-drawer-title">Bisque</DialogTitle>
             <DialogClose class="icon-button" aria-label="Close navigation">
               <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
             </DialogClose>
@@ -49,7 +49,7 @@ export component DocsPage(props: DocsPageProps) {
           <NavList />
         </DialogPopup>
       </DialogRoot>
-      <a class="logo" href={href("")}>rs-ui</a>
+      <a class="logo" href={href("")}>Bisque</a>
       <span class="logo-note">Headless components for ReactiveScript</span>
       <button class="icon-button theme-button" type="button" aria-label="Switch between light and dark" onClick={() => { toggleTheme() }}>
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" /></svg>

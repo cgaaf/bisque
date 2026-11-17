@@ -1,4 +1,4 @@
-import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPopup, TooltipArrow } from "./rs-ui/tooltip/tooltip.rx"
+import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPopup, TooltipArrow } from "./bisque/tooltip/tooltip.rx"
 
 <TooltipProvider>
   <TooltipRoot>

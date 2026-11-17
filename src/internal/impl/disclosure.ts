@@ -138,18 +138,18 @@ export type Orientation = "horizontal" | "vertical";
 
 /**
  * Moves focus between the triggers of the accordion that owns `event.currentTarget`: the arrow keys of
- * `orientation`, Home and End. Triggers carry `data-rs-ui-accordion-trigger` (and `data-disabled` when they can't
- * take focus); the root carries `data-rs-ui-accordion`. Triggers of an accordion nested in a panel are skipped.
+ * `orientation`, Home and End. Triggers carry `data-bisque-accordion-trigger` (and `data-disabled` when they can't
+ * take focus); the root carries `data-bisque-accordion`. Triggers of an accordion nested in a panel are skipped.
  * Keys pressed anywhere else (an input in a panel) are left alone, since only a trigger calls this.
  */
 export function focusAdjacentTrigger(event: KeyboardEvent, orientation: Orientation, loop: boolean): void {
   if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
   const trigger = event.currentTarget as HTMLElement | null;
-  const root = trigger?.closest<HTMLElement>("[data-rs-ui-accordion]");
+  const root = trigger?.closest<HTMLElement>("[data-bisque-accordion]");
   if (!trigger || !root) return;
-  const triggers = [...root.querySelectorAll<HTMLElement>("[data-rs-ui-accordion-trigger]")].filter(
+  const triggers = [...root.querySelectorAll<HTMLElement>("[data-bisque-accordion-trigger]")].filter(
     (item) =>
-      item.closest("[data-rs-ui-accordion]") === root &&
+      item.closest("[data-bisque-accordion]") === root &&
       (item === trigger || !item.hasAttribute("data-disabled")),
   );
   const index = triggers.indexOf(trigger);

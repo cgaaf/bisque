@@ -19,7 +19,7 @@ export type SliderPointerOptions = {
 };
 
 /** The attribute a thumb carries so the control can find it, and its index among the thumbs. */
-const THUMB = "[data-rs-ui-slider-thumb]";
+const THUMB = "[data-bisque-slider-thumb]";
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
@@ -257,7 +257,7 @@ function focusThumbInput(control: HTMLElement, index: number): void {
  * Pointer dragging on a slider's control: a press on the track moves the nearest thumb there, a press on a thumb
  * grabs it where it was pressed, and moving the pointer drags it until release. `onChange` gets the new values
  * (a range thumb pushes its neighbours), `onCommit` the final ones on release if anything changed, and
- * `onDragging` brackets the gesture. Thumbs are found in the DOM by `data-rs-ui-slider-thumb` and `data-index`.
+ * `onDragging` brackets the gesture. Thumbs are found in the DOM by `data-bisque-slider-thumb` and `data-index`.
  */
 export function createSliderPointer(
   control: Accessor<MaybeElement>,

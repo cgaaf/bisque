@@ -1,5 +1,5 @@
-import { Form } from "./rs-ui/form/form.rx"
-import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError } from "./rs-ui/field/field.rx"
+import { Form } from "./bisque/form/form.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError } from "./bisque/field/field.rx"
 
 // subscribe returns the request's promise: the form waits for it, and shows the errors it resolves to.
 <Form onFormSubmit={(values) => subscribe(values.email)}>

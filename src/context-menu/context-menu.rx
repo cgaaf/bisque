@@ -79,7 +79,7 @@ export fn contextMenuTrigger(ref c: MenuContext, ref setElement: ElementRef, ref
 export fn contextMenuAnchor(ref c: MenuContext, ref point: ContextMenuPoint): PartProps {
   {
     "aria-hidden": "true",
-    "data-rs-ui-context-menu-anchor": "",
+    "data-bisque-context-menu-anchor": "",
     style: {
       position: "fixed",
       left: `${point.x}px`,

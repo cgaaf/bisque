@@ -1,4 +1,4 @@
-import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectArrow, SelectItem, SelectItemText, SelectItemIndicator, SelectGroup, SelectGroupLabel, SelectSeparator } from "./rs-ui/select/select.rx"
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectArrow, SelectItem, SelectItemText, SelectItemIndicator, SelectGroup, SelectGroupLabel, SelectSeparator } from "./bisque/select/select.rx"
 
 <SelectRoot>
   <SelectTrigger>

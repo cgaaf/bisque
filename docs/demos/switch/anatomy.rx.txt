@@ -1,4 +1,4 @@
-import { SwitchRoot, SwitchThumb } from "./rs-ui/switch/switch.rx"
+import { SwitchRoot, SwitchThumb } from "./bisque/switch/switch.rx"
 
 <label>
   <SwitchRoot>

@@ -40,7 +40,7 @@ function firePointer(type: string, x: number, y: number) {
 // The slider whose control has the test id `id`: its control, thumb and range input.
 function parts(getByTestId: (id: string) => HTMLElement, id: string) {
   const control = getByTestId(id);
-  const thumb = control.querySelector<HTMLElement>("[data-rs-ui-slider-thumb]")!;
+  const thumb = control.querySelector<HTMLElement>("[data-bisque-slider-thumb]")!;
   const input = thumb.querySelector("input")!;
   const at = (fraction: number) => {
     const box = control.getBoundingClientRect();

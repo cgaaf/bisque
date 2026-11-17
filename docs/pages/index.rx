@@ -3,7 +3,7 @@ import { navigation, href } from "../lib/site.js"
 
 export default component Page() {
   components = navigation()[2].items
-  <DocsPage title="Unstyled components for ReactiveScript, built on what browsers already do" subtitle="rs-ui is a set of accessible, headless components written in .rx. Dialogs are <dialog>, popups are popovers placed with CSS anchor positioning, checkboxes are checkboxes. The library adds only what the platform leaves out.">
+  <DocsPage title="Unstyled components for ReactiveScript, built on what browsers already do" subtitle="Bisque is a set of accessible, headless components written in .rx. Dialogs are <dialog>, popups are popovers placed with CSS anchor positioning, checkboxes are checkboxes. The library adds only what the platform leaves out.">
     <p>
       <a href={href("overview/quick-start")}>Quick start</a>{" · "}
       <a href={href("overview/platform-first")}>Why platform first</a>{" · "}

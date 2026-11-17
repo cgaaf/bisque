@@ -1,4 +1,4 @@
-import { FieldsetRoot, FieldsetLegend } from "./rs-ui/fieldset/fieldset.rx"
+import { FieldsetRoot, FieldsetLegend } from "./bisque/fieldset/fieldset.rx"
 
 <FieldsetRoot>
   <FieldsetLegend />

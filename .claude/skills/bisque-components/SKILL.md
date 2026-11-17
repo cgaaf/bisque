@@ -1,9 +1,9 @@
 ---
-name: rs-ui-components
-description: How to write, change or review a component in rs-ui, the headless ReactiveScript (.rx) component library. Use when adding a component family or part under src/, editing a .rx or .d.rx file, adding a DOM primitive in src/internal, writing a fixture or test for a component, or fixing a ReactiveScript compiler error (PARSE, REACTIVE_WRITE_IN_OWNED_SCOPE, CONTEXT_NOT_FOUND, COMPONENT_AS_VALUE…) or a "no provision" runtime error in this repo.
+name: bisque-components
+description: How to write, change or review a component in Bisque, the headless ReactiveScript (.rx) component library. Use when adding a component family or part under src/, editing a .rx or .d.rx file, adding a DOM primitive in src/internal, writing a fixture or test for a component, or fixing a ReactiveScript compiler error (PARSE, REACTIVE_WRITE_IN_OWNED_SCOPE, CONTEXT_NOT_FOUND, COMPONENT_AS_VALUE…) or a "no provision" runtime error in this repo.
 ---
 
-# Writing rs-ui components
+# Writing Bisque components
 
 The language itself is documented in `node_modules/@reactivescript/compiler/guide/` (`language.md` first, then
 `libraries.md`; `diagnostics.md` when the compiler reports a code). This skill is what those guides don't say:
@@ -128,7 +128,7 @@ with `untrack`; and never let one primitive depend on another's effect having ru
 between the items, as in an accordion, handle the keys on the item itself, or arrow keys typed into an input in
 that content get taken.
 
-Lists use the DOM as the registry: an item carries `data-rs-ui-item` (and `data-disabled`), and
+Lists use the DOM as the registry: an item carries `data-bisque-item` (and `data-disabled`), and
 `createRovingFocus` finds items by querying. Parts don't register with a parent to be navigable.
 
 ## Tests

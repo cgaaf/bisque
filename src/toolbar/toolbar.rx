@@ -55,7 +55,7 @@ export component ToolbarRoot(props: ToolbarRootProps) {
 
 // What every toolbar item carries: it is a roving-focus item and shows the toolbar's orientation.
 fn itemState(ref c: ToolbarContext): PartProps {
-  { "data-rs-ui-item": "", "data-orientation": c.orientation }
+  { "data-bisque-item": "", "data-orientation": c.orientation }
 }
 
 export type ToolbarButtonOptions = {

@@ -31,7 +31,7 @@ for (const [what, id] of cases) {
     async () => {
       const { getByRole, getByTestId, user } = mount(held);
       const viewport = getByTestId(id);
-      const toasts = () => [...viewport.querySelectorAll<HTMLElement>("[data-rs-ui-toast]")];
+      const toasts = () => [...viewport.querySelectorAll<HTMLElement>("[data-bisque-toast]")];
       const open = () => toasts().filter((el) => !el.hasAttribute("data-ending-style"));
       await user.click(getByRole("button", { name: `Add ${id}` }));
       await expect.poll(() => toasts().length).toBe(1);

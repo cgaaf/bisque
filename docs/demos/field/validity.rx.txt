@@ -1,4 +1,4 @@
-import { FieldRoot, FieldLabel, FieldControl, FieldValidity, fieldValidity } from "./rs-ui/field/field.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldValidity, fieldValidity } from "./bisque/field/field.rx"
 
 // FieldValidity provides the field's validity to its children.
 component Status() {

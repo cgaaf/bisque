@@ -1,4 +1,4 @@
-import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "./rs-ui/accordion/accordion.rx"
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "./bisque/accordion/accordion.rx"
 
 <AccordionRoot>
   <AccordionItem>

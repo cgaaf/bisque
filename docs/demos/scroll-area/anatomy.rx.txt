@@ -1,4 +1,4 @@
-import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaCorner } from "./rs-ui/scroll-area/scroll-area.rx"
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaCorner } from "./bisque/scroll-area/scroll-area.rx"
 
 <ScrollAreaRoot>
   <ScrollAreaViewport>

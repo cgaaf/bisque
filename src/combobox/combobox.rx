@@ -719,7 +719,7 @@ export fn comboboxItem(ref c: ComboboxContext, ref id: string, ref value: string
     role: "option",
     "aria-selected": isAutocomplete ? undefined : isSelected ? "true" : "false",
     "aria-disabled": disabled ? "true" : undefined,
-    "data-rs-ui-item": "",
+    "data-bisque-item": "",
     "data-value": value,
     "data-label": label,
     "data-selected": isSelected ? "" : undefined,

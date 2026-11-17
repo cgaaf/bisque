@@ -1,4 +1,4 @@
-import { CollapsibleRoot, CollapsiblePanel, collapsible, collapsibleTrigger } from "./rs-ui/collapsible/collapsible.rx"
+import { CollapsibleRoot, CollapsiblePanel, collapsible, collapsibleTrigger } from "./bisque/collapsible/collapsible.rx"
 
 component SectionTrigger(props: { title: string }) {
   c = use collapsible

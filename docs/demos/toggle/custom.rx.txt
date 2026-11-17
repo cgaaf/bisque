@@ -1,6 +1,6 @@
-import { toggle } from "./rs-ui/toggle/toggle.rx"
-import { toggleGroup } from "./rs-ui/toggle-group/toggle-group.rx"
-import { toolbar } from "./rs-ui/toolbar/toolbar.rx"
+import { toggle } from "./bisque/toggle/toggle.rx"
+import { toggleGroup } from "./bisque/toggle-group/toggle-group.rx"
+import { toolbar } from "./bisque/toolbar/toolbar.rx"
 
 // A toggle on a <span>: `native: false` adds the button role, a Tab stop, and Enter and Space.
 component SpanToggle(props: { children?: View }) {

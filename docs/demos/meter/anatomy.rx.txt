@@ -1,4 +1,4 @@
-import { MeterRoot, MeterLabel, MeterValue, MeterTrack, MeterIndicator } from "./rs-ui/meter/meter.rx"
+import { MeterRoot, MeterLabel, MeterValue, MeterTrack, MeterIndicator } from "./bisque/meter/meter.rx"
 
 <MeterRoot>
   <MeterLabel />

@@ -8,7 +8,7 @@ type Props = Record<string, unknown>;
 type Source = object | undefined;
 type Handler = (...args: unknown[]) => unknown;
 
-const PREVENTED = Symbol("rs-ui.prevented");
+const PREVENTED = Symbol("bisque.prevented");
 
 /**
  * Called from a consumer's handler to stop the part's own handler for the same event, e.g. keep a menu open on an
@@ -113,5 +113,5 @@ let nextId = 0;
 /** A document-unique id for wiring ARIA relationships (`aria-controls`, `aria-labelledby`). */
 export function createId(prefix: string): string {
   nextId += 1;
-  return `rs-ui-${prefix}-${nextId}`;
+  return `bisque-${prefix}-${nextId}`;
 }

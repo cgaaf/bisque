@@ -122,7 +122,7 @@ export component MenuRoot(props: MenuRootProps) {
     if (!inBar) { return }
     let next = adjacentItem(bar.element, state.trigger, direction, bar.loop)
     if (!next) { return }
-    let id = next.getAttribute("data-rs-ui-menu-id")
+    let id = next.getAttribute("data-bisque-menu-id")
     if (id) {
       bar.setOpenMenu(id, "first-item")
     } else {
@@ -193,8 +193,8 @@ export fn menuTrigger(ref c: MenuContext, ref bar: MenubarContext): PartProps {
     "aria-controls": c.popupId,
     "data-popup-open": c.open ? "" : undefined,
     "data-disabled": c.disabled ? "" : undefined,
-    "data-rs-ui-item": bar.present ? "" : undefined,
-    "data-rs-ui-menu-id": bar.present ? c.menuId : undefined,
+    "data-bisque-item": bar.present ? "" : undefined,
+    "data-bisque-menu-id": bar.present ? c.menuId : undefined,
     ref: c.setTrigger,
     onClick: press,
     onKeyDown: keyDown,
@@ -248,7 +248,7 @@ export fn menuPopup(ref c: MenuContext, ref bar: MenubarContext, ref side: "top"
     tabindex: "-1",
     "aria-orientation": "vertical",
     // Marks it a list of its own before roving focus does, so a menubar's arrow keys leave its items alone.
-    "data-rs-ui-list": "",
+    "data-bisque-list": "",
     onKeyDown: keyDown,
   }
 }
@@ -279,7 +279,7 @@ fn itemBase(ref disabled: boolean): PartProps {
   }
   {
     tabindex: "-1",
-    "data-rs-ui-item": "",
+    "data-bisque-item": "",
     "data-highlighted": highlighted ? "" : undefined,
     "data-disabled": disabled ? "" : undefined,
     "aria-disabled": disabled ? "true" : undefined,

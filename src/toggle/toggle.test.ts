@@ -58,7 +58,7 @@ test("its props make a non-button element a toggle", async () => {
   const span = getByTestId("span");
   expect(span.getAttribute("role")).toBe("button");
   expect(span.getAttribute("tabindex")).toBe("0");
-  expect(span.hasAttribute("data-rs-ui-item")).toBe(false);
+  expect(span.hasAttribute("data-bisque-item")).toBe(false);
   span.focus();
   await user.keyboard("{Enter}");
   expect(span.getAttribute("aria-pressed")).toBe("true");

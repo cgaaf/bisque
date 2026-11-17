@@ -1,4 +1,4 @@
-import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "./rs-ui/dialog/dialog.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "./bisque/dialog/dialog.rx"
 
 <DialogRoot>
   <DialogTrigger />

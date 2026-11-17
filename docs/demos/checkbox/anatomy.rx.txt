@@ -1,4 +1,4 @@
-import { CheckboxRoot, CheckboxIndicator } from "./rs-ui/checkbox/checkbox.rx"
+import { CheckboxRoot, CheckboxIndicator } from "./bisque/checkbox/checkbox.rx"
 
 <label>
   <CheckboxRoot>

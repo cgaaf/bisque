@@ -1,4 +1,4 @@
-import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuArrow, NavigationMenuLink } from "./rs-ui/navigation-menu/navigation-menu.rx"
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuArrow, NavigationMenuLink } from "./bisque/navigation-menu/navigation-menu.rx"
 
 <NavigationMenuRoot>
   <NavigationMenuList>

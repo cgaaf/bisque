@@ -9,13 +9,13 @@
 //   which runs after a listener on the container.
 // - No typeahead: an item's text is not a name to type in a toolbar.
 //
-// It shares the DOM registry of ./roving.ts: items carry `data-rs-ui-item`, the container `data-rs-ui-list`.
+// It shares the DOM registry of ./roving.ts: items carry `data-bisque-item`, the container `data-bisque-list`.
 import { createEffect, untrack, type Accessor } from "solid-js";
 
 type MaybeElement = HTMLElement | undefined;
 
-const LIST = "data-rs-ui-list";
-const ITEM = "[data-rs-ui-item]";
+const LIST = "data-bisque-list";
+const ITEM = "[data-bisque-item]";
 
 export type CompositeOptions = {
   orientation: "horizontal" | "vertical";
@@ -79,7 +79,7 @@ export function createCompositeFocus(
         const enabled = all.filter(focusable);
         const stop =
           focused ??
-          enabled.find((item) => item.hasAttribute("data-rs-ui-current")) ??
+          enabled.find((item) => item.hasAttribute("data-bisque-current")) ??
           enabled.find((item) => item.getAttribute("tabindex") === "0") ??
           enabled[0];
         for (const item of all) {
@@ -131,7 +131,7 @@ export function createCompositeFocus(
         subtree: true,
         childList: true,
         attributes: true,
-        attributeFilter: ["data-disabled", "data-focusable", "disabled", "data-rs-ui-current"],
+        attributeFilter: ["data-disabled", "data-focusable", "disabled", "data-bisque-current"],
       });
       return () => {
         el.removeEventListener("keydown", onKeyDown);

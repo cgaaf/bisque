@@ -1,14 +1,14 @@
 // Lists of options (select, combobox, autocomplete): finding items by value, typeahead that matches an item's
 // label, and the active-descendant navigation of a list whose focus stays in an input.
 //
-// The DOM is the registry, as in ./roving.ts: an option carries `data-rs-ui-item`, its value as `data-value`,
+// The DOM is the registry, as in ./roving.ts: an option carries `data-bisque-item`, its value as `data-value`,
 // `data-label` when its label differs from its text, and `data-disabled` while it can't be chosen.
 
 import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
 
 type MaybeElement = HTMLElement | undefined;
 
-const ITEM = "[data-rs-ui-item]";
+const ITEM = "[data-bisque-item]";
 
 function enabledItems(container: HTMLElement): HTMLElement[] {
   return [...container.querySelectorAll<HTMLElement>(ITEM)].filter(
@@ -293,7 +293,7 @@ export function createItemLabels(
 }
 
 /**
- * Calls `onChange` with the number of items (`data-rs-ui-item`) inside `container`, once it is set and after every
+ * Calls `onChange` with the number of items (`data-bisque-item`) inside `container`, once it is set and after every
  * change to them: how a list knows it is empty, and that its items were replaced or changed value (a filter, a new
  * answer from a server), without its items registering themselves. An item that isn't rendered isn't counted. An
  * item whose element is kept with another `data-value` counts as a change too. (ReactiveScript's `for` keeps a

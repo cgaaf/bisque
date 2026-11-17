@@ -1,4 +1,4 @@
-import { AlertDialogRoot, AlertDialogTrigger, AlertDialogPopup, AlertDialogTitle, AlertDialogDescription, AlertDialogClose } from "./rs-ui/alert-dialog/alert-dialog.rx"
+import { AlertDialogRoot, AlertDialogTrigger, AlertDialogPopup, AlertDialogTitle, AlertDialogDescription, AlertDialogClose } from "./bisque/alert-dialog/alert-dialog.rx"
 
 <AlertDialogRoot>
   <AlertDialogTrigger />

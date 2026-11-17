@@ -236,7 +236,7 @@ const functionIn = (file, name) => functionsByFile.get(file)?.get(name) ?? expor
 function dataAttributes(body, file, seen = new Set()) {
   const names = new Set();
   for (const match of body.matchAll(/["\s](data-[a-z-]+)["=]/g)) {
-    if (!match[1].startsWith("data-rs-ui") && match[1] !== "data-testid") names.add(match[1]);
+    if (!match[1].startsWith("data-bisque") && match[1] !== "data-testid") names.add(match[1]);
   }
   for (const match of body.matchAll(/\b(\w+)\(/g)) {
     const fn = functionIn(file, match[1]);

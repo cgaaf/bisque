@@ -1,4 +1,4 @@
-import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "./rs-ui/slider/slider.rx"
+import { SliderRoot, SliderValue, SliderControl, SliderTrack, SliderIndicator, SliderThumb } from "./bisque/slider/slider.rx"
 
 <SliderRoot>
   <SliderValue />

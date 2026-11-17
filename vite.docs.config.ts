@@ -14,7 +14,7 @@ const outDir = resolve(import.meta.dirname, "dist/docs");
  */
 function staticRoutes(): Plugin {
   return {
-    name: "rs-ui-docs-routes",
+    name: "bisque-docs-routes",
     apply: "build",
     closeBundle() {
       const index = join(outDir, "index.html");
@@ -37,9 +37,9 @@ function staticRoutes(): Plugin {
  * source, because the ReactiveScript plugin compiles any `.rx` id whatever its query.
  */
 function sourceText(): Plugin {
-  const prefix = "\0rs-ui-text:";
+  const prefix = "\0bisque-text:";
   return {
-    name: "rs-ui-docs-source-text",
+    name: "bisque-docs-source-text",
     enforce: "pre",
     resolveId(source, importer) {
       if (!source.endsWith("?text") || !importer) return;

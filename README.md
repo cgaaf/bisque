@@ -1,4 +1,4 @@
-# rs-ui
+# Bisque
 
 Headless, unstyled, accessible components for [ReactiveScript](https://reactivescript.dev/) (`.rx`), the
 language from the Solid team that compiles to Solid 2.0. [Base UI](https://base-ui.com) is the model: the same
@@ -29,15 +29,15 @@ ReactiveScript 0.3 resolves an `.rx` import only by relative path, so the librar
 is copied into the app:
 
 ```bash
-pnpm add rs-ui @reactivescript/runtime solid-js @solidjs/web
+pnpm add bisque-ui @reactivescript/runtime solid-js @solidjs/web
 ```
 
 ```bash
-pnpm dlx rs-ui copy src/rs-ui
+pnpm dlx bisque-ui copy src/bisque
 ```
 
 ```rx
-import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "./rs-ui/dialog/dialog.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "./bisque/dialog/dialog.rx"
 
 export component Example() {
   <DialogRoot>
@@ -90,7 +90,7 @@ pnpm check
 
 runs formatting (oxfmt), lint (oxlint), both type checks (`rx-tsc` for `.rx`, `tsrs` for `.ts`), the jsdom
 tests, the tests in Chromium, Firefox and WebKit, and the docs build. `CLAUDE.md` and
-`.claude/skills/rs-ui-components` describe how the library is written.
+`.claude/skills/bisque-components` describe how the library is written.
 
 ## Licence
 

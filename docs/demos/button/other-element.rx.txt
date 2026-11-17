@@ -1,5 +1,5 @@
-import { mergeProps } from "./rs-ui/internal/props.js"
-import { button, gateButtonHandlers } from "./rs-ui/button/button.rx"
+import { mergeProps } from "./bisque/internal/props.js"
+import { button, gateButtonHandlers } from "./bisque/button/button.rx"
 
 component CardButton(props: { disabled?: boolean; onClick?: () => void; children?: View }) {
   isDisabled = props.disabled ?? false

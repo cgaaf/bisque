@@ -1,13 +1,13 @@
 // Keyboard navigation inside a composite widget (menu, listbox, tabs, toolbar, radio group).
 //
-// The DOM is the registry: a part marks itself an item with `data-rs-ui-item`, and a disabled one also carries
+// The DOM is the registry: a part marks itself an item with `data-bisque-item`, and a disabled one also carries
 // `data-disabled`. Nothing registers with its parent, so items can be added, removed and reordered freely.
 import { createEffect, untrack, type Accessor } from "solid-js";
 
 type MaybeElement = HTMLElement | undefined;
 
-const LIST = "data-rs-ui-list";
-const ITEM = "[data-rs-ui-item]";
+const LIST = "data-bisque-list";
+const ITEM = "[data-bisque-item]";
 
 export type RovingOptions = {
   orientation: "horizontal" | "vertical" | "both";
@@ -17,7 +17,7 @@ export type RovingOptions = {
   typeahead: boolean;
   /**
    * Whether the list is one Tab stop (tabs, toolbar, radio group): one item has `tabindex="0"`, the others
-   * `-1`. That item is the one marked `data-rs-ui-current`, else the last one focused, else the first.
+   * `-1`. That item is the one marked `data-bisque-current`, else the last one focused, else the first.
    * In a popup (menu, listbox) this is false and the part gives every item `tabindex="-1"`.
    */
   tabStop: boolean;
@@ -42,11 +42,11 @@ export function listItems(container: HTMLElement): HTMLElement[] {
   );
 }
 
-/** Moves focus to the first, last or current (`data-rs-ui-current`) item of a list. */
+/** Moves focus to the first, last or current (`data-bisque-current`) item of a list. */
 export function focusListItem(container: MaybeElement, which: "first" | "last" | "current"): void {
   if (!container) return;
   const items = listItems(container);
-  const current = items.find((item) => item.hasAttribute("data-rs-ui-current"));
+  const current = items.find((item) => item.hasAttribute("data-bisque-current"));
   const target =
     which === "last" ? items[items.length - 1] : which === "current" ? (current ?? items[0]) : items[0];
   (target ?? container).focus();
@@ -68,7 +68,7 @@ export function createRovingFocus(container: Accessor<MaybeElement>, options: Ac
         const items = listItems(el);
         const stop =
           focused ??
-          items.find((item) => item.hasAttribute("data-rs-ui-current")) ??
+          items.find((item) => item.hasAttribute("data-bisque-current")) ??
           items.find((item) => item.getAttribute("tabindex") === "0") ??
           items[0];
         for (const item of el.querySelectorAll<HTMLElement>(ITEM)) {
@@ -128,7 +128,7 @@ export function createRovingFocus(container: Accessor<MaybeElement>, options: Ac
         subtree: true,
         childList: true,
         attributes: true,
-        attributeFilter: ["data-disabled", "data-rs-ui-current"],
+        attributeFilter: ["data-disabled", "data-bisque-current"],
       });
       return () => {
         el.removeEventListener("keydown", onKeyDown);

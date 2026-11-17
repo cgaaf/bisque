@@ -1,4 +1,4 @@
-import { ToolbarRoot, ToolbarButton, ToolbarLink, ToolbarInput, ToolbarGroup, ToolbarSeparator } from "./rs-ui/toolbar/toolbar.rx"
+import { ToolbarRoot, ToolbarButton, ToolbarLink, ToolbarInput, ToolbarGroup, ToolbarSeparator } from "./bisque/toolbar/toolbar.rx"
 
 <ToolbarRoot>
   <ToolbarButton />

@@ -94,7 +94,7 @@ export function createToastManager(): ToastManager {
   const manager: ToastManager = {
     add(options) {
       nextToastId += 1;
-      const id = options.id ?? `rs-ui-toast-${nextToastId}`;
+      const id = options.id ?? `bisque-toast-${nextToastId}`;
       for (const listener of listeners) listener.add({ ...options, id });
       return id;
     },
@@ -344,9 +344,9 @@ export function createToastHotkey(active: Accessor<boolean>, viewport: Accessor<
  */
 export function handOffToastFocus(toast: MaybeElement): void {
   if (!toast?.contains(document.activeElement)) return;
-  const viewport = toast.closest<HTMLElement>("[data-rs-ui-toast-viewport]");
+  const viewport = toast.closest<HTMLElement>("[data-bisque-toast-viewport]");
   const toasts = viewport
-    ? [...viewport.querySelectorAll<HTMLElement>("[data-rs-ui-toast]")].filter(
+    ? [...viewport.querySelectorAll<HTMLElement>("[data-bisque-toast]")].filter(
         (el) => el === toast || (!el.inert && !el.hasAttribute("data-ending-style")),
       )
     : [];

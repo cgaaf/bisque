@@ -59,7 +59,7 @@ export default component Page() {
     <h3 id="manager">Adding toasts from anywhere</h3>
     <p>
       To add toasts from outside the provider, or from plain TypeScript, create a manager with{" "}
-      <code>createToastManager()</code> from <code>./rs-ui/internal/toast.js</code>, keep it in a module of its own,
+      <code>createToastManager()</code> from <code>./bisque/internal/toast.js</code>, keep it in a module of its own,
       and pass it to the provider as <code>toastManager</code>. The provider reads it once.
     </p>
     <Demo source="toast/manager"><ToastManagerDemo /></Demo>

@@ -1,4 +1,4 @@
-import { TabsRoot, TabsList, TabsPanel, tabs, tabsListOptions, tabsTab } from "./rs-ui/tabs/tabs.rx"
+import { TabsRoot, TabsList, TabsPanel, tabs, tabsListOptions, tabsTab } from "./bisque/tabs/tabs.rx"
 
 component LinkTab(props: { value: string; href: string; children?: View }) {
   c = use tabs

@@ -2,10 +2,10 @@ import { DocsPage } from "../../shell.rx"
 import { href } from "../../lib/site.js"
 
 export default component Page() {
-  <DocsPage title="About" subtitle="What rs-ui is, how it relates to Base UI, and where it stands.">
+  <DocsPage title="About" subtitle="What Bisque is, how it relates to Base UI, and where it stands.">
     <h2 id="what-it-is">What it is</h2>
     <p>
-      rs-ui is a library of unstyled, accessible components written in{" "}
+      Bisque is a library of unstyled, accessible components written in{" "}
       <a href="https://reactivescript.dev/">ReactiveScript</a>, the language from the Solid team that compiles
       to Solid 2. It gives you behaviour and accessibility; the markup's appearance is entirely yours.
     </p>
@@ -44,7 +44,7 @@ export default component Page() {
 
     <h2 id="status">Status</h2>
     <p>
-      rs-ui is experimental, as ReactiveScript itself is (version 0.3). Expect its API to change. Server
+      Bisque is experimental, as ReactiveScript itself is (version 0.3). Expect its API to change. Server
       rendering has not been tested. It is distributed as source that you copy into your app, because the
       language can't yet import <code>.rx</code> from a package.
     </p>

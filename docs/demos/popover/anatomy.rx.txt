@@ -1,4 +1,4 @@
-import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose } from "./rs-ui/popover/popover.rx"
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose } from "./bisque/popover/popover.rx"
 
 <PopoverRoot>
   <PopoverTrigger />

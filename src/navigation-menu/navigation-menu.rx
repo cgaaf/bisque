@@ -206,7 +206,7 @@ export fn navigationMenuTrigger(ref nav: NavigationMenuContext, ref item: Naviga
     "data-disabled": disabled ? "" : undefined,
     "aria-disabled": disabled ? "true" : undefined,
     "data-focusable": "",
-    "data-rs-ui-item": "",
+    "data-bisque-item": "",
     ref: item.setTrigger,
     onClick: press,
     onKeyDown: keyDown,
@@ -266,7 +266,7 @@ export fn navigationMenuContent(ref nav: NavigationMenuContext, ref item: Naviga
     // Not a Tab stop itself (Firefox makes a scrollable popover one otherwise), but focusable from script.
     tabindex: "-1",
     // A list of its own, so the list's arrow keys leave the links inside alone.
-    "data-rs-ui-list": "",
+    "data-bisque-list": "",
     "data-activation-direction": direction,
     onFocusOut: focusOut,
   }
@@ -296,7 +296,7 @@ export fn navigationMenuLink(ref nav: NavigationMenuContext, ref content: Naviga
   {
     "aria-current": active ? "page" : undefined,
     "data-active": active ? "" : undefined,
-    "data-rs-ui-item": content.inside ? undefined : "",
+    "data-bisque-item": content.inside ? undefined : "",
     onClick: click,
   }
 }
