@@ -1,8 +1,13 @@
 // A set of disclosures, each item a native <details>. The browser holds each item's open state, toggles it from
-// its <summary> (click, Enter, Space), hides closed content (`::details-content`) and opens it for find-in-page;
-// when only one item may be open, the items share a `name` and the browser closes the others. This family adds the
-// value (which items are open, controlled or not), `disabled`, arrow-key movement between triggers, the panels'
-// measured size and their exit animation. Style items with `[open]` and panels with `[data-ending-style]`.
+// its <summary> (click, Enter, Space), hides closed content (`::details-content`) and opens it for find-in-page.
+// This family adds the value (which items are open, controlled or not), `disabled`, arrow-key movement between
+// triggers, the panels' measured size and their exit animation. Style items with `[open]` and panels with
+// `[data-ending-style]`.
+//
+// When only one item may be open, the root closes the others, not the browser: items don't share a `name`. The
+// browser closes a <details> of the same name the moment another opens, before its exit animation can run, so the
+// item snapped shut and everything below it jumped. Find-in-page still works: the item it opens reports the open,
+// and the one that was open animates out.
 //
 // There is no Header part. Base UI wraps its trigger button in a heading; here the trigger is the <summary>, which
 // must be the first child of its <details>, so nothing can wrap it. A summary may contain a heading instead:
@@ -20,8 +25,6 @@ export type AccordionContext = {
   disabled: boolean
   orientation: AccordionOrientation
   loopFocus: boolean
-  // The `name` the items share when only one may be open, so the browser keeps the others closed.
-  name: string | undefined
   setItemOpen: (item: string, open: boolean) => void
 }
 
@@ -46,7 +49,6 @@ export component AccordionRoot(props: AccordionRootProps) {
   current = props.value ?? uncontrolled
   isDisabled = latest props.disabled ?? false
   axis = latest props.orientation ?? "vertical"
-  groupName = createId("accordion")
 
   action setItemOpen(item: string, open: boolean) {
     if (current.includes(item) == open) { return }
@@ -66,7 +68,6 @@ export component AccordionRoot(props: AccordionRootProps) {
     disabled: isDisabled,
     orientation: axis,
     loopFocus: latest props.loopFocus ?? true,
-    name: (latest props.multiple ?? false) ? undefined : groupName,
     setItemOpen: setItemOpen,
   }
 
@@ -103,10 +104,17 @@ export type AccordionItemProps = {
 } & Omit<DetailsProps, "children" | "open" | "name">
 
 // The disabled and orientation attributes every part of an item carries.
+//
+// The parts read each field of the contexts through an equation of its own. The item context is one object,
+// rebuilt whenever any field changes (each open and close): a props object built straight from it would be
+// rebuilt each time with the same content, and everything spread from it would run again
+// (`UNSTABLE_MEMO_OUTPUT`). An equation of one field stops the change when that field didn't.
 fn itemState(ref root: AccordionContext, ref item: AccordionItemContext): PartProps {
+  disabled = item.disabled
+  orientation = root.orientation
   {
-    "data-disabled": item.disabled ? "" : undefined,
-    "data-orientation": root.orientation,
+    "data-disabled": disabled ? "" : undefined,
+    "data-orientation": orientation,
   }
 }
 
@@ -156,7 +164,6 @@ export component AccordionItem(props: AccordionItemProps) {
   state = itemState(root, self)
   own = {
     ...state,
-    name: root.name,
     open: initiallyOpen ? true : undefined,
     ref: setDetails,
   }
@@ -175,11 +182,14 @@ export fn accordionTrigger(ref root: AccordionContext, ref item: AccordionItemCo
   }
   action keyDown(event: KeyboardEvent) { focusAdjacentTrigger(event, root.orientation, root.loopFocus) }
   state = itemState(root, item)
+  // One equation per field, as in itemState.
+  triggerId = item.triggerId
+  disabled = item.disabled
   {
     ...state,
-    id: item.triggerId,
-    "aria-disabled": item.disabled ? "true" : undefined,
-    tabindex: item.disabled ? "-1" : undefined,
+    id: triggerId,
+    "aria-disabled": disabled ? "true" : undefined,
+    tabindex: disabled ? "-1" : undefined,
     "data-rs-ui-accordion-trigger": "",
     onClick: press,
     onKeyDown: keyDown,
@@ -200,12 +210,16 @@ export component AccordionTrigger({ children, ...rest }: SummaryProps) {
 // under `[data-ending-style]`.
 export fn accordionPanel(ref root: AccordionContext, ref item: AccordionItemContext): PartProps {
   state = itemState(root, item)
+  // One equation per field, as in itemState.
+  panelId = item.panelId
+  triggerId = item.triggerId
+  setPanel = item.setPanel
   {
     ...state,
-    id: item.panelId,
+    id: panelId,
     role: "region",
-    "aria-labelledby": item.triggerId,
-    ref: item.setPanel,
+    "aria-labelledby": triggerId,
+    ref: setPanel,
   }
 }
 

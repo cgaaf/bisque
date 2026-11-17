@@ -7,7 +7,7 @@ const details = (el: HTMLElement) => el as HTMLDetailsElement;
 const trigger = (getByText: (text: string) => HTMLElement, text: string) =>
   getByText(text).closest("summary")!;
 
-test("items are <details> sharing a name, with summaries labelling region panels", () => {
+test("items are <details>, with summaries labelling region panels", () => {
   const { getByTestId, getByText } = mount(basic);
   const one = details(getByTestId("item-one"));
   const two = details(getByTestId("item-two"));
@@ -16,8 +16,9 @@ test("items are <details> sharing a name, with summaries labelling region panels
   expect(one.tagName).toBe("DETAILS");
   expect(one.open).toBe(true);
   expect(two.open).toBe(false);
-  expect(one.name).not.toBe("");
-  expect(two.name).toBe(one.name);
+  // No shared `name`: the browser would close the open item at once, with no exit animation. The root does it.
+  expect(one.name).toBe("");
+  expect(two.name).toBe("");
   expect(summary.parentElement).toBe(one);
   expect(panel.getAttribute("role")).toBe("region");
   expect(panel.getAttribute("aria-labelledby")).toBe(summary.id);
@@ -27,14 +28,23 @@ test("items are <details> sharing a name, with summaries labelling region panels
   expect(one.hasAttribute("data-open")).toBe(false);
 });
 
-test("opening one item closes the other, with one value change", async () => {
+test("opening one item animates the other out, with one value change", async () => {
   const { getByTestId, getByText, user } = mount(basic);
   const one = details(getByTestId("item-one"));
   const two = details(getByTestId("item-two"));
+  const panel = getByTestId("panel-one");
+  await expect.poll(() => panel.style.getPropertyValue("--accordion-panel-height")).toBe("auto");
   await user.click(trigger(getByText, "Two"));
   expect(two.open).toBe(true);
-  // The browser closes the other item of the same name, at once.
-  expect(one.open).toBe(false);
+  // The open item stays open while its panel shrinks, so what's below it doesn't jump.
+  expect(one.open).toBe(true);
+  expect(panel.hasAttribute("data-ending-style")).toBe(true);
+  await frame();
+  await frame();
+  const height = panel.getBoundingClientRect().height;
+  expect(height).toBeGreaterThan(0);
+  expect(height).toBeLessThan(80);
+  await expect.poll(() => one.open).toBe(false);
   expect(getByTestId("opened").textContent).toBe("two open");
   // Let the browser's toggle events arrive (Firefox delivers them late): they change nothing more.
   await frame();
@@ -154,10 +164,11 @@ test("an item the browser opens by itself is reported once, and closes the other
   const { getByTestId } = mount(basic);
   // What find-in-page does: the browser sets `open` on the item that holds the match.
   details(getByTestId("item-two")).open = true;
-  expect(details(getByTestId("item-one")).open).toBe(false);
   await expect.poll(() => getByTestId("changes").textContent).toBe("two");
+  await expect.poll(() => details(getByTestId("item-one")).open).toBe(false);
   await new Promise((resolve) => setTimeout(resolve, 50));
   expect(getByTestId("changes").textContent).toBe("two");
+  expect(details(getByTestId("item-two")).open).toBe(true);
 });
 
 test("`multiple` keeps several items open, controlled by `value`", async () => {
@@ -218,4 +229,18 @@ test("a disabled root disables every item", async () => {
   await user.click(locked);
   await frame();
   expect(details(getByTestId("item-z")).open).toBe(false);
+});
+
+test("clicking quickly from item to item rebuilds no part's props needlessly", async () => {
+  const { getByTestId, getByText } = mount(basic);
+  // Each open and close rebuilds the item context; a part's props built straight from it would come out new but
+  // equal every time, which Solid reports (UNSTABLE_MEMO_OUTPUT) and the setup turns into a failure.
+  for (const text of ["Two", "One", "Two", "One", "Two", "One", "Two", "One"]) {
+    trigger(getByText, text).click();
+    // oxlint-disable-next-line no-await-in-loop -- each press lands while the one before is still animating
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  }
+  // The last press wins.
+  await expect.poll(() => details(getByTestId("item-two")).open).toBe(false);
+  expect(details(getByTestId("item-one")).open).toBe(true);
 });

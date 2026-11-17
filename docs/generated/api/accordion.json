@@ -32,7 +32,7 @@
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether several items can be open at once. Without it the items share a `name`, and the browser closes the open item when another opens."
+          "description": "Whether several items can be open at once. Without it, opening an item closes the open one, which animates out."
         },
         {
           "name": "disabled",

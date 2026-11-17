@@ -13,7 +13,7 @@ on the "not yet" list, because features move off it with each release.
 | Non-modal layer, light dismiss, Escape, nesting                    | `popover="auto"` (`"manual"` where the part decides when to close), `showPopover({ source })`, `beforetoggle` / `toggle` | portal, listen for outside presses, manage z-index                     |
 | Placing a popup against its trigger, flipping at the viewport edge | CSS anchor positioning: the implicit anchor from the invoker, `position-area`, `position-try-fallbacks`, `anchor-size()` | measure, compute positions, depend on a positioning library            |
 | Trigger opens or closes its target                                 | `popovertarget`, `command` / `commandfor`                                                                                | attach click handlers for it                                           |
-| Disclosure, and one-open-at-a-time groups                          | `<details>`, `<summary>`, `<details name>`, the `toggle` event                                                           | hold open state the browser already holds, hide content itself         |
+| Disclosure                                                         | `<details>`, `<summary>`, the `toggle` event                                                                             | hold open state the browser already holds, hide content itself         |
 | Entry animation                                                    | `@starting-style` in the consumer's CSS                                                                                  | set a starting-style attribute for a frame                             |
 | Checked, selected and invalid state                                | native `<input>` (`appearance: none`), `:checked`, `:indeterminate`, `:user-invalid`, `:has()`                           | mirror a hidden input, track touched state for styling                 |
 | Radio group keyboard behaviour                                     | native radios sharing a `name`                                                                                           | add roving focus                                                       |
@@ -29,6 +29,10 @@ on the "not yet" list, because features move off it with each release.
   CSS and only animates where the engine can.
 - **Animating to `auto` height** (`interpolate-size`: Chrome only). A disclosure panel's measured size is still
   written to a CSS variable.
+- **An exit animation in a one-open group.** `<details name>` closes the open sibling the moment another opens,
+  before its exit animation can start (only Chrome can keep closed `::details-content` visible for a
+  transition), so it snapped shut and the items below jumped. Accordion items don't share a `name`: the root
+  closes the other item, which animates out. Find-in-page still opens an item, and the root closes the rest.
 - **Hover-triggered popups** (`interestfor`: Chrome only; `popover="hint"`: not in Safari). Tooltip and
   PreviewCard use `popover="manual"` with the library's hover-intent logic, and since a manual popover gets no
   Escape or light dismiss from the browser, the library closes those two itself.

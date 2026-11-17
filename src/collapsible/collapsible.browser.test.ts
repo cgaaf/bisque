@@ -148,3 +148,17 @@ test("does nothing while disabled, and is out of the tab order", async () => {
   await frame();
   expect(root.open).toBe(false);
 });
+
+test("toggling quickly rebuilds no part's props needlessly", async () => {
+  const { getByTestId, getByText } = mount(basic);
+  // Each open and close rebuilds the context; props built straight from it would come out new but equal every
+  // time, which Solid reports (UNSTABLE_MEMO_OUTPUT) and the setup turns into a failure.
+  const trigger = summary(getByText, "Toggle");
+  for (let i = 0; i < 8; i++) {
+    trigger.click();
+    // oxlint-disable-next-line no-await-in-loop -- each press lands while the one before is still animating
+    await new Promise((resolve) => setTimeout(resolve, 40));
+  }
+  // An even number of presses leaves it closed.
+  await expect.poll(() => details(getByTestId("uncontrolled")).open).toBe(false);
+});

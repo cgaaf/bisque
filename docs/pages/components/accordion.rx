@@ -22,13 +22,10 @@ export default component Page() {
       <li>Toggling from the summary on a press, <kbd>Enter</kbd> and <kbd>Space</kbd>.</li>
       <li>Hiding closed content, which stays in the document.</li>
       <li>Opening a closed item when find-in-page matches text inside it.</li>
-      <li>
-        One open item at a time: unless <code>multiple</code> is set, the items share a <code>name</code>, and
-        the browser closes the open one when another opens.
-      </li>
     </ul>
     <p>
-      The library adds the value (which items are open, controlled or not), <code>disabled</code>, moving
+      The library adds the value (which items are open, controlled or not), one open item at a time unless
+      <code>multiple</code> is set, <code>disabled</code>, moving
       between triggers with the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>, labelling each panel by its
       trigger, the panels' measured size as CSS variables, and the exit animation.
     </p>
@@ -44,7 +41,7 @@ export default component Page() {
 
     <h3 id="multiple">Opening several items</h3>
     <p>
-      With <code>multiple</code> the items don't share a <code>name</code>, and any number can be open. An item
+      With <code>multiple</code> any number of items can be open. An item
       with <code>disabled</code>, or every item under a disabled root, ignores presses and keys, leaves the tab
       order and is skipped by the arrow keys. All of its parts carry <code>data-disabled</code>.
     </p>
@@ -92,9 +89,10 @@ export default component Page() {
     </p>
     <div class="note">
       <p>
-        When one item opens and the browser closes the other because they share a <code>name</code>, that item
-        closes at once, without its exit animation. An item that closes with no other opening in its place, from its
-        trigger or from <code>value</code>, animates out.
+        The items don't share a <code>name</code>, though a {"<details>"} group could keep one open by itself:
+        the browser closes the other item the moment one opens, before it can animate, so it would snap shut and
+        everything below it would jump. The accordion closes it instead, and it animates out while the new one
+        opens, including when find-in-page opened the new one.
       </p>
     </div>
 
