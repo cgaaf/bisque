@@ -1,0 +1,4 @@
+// How .rx may use ./props.ts (guide: node_modules/@reactivescript/compiler/guide/libraries.md).
+export pure fn mergeProps(internal: any, external: any): any
+export pure fn createId(prefix: string): string instantiates
+export fn preventDefaultBehavior(event: Event): void

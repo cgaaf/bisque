@@ -1,0 +1,81 @@
+import { mergeProps, createId } from "../internal/props.ts"
+import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
+
+export type CollapsibleContext = {
+  open: boolean
+  disabled: boolean
+  panelId: string
+  toggle: () => void
+}
+
+export context collapsible: CollapsibleContext
+
+export type CollapsibleRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  disabled?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+export component CollapsibleRoot(props: CollapsibleRootProps) {
+  source uncontrolled := peek(props.defaultOpen ?? false)
+  isOpen = props.open ?? uncontrolled
+  isDisabled = props.disabled ?? false
+  panelId = createId("collapsible-panel")
+
+  action toggle() {
+    if (isDisabled) { return }
+    let next = !isOpen
+    uncontrolled := next
+    if (props.onOpenChange) { props.onOpenChange(next) }
+  }
+
+  provide collapsible = { open: isOpen, disabled: isDisabled, panelId: panelId, toggle: toggle }
+
+  { open, defaultOpen, onOpenChange, disabled, children, ...rest } = props
+  own = {
+    "data-open": isOpen ? "" : undefined,
+    "data-closed": isOpen ? undefined : "",
+    "data-disabled": isDisabled ? "" : undefined,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn collapsibleTrigger(ref c: CollapsibleContext): PartProps {
+  action press() { c.toggle() }
+  {
+    type: "button",
+    "aria-expanded": c.open ? "true" : "false",
+    "aria-controls": c.open ? c.panelId : undefined,
+    disabled: c.disabled ? true : undefined,
+    "data-panel-open": c.open ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    onClick: press,
+  }
+}
+
+export component CollapsibleTrigger({ children, ...rest }: ButtonProps) {
+  c = use collapsible
+  own = collapsibleTrigger(c)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export fn collapsiblePanel(ref c: CollapsibleContext): PartProps {
+  {
+    id: c.panelId,
+    "data-open": c.open ? "" : undefined,
+    "data-closed": c.open ? undefined : "",
+  }
+}
+
+export component CollapsiblePanel({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & DivProps) {
+  c = use collapsible
+  own = collapsiblePanel(c)
+  merged = mergeProps(own, rest)
+  {if c.open || keepMounted {
+    <div {...merged} hidden={c.open ? undefined : true}>{children}</div>
+  }}
+}

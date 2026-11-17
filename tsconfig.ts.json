@@ -1,0 +1,6 @@
+{
+  // Read by `tsrs`: the plain TypeScript in the project. `.rx` files need `rx-tsc` (see tsconfig.json).
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "verbatimModuleSyntax": true },
+  "include": ["src/**/*.ts", "demo/**/*.ts", "vite.config.ts"]
+}

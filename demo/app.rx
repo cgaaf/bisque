@@ -1,0 +1,11 @@
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "../src/collapsible/collapsible.rx"
+
+export default component App() {
+  <main>
+    <h1>rs-ui</h1>
+    <CollapsibleRoot>
+      <CollapsibleTrigger>Details</CollapsibleTrigger>
+      <CollapsiblePanel>Hidden until opened.</CollapsiblePanel>
+    </CollapsibleRoot>
+  </main>
+}

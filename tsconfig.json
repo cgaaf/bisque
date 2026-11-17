@@ -1,0 +1,21 @@
+{
+  // Read by `rx-tsc` (TypeScript with `.rx` in the program) and by the editor's language server. Plain `.ts` is
+  // checked by `tsrs` instead (tsconfig.ts.json): there a test imports a fixture through `src/rx.d.ts`.
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
+    "jsx": "preserve",
+    "jsxImportSource": "@solidjs/web",
+    "strict": true,
+    "noEmit": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "types": ["vite/client"]
+  },
+  "include": ["src/**/*.rx", "demo/**/*.rx"],
+  // A `.d.rx` declares a JS module to the ReactiveScript compiler. It is not a TypeScript source: with one in the
+  // program, rx-tsc stops with "languageId not found".
+  "exclude": ["**/*.d.rx"]
+}

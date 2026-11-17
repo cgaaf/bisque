@@ -1,0 +1,28 @@
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel, collapsible, collapsibleTrigger } from "../collapsible.rx"
+
+component LinkTrigger() {
+  c = use collapsible
+  t = collapsibleTrigger(c)
+  <a href="#details" data-testid="link" {...t} type={undefined}>as a link</a>
+}
+
+export default component Fixture() {
+  source controlled := false
+  source changes := 0
+  <main>
+    <CollapsibleRoot data-testid="uncontrolled" class="mine">
+      <CollapsibleTrigger onClick={() => { changes := changes + 1 }}>Toggle</CollapsibleTrigger>
+      <LinkTrigger />
+      <CollapsiblePanel data-testid="panel">Content</CollapsiblePanel>
+    </CollapsibleRoot>
+    <CollapsibleRoot data-testid="controlled" open={controlled} onOpenChange={(next) => { controlled := next }}>
+      <CollapsibleTrigger>Controlled</CollapsibleTrigger>
+      <CollapsiblePanel keepMounted data-testid="kept">Kept</CollapsiblePanel>
+    </CollapsibleRoot>
+    <CollapsibleRoot disabled data-testid="disabled">
+      <CollapsibleTrigger>Disabled</CollapsibleTrigger>
+      <CollapsiblePanel>Never</CollapsiblePanel>
+    </CollapsibleRoot>
+    <output data-testid="changes">{changes}</output>
+  </main>
+}

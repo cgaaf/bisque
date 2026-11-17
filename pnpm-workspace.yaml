@@ -1,0 +1,5 @@
+permissions:
+  "@solidjs/web":
+    skills: false
+  solid-js:
+    skills: true

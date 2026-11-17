@@ -1,0 +1,10 @@
+// Types the parts share, as names .rx can import.
+//
+// They are aliases of the definitions in ./types.ts, written with `import("…")` on purpose: the compiler binds
+// every name imported from a JS or TS module as a value, so `import { ButtonProps } from "./types.ts"` leaves an
+// import the bundler rejects ("ButtonProps is not exported"). A type imported from an .rx module binds nothing.
+export type PartProps = import("./types.ts").PartProps
+export type ButtonProps = import("./types.ts").ButtonProps
+export type InputProps = import("./types.ts").InputProps
+export type DivProps = import("./types.ts").HTMLProps<HTMLDivElement>
+export type SpanProps = import("./types.ts").HTMLProps<HTMLSpanElement>
