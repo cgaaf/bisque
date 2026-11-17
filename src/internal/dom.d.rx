@@ -1,0 +1,7 @@
+// How .rx may use ./dom.js (implemented in ./impl/dom.ts) (guide: node_modules/@reactivescript/compiler/guide/libraries.md).
+// A `ref` parameter is passed live; the others are read once. Bind every call: `_scope = createFocusScope(…)`.
+export pure fn createPresence(ref present: boolean, ref element: HTMLElement | undefined): [ref boolean, ref "starting" | "ending" | undefined]
+export pure fn createFocusScope(ref active: boolean, ref container: HTMLElement | undefined, ref trap: boolean) instantiates
+export pure fn createDismiss(ref active: boolean, ref inside: (HTMLElement | undefined)[], onDismiss: (reason: "escape-key" | "outside-press") => void) instantiates
+export pure fn createScrollLock(ref active: boolean) instantiates
+export fn focusElement(element: HTMLElement | undefined): void

@@ -1,4 +1,4 @@
-import { mergeProps, createId } from "../internal/props.ts"
+import { mergeProps, createId } from "../internal/props.js"
 import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
 
 export type CollapsibleContext = {
