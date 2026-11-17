@@ -2,26 +2,36 @@
 // every family bundles, so a new family is added here.
 import { AccordionDemo } from "./accordion.rx"
 import { AlertDialogDemo } from "./alert-dialog.rx"
+import { AutocompleteDemo } from "./autocomplete.rx"
 import { AvatarDemo } from "./avatar.rx"
 import { ButtonDemo } from "./button.rx"
 import { CheckboxGroupDemo } from "./checkbox-group.rx"
 import { CheckboxDemo } from "./checkbox.rx"
 import { CollapsibleDemo } from "./collapsible.rx"
+import { ComboboxDemo } from "./combobox.rx"
+import { ContextMenuDemo } from "./context-menu.rx"
 import { DialogDemo } from "./dialog.rx"
+import { DrawerDemo } from "./drawer.rx"
 import { FieldDemo } from "./field.rx"
 import { FieldsetDemo } from "./fieldset.rx"
 import { FormDemo } from "./form.rx"
 import { InputDemo } from "./input.rx"
 import { MenuDemo } from "./menu.rx"
+import { MenubarDemo } from "./menubar.rx"
 import { MeterDemo } from "./meter.rx"
+import { NavigationMenuDemo } from "./navigation-menu.rx"
+import { NumberFieldDemo } from "./number-field.rx"
 import { PopoverDemo } from "./popover.rx"
 import { PreviewCardDemo } from "./preview-card.rx"
 import { ProgressDemo } from "./progress.rx"
 import { RadioDemo } from "./radio.rx"
 import { ScrollAreaDemo } from "./scroll-area.rx"
+import { SelectDemo } from "./select.rx"
 import { SeparatorDemo } from "./separator.rx"
+import { SliderDemo } from "./slider.rx"
 import { SwitchDemo } from "./switch.rx"
 import { TabsDemo } from "./tabs.rx"
+import { ToastDemo } from "./toast.rx"
 import { ToggleGroupDemo } from "./toggle-group.rx"
 import { ToggleDemo } from "./toggle.rx"
 import { ToolbarDemo } from "./toolbar.rx"
@@ -37,26 +47,36 @@ export default component App() {
     <h1>rs-ui</h1>
     <section><h2>Accordion</h2><AccordionDemo /></section>
     <section><h2>Alert Dialog</h2><AlertDialogDemo /></section>
+    <section><h2>Autocomplete</h2><AutocompleteDemo /></section>
     <section><h2>Avatar</h2><AvatarDemo /></section>
     <section><h2>Button</h2><ButtonDemo /></section>
     <section><h2>Checkbox Group</h2><CheckboxGroupDemo /></section>
     <section><h2>Checkbox</h2><CheckboxDemo /></section>
     <section><h2>Collapsible</h2><CollapsibleDemo /></section>
+    <section><h2>Combobox</h2><ComboboxDemo /></section>
+    <section><h2>Context Menu</h2><ContextMenuDemo /></section>
     <section><h2>Dialog</h2><DialogDemo /></section>
+    <section><h2>Drawer</h2><DrawerDemo /></section>
     <section><h2>Field</h2><FieldDemo /></section>
     <section><h2>Fieldset</h2><FieldsetDemo /></section>
     <section><h2>Form</h2><FormDemo /></section>
     <section><h2>Input</h2><InputDemo /></section>
     <section><h2>Menu</h2><MenuDemo /></section>
+    <section><h2>Menubar</h2><MenubarDemo /></section>
     <section><h2>Meter</h2><MeterDemo /></section>
+    <section><h2>Navigation Menu</h2><NavigationMenuDemo /></section>
+    <section><h2>Number Field</h2><NumberFieldDemo /></section>
     <section><h2>Popover</h2><PopoverDemo /></section>
     <section><h2>Preview Card</h2><PreviewCardDemo /></section>
     <section><h2>Progress</h2><ProgressDemo /></section>
     <section><h2>Radio</h2><RadioDemo /></section>
     <section><h2>Scroll Area</h2><ScrollAreaDemo /></section>
+    <section><h2>Select</h2><SelectDemo /></section>
     <section><h2>Separator</h2><SeparatorDemo /></section>
+    <section><h2>Slider</h2><SliderDemo /></section>
     <section><h2>Switch</h2><SwitchDemo /></section>
     <section><h2>Tabs</h2><TabsDemo /></section>
+    <section><h2>Toast</h2><ToastDemo /></section>
     <section><h2>Toggle Group</h2><ToggleGroupDemo /></section>
     <section><h2>Toggle</h2><ToggleDemo /></section>
     <section><h2>Toolbar</h2><ToolbarDemo /></section>

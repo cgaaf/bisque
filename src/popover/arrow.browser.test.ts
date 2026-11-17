@@ -52,3 +52,28 @@ test("closing puts data-side back to the side asked for", async () => {
   await user.keyboard("{Escape}");
   await expect.poll(() => popup.getAttribute("data-side")).toBe("bottom");
 });
+
+test("data-side and the arrow follow a flip that scrolling causes while the popup is open", async () => {
+  const mounted = mount(arrows);
+  const trigger = mounted.getByRole("button", { name: "Scrolled" });
+  const arrow = mounted.getByTestId("scrolled-arrow");
+  const popup = arrow.parentElement!;
+  const pageTop = trigger.getBoundingClientRect().top + window.scrollY;
+  try {
+    // The trigger at the top of the viewport: the popup fits below it.
+    window.scrollTo(0, pageTop - 10);
+    trigger.focus({ preventScroll: true });
+    await mounted.user.keyboard("{Enter}");
+    await expect.poll(() => popup.getAttribute("data-side")).toBe("bottom");
+    expect(Math.abs(centre(arrow).y - popup.getBoundingClientRect().top)).toBeLessThanOrEqual(1);
+
+    // The trigger at the bottom of the viewport: no room below it any more.
+    window.scrollTo(0, pageTop + trigger.offsetHeight + 10 - window.innerHeight);
+    await expect.poll(() => popup.getAttribute("data-side")).toBe("top");
+    await expect.poll(() => arrow.getAttribute("data-side")).toBe("top");
+    expect(Math.abs(centre(arrow).y - popup.getBoundingClientRect().bottom)).toBeLessThanOrEqual(1);
+    expect(Math.abs(centre(arrow).x - centre(trigger).x)).toBeLessThanOrEqual(1);
+  } finally {
+    window.scrollTo(0, 0);
+  }
+});

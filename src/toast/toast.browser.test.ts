@@ -187,18 +187,26 @@ test("hovering the viewport pauses the timers and leaving resumes them with the 
   flush();
   const root = toasts()[0];
   advance(600);
+  // The faked clock moves on while a real `user` call is in flight, by as long as the call takes (more on a
+  // busy machine), and the timer runs for some of that before the pointer arrives. Measure it.
+  let drift = -Date.now();
   await user.hover(root);
+  drift += Date.now();
   expect(viewport.hasAttribute("data-expanded")).toBe(true);
   expect(root.hasAttribute("data-expanded")).toBe(true);
   advance(5000);
   expect(root.hasAttribute("data-ending-style")).toBe(false);
+  drift -= Date.now();
   await user.hover(getByRole("button", { name: "Before" }));
+  drift += Date.now();
   expect(viewport.hasAttribute("data-expanded")).toBe(false);
-  // 400ms were left. Each real `user` call can move the faked clock on by up to ~50ms before the pointer
-  // arrives (seen in Chromium and WebKit), so allow for two of them.
-  advance(290);
-  expect(root.hasAttribute("data-ending-style")).toBe(false);
-  advance(110);
+  // 400ms were left when it paused, less whatever ran during the two hovers.
+  const atLeast = 400 - drift - 10;
+  if (atLeast > 0) {
+    advance(atLeast);
+    expect(root.hasAttribute("data-ending-style")).toBe(false);
+  }
+  advance(400 - Math.max(atLeast, 0));
   expect(root.hasAttribute("data-ending-style")).toBe(true);
 });
 
