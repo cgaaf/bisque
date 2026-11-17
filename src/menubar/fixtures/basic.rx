@@ -1,65 +1,49 @@
 import { MenubarRoot } from "../menubar.rx"
-import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../../menu/menu.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../../menu/menu.rx"
 
 export default component Fixture() {
   source chosen := "none"
+  <style>
+    :global(.bar-popup) { margin: 0; padding: 0; border: 0; width: 100px }
+    :global(.bar-popup > :not([popover])) { display: block; box-sizing: border-box; width: 100%; height: 20px; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
   <main>
     <button>Before</button>
-    <MenubarRoot data-testid="bar">
+    <MenubarRoot data-testid="bar" style="display: flex; gap: 8px">
       <MenuRoot>
         <MenuTrigger>File</MenuTrigger>
-        <MenuPortal>
-          <MenuPositioner data-testid="file-positioner">
-            <MenuPopup data-testid="file-popup">
-              <MenuItem onClick={() => { chosen := "new" }}>New</MenuItem>
-              <MenuSubmenuRoot>
-                <MenuSubmenuTrigger>Recent</MenuSubmenuTrigger>
-                <MenuPortal>
-                  <MenuPositioner>
-                    <MenuPopup data-testid="recent-popup">
-                      <MenuItem onClick={() => { chosen := "a.txt" }}>a.txt</MenuItem>
-                    </MenuPopup>
-                  </MenuPositioner>
-                </MenuPortal>
-              </MenuSubmenuRoot>
+        <MenuPopup class="bar-popup" data-testid="file-popup">
+          <MenuItem onClick={() => { chosen := "new" }}>New</MenuItem>
+          <MenuSubmenuRoot>
+            <MenuSubmenuTrigger>Recent</MenuSubmenuTrigger>
+            <MenuPopup class="bar-popup" data-testid="recent-popup">
+              <MenuItem onClick={() => { chosen := "a.txt" }}>a.txt</MenuItem>
             </MenuPopup>
-          </MenuPositioner>
-        </MenuPortal>
+          </MenuSubmenuRoot>
+        </MenuPopup>
       </MenuRoot>
       <MenuRoot>
         <MenuTrigger>Edit</MenuTrigger>
-        <MenuPortal>
-          <MenuPositioner>
-            <MenuPopup data-testid="edit-popup">
-              <MenuItem onClick={() => { chosen := "undo" }}>Undo</MenuItem>
-              <MenuItem onClick={() => { chosen := "redo" }}>Redo</MenuItem>
-            </MenuPopup>
-          </MenuPositioner>
-        </MenuPortal>
+        <MenuPopup class="bar-popup" data-testid="edit-popup">
+          <MenuItem onClick={() => { chosen := "undo" }}>Undo</MenuItem>
+          <MenuItem onClick={() => { chosen := "redo" }}>Redo</MenuItem>
+        </MenuPopup>
       </MenuRoot>
       <MenuRoot disabled>
         <MenuTrigger>Help</MenuTrigger>
-        <MenuPortal>
-          <MenuPositioner>
-            <MenuPopup data-testid="help-popup">
-              <MenuItem>About</MenuItem>
-            </MenuPopup>
-          </MenuPositioner>
-        </MenuPortal>
+        <MenuPopup class="bar-popup" data-testid="help-popup">
+          <MenuItem>About</MenuItem>
+        </MenuPopup>
       </MenuRoot>
       <MenuRoot>
         <MenuTrigger>View</MenuTrigger>
-        <MenuPortal>
-          <MenuPositioner>
-            <MenuPopup data-testid="view-popup">
-              <MenuItem onClick={() => { chosen := "zoom" }}>Zoom</MenuItem>
-            </MenuPopup>
-          </MenuPositioner>
-        </MenuPortal>
+        <MenuPopup class="bar-popup" data-testid="view-popup">
+          <MenuItem onClick={() => { chosen := "zoom" }}>Zoom</MenuItem>
+        </MenuPopup>
       </MenuRoot>
     </MenubarRoot>
     <button>After</button>
     <output data-testid="chosen">{chosen}</output>
-    <div data-testid="outside">outside</div>
+    <p data-testid="outside" style="margin-top: 200px">outside</p>
   </main>
 }

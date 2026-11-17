@@ -1,52 +1,46 @@
-import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuPositioner, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../context-menu.rx"
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../context-menu.rx"
 
 export default component Fixture() {
   source chosen := "none"
   source changes := 0
   source zoom := "100"
+  <style>
+    :global(.context-popup) { margin: 0; padding: 0; border: 0; width: 120px }
+    :global(.context-popup > :not([popover])) { display: block; box-sizing: border-box; width: 100%; height: 20px; font: inherit; border: 0; padding: 0; text-align: start }
+  </style>
   <main>
     <ContextMenuRoot onOpenChange={() => { changes := changes + 1 }}>
-      <ContextMenuTrigger data-testid="area">
+      <ContextMenuTrigger data-testid="area" style="position: fixed; inset: 0 0 40px 0">
         Right-click here <button>Focus me</button>
       </ContextMenuTrigger>
-      <ContextMenuPortal>
-        <ContextMenuPositioner data-testid="positioner">
-          <ContextMenuPopup>
-            <ContextMenuItem onClick={() => { chosen := "copy" }}>Copy</ContextMenuItem>
-            <ContextMenuItem onClick={() => { chosen := "paste" }}>Paste</ContextMenuItem>
-            <ContextMenuSeparator />
-            <ContextMenuGroup>
-              <ContextMenuGroupLabel>Zoom</ContextMenuGroupLabel>
-              <ContextMenuRadioGroup value={zoom} onValueChange={(next) => { zoom := next }}>
-                <ContextMenuRadioItem value="100">Actual size</ContextMenuRadioItem>
-              </ContextMenuRadioGroup>
-            </ContextMenuGroup>
-            <ContextMenuSubmenuRoot>
-              <ContextMenuSubmenuTrigger>More</ContextMenuSubmenuTrigger>
-              <ContextMenuPortal>
-                <ContextMenuPositioner>
-                  <ContextMenuPopup data-testid="sub-popup">
-                    <ContextMenuItem onClick={() => { chosen := "inspect" }}>Inspect</ContextMenuItem>
-                  </ContextMenuPopup>
-                </ContextMenuPositioner>
-              </ContextMenuPortal>
-            </ContextMenuSubmenuRoot>
+      <ContextMenuPopup class="context-popup" data-testid="popup">
+        <ContextMenuItem onClick={() => { chosen := "copy" }}>Copy</ContextMenuItem>
+        <ContextMenuItem onClick={() => { chosen := "paste" }}>Paste</ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuGroup>
+          <ContextMenuGroupLabel>Zoom</ContextMenuGroupLabel>
+          <ContextMenuRadioGroup value={zoom} onValueChange={(next) => { zoom := next }}>
+            <ContextMenuRadioItem value="100">Actual size</ContextMenuRadioItem>
+          </ContextMenuRadioGroup>
+        </ContextMenuGroup>
+        <ContextMenuSubmenuRoot>
+          <ContextMenuSubmenuTrigger>More</ContextMenuSubmenuTrigger>
+          <ContextMenuPopup class="context-popup" data-testid="sub-popup">
+            <ContextMenuItem onClick={() => { chosen := "inspect" }}>Inspect</ContextMenuItem>
           </ContextMenuPopup>
-        </ContextMenuPositioner>
-      </ContextMenuPortal>
+        </ContextMenuSubmenuRoot>
+      </ContextMenuPopup>
     </ContextMenuRoot>
-    <ContextMenuRoot disabled>
-      <ContextMenuTrigger data-testid="disabled-area">Disabled</ContextMenuTrigger>
-      <ContextMenuPortal>
-        <ContextMenuPositioner>
-          <ContextMenuPopup data-testid="disabled-popup">
-            <ContextMenuItem>Nothing</ContextMenuItem>
-          </ContextMenuPopup>
-        </ContextMenuPositioner>
-      </ContextMenuPortal>
-    </ContextMenuRoot>
-    <output data-testid="chosen">{chosen}</output>
-    <output data-testid="changes">{changes}</output>
-    <div data-testid="outside">outside</div>
+    <div style="position: fixed; left: 0; right: 0; bottom: 0; height: 40px; display: flex; gap: 40px">
+      <ContextMenuRoot disabled>
+        <ContextMenuTrigger data-testid="disabled-area">Disabled</ContextMenuTrigger>
+        <ContextMenuPopup data-testid="disabled-popup">
+          <ContextMenuItem>Nothing</ContextMenuItem>
+        </ContextMenuPopup>
+      </ContextMenuRoot>
+      <output data-testid="chosen">{chosen}</output>
+      <output data-testid="changes">{changes}</output>
+      <p data-testid="outside" style="margin: 0">outside</p>
+    </div>
   </main>
 }

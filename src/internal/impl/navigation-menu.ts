@@ -1,11 +1,9 @@
-// Behaviour of the navigation menu that needs the DOM: which way the active item moved, and the shared popup's size
-// following the content shown in its viewport. `../navigation-menu.d.rx` declares how `.rx` may call these.
-import { createEffect, type Accessor } from "solid-js";
+// Behaviour of the navigation menu that needs the DOM: which way the active item moved, and focus moving into an
+// item's content and back to its trigger. `../navigation-menu.d.rx` declares how `.rx` may call these.
+import { createEffect, untrack, type Accessor } from "solid-js";
+import { whenShown } from "./menu.ts";
 
 type MaybeElement = HTMLElement | undefined;
-
-/** Marks a viewport's content element; the one shown carries `data-open` too. */
-const CONTENT = "data-rs-ui-navigation-content";
 
 /**
  * The direction from the item at `from` to the item at `to`, for `data-activation-direction`: by document order,
@@ -27,53 +25,60 @@ export function containsTarget(elements: MaybeElement[], target: EventTarget | n
   return target instanceof Node && elements.some((element) => element?.contains(target));
 }
 
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
+/** Moves focus to the first focusable element in `container`, else to the container itself. */
+export function focusFirstIn(container: MaybeElement): void {
+  if (!container) return;
+  const first = [...container.querySelectorAll<HTMLElement>(FOCUSABLE)].find(
+    (element) => element.getClientRects().length > 0,
+  );
+  (first ?? container).focus();
+}
+
 /**
- * While `active`, sizes the popup to the content its viewport shows: writes `--popup-width` and `--popup-height`
- * on `popup` and `--positioner-width` and `--positioner-height` on `positioner`, in pixels, from the shown
- * content's size, and again whenever the shown content changes or resizes. A stylesheet animates between items'
- * sizes by transitioning `width: var(--popup-width)`.
+ * Focus for an item's content (a `popover`). While `active` and `enter`: once the browser has shown `content`,
+ * focus moves to its first focusable element. When it deactivates with focus inside it (or lost because the
+ * browser hid what had it), focus goes back to `trigger`; content that hovering opened and closed leaves focus
+ * where it was.
  */
-export function createViewportSize(
+export function createContentFocus(
   active: Accessor<boolean>,
-  popup: Accessor<MaybeElement>,
-  positioner: Accessor<MaybeElement>,
-  viewport: Accessor<MaybeElement>,
+  enter: Accessor<boolean>,
+  content: Accessor<MaybeElement>,
+  trigger: Accessor<MaybeElement>,
 ): void {
   createEffect(
-    () => (active() ? ([popup(), positioner(), viewport()] as const) : undefined),
-    (input) => {
-      if (!input) return;
-      const [popupEl, positionerEl, viewportEl] = input;
-      if (!popupEl || !viewportEl) return;
-      let observed: HTMLElement | undefined;
-      const resize = typeof ResizeObserver === "function" ? new ResizeObserver(() => measure()) : undefined;
-      function measure() {
-        const shown = viewportEl!.querySelector<HTMLElement>(`[${CONTENT}][data-open]`);
-        if (shown !== observed) {
-          if (observed) resize?.unobserve(observed);
-          if (shown) resize?.observe(shown);
-          observed = shown ?? undefined;
-        }
-        if (!shown) return;
-        const width = `${shown.offsetWidth}px`;
-        const height = `${shown.offsetHeight}px`;
-        popupEl!.style.setProperty("--popup-width", width);
-        popupEl!.style.setProperty("--popup-height", height);
-        positionerEl?.style.setProperty("--positioner-width", width);
-        positionerEl?.style.setProperty("--positioner-height", height);
-      }
-      measure();
-      const mutations = new MutationObserver(measure);
-      mutations.observe(viewportEl, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        attributeFilter: ["data-open"],
-      });
-      return () => {
-        mutations.disconnect();
-        resize?.disconnect();
+    () => (active() ? content() : undefined),
+    (el) => {
+      if (!el) return;
+      let inside = el.contains(document.activeElement);
+      const onFocusIn = () => {
+        inside = true;
       };
+      const onFocusOut = (event: FocusEvent) => {
+        if (event.relatedTarget && !el.contains(event.relatedTarget as Node)) inside = false;
+      };
+      el.addEventListener("focusin", onFocusIn);
+      el.addEventListener("focusout", onFocusOut);
+      return () => {
+        el.removeEventListener("focusin", onFocusIn);
+        el.removeEventListener("focusout", onFocusOut);
+        const focused = document.activeElement;
+        const lost = focused === null || focused === document.body || el.contains(focused);
+        if (inside && lost) untrack(trigger)?.focus();
+      };
+    },
+  );
+
+  createEffect(
+    () => (active() && enter() ? content() : undefined),
+    (el) => {
+      if (!el) return;
+      return whenShown(el, () => {
+        if (!el.contains(document.activeElement)) focusFirstIn(el);
+      });
     },
   );
 }

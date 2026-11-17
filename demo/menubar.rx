@@ -1,53 +1,37 @@
 import { MenubarRoot } from "../src/menubar/menubar.rx"
-import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuSeparator, MenuSubmenuRoot, MenuSubmenuTrigger } from "../src/menu/menu.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuSeparator, MenuSubmenuRoot, MenuSubmenuTrigger } from "../src/menu/menu.rx"
 
 export component MenubarDemo() {
   <MenubarRoot class="menubar">
     <MenuRoot>
       <MenuTrigger>File</MenuTrigger>
-      <MenuPortal>
-        <MenuPositioner sideOffset={4}>
+      <MenuPopup class="popup" sideOffset={4}>
+        <MenuItem>New</MenuItem>
+        <MenuItem>Open…</MenuItem>
+        <MenuSubmenuRoot>
+          <MenuSubmenuTrigger>Open recent</MenuSubmenuTrigger>
           <MenuPopup class="popup">
-            <MenuItem>New</MenuItem>
-            <MenuItem>Open…</MenuItem>
-            <MenuSubmenuRoot>
-              <MenuSubmenuTrigger>Open recent</MenuSubmenuTrigger>
-              <MenuPortal>
-                <MenuPositioner>
-                  <MenuPopup class="popup">
-                    <MenuItem>notes.txt</MenuItem>
-                    <MenuItem>todo.md</MenuItem>
-                  </MenuPopup>
-                </MenuPositioner>
-              </MenuPortal>
-            </MenuSubmenuRoot>
-            <MenuSeparator />
-            <MenuItem>Close</MenuItem>
+            <MenuItem>notes.txt</MenuItem>
+            <MenuItem>todo.md</MenuItem>
           </MenuPopup>
-        </MenuPositioner>
-      </MenuPortal>
+        </MenuSubmenuRoot>
+        <MenuSeparator />
+        <MenuItem>Close</MenuItem>
+      </MenuPopup>
     </MenuRoot>
     <MenuRoot>
       <MenuTrigger>Edit</MenuTrigger>
-      <MenuPortal>
-        <MenuPositioner sideOffset={4}>
-          <MenuPopup class="popup">
-            <MenuItem>Undo</MenuItem>
-            <MenuItem>Redo</MenuItem>
-          </MenuPopup>
-        </MenuPositioner>
-      </MenuPortal>
+      <MenuPopup class="popup" sideOffset={4}>
+        <MenuItem>Undo</MenuItem>
+        <MenuItem>Redo</MenuItem>
+      </MenuPopup>
     </MenuRoot>
     <MenuRoot>
       <MenuTrigger>View</MenuTrigger>
-      <MenuPortal>
-        <MenuPositioner sideOffset={4}>
-          <MenuPopup class="popup">
-            <MenuItem>Zoom in</MenuItem>
-            <MenuItem>Zoom out</MenuItem>
-          </MenuPopup>
-        </MenuPositioner>
-      </MenuPortal>
+      <MenuPopup class="popup" sideOffset={4}>
+        <MenuItem>Zoom in</MenuItem>
+        <MenuItem>Zoom out</MenuItem>
+      </MenuPopup>
     </MenuRoot>
   </MenubarRoot>
 }

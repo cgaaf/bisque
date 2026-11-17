@@ -1,26 +1,25 @@
-import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink, NavigationMenuPortal, NavigationMenuPositioner, NavigationMenuPopup, NavigationMenuViewport } from "../navigation-menu.rx"
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuContent, NavigationMenuLink } from "../navigation-menu.rx"
 
 export default component Fixture() {
   source value: string | null := "docs"
   <main>
-    <button data-testid="close" onClick={() => { value := null }}>Close</button>
     <NavigationMenuRoot value={value} onValueChange={(v) => { value := v }}>
       <NavigationMenuList>
         <NavigationMenuItem value="docs">
           <NavigationMenuTrigger>Docs</NavigationMenuTrigger>
-          <NavigationMenuContent data-testid="docs-content">
+          <NavigationMenuContent data-testid="docs-content" side="right">
             <NavigationMenuLink href="#intro">Intro</NavigationMenuLink>
           </NavigationMenuContent>
         </NavigationMenuItem>
+        <NavigationMenuItem value="blog">
+          <NavigationMenuTrigger disabled>Blog</NavigationMenuTrigger>
+          <NavigationMenuContent data-testid="blog-content">
+            <NavigationMenuLink href="#posts">Posts</NavigationMenuLink>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
       </NavigationMenuList>
-      <NavigationMenuPortal>
-        <NavigationMenuPositioner>
-          <NavigationMenuPopup data-testid="popup">
-            <NavigationMenuViewport />
-          </NavigationMenuPopup>
-        </NavigationMenuPositioner>
-      </NavigationMenuPortal>
     </NavigationMenuRoot>
+    <button data-testid="close" onClick={() => { value := null }}>Close</button>
     <output data-testid="value">{value ?? "null"}</output>
   </main>
 }

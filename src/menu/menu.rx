@@ -1,33 +1,31 @@
+// A menu on the native `popover` attribute. The browser provides the top layer, closing on Escape and on a press
+// outside, nesting (a submenu's popup sits inside its parent's, so the browser keeps the parent open while it is
+// open and closes it with the parent), and the placement against the trigger with CSS anchor positioning. The
+// platform has no menu keyboard model, so this family adds it: roving focus and typeahead between items, item
+// kinds and their activation, moving focus into the menu on open and back to the trigger on close, and the ARIA
+// roles. There is no Portal, Positioner, Backdrop or Arrow part: the popup is the positioned element, styled with
+// `:popover-open` and `@starting-style`, and it stays in the document while closed.
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
-import { createFloating, createRovingFocus, createDismiss, focusElement, clickElement, focusListItem } from "../internal/dom.js"
-import { createHoverIntent, createArrow } from "../internal/overlay.js"
+import { createRovingFocus, focusElement, clickElement, focusListItem } from "../internal/dom.js"
+import { createHoverIntent } from "../internal/overlay.js"
 import { createMenuFocus, adjacentItem } from "../internal/menu.js"
-import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, AnchorProps, PartProps } from "../internal/types.rx"
 
 // Where focus goes when a menu opens: its popup, its first or last item, or nowhere (a submenu opened by hover).
 export type MenuOpenFocus = "none" | "container" | "first-item" | "last-item"
 
-// A point in viewport coordinates to open at instead of the trigger (a context menu opens at the pointer).
-export type MenuAnchorPoint = { x: number; y: number; width?: number; height?: number }
-
-export type MenuContext = PopupState & {
-  popupId: string
-  // Shared by a menu and its submenus: their popups carry it as `data-rs-ui-menu-tree`.
-  treeId: string
+// `trigger` is the element the popup is anchored to: the MenuTrigger, a submenu's trigger item, or a context
+// menu's point.
+export type MenuContext = PopoverState & {
+  // Names this menu in a Menubar (MenubarContext.openMenu).
+  menuId: string
   openFocus: MenuOpenFocus
   openWith: (focus: MenuOpenFocus) => void
-  // Opens at a point rather than against the trigger (ContextMenuTrigger).
-  openAt: (point: MenuAnchorPoint, focus: MenuOpenFocus) => void
-  anchorPoint: MenuAnchorPoint | undefined
   disabled: boolean
-  // Closes this menu and every menu above it: choosing an item, Tab, a press outside.
+  // Closes this menu and every menu it is nested in: choosing an item, Tab.
   closeTree: () => void
   isSubmenu: boolean
-  // Whether the menu this one opened from is open (always true for a top-level menu).
-  parentOpen: boolean
-  // This menu's popup and its parents': a press in any of them is not a press outside.
-  popups: (HTMLElement | undefined)[]
   // In a menubar: opens the menu `direction` triggers along from this tree's top-level trigger.
   moveInMenubar: (direction: number) => void
 }
@@ -40,7 +38,7 @@ export type MenubarContext = {
   orientation: "horizontal" | "vertical"
   disabled: boolean
   loop: boolean
-  // The popup id of the menu that is open, if one is.
+  // The `menuId` of the menu that is open, if one is.
   openMenu: string | undefined
   openFocus: MenuOpenFocus
   element: HTMLElement | undefined
@@ -61,6 +59,8 @@ export context menubar: MenubarContext = {
 export type MenuRootProps = {
   open?: boolean
   defaultOpen?: boolean
+  // Called after the browser or a part opened or closed it. A press outside and Escape can't be refused: a
+  // controlled menu that keeps `open` true is shown again.
   onOpenChange?: (open: boolean) => void
   // A disabled menu doesn't open. Default: false.
   disabled?: boolean
@@ -70,35 +70,28 @@ export type MenuRootProps = {
 export component MenuRoot(props: MenuRootProps) {
   bar = use menubar
   source localFocus: MenuOpenFocus := "container"
-  source anchorPoint: MenuAnchorPoint | undefined := undefined
-  popupId = createId("menu")
+  menuId = createId("menu")
   inBar = bar.present
   isDisabled = (props.disabled ?? false) || bar.disabled
 
   action changed(next: boolean) {
     if (inBar) {
-      if (next) { bar.setOpenMenu(popupId, localFocus) } else if (bar.openMenu == popupId) { bar.setOpenMenu(undefined, "container") }
+      if (next) { bar.setOpenMenu(menuId, localFocus) } else if (bar.openMenu == menuId) { bar.setOpenMenu(undefined, "container") }
     }
     if (props.onOpenChange) { props.onOpenChange(next) }
   }
 
-  state = createPopupState(inBar ? bar.openMenu == popupId : props.open, peek(props.defaultOpen ?? false), true, changed)
+  state = createPopoverState(inBar ? bar.openMenu == menuId : props.open, peek(props.defaultOpen ?? false), changed)
   openFocus = inBar ? bar.openFocus : localFocus
 
   action openWith(focus: MenuOpenFocus) {
     if (isDisabled) { return }
     if (inBar) {
-      if (bar.openMenu == popupId) { return }
-      bar.setOpenMenu(popupId, focus)
+      if (bar.openMenu == menuId) { return }
+      bar.setOpenMenu(menuId, focus)
       if (props.onOpenChange) { props.onOpenChange(true) }
       return
     }
-    localFocus := focus
-    state.setOpen(true)
-  }
-  action openAt(point: MenuAnchorPoint, focus: MenuOpenFocus) {
-    if (isDisabled) { return }
-    anchorPoint := point
     localFocus := focus
     state.setOpen(true)
   }
@@ -116,32 +109,31 @@ export component MenuRoot(props: MenuRootProps) {
     }
   }
 
-  _focus = createMenuFocus(state.open, state.popup, openFocus, state.trigger, true, peek(popupId))
+  _focus = createMenuFocus(state.open, state.popup, openFocus, state.trigger, true)
 
   provide menu = {
     ...state,
-    popupId: popupId,
-    treeId: popupId,
+    menuId: menuId,
     openFocus: openFocus,
     openWith: openWith,
-    openAt: openAt,
-    anchorPoint: anchorPoint,
     disabled: isDisabled,
     closeTree: closeTree,
     isSubmenu: false,
-    parentOpen: true,
-    popups: [state.popup],
     moveInMenubar: moveInMenubar,
   }
 
   {props.children}
 }
 
+// Spread on a <button>. `popovertarget` is there so the browser doesn't count a press on the trigger as a press
+// outside the open menu; the click itself is the menu's (it is prevented, so the browser doesn't toggle), which
+// lets a menubar keep a menu open that hovering opened.
 export fn menuTrigger(ref c: MenuContext, ref bar: MenubarContext): PartProps {
   vertical = bar.orientation == "vertical"
   // Set while the pointer that opened the menu by hovering is still on the trigger: its click keeps it open.
   source hoverOpened: boolean := false
-  action press() {
+  action press(event: MouseEvent) {
+    event.preventDefault()
     // Read into a local: narrowing `hoverOpened` itself would narrow the type rx-tsc gives its write.
     let stick = hoverOpened
     if (c.open && stick) {
@@ -163,7 +155,7 @@ export fn menuTrigger(ref c: MenuContext, ref bar: MenubarContext): PartProps {
   }
   // In a menubar with a menu open, moving the pointer onto another trigger opens its menu instead.
   action pointerEnter(event: PointerEvent) {
-    if (bar.present && !c.disabled && event.pointerType != "touch" && bar.openMenu != undefined && bar.openMenu != c.popupId) {
+    if (bar.present && !c.disabled && event.pointerType != "touch" && bar.openMenu != undefined && bar.openMenu != c.menuId) {
       hoverOpened := true
       c.openWith("container")
     }
@@ -171,15 +163,16 @@ export fn menuTrigger(ref c: MenuContext, ref bar: MenubarContext): PartProps {
   action pointerLeave() { hoverOpened := false }
   {
     type: "button",
+    popovertarget: c.popupId,
     role: bar.present ? "menuitem" : undefined,
     disabled: c.disabled ? true : undefined,
     "aria-haspopup": "menu",
     "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.mounted ? c.popupId : undefined,
+    "aria-controls": c.popupId,
     "data-popup-open": c.open ? "" : undefined,
     "data-disabled": c.disabled ? "" : undefined,
     "data-rs-ui-item": bar.present ? "" : undefined,
-    "data-rs-ui-menu-id": bar.present ? c.popupId : undefined,
+    "data-rs-ui-menu-id": bar.present ? c.menuId : undefined,
     ref: c.setTrigger,
     onClick: press,
     onKeyDown: keyDown,
@@ -196,70 +189,25 @@ export component MenuTrigger({ children, ...rest }: ButtonProps) {
   <button {...merged}>{children}</button>
 }
 
-// Renders its children at the end of <body> while the menu is mounted.
-export component MenuPortal(props: { keepMounted?: boolean; children?: View }) {
-  c = use menu
-  {if c.mounted || (props.keepMounted ?? false) {
-    portal { {props.children} }
-  }}
-}
-
-export component MenuBackdrop({ children, ...rest }: DivProps) {
-  c = use menu
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", ...state }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Where the positioner put the popup, for the popup and the arrow inside it.
-export type MenuPositionerContext = {
-  side: "top" | "bottom" | "left" | "right"
-  align: "start" | "center" | "end"
-  arrowUncentered: boolean
-  setArrow: (element: HTMLElement) => void
-}
-
-export context menuPositioner: MenuPositionerContext
-
-export type MenuPositionerProps = {
-  // Default: "bottom"; "right" for a submenu, and in a vertical menubar.
+export type MenuPopupProps = {
+  // Which side of the trigger it sits on; the browser flips it when it doesn't fit. Default: "bottom"; "right"
+  // for a submenu and in a vertical menubar.
   side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the trigger it lines up with. Default: "start".
   align?: "start" | "center" | "end"
+  // Gap between trigger and popup, in pixels. Default: 0.
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: number
-  // What to position against instead of the trigger: an element, or a point in viewport coordinates.
-  anchor?: HTMLElement | MenuAnchorPoint
 } & DivProps
 
-// Positions the popup against the trigger. Carries `data-side` and `data-align`: where it ended up.
-export component MenuPositioner(props: MenuPositionerProps) {
-  c = use menu
-  bar = use menubar
-  source arrow: HTMLElement | undefined := undefined
-  action setArrow(element: HTMLElement) { arrow := element }
-  sideways = c.isSubmenu || (bar.present && bar.orientation == "vertical")
-  [usedSide, usedAlign] = createFloating(c.mounted, props.anchor ?? c.anchorPoint ?? c.trigger, c.positioner, {
-    side: props.side ?? (sideways ? "right" : "bottom"),
-    align: props.align ?? "start",
-    sideOffset: props.sideOffset ?? 0,
-    alignOffset: props.alignOffset ?? 0,
-    collisionPadding: props.collisionPadding ?? 5,
-  })
-  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
-  provide menuPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
-  { side, align, sideOffset, alignOffset, collisionPadding, anchor, children, ...rest } = props
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
-  <div {...merged}>{children}</div>
-}
-
-export fn menuPopup(ref c: MenuContext, ref bar: MenubarContext): PartProps {
+// The menu: a `popover="auto"` element placed against its trigger. A submenu's popup is declared inside the
+// parent's popup, which is what makes the browser treat it as nested.
+export fn menuPopup(ref c: MenuContext, ref bar: MenubarContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  base = popoverPopupProps(c, "auto", side, align, sideOffset, alignOffset)
   _roving = createRovingFocus(c.popup, { orientation: "vertical", loop: true, typeahead: true, tabStop: false })
-  state = popupStateAttributes(c)
-  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement; target: Node }) {
-    // A submenu's popup is portalled, but its key events still bubble here through the portal: leave them.
-    if (event.defaultPrevented || !event.currentTarget.contains(event.target)) { return }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement; target: HTMLElement }) {
+    // A submenu's popup is inside this one, so its key events bubble through here: leave them to it.
+    if (event.defaultPrevented || event.target.closest("[popover]") != event.currentTarget) { return }
     if (event.key == "Tab") {
       // Tab leaves the menu, so the whole tree closes.
       c.closeTree()
@@ -272,40 +220,22 @@ export fn menuPopup(ref c: MenuContext, ref bar: MenubarContext): PartProps {
     }
   }
   {
-    id: c.popupId,
+    ...base,
     role: "menu",
     tabindex: "-1",
     "aria-orientation": "vertical",
-    "data-rs-ui-menu-tree": c.treeId,
-    ref: c.setPopup,
+    // Marks it a list of its own before roving focus does, so a menubar's arrow keys leave its items alone.
+    "data-rs-ui-list": "",
     onKeyDown: keyDown,
-    ...state,
   }
 }
 
-export component MenuPopup({ children, ...rest }: DivProps) {
+export component MenuPopup({ side, align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: MenuPopupProps) {
   c = use menu
   bar = use menubar
-  p = use menuPositioner
-  own = menuPopup(c, bar)
-  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
-// by `data-side`. It has nothing to point at in a context menu.
-export component MenuArrow({ children, ...rest }: DivProps) {
-  c = use menu
-  p = use menuPositioner
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    "aria-hidden": "true",
-    "data-side": p.side,
-    "data-align": p.align,
-    "data-uncentered": p.arrowUncentered ? "" : undefined,
-    ref: p.setArrow,
-    ...state,
-  }, rest)
+  usedSide = side ?? (c.isSubmenu || (bar.present && bar.orientation == "vertical") ? "right" : "bottom")
+  own = menuPopup(c, bar, usedSide, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -500,23 +430,22 @@ export component MenuSeparator(props: DivProps) {
   <div {...merged} />
 }
 
+// Escape closes only the innermost open menu, as the browser does for nested popovers, and focus returns to the
+// submenu's trigger. (Base UI's `closeParentOnEsc` is not offered: the browser decides.)
 export type MenuSubmenuRootProps = {
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
-  // Whether Escape closes every menu in the tree (true) or only this submenu, returning focus to its trigger.
-  // Default: true. Base UI's default is false.
-  closeParentOnEsc?: boolean
   disabled?: boolean
   children?: View
 }
 
-// A menu inside a menu: holds a MenuSubmenuTrigger (an item of the parent) and the submenu's own Portal,
-// Positioner and Popup. The parts beneath it read it as `menu`, like a top-level menu.
+// A menu inside a menu: holds a MenuSubmenuTrigger (an item of the parent) and the submenu's own MenuPopup,
+// declared inside the parent's MenuPopup. The parts beneath it read it as `menu`, like a top-level menu.
 export component MenuSubmenuRoot(props: MenuSubmenuRootProps) {
   // Read here and passed down: in a component that provides `menu`, `use menu` sees its own provision.
   parent = use menu
-  <SubmenuProvider parent={parent} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} closeParentOnEsc={props.closeParentOnEsc} disabled={props.disabled}>
+  <SubmenuProvider parent={parent} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} disabled={props.disabled}>
     {props.children}
   </SubmenuProvider>
 }
@@ -524,51 +453,30 @@ export component MenuSubmenuRoot(props: MenuSubmenuRootProps) {
 component SubmenuProvider(props: MenuSubmenuRootProps & { parent: MenuContext }) {
   parent = props.parent
   source openFocus: MenuOpenFocus := "none"
-  state = createPopupState(props.open, peek(props.defaultOpen ?? false), false, props.onOpenChange)
-  popupId = createId("menu")
+  // The browser closes the submenu with its parent (it is nested in it) and reports it through `toggle`.
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
   isDisabled = (props.disabled ?? false) || parent.disabled
-  popups = [...parent.popups, state.popup]
 
   action openWith(focus: MenuOpenFocus) {
     if (isDisabled) { return }
     openFocus := focus
     state.setOpen(true)
   }
-  action openAt(point: MenuAnchorPoint, focus: MenuOpenFocus) { openWith(focus) }
   action closeTree() {
     state.setOpen(false)
     parent.closeTree()
   }
-  // Escape and a press outside are this submenu's to handle while it is the top layer.
-  action dismiss(reason: "escape-key" | "outside-press") {
-    if (reason == "escape-key" && !(props.closeParentOnEsc ?? true)) {
-      state.setOpen(false)
-    } else {
-      closeTree()
-    }
-  }
 
-  _dismiss = createDismiss(state.open, [...popups, state.trigger], dismiss)
-  _focus = createMenuFocus(state.open, state.popup, openFocus, state.trigger, parent.open, peek(parent.treeId))
-
-  // However the parent closed, the submenu closes with it.
-  effect (parent.open) {
-    if (!$0) { state.setOpen(false) }
-  }
+  _focus = createMenuFocus(state.open, state.popup, openFocus, state.trigger, parent.open)
 
   provide menu = {
     ...state,
-    popupId: popupId,
-    treeId: parent.treeId,
+    menuId: state.popupId,
     openFocus: openFocus,
     openWith: openWith,
-    openAt: openAt,
-    anchorPoint: undefined,
     disabled: isDisabled,
     closeTree: closeTree,
     isSubmenu: true,
-    parentOpen: parent.open,
-    popups: popups,
     moveInMenubar: parent.moveInMenubar,
   }
 
@@ -583,10 +491,12 @@ export type MenuSubmenuTriggerProps = {
   delay?: number
   // How long after the pointer leaves (and not towards the submenu) before it closes, in ms. Default: 0.
   closeDelay?: number
-} & DivProps
+} & ButtonProps
 
 // An item of the parent menu that opens the submenu: on hover (the pointer may cross other items on its way to the
 // submenu without closing it), on click, and on ArrowRight, Enter and Space, which also move focus into it.
+// Spread it on a <button>: like MenuTrigger, its `popovertarget` keeps a press on it from closing the submenu
+// (a press on any other part of the parent menu does close it), and the click itself is prevented.
 export fn menuSubmenuTrigger(ref c: MenuContext, ref disabled: boolean, ref openOnHover: boolean, ref delay: number, ref closeDelay: number): PartProps {
   base = itemBase(disabled)
   action hoverChange(next: boolean, reason: "hover" | "focus" | "press" | "group") {
@@ -611,16 +521,19 @@ export fn menuSubmenuTrigger(ref c: MenuContext, ref disabled: boolean, ref open
       c.setOpen(false)
     }
   }
-  action click() {
+  action click(event: MouseEvent) {
+    event.preventDefault()
     if (disabled) { return }
     if (!c.open) { c.openWith("none") } else if (!openOnHover) { c.setOpen(false) }
   }
   {
     role: "menuitem",
+    type: "button",
+    popovertarget: c.popupId,
     ...base,
     "aria-haspopup": "menu",
     "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.mounted ? c.popupId : undefined,
+    "aria-controls": c.popupId,
     "data-popup-open": c.open ? "" : undefined,
     ref: c.setTrigger,
     onClick: click,
@@ -633,5 +546,19 @@ export component MenuSubmenuTrigger({ disabled = false, openOnHover = true, dela
   isDisabled = disabled || c.disabled
   own = menuSubmenuTrigger(c, isDisabled, openOnHover, delay, closeDelay)
   merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  <button {...merged}>{children}</button>
+}
+
+// Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the
+// trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.
+export fn menuArrow(ref c: MenuContext): PartProps {
+  base = popoverArrowProps(c)
+  base
+}
+
+export component MenuArrow({ children, ...rest }: DivProps) {
+  c = use menu
+  own = menuArrow(c)
+  merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

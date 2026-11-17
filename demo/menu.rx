@@ -1,29 +1,21 @@
-import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuLinkItem, MenuSeparator, MenuCheckboxItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../src/menu/menu.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuLinkItem, MenuSeparator, MenuCheckboxItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../src/menu/menu.rx"
 
 export component MenuDemo() {
   <MenuRoot>
     <MenuTrigger>Actions</MenuTrigger>
-    <MenuPortal>
-      <MenuPositioner sideOffset={4}>
+    <MenuPopup class="popup" sideOffset={4}>
+      <MenuItem>Rename</MenuItem>
+      <MenuItem>Duplicate</MenuItem>
+      <MenuSubmenuRoot>
+        <MenuSubmenuTrigger>Share</MenuSubmenuTrigger>
         <MenuPopup class="popup">
-          <MenuItem>Rename</MenuItem>
-          <MenuItem>Duplicate</MenuItem>
-          <MenuSubmenuRoot>
-            <MenuSubmenuTrigger>Share</MenuSubmenuTrigger>
-            <MenuPortal>
-              <MenuPositioner>
-                <MenuPopup class="popup">
-                  <MenuItem>Email link</MenuItem>
-                  <MenuItem>Copy link</MenuItem>
-                </MenuPopup>
-              </MenuPositioner>
-            </MenuPortal>
-          </MenuSubmenuRoot>
-          <MenuSeparator />
-          <MenuCheckboxItem>Word wrap</MenuCheckboxItem>
-          <MenuLinkItem href="#menu">Documentation</MenuLinkItem>
+          <MenuItem>Email link</MenuItem>
+          <MenuItem>Copy link</MenuItem>
         </MenuPopup>
-      </MenuPositioner>
-    </MenuPortal>
+      </MenuSubmenuRoot>
+      <MenuSeparator />
+      <MenuCheckboxItem>Word wrap</MenuCheckboxItem>
+      <MenuLinkItem href="#menu">Documentation</MenuLinkItem>
+    </MenuPopup>
   </MenuRoot>
 }

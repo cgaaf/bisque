@@ -1,27 +1,19 @@
-import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuPositioner, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../src/context-menu/context-menu.rx"
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../src/context-menu/context-menu.rx"
 
 export component ContextMenuDemo() {
   <ContextMenuRoot>
     <ContextMenuTrigger class="context-area">Right-click (or long-press) here</ContextMenuTrigger>
-    <ContextMenuPortal>
-      <ContextMenuPositioner>
+    <ContextMenuPopup class="popup">
+      <ContextMenuItem>Back</ContextMenuItem>
+      <ContextMenuItem>Reload</ContextMenuItem>
+      <ContextMenuSeparator />
+      <ContextMenuSubmenuRoot>
+        <ContextMenuSubmenuTrigger>More tools</ContextMenuSubmenuTrigger>
         <ContextMenuPopup class="popup">
-          <ContextMenuItem>Back</ContextMenuItem>
-          <ContextMenuItem>Reload</ContextMenuItem>
-          <ContextMenuSeparator />
-          <ContextMenuSubmenuRoot>
-            <ContextMenuSubmenuTrigger>More tools</ContextMenuSubmenuTrigger>
-            <ContextMenuPortal>
-              <ContextMenuPositioner>
-                <ContextMenuPopup class="popup">
-                  <ContextMenuItem>Save page as…</ContextMenuItem>
-                  <ContextMenuItem>Developer tools</ContextMenuItem>
-                </ContextMenuPopup>
-              </ContextMenuPositioner>
-            </ContextMenuPortal>
-          </ContextMenuSubmenuRoot>
+          <ContextMenuItem>Save page as…</ContextMenuItem>
+          <ContextMenuItem>Developer tools</ContextMenuItem>
         </ContextMenuPopup>
-      </ContextMenuPositioner>
-    </ContextMenuPortal>
+      </ContextMenuSubmenuRoot>
+    </ContextMenuPopup>
   </ContextMenuRoot>
 }

@@ -1,0 +1,21 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem } from "../menu.rx"
+
+export default component Fixture() {
+  source open := false
+  <main>
+    <button onClick={() => { open := true }}>Open from outside</button>
+    <MenuRoot open={open} onOpenChange={(next) => { open := next }}>
+      <MenuTrigger>Controlled</MenuTrigger>
+      <MenuPopup data-testid="controlled-popup">
+        <MenuItem>One</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+    <MenuRoot disabled>
+      <MenuTrigger>Disabled</MenuTrigger>
+      <MenuPopup data-testid="disabled-popup">
+        <MenuItem>Nothing</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+  </main>
+}

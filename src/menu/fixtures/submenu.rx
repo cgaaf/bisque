@@ -1,45 +1,50 @@
-import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuLinkItem, MenuCheckboxItem, MenuArrow, MenuSubmenuRoot, MenuSubmenuTrigger } from "../menu.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuLinkItem, MenuCheckboxItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../menu.rx"
 
 export default component Fixture() {
   source chosen := "none"
   source wrap := false
-  <main>
+  source subChanges := 0
+  <style>
+    :global(.menu) { margin: 0; padding: 0; border: 0; width: 120px }
+    :global(.menu > :not([popover])) { display: block; box-sizing: border-box; width: 100%; height: 24px; font: inherit; border: 0; padding: 2px; text-align: start }
+  </style>
+  <main style="padding: 40px 0 0 40px">
     <MenuRoot>
       <MenuTrigger>File</MenuTrigger>
-      <MenuPortal>
-        <MenuPositioner data-testid="positioner">
-          <MenuPopup data-testid="root-popup">
-            <MenuArrow data-testid="arrow" />
-            <MenuItem onClick={() => { chosen := "new" }}>New</MenuItem>
+      <MenuPopup class="menu" data-testid="root-popup">
+        <MenuItem onClick={() => { chosen := "new" }}>New</MenuItem>
+        <MenuSubmenuRoot onOpenChange={() => { subChanges := subChanges + 1 }}>
+          <MenuSubmenuTrigger>Share</MenuSubmenuTrigger>
+          <MenuPopup class="menu" data-testid="sub-popup">
+            <MenuItem onClick={() => { chosen := "email" }}>Email</MenuItem>
+            <MenuCheckboxItem checked={wrap} onCheckedChange={(next) => { wrap := next }}>Notify</MenuCheckboxItem>
             <MenuSubmenuRoot>
-              <MenuSubmenuTrigger>Share</MenuSubmenuTrigger>
-              <MenuPortal>
-                <MenuPositioner data-testid="sub-positioner">
-                  <MenuPopup data-testid="sub-popup">
-                    <MenuItem onClick={() => { chosen := "email" }}>Email</MenuItem>
-                    <MenuCheckboxItem checked={wrap} onCheckedChange={(next) => { wrap := next }}>Notify</MenuCheckboxItem>
-                    <MenuLinkItem href="#docs">Docs</MenuLinkItem>
-                  </MenuPopup>
-                </MenuPositioner>
-              </MenuPortal>
+              <MenuSubmenuTrigger>More</MenuSubmenuTrigger>
+              <MenuPopup class="menu" data-testid="more-popup">
+                <MenuItem onClick={() => { chosen := "fax" }}>Fax</MenuItem>
+              </MenuPopup>
             </MenuSubmenuRoot>
-            <MenuSubmenuRoot closeParentOnEsc={false}>
-              <MenuSubmenuTrigger>Export</MenuSubmenuTrigger>
-              <MenuPortal>
-                <MenuPositioner>
-                  <MenuPopup data-testid="export-popup">
-                    <MenuItem onClick={() => { chosen := "pdf" }}>PDF</MenuItem>
-                  </MenuPopup>
-                </MenuPositioner>
-              </MenuPortal>
-            </MenuSubmenuRoot>
-            <MenuItem onClick={() => { chosen := "print" }}>Print</MenuItem>
+            <MenuLinkItem href="#docs">Docs</MenuLinkItem>
           </MenuPopup>
-        </MenuPositioner>
-      </MenuPortal>
+        </MenuSubmenuRoot>
+        <MenuSubmenuRoot>
+          <MenuSubmenuTrigger>Export</MenuSubmenuTrigger>
+          <MenuPopup class="menu" data-testid="export-popup">
+            <MenuItem onClick={() => { chosen := "pdf" }}>PDF</MenuItem>
+          </MenuPopup>
+        </MenuSubmenuRoot>
+        <MenuItem onClick={() => { chosen := "print" }}>Print</MenuItem>
+        <MenuSubmenuRoot disabled>
+          <MenuSubmenuTrigger>Archive</MenuSubmenuTrigger>
+          <MenuPopup class="menu" data-testid="archive-popup">
+            <MenuItem>Old</MenuItem>
+          </MenuPopup>
+        </MenuSubmenuRoot>
+      </MenuPopup>
     </MenuRoot>
     <output data-testid="chosen">{chosen}</output>
     <output data-testid="wrap">{wrap ? "on" : "off"}</output>
-    <div data-testid="outside">outside</div>
+    <output data-testid="sub-changes">{subChanges}</output>
+    <p data-testid="outside" style="margin-top: 300px">outside</p>
   </main>
 }

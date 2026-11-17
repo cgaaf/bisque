@@ -1,4 +1,4 @@
-import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuLink, NavigationMenuPortal, NavigationMenuPositioner, NavigationMenuPopup, NavigationMenuViewport, NavigationMenuArrow, NavigationMenuBackdrop } from "../navigation-menu.rx"
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuLink } from "../navigation-menu.rx"
 
 component Counter() {
   source count := 0
@@ -8,21 +8,27 @@ component Counter() {
 export default component Fixture() {
   source changes := 0
   source last := "none"
-  <main>
+  <style>
+    :global(.nav-list) { display: flex; gap: 16px; list-style: none; margin: 0; padding: 0 }
+    :global(.nav-content) { margin: 0; padding: 0; border: 0; width: 160px }
+    :global(.nav-content > *) { display: block }
+  </style>
+  <main style="padding: 20px 0 0 100px">
     <button>Before</button>
     <NavigationMenuRoot data-testid="root" onValueChange={(v) => { changes := changes + 1; last := v ?? "null" }}>
-      <NavigationMenuList data-testid="list">
+      <NavigationMenuList data-testid="list" class="nav-list">
         <NavigationMenuItem value="overview">
           <NavigationMenuTrigger>Overview <NavigationMenuIcon data-testid="icon">v</NavigationMenuIcon></NavigationMenuTrigger>
-          <NavigationMenuContent data-testid="overview-content" class="content">
+          <NavigationMenuContent data-testid="overview-content" class="nav-content" sideOffset={8}>
             <NavigationMenuLink href="#quick">Quick start</NavigationMenuLink>
             <NavigationMenuLink href="#a11y" closeOnClick>Accessibility</NavigationMenuLink>
+            <input aria-label="Search" />
             <Counter />
           </NavigationMenuContent>
         </NavigationMenuItem>
         <NavigationMenuItem value="handbook">
           <NavigationMenuTrigger>Handbook</NavigationMenuTrigger>
-          <NavigationMenuContent data-testid="handbook-content">
+          <NavigationMenuContent data-testid="handbook-content" class="nav-content">
             <NavigationMenuLink href="#styling">Styling</NavigationMenuLink>
           </NavigationMenuContent>
         </NavigationMenuItem>
@@ -30,19 +36,10 @@ export default component Fixture() {
           <NavigationMenuLink href="#home" active>Home</NavigationMenuLink>
         </NavigationMenuItem>
       </NavigationMenuList>
-      <NavigationMenuPortal>
-        <NavigationMenuBackdrop data-testid="backdrop" />
-        <NavigationMenuPositioner data-testid="positioner" sideOffset={8}>
-          <NavigationMenuPopup data-testid="popup">
-            <NavigationMenuArrow data-testid="arrow" />
-            <NavigationMenuViewport data-testid="viewport" />
-          </NavigationMenuPopup>
-        </NavigationMenuPositioner>
-      </NavigationMenuPortal>
     </NavigationMenuRoot>
-    <button>After</button>
+    <input aria-label="After" />
     <output data-testid="changes">{changes}</output>
     <output data-testid="last">{last}</output>
-    <div data-testid="outside">outside</div>
+    <p data-testid="outside" style="margin-top: 240px">outside</p>
   </main>
 }

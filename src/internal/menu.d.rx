@@ -1,8 +1,10 @@
-// How .rx may use ./menu.js (implemented in ./impl/menu.ts): menu focus, long press, menubar neighbours.
+// How .rx may use ./menu.js (implemented in ./impl/menu.ts): menu focus, long press, opening once the pointer is
+// released, menubar neighbours.
 // A `ref` parameter is passed live; the others are read once. Bind every call.
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./menu.d.ts.
-export pure fn createMenuFocus(ref active: boolean, ref popup: HTMLElement | undefined, ref initialFocus: "none" | "container" | "first-item" | "last-item", ref returnTo: HTMLElement | undefined, ref restore: boolean, tree: string) instantiates
+export pure fn createMenuFocus(ref active: boolean, ref popup: HTMLElement | undefined, ref initialFocus: "none" | "container" | "first-item" | "last-item", ref returnTo: HTMLElement | undefined, ref restore: boolean) instantiates
+export fn afterRelease(open: () => void): void
+export fn afterPointerRelease(event: MouseEvent, open: () => void): void
 export pure fn createLongPress(ref enabled: boolean, ref element: HTMLElement | undefined, delay: number, onLongPress: (x: number, y: number) => void) instantiates
 export fn adjacentItem(bar: HTMLElement | undefined, from: HTMLElement | undefined, direction: number, loop: boolean): HTMLElement | undefined
 export fn elementCorner(element: HTMLElement | undefined): { x: number; y: number }
-export fn containsFocus(element: HTMLElement | undefined): boolean
