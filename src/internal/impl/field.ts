@@ -472,30 +472,6 @@ export function isEmptyView(view: unknown): boolean {
   return view === undefined || view === null || view === false || (Array.isArray(view) && view.length === 0);
 }
 
-/**
- * Keeps a native checkbox or radio showing the component's state. The browser toggles `checked` (and clears
- * `indeterminate`) itself on a click, before any handler runs, and an owner of a controlled value may refuse the
- * change; Solid writes a property only when its value changes, so both are written again after every change
- * (`revision`). `indeterminate` is a property with no attribute, so it can only be set this way. What a form reset
- * restores is the element's `defaultChecked`, which the component passes as a prop; after a reset the component
- * decides what the box shows (`createFormReset`) and counts a revision.
- */
-export function createCheckedInput(
-  element: Accessor<HTMLInputElement | undefined>,
-  checked: Accessor<boolean>,
-  indeterminate: Accessor<boolean>,
-  revision: Accessor<number>,
-): void {
-  createEffect(
-    () => [element(), checked(), indeterminate(), revision()] as const,
-    ([input, isChecked, isIndeterminate]) => {
-      if (!input) return;
-      input.checked = isChecked;
-      input.indeterminate = isIndeterminate;
-    },
-  );
-}
-
 /** The form a control or a part inside one belongs to: the input's own `form` (which follows a `form` attribute). */
 function formOf(element: Element): HTMLFormElement | null {
   if (element instanceof HTMLFormElement) return element;

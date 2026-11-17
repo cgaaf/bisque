@@ -12,7 +12,6 @@ export pure fn createFormErrors(ref errors: import("./impl/field.ts").FormErrors
 export pure fn sameValue(a: unknown, b: unknown): boolean
 export pure fn isFilled(value: unknown): boolean
 export pure fn isEmptyView(view: unknown): boolean
-export pure fn createCheckedInput(ref element: HTMLInputElement | undefined, ref checked: boolean, ref indeterminate: boolean, ref revision: number) instantiates
 export pure fn createFormReset(ref element: Element | undefined, onReset: () => void) instantiates
 export fn setInputValue(input: HTMLInputElement | undefined, value: string): void
 export fn reportFailure(error: unknown): void

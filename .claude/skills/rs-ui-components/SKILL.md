@@ -113,6 +113,9 @@ Conventions the existing families follow, and consumers will rely on:
   (the implementation receives an accessor) or a result read without a call.
 - `src/internal/dom.d.ts`: generated from the `.d.rx` by `pnpm gen:dts`, so `rx-tsc` types calls as `.rx` sees
   them. Never edited.
+- `src/internal/dom.conform.ts`: generated with it. Types only: each declaration must be assignable from its
+  implementation, a `ref` being an `Accessor`, so `pnpm typecheck:ts` fails when the `.d.rx` and the `.ts`
+  disagree. `pure` and `instantiates` are not checked. Never edited.
 
 Keep state, derivation and context in `.rx`. Add a primitive only for what needs the DOM **and** that the
 platform doesn't do; look in `native.d.rx` (drivers for native elements) and the other `.d.rx` files first. A

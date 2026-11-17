@@ -10,7 +10,6 @@ export declare function createFormErrors(errors: import("./impl/field.ts").FormE
 export declare function sameValue(a: unknown, b: unknown): boolean;
 export declare function isFilled(value: unknown): boolean;
 export declare function isEmptyView(view: unknown): boolean;
-export declare function createCheckedInput(element: HTMLInputElement | undefined, checked: boolean, indeterminate: boolean, revision: number): void;
 export declare function createFormReset(element: Element | undefined, onReset: () => void): void;
 export declare function setInputValue(input: HTMLInputElement | undefined, value: string): void;
 export declare function reportFailure(error: unknown): void;
