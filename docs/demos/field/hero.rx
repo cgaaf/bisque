@@ -1,0 +1,13 @@
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+
+export component FieldHero() {
+  <div class="FieldHero">
+    <FieldRoot class="Field" name="email" validationMode="onBlur">
+      <FieldLabel class="Label">Email</FieldLabel>
+      <Input class="Input" type="email" required placeholder="you@example.com" />
+      <FieldDescription class="Description">We send the receipt here.</FieldDescription>
+      <FieldError class="Error" />
+    </FieldRoot>
+  </div>
+}

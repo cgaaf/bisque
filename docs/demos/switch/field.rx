@@ -1,0 +1,25 @@
+import { SwitchRoot, SwitchThumb } from "../../../src/switch/switch.rx"
+import { FieldRoot, FieldLabel, FieldDescription } from "../../../src/field/field.rx"
+
+export component SwitchField() {
+  <div class="SwitchField">
+    <FieldRoot class="Field" name="backups">
+      <div class="Text">
+        <FieldLabel class="Label">Automatic backups</FieldLabel>
+        <FieldDescription class="Description">Copy your files to the cloud every night.</FieldDescription>
+      </div>
+      <div class="Control">
+        <SwitchRoot class="Switch" defaultChecked><SwitchThumb class="Thumb" /></SwitchRoot>
+      </div>
+    </FieldRoot>
+    <FieldRoot class="Field" name="sync" disabled>
+      <div class="Text">
+        <FieldLabel class="Label">Sync over mobile data</FieldLabel>
+        <FieldDescription class="Description">Available on the Team plan.</FieldDescription>
+      </div>
+      <div class="Control">
+        <SwitchRoot class="Switch"><SwitchThumb class="Thumb" /></SwitchRoot>
+      </div>
+    </FieldRoot>
+  </div>
+}

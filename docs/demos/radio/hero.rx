@@ -1,0 +1,12 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../../../src/radio/radio.rx"
+
+export component RadioHero() {
+  <div class="RadioHero">
+    <div class="Caption" id="radio-hero-caption">Delivery</div>
+    <RadioGroup class="Group" aria-labelledby="radio-hero-caption" name="delivery" defaultValue="standard">
+      <label class="Item"><RadioRoot class="Radio" value="standard"><RadioIndicator class="Indicator" /></RadioRoot>Standard</label>
+      <label class="Item"><RadioRoot class="Radio" value="express"><RadioIndicator class="Indicator" /></RadioRoot>Express</label>
+      <label class="Item"><RadioRoot class="Radio" value="overnight" disabled><RadioIndicator class="Indicator" /></RadioRoot>Overnight</label>
+    </RadioGroup>
+  </div>
+}

@@ -1,0 +1,60 @@
+.CheckboxHero {
+  /* The box, its indicator and the text share one grid: the indicator sits in the box's cell. */
+  .Label {
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.625rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  /* The root is the native <input type="checkbox">: `appearance: none` removes the browser's box. */
+  .Checkbox {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border: 1px solid light-dark(#c4c4cc, #4a4a54);
+    border-radius: 0.3125rem;
+    background: light-dark(#fff, #16161a);
+    cursor: inherit;
+    transition:
+      background-color 120ms,
+      border-color 120ms;
+  }
+
+  .Checkbox:hover {
+    border-color: light-dark(#8e8e99, #6e6e7a);
+  }
+
+  .Checkbox:checked {
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Checkbox:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  /* The indicator is the box's next sibling, laid over it; presses go through to the box. */
+  .Indicator {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    color: light-dark(#fff, #17171a);
+    pointer-events: none;
+    opacity: 0;
+    scale: 0.6;
+    transition:
+      opacity 120ms,
+      scale 120ms;
+  }
+
+  .Checkbox:checked + .Indicator {
+    opacity: 1;
+    scale: 1;
+  }
+}

@@ -1,0 +1,31 @@
+import { Form, FormErrors } from "../../../src/form/form.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+
+export component FormServerErrors() {
+  source errors: FormErrors := {}
+  source saved := ""
+  // Stands in for a server that answers at once: it refuses the handles it already has.
+  <div class="FormServerErrors">
+    <Form class="Form" errors={errors} onFormSubmit={(values) => {
+      if (values.handle == "studio" || values.handle == "design") {
+        errors := { handle: `@${values.handle} is already taken` }
+        saved := ""
+      } else {
+        errors := {}
+        saved := `${values.handle}`
+      }
+    }}>
+      <FieldRoot class="Field" name="handle">
+        <FieldLabel class="Label">Handle</FieldLabel>
+        <div class="Row">
+          <Input class="Input" required pattern="[a-z0-9]+" />
+          <button class="Submit" type="submit">Save</button>
+        </div>
+        <FieldDescription class="Description">Lowercase letters and digits. Try “studio”.</FieldDescription>
+        <FieldError class="Error" />
+      </FieldRoot>
+    </Form>
+    {if saved != "" { <p class="Saved">Saved @{saved}</p> }}
+  </div>
+}

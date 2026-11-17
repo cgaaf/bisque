@@ -1,0 +1,88 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { RadioHero } from "../../demos/radio/hero.rx"
+import { RadioCards } from "../../demos/radio/cards.rx"
+
+export default component Page() {
+  <DocsPage title="Radio" subtitle="A set of native radios of which one is checked.">
+    <Demo source="radio/hero"><RadioHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="radio/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Each <code>RadioRoot</code> is a native <code>{"<input type=\"radio\">"}</code>, and the radios of a group
+      share a <code>name</code>. That is all the browser needs to treat them as one group. It provides:
+    </p>
+    <ul>
+      <li>One Tab stop for the group: the checked radio, or the first one when none is checked.</li>
+      <li>
+        Moving between the radios with the arrow keys, checking each one as focus arrives and skipping disabled
+        ones. Chrome and Firefox wrap around at the ends; Safari doesn't.
+      </li>
+      <li><kbd>Space</kbd> to check the focused radio, and label association.</li>
+      <li>Form submission of the checked radio's value, and <code>required</code> validation.</li>
+      <li>
+        The style hooks <code>:checked</code>, <code>:disabled</code>, <code>:focus-visible</code> and{" "}
+        <code>:user-invalid</code>.
+      </li>
+    </ul>
+    <p>
+      The library adds <code>RadioGroup</code>, a <code>{"<div role=\"radiogroup\">"}</code> that holds the value
+      (which may be controlled) and gives its radios a shared name when you don't. It also adds{" "}
+      <code>readOnly</code>, and the wiring to a <a href="../field/">Field</a>. There is no roving focus in
+      JavaScript.
+    </p>
+    <div class="note">
+      <p>
+        Base UI has separate Radio and Radio Group pages; here both are in one family. As with{" "}
+        <a href="../checkbox/">Checkbox</a>, an <code>{"<input>"}</code> can't have children, so{" "}
+        <code>RadioRoot</code> renders its children after the radio: <code>RadioIndicator</code> is its next
+        sibling, styled with <code>.Radio:checked + .Indicator</code>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="labelling">Labelling the group</h3>
+    <p>
+      Name the group with <code>aria-label</code>, or with <code>aria-labelledby</code> pointing at a caption as
+      the demo above does. Inside a <code>FieldRoot</code>, a <code>FieldLabel</code> names it, and a{" "}
+      <a href="../fieldset/">Fieldset</a>'s legend works too. Each radio is labelled by its own{" "}
+      <code>{"<label>"}</code>.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to the group to hold the value yourself, or{" "}
+      <code>defaultValue</code> to let it keep its own. An owner that doesn't take the new value keeps its radio
+      checked. With no value, no radio is checked and the first one is the group's Tab stop.
+    </p>
+    <p>
+      In the demo below the whole card is the radio's <code>{"<label>"}</code>, and is styled from the radio inside
+      it with <code>:has(:checked)</code> and <code>:has(:focus-visible)</code>. The radio draws its own dot, with
+      an inset shadow, so there is no indicator.
+    </p>
+    <Demo source="radio/cards"><RadioCards /></Demo>
+
+    <h3 id="names">Names and forms</h3>
+    <p>
+      The radios submit the checked value under the group's <code>name</code>. Without one, the field's name is
+      used inside a named <code>FieldRoot</code>, and otherwise a generated name groups them. A form they are in
+      then submits the value under that generated name, so give the group a <code>name</code> when the submission
+      matters.
+    </p>
+
+    <h3 id="disabled-read-only">Disabled and read-only</h3>
+    <p>
+      <code>disabled</code> on a radio, or on the group, is the native attribute: the arrow keys skip a disabled
+      radio and <code>:disabled</code> matches it. <code>readOnly</code> on the group lets focus move through the
+      radios with the arrow keys but checks none of them; the group carries <code>aria-readonly</code> and each
+      radio <code>data-readonly</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="radio" />
+  </DocsPage>
+}

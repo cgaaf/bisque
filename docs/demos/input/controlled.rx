@@ -1,0 +1,15 @@
+import { Input } from "../../../src/input/input.rx"
+
+export component InputControlled() {
+  source bio := "Makes furniture from reclaimed oak."
+  <div class="InputControlled">
+    <label class="Label">
+      Short bio
+      <Input class="Input" value={bio} maxlength={60} onValueChange={(next) => { bio := next }} />
+    </label>
+    <div class="Row">
+      <output class="Count">{bio.length} / 60</output>
+      <button class="Button" type="button" onClick={() => { bio := "" }}>Clear</button>
+    </div>
+  </div>
+}

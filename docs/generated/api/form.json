@@ -4,35 +4,35 @@
     {
       "name": "Form",
       "element": "form",
-      "description": "A native <form> that validates its Fields on submit, focuses the first invalid one, and shows errors passed in.",
+      "description": "A native `<form>` with `novalidate`. On submit it validates every enabled Field inside, prevents the submit and focuses the first invalid field when one fails, and shows errors passed in by field name.",
       "props": [
         {
           "name": "validationMode",
           "type": "FormValidationMode",
           "default": "\"onSubmit\"",
           "required": false,
-          "description": "When fields validate, unless a FieldRoot says otherwise."
+          "description": "When the Fields inside validate, unless a FieldRoot sets its own: `\"onSubmit\"` (on submit, then on every change), `\"onBlur\"` or `\"onChange\"`. A submit always validates every field."
         },
         {
           "name": "errors",
           "type": "FormErrors",
           "default": null,
           "required": false,
-          "description": "Errors to show on fields, keyed by field name. An entry is hidden once its field's value changes, until `errors` changes. Changes are seen by content (an .rx object source keeps its identity when written), so reset it (to {}) when a submit starts: the same errors coming back for the next submit are then a change, and show again."
+          "description": "Errors to show, keyed by field name: a message or a list of messages each. An entry is hidden once its field's value changes, until `errors` changes again. Compared by content, so set it to `{}` when a submit starts."
         },
         {
           "name": "onFormSubmit",
           "type": "(values: FormValues) => void",
           "default": null,
           "required": false,
-          "description": "Called on a valid submit with the values of the named fields; the native submission is then prevented."
+          "description": "Called on a valid submit with the values of the enabled, named Fields, keyed by name. The native submission is then prevented."
         },
         {
           "name": "onSubmit",
           "type": "(event: SubmitEvent) => void",
           "default": null,
           "required": false,
-          "description": "Called on a valid submit, before `onFormSubmit`."
+          "description": "Called with the submit event on a valid submit, before `onFormSubmit`. Without `onFormSubmit`, the native submission goes ahead unless this prevents it."
         }
       ],
       "dataAttributes": [],

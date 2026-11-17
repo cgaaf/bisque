@@ -1,0 +1,10 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "./rs-ui/radio/radio.rx"
+
+<RadioGroup>
+  <label>
+    <RadioRoot value="a">
+      <RadioIndicator />
+    </RadioRoot>
+    Label
+  </label>
+</RadioGroup>

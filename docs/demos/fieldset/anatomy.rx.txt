@@ -1,0 +1,5 @@
+import { FieldsetRoot, FieldsetLegend } from "./rs-ui/fieldset/fieldset.rx"
+
+<FieldsetRoot>
+  <FieldsetLegend />
+</FieldsetRoot>

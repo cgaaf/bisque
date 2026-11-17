@@ -1,0 +1,64 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { CheckboxGroupHero } from "../../demos/checkbox-group/hero.rx"
+import { CheckboxGroupParent } from "../../demos/checkbox-group/parent.rx"
+
+export default component Page() {
+  <DocsPage title="Checkbox Group" subtitle="A set of checkboxes that share one value: the list of the checked ones.">
+    <Demo source="checkbox-group/hero"><CheckboxGroupHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="checkbox-group/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Every box in the group is a native checkbox (see <a href="../checkbox/">Checkbox</a>), so each one toggles,
+      takes focus, submits and is styled as a native checkbox does. Boxes that share a <code>name</code> submit
+      every checked value under that name; the browser needs nothing more for that.
+    </p>
+    <p>
+      What the browser has no notion of is the group's value. <code>CheckboxGroup</code> is a{" "}
+      <code>{"<div role=\"group\">"}</code> that holds the checked boxes' values as one list, which may be
+      controlled, and adds a parent box that checks or clears the others. Inside a <a href="../field/">Field</a>{" "}
+      the group is the field's control: the list is the field's value, and the group is labelled by the field's
+      label.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="labelling">Labelling the group</h3>
+    <p>
+      Name the group as you would any element with <code>role="group"</code>: with <code>aria-label</code>, or with{" "}
+      <code>aria-labelledby</code> pointing at a heading. Inside a <code>FieldRoot</code>, as in the demo above, a{" "}
+      <code>FieldLabel</code> names it. A <a href="../fieldset/">Fieldset</a> with a legend around the group works
+      too, with no ARIA at all. Each box is labelled by its own <code>{"<label>"}</code>.
+    </p>
+
+    <h3 id="value">The value</h3>
+    <p>
+      A box takes part in the group when it has a <code>value</code>: it is checked while the group's list holds
+      that value, and pressing it adds or removes it. Pass <code>value</code> and <code>onValueChange</code> to the
+      group to hold the list yourself, or <code>defaultValue</code> to let it keep its own. A box's own{" "}
+      <code>checked</code> and <code>defaultChecked</code> are ignored inside a group.
+    </p>
+
+    <h3 id="parent">A parent box</h3>
+    <p>
+      Give the group every value with <code>allValues</code> and add a box with <code>parent</code>. It is checked
+      while all the boxes are, and indeterminate (matched by <code>:indeterminate</code>) while some are. Pressing it
+      cycles through all, none, and back to the selection the user had made, as Base UI's does. Once every box or
+      none is checked by hand, it toggles between all and none. The parent box has no name, so it submits nothing.
+    </p>
+    <Demo source="checkbox-group/parent"><CheckboxGroupParent /></Demo>
+
+    <h3 id="disabled">Disabled</h3>
+    <p>
+      <code>disabled</code> on the group disables every box in it natively, and the group carries{" "}
+      <code>data-disabled</code>. A disabled <code>FieldRoot</code> or <code>FieldsetRoot</code> around it does the
+      same.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="checkbox-group" />
+  </DocsPage>
+}

@@ -1,0 +1,11 @@
+import { Form } from "./rs-ui/form/form.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldError } from "./rs-ui/field/field.rx"
+
+<Form>
+  <FieldRoot>
+    <FieldLabel />
+    <FieldControl />
+    <FieldError />
+  </FieldRoot>
+  <button type="submit" />
+</Form>

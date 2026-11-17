@@ -1,0 +1,21 @@
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+
+export component CheckboxControlled() {
+  source subscribed := false
+  <div class="CheckboxControlled">
+    <label class="Label">
+      <CheckboxRoot class="Checkbox" checked={subscribed} onCheckedChange={(next) => { subscribed := next }}>
+        <CheckboxIndicator class="Indicator">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </CheckboxIndicator>
+      </CheckboxRoot>
+      Weekly digest
+    </label>
+    <div class="Row">
+      <button class="Button" type="button" onClick={() => { subscribed := !subscribed }}>Toggle from here</button>
+      <output class="State">{subscribed ? "subscribed" : "not subscribed"}</output>
+    </div>
+  </div>
+}

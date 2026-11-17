@@ -1,0 +1,58 @@
+.CheckboxGroupHero {
+  .Legend {
+    display: block;
+    margin-bottom: 0.625rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .Group {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .Item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.625rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  /* Each box is a native checkbox with the browser's look removed. */
+  .Checkbox {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border: 1px solid light-dark(#c4c4cc, #4a4a54);
+    border-radius: 0.3125rem;
+    background: light-dark(#fff, #16161a);
+    cursor: inherit;
+  }
+
+  .Checkbox:checked {
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Checkbox:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Indicator {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    color: light-dark(#fff, #17171a);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .Checkbox:checked + .Indicator {
+    visibility: visible;
+  }
+}

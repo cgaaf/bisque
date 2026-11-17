@@ -1,0 +1,138 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { FieldHero } from "../../demos/field/hero.rx"
+import { FieldValidate } from "../../demos/field/validate.rx"
+import { FieldMatch } from "../../demos/field/match.rx"
+
+export default component Page() {
+  <DocsPage title="Field" subtitle="Labels a control, describes it, validates it and shows its errors.">
+    <Demo source="field/hero"><FieldHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="field/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      A field stands on the native input inside it. <code>FieldLabel</code> is a native{" "}
+      <code>{"<label for>"}</code> that names the control, so a press on the label focuses or toggles it. The
+      input's own constraints (<code>required</code>, <code>type="email"</code>, <code>pattern</code>,{" "}
+      <code>minlength</code>, <code>min</code> and the rest) are what native validation checks, and the error shown
+      for them is the browser's own message, in the browser's language. <code>:invalid</code> and{" "}
+      <code>:user-invalid</code> on the input are the browser's answer and need nothing from the library.
+    </p>
+    <p>The library adds:</p>
+    <ul>
+      <li>
+        The wiring: the control's <code>aria-describedby</code> lists the descriptions and, while it shows, the
+        error; <code>aria-invalid</code> is set while the field is invalid.
+      </li>
+      <li>
+        A <code>validate</code> function, run after the native constraints pass. Its message is also set on the
+        input with <code>setCustomValidity()</code>, so <code>:invalid</code> agrees with the field.
+      </li>
+      <li>When to validate: on submit, on blur or on every change.</li>
+      <li>
+        State the browser has no selector for, written as <code>data-*</code> attributes on every part: touched,
+        dirty, filled, valid and invalid.
+      </li>
+      <li>Disabling the control with the field, or with a <a href="../fieldset/">Fieldset</a> around it.</li>
+    </ul>
+    <div class="note">
+      <p>
+        There is no Field Item part: put each checkbox or radio in its own <code>{"<label>"}</code>, and a{" "}
+        <a href="../checkbox-group/">CheckboxGroup</a> or <a href="../radio/">RadioGroup</a> in the field. Base UI's
+        render function on Validity is a context here, read with <code>use fieldValidity</code>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="when">When a field validates</h3>
+    <p>
+      <code>validationMode</code> says when; a <a href="../form/">Form</a> sets it for all its fields, and a field's
+      own prop wins.
+    </p>
+    <ul>
+      <li>
+        <code>"onSubmit"</code>, the default: the Form validates every field when it is submitted, and from then on
+        each field validates on every change. Outside a Form, a field in this mode is never validated, so give it
+        one of the other modes.
+      </li>
+      <li>
+        <code>"onBlur"</code>: when the control loses focus. Editing it afterwards clears the error (unless a
+        required control is now empty), and the next blur validates again. The demo above works this way.
+      </li>
+      <li><code>"onChange"</code>: on every change of the value.</li>
+    </ul>
+    <p>
+      A missing value doesn't count until the user has changed the field or a submit has validated it, so a
+      required field isn't marked invalid when someone only tabs through it. A disabled field isn't validated, and
+      is neither valid nor invalid.
+    </p>
+
+    <h3 id="custom-validation">Custom validation</h3>
+    <p>
+      <code>validate</code> receives the value, and the values of the named fields of the form it is in. It returns a
+      message, or a list of messages, when the value is invalid, and <code>null</code>, <code>""</code> or nothing
+      when it is valid. It runs only once the native constraints pass: in the demo below, the length is checked by
+      the browser's <code>minlength</code> and the name by <code>validate</code>.
+    </p>
+    <Demo source="field/validate"><FieldValidate /></Demo>
+
+    <h3 id="errors">Error messages</h3>
+    <p>
+      <code>FieldError</code> is rendered only while the field is invalid. Without children it shows the error: the
+      browser's message for a native constraint, or what <code>validate</code> returned. Several messages are shown
+      as a list. Give it children to show your own text instead.
+    </p>
+    <p>
+      <code>match</code> shows an error for one failure only. Its values are the keys of the DOM's{" "}
+      <code>ValidityState</code>: <code>"valueMissing"</code>, <code>"typeMismatch"</code>,{" "}
+      <code>"patternMismatch"</code>, <code>"tooShort"</code>, <code>"tooLong"</code>,{" "}
+      <code>"rangeUnderflow"</code>, <code>"rangeOverflow"</code>, <code>"stepMismatch"</code>,{" "}
+      <code>"badInput"</code>, and <code>"customError"</code> for <code>validate</code>. <code>match</code> set to
+      true shows it always.
+    </p>
+    <Demo source="field/match"><FieldMatch /></Demo>
+
+    <h3 id="styling">Styling the state</h3>
+    <p>
+      Every part of a field carries the field's state: <code>data-invalid</code> and <code>data-valid</code> once
+      it has been validated, <code>data-touched</code> once the control has been focused and left,{" "}
+      <code>data-dirty</code> while the value differs from the first one, <code>data-filled</code> while it has a
+      value, and <code>data-disabled</code> and <code>data-focused</code>. On the native input itself the last two
+      are left out: style it with <code>:disabled</code> and <code>:focus</code>.
+    </p>
+    <p>
+      Prefer <code>[data-invalid]</code> to <code>:user-invalid</code> for a field's control. It follows the
+      field's validation mode, and it also counts <code>validate</code>, the <code>invalid</code> prop and a
+      Form's <code>errors</code>.
+    </p>
+
+    <h3 id="controls">Other controls</h3>
+    <p>
+      A field takes one control. <code>FieldControl</code> and <a href="../input/">Input</a> are the same native input, of any <code>type</code>. <a href="../checkbox/">Checkbox</a> and <a href="../switch/">Switch</a> report their checked state
+      as the field's value, a <a href="../radio/">RadioGroup</a> the checked radio's value and a{" "}
+      <a href="../checkbox-group/">CheckboxGroup</a> its list. A group is named by <code>FieldLabel</code> through{" "}
+      <code>aria-labelledby</code>. The control takes the field's <code>name</code> when it has none of its own.
+    </p>
+
+    <h3 id="validity">Reading the validity</h3>
+    <p>
+      <code>FieldValidity</code> provides the field's validity to its children as the <code>fieldValidity</code>{" "}
+      context: the <code>ValidityState</code> flags with <code>valid</code> (null until validated), the messages,
+      the value validated, and the initial value.
+    </p>
+    <Code file="field/validity.rx.txt" />
+
+    <h3 id="external">Errors from elsewhere</h3>
+    <p>
+      <code>invalid</code> marks the field invalid whatever its value, for a decision made outside it. A{" "}
+      <a href="../form/">Form</a>'s <code>errors</code> do the same for the field with that name, until its value
+      changes. <code>dirty</code> and <code>touched</code> control those states when something else owns them.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="field" />
+  </DocsPage>
+}

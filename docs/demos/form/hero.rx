@@ -1,0 +1,37 @@
+import { Form } from "../../../src/form/form.rx"
+import { FieldRoot, FieldLabel, FieldError } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+
+export component FormHero() {
+  source sent := ""
+  <div class="FormHero">
+    <Form class="Form" onFormSubmit={(values) => { sent := `${values.email}, ${values.username}, terms: ${values.terms}` }}>
+      <FieldRoot class="Field" name="email">
+        <FieldLabel class="Label">Email</FieldLabel>
+        <Input class="Input" type="email" required />
+        <FieldError class="Error" />
+      </FieldRoot>
+      <FieldRoot class="Field" name="username" validate={(value, values) => value == values.email ? "Choose a name other than your email" : value == "admin" ? "That name is taken" : null}>
+        <FieldLabel class="Label">Username</FieldLabel>
+        <Input class="Input" required minlength={3} />
+        <FieldError class="Error" />
+      </FieldRoot>
+      <FieldRoot class="Field CheckField" name="terms">
+        <div class="Check">
+          <CheckboxRoot class="Checkbox" required>
+            <CheckboxIndicator class="Indicator">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </CheckboxIndicator>
+          </CheckboxRoot>
+          <FieldLabel class="CheckLabel">I accept the terms</FieldLabel>
+        </div>
+        <FieldError class="Error">Accept the terms to create an account.</FieldError>
+      </FieldRoot>
+      <button class="Submit" type="submit">Create account</button>
+    </Form>
+    {if sent != "" { <p class="Sent">Submitted: {sent}</p> }}
+  </div>
+}

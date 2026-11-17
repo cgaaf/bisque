@@ -1,0 +1,36 @@
+.InputHero {
+  width: min(100%, 18rem);
+
+  .Label {
+    display: grid;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* A native <input>: the browser gives it a font of its own, so inherit the page's. */
+  .Input {
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.9375rem;
+    font-weight: 400;
+  }
+
+  .Input::placeholder {
+    color: light-dark(#a0a0aa, #6e6e7a);
+  }
+
+  .Input:hover {
+    border-color: light-dark(#b4b4be, #4a4a54);
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+}

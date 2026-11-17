@@ -1,0 +1,92 @@
+.SwitchField {
+  width: min(100%, 24rem);
+  border: 1px solid light-dark(#d4d4dc, #3a3a43);
+  border-radius: 0.5rem;
+  background: light-dark(#fff, #16161a);
+
+  .Field {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+  }
+
+  .Field + .Field {
+    border-top: 1px solid light-dark(#e4e4e8, #26262c);
+  }
+
+  .Text {
+    flex: 1;
+  }
+
+  /* FieldLabel is a native <label for>: a press on it toggles the switch. */
+  .Label {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Description {
+    margin: 0.125rem 0 0;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* The field's parts carry `data-disabled`; the switch itself matches `:disabled`. */
+  .Label[data-disabled] {
+    color: light-dark(#8e8e99, #6e6e7a);
+    cursor: default;
+  }
+
+  .Control {
+    display: grid;
+  }
+
+  .Switch {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 2.5rem;
+    height: 1.5rem;
+    margin: 0;
+    border-radius: 999px;
+    background: light-dark(#d4d4dc, #3a3a43);
+    cursor: pointer;
+    transition: background-color 150ms;
+  }
+
+  .Switch:checked {
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Switch:disabled {
+    background: light-dark(#ececf0, #26262c);
+    cursor: default;
+  }
+
+  .Switch:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Thumb {
+    grid-area: 1 / 1;
+    align-self: center;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-left: 0.1875rem;
+    border-radius: 50%;
+    background: light-dark(#fff, #16161a);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+    pointer-events: none;
+    transition: translate 150ms;
+  }
+
+  .Switch:checked + .Thumb {
+    translate: 1rem 0;
+  }
+
+  .Switch:disabled + .Thumb {
+    box-shadow: none;
+    opacity: 0.6;
+  }
+}

@@ -1,0 +1,16 @@
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+
+export component CheckboxHero() {
+  <div class="CheckboxHero">
+    <label class="Label">
+      <CheckboxRoot class="Checkbox" name="notifications" defaultChecked>
+        <CheckboxIndicator class="Indicator">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </CheckboxIndicator>
+      </CheckboxRoot>
+      Enable notifications
+    </label>
+  </div>
+}

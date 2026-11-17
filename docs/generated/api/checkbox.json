@@ -4,115 +4,107 @@
     {
       "name": "CheckboxRoot",
       "element": "input",
-      "description": "",
+      "description": "The box: a native `<input type=\"checkbox\">`. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:indeterminate`, `:disabled`, `:focus-visible` and `:user-invalid`.",
       "props": [
         {
           "name": "checked",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the box is checked. Pass it with `onCheckedChange` to control the box."
         },
         {
           "name": "defaultChecked",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the box is checked at first, when it isn't controlled."
         },
         {
           "name": "onCheckedChange",
           "type": "(checked: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new state when the user checks or clears the box."
         },
         {
           "name": "indeterminate",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Neither checked nor unchecked: a parent box whose children are mixed. A press clears it and toggles the box, as the browser does; a controlled `indeterminate` that stays true is set again."
+          "description": "Shows the box as neither checked nor unchecked; `:indeterminate` matches it. A press clears it and toggles the box, as the browser does, and the box is set back to indeterminate while this stays true."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Disables the box natively: it can't be focused or pressed, and `:disabled` matches it."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Focusable and announced, but a press doesn't change it (`readonly` has no effect on a native checkbox)."
+          "description": "Keeps the box focusable but cancels a press or Space, so its state doesn't change. Sets `aria-readonly` and `data-readonly`."
         },
         {
           "name": "required",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Sets the native `required` attribute: the box must be checked for its form, or its Field, to be valid."
         },
         {
           "name": "name",
           "type": "string",
           "default": null,
           "required": false,
-          "description": "With a name (or inside a named FieldRoot), the box submits `value` (default \"on\") with its form while checked."
+          "description": "The name the box submits `value` under while it is checked. Inside a FieldRoot, the field's `name` is used when this is absent."
         },
         {
           "name": "value",
           "type": "string",
           "default": "\"\"",
           "required": false,
-          "description": "Inside a CheckboxGroup, also the value the group's list holds while the box is checked."
+          "description": "What the box submits with its form while checked; the browser's default is `\"on\"`. Inside a CheckboxGroup, the value the group's list holds while this box is checked."
         },
         {
           "name": "parent",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Inside a CheckboxGroup with `allValues`: the box that checks or clears them all, mixed while some are checked."
+          "description": "Inside a CheckboxGroup with `allValues`: makes this the box that checks or clears all the others. It is checked when all are, indeterminate when some are, and submits nothing."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-dirty",
-          "description": "Present once the field's value has changed."
-        },
-        {
-          "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Inside a FieldRoot: present while the box's state differs from its initial one."
         },
         {
           "name": "data-filled",
-          "description": "Present when the field has a value."
-        },
-        {
-          "name": "data-focused",
-          "description": "Present while the field has focus."
+          "description": "Inside a FieldRoot: present while the box is checked."
         },
         {
           "name": "data-invalid",
-          "description": "Present when the field is invalid."
+          "description": "Inside a FieldRoot: present when the field is invalid."
         },
         {
           "name": "data-parent",
-          "description": ""
+          "description": "Present on the parent box of a CheckboxGroup."
         },
         {
           "name": "data-readonly",
-          "description": "Present when the field is read-only."
+          "description": "Present when `readOnly` is set."
         },
         {
           "name": "data-touched",
-          "description": "Present once the field has been focused and left."
+          "description": "Inside a FieldRoot: present once the box has been focused and left."
         },
         {
           "name": "data-valid",
-          "description": "Present when the field is valid."
+          "description": "Inside a FieldRoot: present when the field has been validated and is valid."
         }
       ],
       "cssVariables": []
@@ -120,7 +112,7 @@
     {
       "name": "CheckboxIndicator",
       "element": "span",
-      "description": "A mark beside the box, always in the document: place it in CheckboxRoot, where it is the box's next sibling, and show it with `input:checked + *` and `input:indeterminate + *`. Hidden from assistive technology, which hears the box's own state.",
+      "description": "A mark shown beside the box, always in the document. Place it in CheckboxRoot, where it is the box's next sibling, and show it with `.Checkbox:checked + .Indicator` and `.Checkbox:indeterminate + .Indicator`. It is `aria-hidden`: the box's own state is what assistive technology gets.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []

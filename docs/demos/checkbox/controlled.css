@@ -1,0 +1,72 @@
+.CheckboxControlled {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+
+  .Label {
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.625rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  .Checkbox {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border: 1px solid light-dark(#c4c4cc, #4a4a54);
+    border-radius: 0.3125rem;
+    background: light-dark(#fff, #16161a);
+    cursor: inherit;
+  }
+
+  .Checkbox:checked {
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Checkbox:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Indicator {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    color: light-dark(#fff, #17171a);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .Checkbox:checked + .Indicator {
+    visibility: visible;
+  }
+
+  .Row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .Button {
+    padding: 0.4375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .State {
+    font-family: ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

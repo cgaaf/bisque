@@ -1,0 +1,13 @@
+import { FieldRoot, FieldLabel, FieldError } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+
+export component FieldMatch() {
+  <div class="FieldMatch">
+    <FieldRoot class="Field" name="code" validationMode="onChange">
+      <FieldLabel class="Label">Verification code</FieldLabel>
+      <Input class="Input" required pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" />
+      <FieldError class="Error" match="valueMissing">Enter the code we sent you.</FieldError>
+      <FieldError class="Error" match="patternMismatch">The code is six digits.</FieldError>
+    </FieldRoot>
+  </div>
+}

@@ -1,0 +1,31 @@
+import { FieldsetRoot, FieldsetLegend } from "../../../src/fieldset/fieldset.rx"
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+
+export component FieldsetDisabled() {
+  source sameAsBilling: boolean := true
+  <div class="FieldsetDisabled">
+    <label class="Toggle">
+      <CheckboxRoot class="Checkbox" checked={sameAsBilling} onCheckedChange={(next) => { sameAsBilling := next }}>
+        <CheckboxIndicator class="Indicator">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+            <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </CheckboxIndicator>
+      </CheckboxRoot>
+      Ship to the billing address
+    </label>
+    <FieldsetRoot class="Fieldset" disabled={sameAsBilling}>
+      <FieldsetLegend class="Legend">Shipping address</FieldsetLegend>
+      <FieldRoot class="Field" name="street">
+        <FieldLabel class="Label">Street</FieldLabel>
+        <Input class="Input" />
+      </FieldRoot>
+      <FieldRoot class="Field" name="city">
+        <FieldLabel class="Label">City</FieldLabel>
+        <Input class="Input" />
+      </FieldRoot>
+    </FieldsetRoot>
+  </div>
+}

@@ -1,0 +1,25 @@
+import { RadioGroup, RadioRoot } from "../../../src/radio/radio.rx"
+
+export component RadioCards() {
+  source plan := "team"
+  <div class="RadioCards">
+    <RadioGroup class="Group" aria-label="Plan" name="plan" value={plan} onValueChange={(next) => { plan := next }}>
+      <label class="Card">
+        <RadioRoot class="Radio" value="solo" />
+        <span class="Name">Solo</span>
+        <span class="Detail">One seat, 5 projects</span>
+      </label>
+      <label class="Card">
+        <RadioRoot class="Radio" value="team" />
+        <span class="Name">Team</span>
+        <span class="Detail">Up to 10 seats, unlimited projects</span>
+      </label>
+      <label class="Card">
+        <RadioRoot class="Radio" value="company" />
+        <span class="Name">Company</span>
+        <span class="Detail">Unlimited seats, single sign-on</span>
+      </label>
+    </RadioGroup>
+    <output class="State">plan: {plan}</output>
+  </div>
+}

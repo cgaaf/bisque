@@ -1,0 +1,58 @@
+.FieldHero {
+  width: min(100%, 20rem);
+
+  .Field {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Input {
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.9375rem;
+  }
+
+  .Input::placeholder {
+    color: light-dark(#a0a0aa, #6e6e7a);
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  /* The field writes `data-invalid` on all its parts when it validates and fails. */
+  .Input[data-invalid] {
+    border-color: light-dark(#c4314b, #ff8a9a);
+  }
+
+  .Input[data-invalid]:focus-visible {
+    outline-color: light-dark(#c4314b, #ff8a9a);
+  }
+
+  .Description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* While it shows, the error replaces the description. */
+  .Field[data-invalid] .Description {
+    display: none;
+  }
+
+  .Error {
+    font-size: 0.8125rem;
+    color: light-dark(#c4314b, #ff8a9a);
+  }
+}

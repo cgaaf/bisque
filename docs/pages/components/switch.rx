@@ -1,0 +1,73 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { SwitchHero } from "../../demos/switch/hero.rx"
+import { SwitchField } from "../../demos/switch/field.rx"
+
+export default component Page() {
+  <DocsPage title="Switch" subtitle="A native checkbox with the switch role, for a setting that is on or off.">
+    <Demo source="switch/hero"><SwitchHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="switch/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>SwitchRoot</code> is a native <code>{"<input type=\"checkbox\" role=\"switch\">"}</code>, styled whole
+      with <code>appearance: none</code>. The browser provides:
+    </p>
+    <ul>
+      <li>The on state, and toggling it with a press or <kbd>Space</kbd>.</li>
+      <li>Label association, form submission of its <code>value</code> while on, and <code>required</code> validation.</li>
+      <li>
+        The style hooks <code>:checked</code>, <code>:disabled</code>, <code>:focus-visible</code> and{" "}
+        <code>:user-invalid</code>.
+      </li>
+    </ul>
+    <p>
+      The library adds a controlled <code>checked</code> value, <code>readOnly</code>, and the wiring to a{" "}
+      <a href="../field/">Field</a>.
+    </p>
+    <div class="note">
+      <p>
+        An <code>{"<input>"}</code> can't have children, so <code>SwitchRoot</code> renders its children after it:{" "}
+        <code>SwitchThumb</code> is its next sibling, moved with <code>.Switch:checked + .Thumb</code>. The input is
+        the track. There is no hidden input.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="styling">Styling the track and thumb</h3>
+    <p>
+      The hero puts the input and the thumb in the same grid cell, so the thumb lies on the track, and slides it
+      with <code>translate</code> when the input is <code>:checked</code>. The thumb has{" "}
+      <code>pointer-events: none</code> so a press on it reaches the input.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>checked</code> and <code>onCheckedChange</code> to hold the state yourself, or{" "}
+      <code>defaultChecked</code> to let the switch keep its own. An owner that doesn't take the new value keeps the
+      switch as it was.
+    </p>
+
+    <h3 id="field">With a label and description</h3>
+    <p>
+      Inside a <code>FieldRoot</code> the switch is the field's control: <code>FieldLabel</code> is a native{" "}
+      <code>{"<label for>"}</code> pointing at it, <code>FieldDescription</code> becomes its{" "}
+      <code>aria-describedby</code>, and a disabled field disables it. The field's name is the switch's name when it
+      has none of its own.
+    </p>
+    <Demo source="switch/field"><SwitchField /></Demo>
+
+    <h3 id="read-only">Read-only</h3>
+    <p>
+      <code>readOnly</code> keeps the switch focusable but cancels a press or <kbd>Space</kbd>, so it doesn't
+      change. The browser has no read-only checkbox, so the switch carries <code>aria-readonly="true"</code> and{" "}
+      <code>data-readonly</code> to style it from.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="switch" />
+  </DocsPage>
+}

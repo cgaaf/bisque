@@ -1,0 +1,94 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { CheckboxHero } from "../../demos/checkbox/hero.rx"
+import { CheckboxControlled } from "../../demos/checkbox/controlled.rx"
+import { CheckboxStates } from "../../demos/checkbox/states.rx"
+
+export default component Page() {
+  <DocsPage title="Checkbox" subtitle="A native checkbox that can be styled whole, with an optional indicator.">
+    <Demo source="checkbox/hero"><CheckboxHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="checkbox/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>CheckboxRoot</code> is a native <code>{"<input type=\"checkbox\">"}</code>. With{" "}
+      <code>appearance: none</code> it can be styled whole, and the browser provides:
+    </p>
+    <ul>
+      <li>The checked state, and toggling it with a press or <kbd>Space</kbd>.</li>
+      <li>Label association: a <code>{"<label>"}</code> around the box, or one whose <code>for</code> names it, toggles it too.</li>
+      <li>Form submission: with a <code>name</code>, a checked box submits its <code>value</code> (<code>"on"</code> by default).</li>
+      <li><code>required</code> validation.</li>
+      <li>
+        The style hooks <code>:checked</code>, <code>:indeterminate</code>, <code>:disabled</code>,{" "}
+        <code>:focus-visible</code> and <code>:user-invalid</code>.
+      </li>
+    </ul>
+    <p>
+      The library adds a controlled <code>checked</code> value, <code>readOnly</code>, <code>indeterminate</code> as a
+      prop (the browser has it only as a property, with no attribute), the{" "}
+      <a href="../checkbox-group/">checkbox group</a>, and the wiring to a <a href="../field/">Field</a>.
+    </p>
+    <div class="note">
+      <p>
+        An <code>{"<input>"}</code> can't have children, so <code>CheckboxRoot</code> renders its children right
+        after the box, as its siblings. <code>CheckboxIndicator</code> is the box's next sibling and is styled from
+        it with <code>.Checkbox:checked + .Indicator</code>. There is no hidden input: the box itself is what the form
+        submits.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="styling">Styling the box</h3>
+    <p>
+      Remove the browser's box with <code>appearance: none</code> and draw your own with a size, border and
+      background. The hero puts the box and its indicator in the same grid cell, so the indicator is drawn over the
+      box; it has <code>pointer-events: none</code> so a press reaches the box. The indicator is always in the
+      document, which means it can be animated in and out with a plain transition.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>checked</code> and <code>onCheckedChange</code> to hold the state yourself. Without them, the box
+      starts at <code>defaultChecked</code> and keeps its own state. An owner that doesn't take the new value keeps
+      the box as it was.
+    </p>
+    <Demo source="checkbox/controlled"><CheckboxControlled /></Demo>
+
+    <h3 id="states">Indeterminate, disabled and read-only</h3>
+    <p>
+      <code>indeterminate</code> shows a box as neither checked nor unchecked, and <code>:indeterminate</code> matches
+      it. A press clears it and toggles the box, as the browser does; while the prop stays true the box is set back
+      to indeterminate, so clear the prop in <code>onCheckedChange</code>. For a box that checks a list of others,
+      use the <a href="../checkbox-group/">checkbox group</a>'s parent box, which works this out for you.
+    </p>
+    <p>
+      <code>disabled</code> is the native attribute: the box can't be focused or pressed, and <code>:disabled</code>{" "}
+      matches it. <code>readOnly</code> keeps the box focusable but cancels a press; the browser has no read-only
+      checkbox, so the box carries <code>aria-readonly="true"</code> and <code>data-readonly</code> to style it from.
+    </p>
+    <Demo source="checkbox/states"><CheckboxStates /></Demo>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      Give the box a <code>name</code> and it submits <code>value</code> with its form while checked, as a native
+      checkbox does. Inside a <a href="../field/">Field</a> it takes the field's name, label, description and
+      validation; the <a href="../form/">Form</a> page shows a required box in a form. A form reset doesn't change
+      the box: it keeps showing its state, controlled or not.
+    </p>
+
+    <h3 id="custom-indicator">A custom indicator</h3>
+    <p>
+      <code>CheckboxRoot</code> provides its state as the <code>checkbox</code> context, for an indicator that
+      renders different content per state. Mark it <code>aria-hidden</code>: the box's own state is what assistive
+      technology is given.
+    </p>
+    <Code file="checkbox/custom-indicator.rx.txt" />
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="checkbox" />
+  </DocsPage>
+}

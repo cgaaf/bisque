@@ -1,0 +1,12 @@
+import { SwitchRoot, SwitchThumb } from "../../../src/switch/switch.rx"
+
+export component SwitchHero() {
+  <div class="SwitchHero">
+    <label class="Label">
+      <SwitchRoot class="Switch" name="dark-mode" defaultChecked>
+        <SwitchThumb class="Thumb" />
+      </SwitchRoot>
+      Dark mode
+    </label>
+  </div>
+}

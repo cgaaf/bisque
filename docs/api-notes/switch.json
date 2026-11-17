@@ -1,0 +1,28 @@
+{
+  "SwitchRoot": {
+    "description": "The switch: a native `<input type=\"checkbox\" role=\"switch\">`, which is also the track. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:disabled`, `:focus-visible` and `:user-invalid`.",
+    "props": {
+      "checked": "Whether the switch is on. Pass it with `onCheckedChange` to control the switch.",
+      "defaultChecked": "Whether the switch is on at first, when it isn't controlled.",
+      "onCheckedChange": "Called with the new state when the user turns the switch on or off.",
+      "disabled": "Disables the switch natively: it can't be focused or pressed, and `:disabled` matches it.",
+      "readOnly": "Keeps the switch focusable but cancels a press or Space, so it doesn't change. Sets `aria-readonly` and `data-readonly`.",
+      "required": "Sets the native `required` attribute: the switch must be on for its form, or its Field, to be valid.",
+      "name": "The name the switch submits `value` under while it is on. Inside a FieldRoot, the field's `name` is used when this is absent.",
+      "value": "What the switch submits with its form while on; the browser's default is `\"on\"`."
+    },
+    "dataAttributes": {
+      "data-readonly": "Present when `readOnly` is set.",
+      "data-disabled": null,
+      "data-focused": null,
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-touched": "Inside a FieldRoot: present once the switch has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present while the switch's state differs from its initial one.",
+      "data-filled": "Inside a FieldRoot: present while the switch is on."
+    }
+  },
+  "SwitchThumb": {
+    "description": "The moving part, always in the document. Place it in SwitchRoot, where it is the input's next sibling, and move it with `.Switch:checked + .Thumb`. It is `aria-hidden`."
+  }
+}

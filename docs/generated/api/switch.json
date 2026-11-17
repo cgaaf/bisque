@@ -4,97 +4,89 @@
     {
       "name": "SwitchRoot",
       "element": "input",
-      "description": "An on/off control. Inside a FieldRoot it is the field's control.",
+      "description": "The switch: a native `<input type=\"checkbox\" role=\"switch\">`, which is also the track. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:disabled`, `:focus-visible` and `:user-invalid`.",
       "props": [
         {
           "name": "checked",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the switch is on. Pass it with `onCheckedChange` to control the switch."
         },
         {
           "name": "defaultChecked",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the switch is on at first, when it isn't controlled."
         },
         {
           "name": "onCheckedChange",
           "type": "(checked: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new state when the user turns the switch on or off."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Disables the switch natively: it can't be focused or pressed, and `:disabled` matches it."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Focusable and announced, but a press doesn't change it (`readonly` has no effect on a native checkbox)."
+          "description": "Keeps the switch focusable but cancels a press or Space, so it doesn't change. Sets `aria-readonly` and `data-readonly`."
         },
         {
           "name": "required",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Sets the native `required` attribute: the switch must be on for its form, or its Field, to be valid."
         },
         {
           "name": "name",
           "type": "string",
           "default": null,
           "required": false,
-          "description": "With a name (or inside a named FieldRoot), the switch submits `value` (default \"on\") with its form while on."
+          "description": "The name the switch submits `value` under while it is on. Inside a FieldRoot, the field's `name` is used when this is absent."
         },
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "What the switch submits with its form while on; the browser's default is `\"on\"`."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-dirty",
-          "description": "Present once the field's value has changed."
-        },
-        {
-          "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Inside a FieldRoot: present while the switch's state differs from its initial one."
         },
         {
           "name": "data-filled",
-          "description": "Present when the field has a value."
-        },
-        {
-          "name": "data-focused",
-          "description": "Present while the field has focus."
+          "description": "Inside a FieldRoot: present while the switch is on."
         },
         {
           "name": "data-invalid",
-          "description": "Present when the field is invalid."
+          "description": "Inside a FieldRoot: present when the field is invalid."
         },
         {
           "name": "data-readonly",
-          "description": "Present when the field is read-only."
+          "description": "Present when `readOnly` is set."
         },
         {
           "name": "data-touched",
-          "description": "Present once the field has been focused and left."
+          "description": "Inside a FieldRoot: present once the switch has been focused and left."
         },
         {
           "name": "data-valid",
-          "description": "Present when the field is valid."
+          "description": "Inside a FieldRoot: present when the field has been validated and is valid."
         }
       ],
       "cssVariables": []
@@ -102,7 +94,7 @@
     {
       "name": "SwitchThumb",
       "element": "span",
-      "description": "The moving part, always in the document: place it in SwitchRoot, where it is the input's next sibling, and style it with `input:checked + *`. Hidden from assistive technology.",
+      "description": "The moving part, always in the document. Place it in SwitchRoot, where it is the input's next sibling, and move it with `.Switch:checked + .Thumb`. It is `aria-hidden`.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []

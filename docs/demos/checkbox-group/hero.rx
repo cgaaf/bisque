@@ -1,0 +1,24 @@
+import { CheckboxGroup } from "../../../src/checkbox-group/checkbox-group.rx"
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+
+component Check() {
+  <CheckboxIndicator class="Indicator">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+  </CheckboxIndicator>
+}
+
+export component CheckboxGroupHero() {
+  <div class="CheckboxGroupHero">
+    <FieldRoot name="toppings">
+      <FieldLabel class="Legend">Toppings</FieldLabel>
+      <CheckboxGroup class="Group" defaultValue={["basil"]}>
+        <label class="Item"><CheckboxRoot class="Checkbox" name="toppings" value="basil"><Check /></CheckboxRoot>Basil</label>
+        <label class="Item"><CheckboxRoot class="Checkbox" name="toppings" value="mushrooms"><Check /></CheckboxRoot>Mushrooms</label>
+        <label class="Item"><CheckboxRoot class="Checkbox" name="toppings" value="olives"><Check /></CheckboxRoot>Olives</label>
+      </CheckboxGroup>
+    </FieldRoot>
+  </div>
+}

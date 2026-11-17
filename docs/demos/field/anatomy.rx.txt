@@ -1,0 +1,9 @@
+import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError, FieldValidity } from "./rs-ui/field/field.rx"
+
+<FieldRoot>
+  <FieldLabel />
+  <FieldControl />
+  <FieldDescription />
+  <FieldError />
+  <FieldValidity />
+</FieldRoot>

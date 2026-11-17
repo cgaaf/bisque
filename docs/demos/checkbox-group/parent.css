@@ -1,0 +1,74 @@
+.CheckboxGroupParent {
+  display: grid;
+  gap: 1rem;
+  justify-items: start;
+
+  .Group {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .Children {
+    display: grid;
+    gap: 0.5rem;
+    padding-left: 1.875rem;
+  }
+
+  .Item {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.625rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  .Checkbox {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border: 1px solid light-dark(#c4c4cc, #4a4a54);
+    border-radius: 0.3125rem;
+    background: light-dark(#fff, #16161a);
+    cursor: inherit;
+  }
+
+  /* The parent box is indeterminate while some of the others are checked. */
+  .Checkbox:checked,
+  .Checkbox:indeterminate {
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Checkbox:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Indicator {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    color: light-dark(#fff, #17171a);
+    pointer-events: none;
+  }
+
+  .Check,
+  .Dash {
+    grid-area: 1 / 1;
+    visibility: hidden;
+  }
+
+  .Checkbox:checked:not(:indeterminate) + .Indicator .Check,
+  .Checkbox:indeterminate + .Indicator .Dash {
+    visibility: visible;
+  }
+
+  .State {
+    font-family: ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

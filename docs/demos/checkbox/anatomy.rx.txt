@@ -1,0 +1,8 @@
+import { CheckboxRoot, CheckboxIndicator } from "./rs-ui/checkbox/checkbox.rx"
+
+<label>
+  <CheckboxRoot>
+    <CheckboxIndicator />
+  </CheckboxRoot>
+  Label
+</label>

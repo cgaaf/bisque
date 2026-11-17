@@ -1,0 +1,50 @@
+.SwitchHero {
+  /* The track and the thumb share one grid cell; the text sits beside them. */
+  .Label {
+    display: inline-grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.75rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  /* The root is the track: a native checkbox with role="switch" and the browser's look removed. */
+  .Switch {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 2.5rem;
+    height: 1.5rem;
+    margin: 0;
+    border-radius: 999px;
+    background: light-dark(#d4d4dc, #3a3a43);
+    cursor: inherit;
+    transition: background-color 150ms;
+  }
+
+  .Switch:checked {
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Switch:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  /* The thumb is the input's next sibling: `:checked +` slides it across. */
+  .Thumb {
+    grid-area: 1 / 1;
+    width: 1.125rem;
+    height: 1.125rem;
+    margin-left: 0.1875rem;
+    border-radius: 50%;
+    background: light-dark(#fff, #16161a);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.2);
+    pointer-events: none;
+    transition: translate 150ms;
+  }
+
+  .Switch:checked + .Thumb {
+    translate: 1rem 0;
+  }
+}

@@ -4,90 +4,90 @@
     {
       "name": "RadioGroup",
       "element": "div",
-      "description": "A set of radios of which one is checked. Inside a FieldRoot it is the field's control.",
+      "description": "A `<div role=\"radiogroup\">` that holds which radio is checked and gives its radios a shared name. Inside a FieldRoot it is the field's control.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "The value of the checked radio. Pass it with `onValueChange` to control the group."
         },
         {
           "name": "defaultValue",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "The value checked at first, when the group isn't controlled. Without one, no radio is checked."
         },
         {
           "name": "onValueChange",
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the radio's value when the user checks another radio."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Disables every radio in the group natively."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "The radios are focusable and the arrow keys move between them, but nothing is checked."
+          "description": "The radios stay focusable and the arrow keys move between them, but none can be checked. Sets `aria-readonly` and `data-readonly`."
         },
         {
           "name": "required",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Sets the native `required` attribute on each radio: one must be checked for the form, or the Field, to be valid. Also sets `aria-required` on the group."
         },
         {
           "name": "name",
           "type": "string",
           "default": null,
           "required": false,
-          "description": "The radios' name: they submit the checked value under it with their form. Without one (and outside a named FieldRoot) a generated name groups them, and a form they are in submits the value under that name."
+          "description": "The radios' shared name: they submit the checked value under it. Without one, the FieldRoot's name is used, else a generated one."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-dirty",
-          "description": "Present once the field's value has changed."
+          "description": "Inside a FieldRoot: present while the value differs from its initial one."
         },
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present when the group is disabled, by its own prop or by its Field or Fieldset."
         },
         {
           "name": "data-filled",
-          "description": "Present when the field has a value."
+          "description": "Inside a FieldRoot: present while a radio is checked."
         },
         {
           "name": "data-focused",
-          "description": "Present while the field has focus."
+          "description": "Inside a FieldRoot: present while focus is on one of the radios."
         },
         {
           "name": "data-invalid",
-          "description": "Present when the field is invalid."
+          "description": "Inside a FieldRoot: present when the field is invalid."
         },
         {
           "name": "data-readonly",
-          "description": "Present when the field is read-only."
+          "description": "Present when the group is read-only."
         },
         {
           "name": "data-touched",
-          "description": "Present once the field has been focused and left."
+          "description": "Inside a FieldRoot: present once focus has been in the group and left it."
         },
         {
           "name": "data-valid",
-          "description": "Present when the field is valid."
+          "description": "Inside a FieldRoot: present when the field has been validated and is valid."
         }
       ],
       "cssVariables": []
@@ -95,34 +95,34 @@
     {
       "name": "RadioRoot",
       "element": "input",
-      "description": "",
+      "description": "A radio: a native `<input type=\"radio\">` that carries the group's name. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:disabled`, `:focus-visible` and `:user-invalid`.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": true,
-          "description": ""
+          "description": "The value the group holds, and the form submits, while this radio is checked."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Disables this radio natively: the arrow keys skip it."
         },
         {
           "name": "readOnly",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Keeps this radio focusable but cancels a press, so it can't be checked."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-readonly",
-          "description": "Present when the field is read-only."
+          "description": "Present when the radio or its group is read-only."
         }
       ],
       "cssVariables": []
@@ -130,7 +130,7 @@
     {
       "name": "RadioIndicator",
       "element": "span",
-      "description": "A mark beside the radio, always in the document: place it in RadioRoot, where it is the radio's next sibling, and show it with `input:checked + *`. Hidden from assistive technology.",
+      "description": "A mark shown beside the radio, always in the document. Place it in RadioRoot, where it is the radio's next sibling, and show it with `.Radio:checked + .Indicator`. It is `aria-hidden`.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []

@@ -1,0 +1,47 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { InputHero } from "../../demos/input/hero.rx"
+import { InputControlled } from "../../demos/input/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Input" subtitle="A native text input that works with Field.">
+    <Demo source="input/hero"><InputHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the component and use it:</p>
+    <Code file="input/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>Input</code> is a native <code>{"<input>"}</code>, and it passes every attribute through. Typing,
+      selection, autofill, the keyboard a phone shows for a <code>type</code> or <code>inputmode</code>, form
+      submission and the constraints (<code>required</code>, <code>type="email"</code>, <code>pattern</code>,{" "}
+      <code>minlength</code>, <code>maxlength</code>, <code>min</code>, <code>max</code>) are the browser's.
+    </p>
+    <p>
+      The library adds a <code>value</code> that may be controlled, <code>onValueChange</code>, and the wiring to a{" "}
+      <a href="../field/">Field</a>: inside a <code>FieldRoot</code> the input is labelled and described by the
+      field's parts, takes its name, is disabled with it and is validated by it.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the value yourself. <code>onValueChange</code>{" "}
+      receives the new value on every input, not only when the input loses focus. Without <code>value</code>, the
+      input starts at <code>defaultValue</code> and keeps its own.
+    </p>
+    <Demo source="input/controlled"><InputControlled /></Demo>
+
+    <h3 id="field">With a label and validation</h3>
+    <p>
+      Put the input in a <code>FieldRoot</code> with a <code>FieldLabel</code>, a <code>FieldDescription</code> and
+      a <code>FieldError</code>. The <a href="../field/">Field</a> page shows how and when it validates, and the{" "}
+      <a href="../form/">Form</a> page a whole form. <code>FieldControl</code>, from the field family, is the
+      same component.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="input" />
+  </DocsPage>
+}

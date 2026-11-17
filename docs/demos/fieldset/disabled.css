@@ -1,0 +1,103 @@
+.FieldsetDisabled {
+  display: grid;
+  gap: 1.25rem;
+  width: min(100%, 20rem);
+
+  .Toggle {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 0.625rem;
+    font-size: 0.9375rem;
+    cursor: pointer;
+  }
+
+  .Checkbox {
+    appearance: none;
+    grid-area: 1 / 1;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin: 0;
+    border: 1px solid light-dark(#c4c4cc, #4a4a54);
+    border-radius: 0.3125rem;
+    background: light-dark(#fff, #16161a);
+    cursor: inherit;
+  }
+
+  .Checkbox:checked {
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+  }
+
+  .Checkbox:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Indicator {
+    grid-area: 1 / 1;
+    display: grid;
+    place-items: center;
+    color: light-dark(#fff, #17171a);
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  .Checkbox:checked + .Indicator {
+    visibility: visible;
+  }
+
+  .Fieldset {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 1rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    min-width: 0;
+  }
+
+  .Legend {
+    padding: 0 0.375rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  /* `:disabled` matches a disabled fieldset and every control inside it. */
+  .Fieldset:disabled .Legend,
+  .Label[data-disabled] {
+    color: light-dark(#8e8e99, #6e6e7a);
+  }
+
+  .Field {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Input {
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.9375rem;
+  }
+
+  .Input:disabled {
+    border-color: light-dark(#e4e4e8, #26262c);
+    background: light-dark(#f2f2f5, #1c1c21);
+    cursor: not-allowed;
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+}

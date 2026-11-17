@@ -1,0 +1,11 @@
+{
+  "Form": {
+    "description": "A native `<form>` with `novalidate`. On submit it validates every enabled Field inside, prevents the submit and focuses the first invalid field when one fails, and shows errors passed in by field name.",
+    "props": {
+      "validationMode": "When the Fields inside validate, unless a FieldRoot sets its own: `\"onSubmit\"` (on submit, then on every change), `\"onBlur\"` or `\"onChange\"`. A submit always validates every field.",
+      "errors": "Errors to show, keyed by field name: a message or a list of messages each. An entry is hidden once its field's value changes, until `errors` changes again. Compared by content, so set it to `{}` when a submit starts.",
+      "onFormSubmit": "Called on a valid submit with the values of the enabled, named Fields, keyed by name. The native submission is then prevented.",
+      "onSubmit": "Called with the submit event on a valid submit, before `onFormSubmit`. Without `onFormSubmit`, the native submission goes ahead unless this prevents it."
+    }
+  }
+}

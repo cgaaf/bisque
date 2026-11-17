@@ -1,0 +1,50 @@
+.FieldsetHero {
+  width: min(100%, 20rem);
+
+  /* A native <fieldset> comes with a border, padding and margins: reset what you change. */
+  .Fieldset {
+    display: grid;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .Legend {
+    padding: 0;
+    margin-bottom: 0.25rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .Field {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Input {
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.9375rem;
+  }
+
+  .Input::placeholder {
+    color: light-dark(#a0a0aa, #6e6e7a);
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+}

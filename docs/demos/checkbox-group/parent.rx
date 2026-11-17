@@ -1,0 +1,29 @@
+import { CheckboxGroup } from "../../../src/checkbox-group/checkbox-group.rx"
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+
+// One indicator with both marks: the CSS shows the check or the dash.
+component Marks() {
+  <CheckboxIndicator class="Indicator">
+    <svg class="Check" width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    <svg class="Dash" width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M3 6h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+    </svg>
+  </CheckboxIndicator>
+}
+
+export component CheckboxGroupParent() {
+  source selected: string[] := ["email"]
+  <div class="CheckboxGroupParent">
+    <CheckboxGroup class="Group" aria-label="Notifications" allValues={["email", "sms", "push"]} value={selected} onValueChange={(next) => { selected := next }}>
+      <label class="Item"><CheckboxRoot class="Checkbox" parent><Marks /></CheckboxRoot>All notifications</label>
+      <div class="Children">
+        <label class="Item"><CheckboxRoot class="Checkbox" name="notify" value="email"><Marks /></CheckboxRoot>Email</label>
+        <label class="Item"><CheckboxRoot class="Checkbox" name="notify" value="sms"><Marks /></CheckboxRoot>Text message</label>
+        <label class="Item"><CheckboxRoot class="Checkbox" name="notify" value="push"><Marks /></CheckboxRoot>Push</label>
+      </div>
+    </CheckboxGroup>
+    <output class="State">{selected.length > 0 ? selected.join(", ") : "none"}</output>
+  </div>
+}

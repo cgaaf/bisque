@@ -1,0 +1,11 @@
+import { CheckboxGroup } from "./rs-ui/checkbox-group/checkbox-group.rx"
+import { CheckboxRoot, CheckboxIndicator } from "./rs-ui/checkbox/checkbox.rx"
+
+<CheckboxGroup>
+  <label>
+    <CheckboxRoot value="a">
+      <CheckboxIndicator />
+    </CheckboxRoot>
+    Label
+  </label>
+</CheckboxGroup>

@@ -1,0 +1,53 @@
+.FieldValidate {
+  width: min(100%, 20rem);
+
+  .Field {
+    display: grid;
+    gap: 0.375rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Input {
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.9375rem;
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  /* `data-valid` appears once the field has validated and passed. */
+  .Field[data-valid][data-filled] .Input {
+    border-color: light-dark(#0a7a52, #6fd3a7);
+  }
+
+  .Input[data-invalid] {
+    border-color: light-dark(#c4314b, #ff8a9a);
+  }
+
+  .Input[data-invalid]:focus-visible {
+    outline-color: light-dark(#c4314b, #ff8a9a);
+  }
+
+  .Description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    font-size: 0.8125rem;
+    color: light-dark(#c4314b, #ff8a9a);
+  }
+}

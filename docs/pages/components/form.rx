@@ -1,0 +1,83 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { FormHero } from "../../demos/form/hero.rx"
+import { FormServerErrors } from "../../demos/form/server-errors.rx"
+
+export default component Page() {
+  <DocsPage title="Form" subtitle="A native form that validates its fields on submit and shows errors from a server.">
+    <Demo source="form/hero"><FormHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="form/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>Form</code> is a native <code>{"<form>"}</code>. Submitting it with a submit button or with{" "}
+      <kbd>Enter</kbd> in a field, and the native submission itself, are the browser's. Its controls' constraints
+      are checked by the browser's constraint validation, which the <a href="../field/">Fields</a> read.
+    </p>
+    <p>
+      The form carries <code>novalidate</code>, so the browser doesn't stop a submit with its own message bubbles.
+      The library validates instead:
+    </p>
+    <ul>
+      <li>On submit, every enabled Field inside is validated, native constraints first and then <code>validate</code>.</li>
+      <li>
+        If any is invalid, the submit is prevented, every field shows its error, and focus moves to the first
+        invalid field in document order. From then on, fields in the default <code>"onSubmit"</code> mode validate
+        on every change.
+      </li>
+      <li>
+        If all are valid, <code>onSubmit</code> is called with the event, then <code>onFormSubmit</code> with the
+        values of the named fields.
+      </li>
+      <li>Errors passed in <code>errors</code>, by field name, are shown on those fields.</li>
+    </ul>
+    <p>
+      A browser still counts a submit attempt as interaction, so <code>:user-invalid</code> matches the invalid
+      controls after one, <code>novalidate</code> or not.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="submitting">Submitting</h3>
+    <p>
+      With <code>onFormSubmit</code>, a valid submit is handed to you: the native submission is prevented and the
+      function receives an object of the named fields' values, keyed by each <code>FieldRoot</code>'s{" "}
+      <code>name</code>. A text input's value is a string, a checkbox's or switch's a boolean, a radio group's the
+      checked value, and a checkbox group's a list. Disabled fields are left out.
+    </p>
+    <p>
+      Without <code>onFormSubmit</code>, a valid submit goes ahead natively, to the form's <code>action</code>, and
+      sends what the browser sends: the named controls' values as form data. <code>onSubmit</code> is called first
+      in both cases, and only for a valid submit.
+    </p>
+
+    <h3 id="validation-mode">When fields validate</h3>
+    <p>
+      <code>validationMode</code> sets the mode for every field inside: <code>"onSubmit"</code> (the default),{" "}
+      <code>"onBlur"</code> or <code>"onChange"</code>. A field's own <code>validationMode</code> wins. Whatever the
+      mode, a submit validates every field. The <a href="../field/">Field</a> page has the details.
+    </p>
+
+    <h3 id="server-errors">Errors from a server</h3>
+    <p>
+      Pass <code>errors</code>, an object of messages keyed by field name, to show errors that only a server can
+      find. Each one makes its field invalid and is shown by its <code>FieldError</code>. When errors arrive after a
+      valid submit, focus moves to the first field that has one. An error is hidden once its field's value changes,
+      and a field that still has one blocks the next submit.
+    </p>
+    <Demo source="form/server-errors"><FormServerErrors /></Demo>
+    <div class="note">
+      <p>
+        <code>errors</code> is compared by content, not identity. Set it to <code>{"{}"}</code> when a submit
+        starts and to the reply when it comes back: the same error returned for the next submit is then a change,
+        and shows again. The demo answers at once, so it can't do that, and an error for a handle that was edited
+        and then typed back stays hidden.
+      </p>
+    </div>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="form" />
+  </DocsPage>
+}

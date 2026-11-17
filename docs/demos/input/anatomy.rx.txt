@@ -1,0 +1,3 @@
+import { Input } from "./rs-ui/input/input.rx"
+
+<Input />

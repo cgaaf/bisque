@@ -1,0 +1,13 @@
+import { FieldRoot, FieldLabel, FieldControl, FieldValidity, fieldValidity } from "./rs-ui/field/field.rx"
+
+// FieldValidity provides the field's validity to its children.
+component Status() {
+  v = use fieldValidity
+  <p>{v.validity.valid == null ? "Not checked yet" : v.validity.valid ? "Looks good" : v.error}</p>
+}
+
+<FieldRoot validationMode="onChange">
+  <FieldLabel>Website</FieldLabel>
+  <FieldControl type="url" />
+  <FieldValidity><Status /></FieldValidity>
+</FieldRoot>

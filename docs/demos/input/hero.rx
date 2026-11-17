@@ -1,0 +1,10 @@
+import { Input } from "../../../src/input/input.rx"
+
+export component InputHero() {
+  <div class="InputHero">
+    <label class="Label">
+      Name
+      <Input class="Input" name="name" placeholder="Your name" autocomplete="name" />
+    </label>
+  </div>
+}

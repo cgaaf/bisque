@@ -1,0 +1,36 @@
+import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+
+// One indicator holds both marks; the CSS shows the one that matches the box's state.
+component Marks() {
+  <CheckboxIndicator class="Indicator">
+    <svg class="Check" width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M2.5 6.25 5 8.75l4.5-5.5" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" />
+    </svg>
+    <svg class="Dash" width="12" height="12" viewBox="0 0 12 12" fill="none">
+      <path d="M3 6h6" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" />
+    </svg>
+  </CheckboxIndicator>
+}
+
+export component CheckboxStates() {
+  source mixed := true
+  <div class="CheckboxStates">
+    <label class="Label">
+      <CheckboxRoot class="Checkbox" indeterminate={mixed} onCheckedChange={() => { mixed := false }}><Marks /></CheckboxRoot>
+      Indeterminate until pressed
+    </label>
+    <label class="Label">
+      <CheckboxRoot class="Checkbox" disabled><Marks /></CheckboxRoot>
+      Disabled
+    </label>
+    <label class="Label">
+      <CheckboxRoot class="Checkbox" disabled defaultChecked><Marks /></CheckboxRoot>
+      Disabled and checked
+    </label>
+    <label class="Label">
+      <CheckboxRoot class="Checkbox" readOnly defaultChecked><Marks /></CheckboxRoot>
+      Read-only
+    </label>
+    <button class="Button" type="button" disabled={mixed} onClick={() => { mixed := true }}>Make it indeterminate again</button>
+  </div>
+}

@@ -1,0 +1,19 @@
+{
+  "Input": {
+    "description": "A native `<input>`; any `type` works and every attribute is passed through. Inside a FieldRoot it is the field's control: labelled and described by the field's parts, named and disabled with it, and validated by it.",
+    "props": {
+      "value": "The input's value. Pass it with `onValueChange` to control the input.",
+      "defaultValue": "The value at first, when the input isn't controlled.",
+      "onValueChange": "Called with the new value on every input."
+    },
+    "dataAttributes": {
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and passed.",
+      "data-touched": "Inside a FieldRoot: present once the input has been focused and left.",
+      "data-dirty": "Inside a FieldRoot: present while the value differs from the one it started with.",
+      "data-filled": "Inside a FieldRoot: present while the input isn't empty.",
+      "data-disabled": null,
+      "data-focused": null
+    }
+  }
+}

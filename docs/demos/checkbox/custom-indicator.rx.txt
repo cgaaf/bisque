@@ -1,0 +1,12 @@
+import { CheckboxRoot, checkbox } from "./rs-ui/checkbox/checkbox.rx"
+
+// CheckboxRoot provides its state to its children.
+component Mark() {
+  c = use checkbox
+  <span class="Mark" aria-hidden="true">{c.indeterminate ? "–" : c.checked ? "✓" : ""}</span>
+}
+
+<label>
+  <CheckboxRoot><Mark /></CheckboxRoot>
+  Select all
+</label>

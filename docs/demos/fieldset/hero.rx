@@ -1,0 +1,19 @@
+import { FieldsetRoot, FieldsetLegend } from "../../../src/fieldset/fieldset.rx"
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+
+export component FieldsetHero() {
+  <div class="FieldsetHero">
+    <FieldsetRoot class="Fieldset">
+      <FieldsetLegend class="Legend">Billing details</FieldsetLegend>
+      <FieldRoot class="Field" name="company">
+        <FieldLabel class="Label">Company</FieldLabel>
+        <Input class="Input" placeholder="Northwind Studio" />
+      </FieldRoot>
+      <FieldRoot class="Field" name="taxId">
+        <FieldLabel class="Label">Tax ID</FieldLabel>
+        <Input class="Input" placeholder="XX-0000000" />
+      </FieldRoot>
+    </FieldsetRoot>
+  </div>
+}

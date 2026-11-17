@@ -1,0 +1,58 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { FieldsetHero } from "../../demos/fieldset/hero.rx"
+import { FieldsetDisabled } from "../../demos/fieldset/disabled.rx"
+
+export default component Page() {
+  <DocsPage title="Fieldset" subtitle="A native fieldset that groups fields under a legend and disables them together.">
+    <Demo source="fieldset/hero"><FieldsetHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="fieldset/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>FieldsetRoot</code> is a native <code>{"<fieldset>"}</code> and <code>FieldsetLegend</code> a native{" "}
+      <code>{"<legend>"}</code>. The browser provides:
+    </p>
+    <ul>
+      <li>The group role, named by the fieldset's first <code>{"<legend>"}</code> child, with no ARIA.</li>
+      <li>
+        Disabling: a disabled fieldset disables every form control inside it, and <code>:disabled</code> matches
+        the fieldset and those controls.
+      </li>
+    </ul>
+    <p>
+      The library adds one thing: the <a href="../field/">Fields</a> inside a disabled fieldset are told they are
+      disabled, so their parts carry <code>data-disabled</code> and a Form skips them when it validates.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="legend">The legend</h3>
+    <p>
+      Make <code>FieldsetLegend</code> the fieldset's first child: only that legend names it. The browser draws a
+      fieldset with a border, padding and the legend set into the border; the hero resets them, and the demo below
+      keeps the border.
+    </p>
+
+    <h3 id="disabled">Disabling a group</h3>
+    <p>
+      <code>disabled</code> disables everything inside, Fields and plain controls alike. A control outside any
+      Field is disabled by the browser alone: <code>:disabled</code> matches it, though its own{" "}
+      <code>disabled</code> attribute isn't set. Style the legend of a disabled fieldset with{" "}
+      <code>fieldset:disabled {">"} legend</code>, and a field's label with <code>[data-disabled]</code>.
+    </p>
+    <Demo source="fieldset/disabled"><FieldsetDisabled /></Demo>
+
+    <h3 id="groups">Around a radio or checkbox group</h3>
+    <p>
+      A fieldset with a legend is also a way to name a <a href="../radio/">RadioGroup</a> or a{" "}
+      <a href="../checkbox-group/">CheckboxGroup</a>, instead of a <code>FieldLabel</code> or{" "}
+      <code>aria-label</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="fieldset" />
+  </DocsPage>
+}
