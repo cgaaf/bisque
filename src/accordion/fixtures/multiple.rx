@@ -1,0 +1,29 @@
+import { AccordionRoot, AccordionItem, AccordionHeader, AccordionTrigger, AccordionPanel } from "../accordion.rx"
+
+export default component Fixture() {
+  source open: string[] := ["a"]
+  <main>
+    <AccordionRoot data-testid="controlled" multiple keepMounted orientation="horizontal" loopFocus={false} value={open} onValueChange={(next) => { open := next }}>
+      <AccordionItem value="a">
+        <AccordionHeader><AccordionTrigger>Alpha</AccordionTrigger></AccordionHeader>
+        <AccordionPanel data-testid="panel-a">A</AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="b">
+        <AccordionHeader><AccordionTrigger>Beta</AccordionTrigger></AccordionHeader>
+        <AccordionPanel data-testid="panel-b">B</AccordionPanel>
+      </AccordionItem>
+      <AccordionItem>
+        <AccordionHeader><AccordionTrigger>Gamma</AccordionTrigger></AccordionHeader>
+        <AccordionPanel keepMounted={false} data-testid="panel-c">C</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+    <output data-testid="value">{open.join(",")}</output>
+    <button onClick={() => { open := [] }}>Close all</button>
+    <AccordionRoot data-testid="disabled" disabled>
+      <AccordionItem value="x">
+        <AccordionHeader><AccordionTrigger>Locked</AccordionTrigger></AccordionHeader>
+        <AccordionPanel>Never</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+  </main>
+}

@@ -1,11 +1,18 @@
 import { mergeProps, createId } from "../internal/props.js"
-import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
+import { createPresence } from "../internal/dom.js"
+import { createPanelSize } from "../internal/disclosure.js"
+import { DivProps, ButtonProps, PartProps, TransitionStatus } from "../internal/types.rx"
 
 export type CollapsibleContext = {
   open: boolean
+  // True from opening until the panel has finished animating out.
+  mounted: boolean
+  status: TransitionStatus
   disabled: boolean
   panelId: string
+  panel: HTMLElement | undefined
   toggle: () => void
+  setPanel: (element: HTMLElement) => void
 }
 
 export context collapsible: CollapsibleContext
@@ -20,6 +27,7 @@ export type CollapsibleRootProps = {
 
 export component CollapsibleRoot(props: CollapsibleRootProps) {
   source uncontrolled := peek(props.defaultOpen ?? false)
+  source panel: HTMLElement | undefined := undefined
   isOpen = props.open ?? uncontrolled
   isDisabled = props.disabled ?? false
   panelId = createId("collapsible-panel")
@@ -30,8 +38,20 @@ export component CollapsibleRoot(props: CollapsibleRootProps) {
     uncontrolled := next
     if (props.onOpenChange) { props.onOpenChange(next) }
   }
+  action setPanel(element: HTMLElement) { panel := element }
 
-  provide collapsible = { open: isOpen, disabled: isDisabled, panelId: panelId, toggle: toggle }
+  [mounted, status] = createPresence(isOpen, panel)
+
+  provide collapsible = {
+    open: isOpen,
+    mounted: mounted,
+    status: status,
+    disabled: isDisabled,
+    panelId: panelId,
+    panel: panel,
+    toggle: toggle,
+    setPanel: setPanel,
+  }
 
   { open, defaultOpen, onOpenChange, disabled, children, ...rest } = props
   own = {
@@ -63,19 +83,26 @@ export component CollapsibleTrigger({ children, ...rest }: ButtonProps) {
   <button {...merged}>{children}</button>
 }
 
+// The panel's size is written to `--collapsible-panel-height` and `--collapsible-panel-width` (see
+// createPanelSize in ../internal/disclosure.js), and it stays mounted while it animates out.
 export fn collapsiblePanel(ref c: CollapsibleContext): PartProps {
   {
     id: c.panelId,
+    hidden: !c.open && !c.mounted ? true : undefined,
     "data-open": c.open ? "" : undefined,
     "data-closed": c.open ? undefined : "",
+    "data-starting-style": c.status == "starting" ? "" : undefined,
+    "data-ending-style": c.status == "ending" ? "" : undefined,
+    ref: c.setPanel,
   }
 }
 
 export component CollapsiblePanel({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & DivProps) {
   c = use collapsible
+  _size = createPanelSize(c.open, c.panel, "collapsible-panel")
   own = collapsiblePanel(c)
   merged = mergeProps(own, rest)
-  {if c.open || keepMounted {
-    <div {...merged} hidden={c.open ? undefined : true}>{children}</div>
+  {if c.mounted || keepMounted {
+    <div {...merged}>{children}</div>
   }}
 }

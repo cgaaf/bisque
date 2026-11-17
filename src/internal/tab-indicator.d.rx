@@ -1,0 +1,4 @@
+// How .rx may use ./tab-indicator.js (implemented in ./impl/tab-indicator.ts): the selected tab's position.
+// A `ref` parameter is passed live; the others are read once. Bind every call.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./tab-indicator.d.ts.
+export pure fn createSelectedTab(ref list: HTMLElement | undefined, ref value: string | undefined, ref orientation: "horizontal" | "vertical"): [ref { left: number; right: number; top: number; bottom: number; width: number; height: number } | undefined, ref "left" | "right" | "up" | "down" | "none"]

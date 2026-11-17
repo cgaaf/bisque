@@ -1,0 +1,236 @@
+import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
+import { createPresence, createRovingFocus } from "../internal/dom.js"
+import { createSelectedTab } from "../internal/tab-indicator.js"
+import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type TabsOrientation = "horizontal" | "vertical"
+// Which way the selection last moved, from the old tab to the new one. "none" until it first moves.
+export type TabsActivationDirection = "left" | "right" | "up" | "down" | "none"
+// The selected tab's box inside the list, in px (see TabsIndicator).
+export type TabsRect = { left: number; right: number; top: number; bottom: number; width: number; height: number }
+export type TabsEntry = { value: string; disabled: boolean }
+
+export type TabsContext = {
+  // The selected value: the `value` prop, else the chosen or default value, else the first enabled tab.
+  value: string | undefined
+  orientation: TabsOrientation
+  direction: TabsActivationDirection
+  rect: TabsRect | undefined
+  // The tab that takes focus from Tab: the selected one, else the first enabled one.
+  tabStop: string | undefined
+  rootId: string
+  list: HTMLElement | undefined
+  select: (value: string) => void
+  setList: (element: HTMLElement) => void
+  upsertTab: (value: string, disabled: boolean) => void
+  removeTab: (value: string) => void
+}
+
+export context tabs: TabsContext
+
+export type TabsRootProps = {
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+  // Default: horizontal (Left/Right move between tabs); vertical uses Up/Down.
+  orientation?: TabsOrientation
+  children?: View
+} & Omit<DivProps, "children">
+
+// What a part's element id is built from, so tab and panel can name each other without registering.
+fn partId(rootId: string, part: string, value: string): string => `${rootId}-${part}-${value}`
+
+export component TabsRoot(props: TabsRootProps) {
+  source uncontrolled: string | undefined := peek(props.defaultValue)
+  source entries: TabsEntry[] := []
+  source list: HTMLElement | undefined := undefined
+  rootId = createId("tabs")
+  axis = props.orientation ?? "horizontal"
+  chosen = props.value ?? uncontrolled
+  firstEnabled = entries.find((t) => !t.disabled)
+  chosenExists = entries.some((t) => t.value == chosen)
+  // A controlled value is shown as given; an uncontrolled one falls back to the first enabled tab while it names
+  // no tab (no default, or that tab went away).
+  current = props.value != undefined ? props.value : chosenExists ? chosen : firstEnabled != undefined ? firstEnabled.value : chosen
+  tabStop = entries.some((t) => t.value == current) ? current : firstEnabled != undefined ? firstEnabled.value : undefined
+
+  action select(next: string) {
+    if (next == current) { return }
+    uncontrolled := next
+    if (props.onValueChange) { props.onValueChange(next) }
+  }
+  action setList(element: HTMLElement) { list := element }
+  action upsertTab(value: string, disabled: boolean) {
+    let entry = { value: value, disabled: disabled }
+    entries := (old) => old.some((t) => t.value == value) ? old.map((t) => t.value == value ? entry : t) : [...old, entry]
+  }
+  action removeTab(value: string) {
+    entries := (old) => old.filter((t) => t.value != value)
+  }
+
+  [rect, direction] = createSelectedTab(list, current, axis)
+
+  provide tabs = {
+    value: current,
+    orientation: axis,
+    direction: direction,
+    rect: rect,
+    tabStop: tabStop,
+    rootId: rootId,
+    list: list,
+    select: select,
+    setList: setList,
+    upsertTab: upsertTab,
+    removeTab: removeTab,
+  }
+
+  { value, defaultValue, onValueChange, orientation, children, ...rest } = props
+  own = { "data-orientation": axis, "data-activation-direction": direction }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type TabsListContext = {
+  activateOnFocus: boolean
+}
+
+export context tabsListOptions: TabsListContext
+
+export type TabsListProps = {
+  // Select a tab as soon as the arrow keys focus it (automatic activation). Default: false, so the focused tab
+  // is selected with Enter or Space (manual activation).
+  activateOnFocus?: boolean
+  // Whether the arrow keys wrap around at the ends. Default: true.
+  loopFocus?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+export fn tabsList(ref c: TabsContext): PartProps {
+  {
+    role: "tablist",
+    "aria-orientation": c.orientation,
+    "data-orientation": c.orientation,
+    "data-activation-direction": c.direction,
+    ref: c.setList,
+  }
+}
+
+export component TabsList(props: TabsListProps) {
+  c = use tabs
+  _roving = createRovingFocus(c.list, { orientation: c.orientation, loop: props.loopFocus ?? true, typeahead: false, tabStop: false })
+  provide tabsListOptions = { activateOnFocus: props.activateOnFocus ?? false }
+  { activateOnFocus, loopFocus, children, ...rest } = props
+  own = tabsList(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type TabsTabProps = {
+  value: string
+  // A disabled tab stays in the DOM and is announced, but can't be selected and is skipped by the arrow keys.
+  disabled?: boolean
+} & Omit<ButtonProps, "value" | "disabled">
+
+export fn tabsTab(ref c: TabsContext, ref l: TabsListContext, ref value: string, ref disabled: boolean): PartProps {
+  isSelected = c.value == value
+  action press() {
+    if (!disabled) { c.select(value) }
+  }
+  action focus() {
+    if (l.activateOnFocus && !disabled) { c.select(value) }
+  }
+  {
+    type: "button",
+    role: "tab",
+    id: partId(c.rootId, "tab", value),
+    tabindex: c.tabStop == value ? "0" : "-1",
+    "aria-selected": isSelected ? "true" : "false",
+    "aria-controls": isSelected ? partId(c.rootId, "panel", value) : undefined,
+    "aria-disabled": disabled ? "true" : undefined,
+    "data-rs-ui-item": "",
+    "data-active": isSelected ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    "data-orientation": c.orientation,
+    "data-activation-direction": c.direction,
+    onClick: press,
+    onFocus: focus,
+  }
+}
+
+export component TabsTab(props: TabsTabProps) {
+  c = use tabs
+  l = use tabsListOptions
+  isDisabled = props.disabled ?? false
+  // The root keeps the list of tabs only to know the first enabled one and whether the value names a tab.
+  effect (props.value) {
+    c.upsertTab($0, isDisabled)
+    return () => { c.removeTab($0) }
+  }
+  effect (isDisabled) { c.upsertTab(props.value, $0) }
+  { value, disabled, children, ...rest } = props
+  own = tabsTab(c, l, value, isDisabled)
+  merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  <button {...merged}>{children}</button>
+}
+
+export type TabsPanelProps = {
+  value: string
+  // Keep the panel in the DOM (hidden) while its tab isn't selected. Default: false.
+  keepMounted?: boolean
+} & DivProps
+
+export component TabsPanel({ value, keepMounted = false, children, ...rest }: TabsPanelProps) {
+  c = use tabs
+  source element: HTMLElement | undefined := undefined
+  isSelected = c.value == value
+  action setElement(el: HTMLElement) { element := el }
+  [mounted, status] = createPresence(isSelected, element)
+  isHidden = !isSelected && !mounted
+  own = {
+    id: partId(c.rootId, "panel", value),
+    role: "tabpanel",
+    tabindex: isSelected ? "0" : "-1",
+    "aria-labelledby": partId(c.rootId, "tab", value),
+    hidden: isHidden ? true : undefined,
+    "data-hidden": isHidden ? "" : undefined,
+    "data-orientation": c.orientation,
+    "data-activation-direction": c.direction,
+    "data-starting-style": status == "starting" ? "" : undefined,
+    "data-ending-style": status == "ending" ? "" : undefined,
+    ref: setElement,
+  }
+  merged = mergeProps(own, rest)
+  {if mounted || keepMounted {
+    <div {...merged}>{children}</div>
+  }}
+}
+
+// Follows the selected tab. Its position and size are CSS variables relative to the list:
+// `--active-tab-left`, `--active-tab-right`, `--active-tab-top`, `--active-tab-bottom`, `--active-tab-width`,
+// `--active-tab-height`. Hidden until the selected tab has a size. Place it inside TabsList.
+export fn tabsIndicator(ref c: TabsContext): PartProps {
+  r = c.rect
+  {
+    role: "presentation",
+    hidden: r == undefined || r.width == 0 || r.height == 0 ? true : undefined,
+    "data-orientation": c.orientation,
+    "data-activation-direction": c.direction,
+    style: r == undefined ? undefined : {
+      "--active-tab-left": `${r.left}px`,
+      "--active-tab-right": `${r.right}px`,
+      "--active-tab-top": `${r.top}px`,
+      "--active-tab-bottom": `${r.bottom}px`,
+      "--active-tab-width": `${r.width}px`,
+      "--active-tab-height": `${r.height}px`,
+    },
+  }
+}
+
+export component TabsIndicator(props: SpanProps) {
+  c = use tabs
+  own = tabsIndicator(c)
+  merged = mergeProps(own, props)
+  {if c.value != undefined {
+    <span {...merged} />
+  }}
+}

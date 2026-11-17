@@ -1,0 +1,34 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, tabs, tabsListOptions, tabsTab } from "../tabs.rx"
+
+component LinkTab(props: { value: string; label: string }) {
+  c = use tabs
+  l = use tabsListOptions
+  t = tabsTab(c, l, props.value, false)
+  <a href="#" data-testid="link-tab" {...t} type={undefined}>{props.label}</a>
+}
+
+export default component Fixture() {
+  source current := "b"
+  <main>
+    <TabsRoot data-testid="root" orientation="vertical" value={current} onValueChange={(next) => { current := next }}>
+      <TabsList activateOnFocus loopFocus={false} data-testid="list">
+        <TabsTab value="a">Alpha</TabsTab>
+        <TabsTab value="b">Beta</TabsTab>
+        <LinkTab value="c" label="Gamma" />
+      </TabsList>
+      <TabsPanel value="a">A</TabsPanel>
+      <TabsPanel value="b" data-testid="panel-b">B</TabsPanel>
+      <TabsPanel value="c">C</TabsPanel>
+    </TabsRoot>
+    <output data-testid="current">{current}</output>
+    <button onClick={() => { current := "a" }}>Pick alpha</button>
+    <TabsRoot data-testid="defaulted" defaultValue="two">
+      <TabsList>
+        <TabsTab value="one">One</TabsTab>
+        <TabsTab value="two">Two</TabsTab>
+      </TabsList>
+      <TabsPanel value="one">Panel one</TabsPanel>
+      <TabsPanel value="two">Panel two</TabsPanel>
+    </TabsRoot>
+  </main>
+}

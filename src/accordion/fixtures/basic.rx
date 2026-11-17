@@ -1,0 +1,35 @@
+import { AccordionRoot, AccordionItem, AccordionHeader, AccordionTrigger, AccordionPanel, accordion, accordionItem, accordionTrigger } from "../accordion.rx"
+
+component LinkTrigger() {
+  root = use accordion
+  item = use accordionItem
+  t = accordionTrigger(root, item)
+  <a href="#shipping" data-testid="link" {...t} type={undefined}>Shipping</a>
+}
+
+export default component Fixture() {
+  source changes := ""
+  source opened := ""
+  <main>
+    <AccordionRoot data-testid="root" class="mine" defaultValue={["one"]} onValueChange={(next) => { changes := next.join(",") }}>
+      <AccordionItem value="one" data-testid="item-one">
+        <AccordionHeader data-testid="header-one"><AccordionTrigger>One</AccordionTrigger></AccordionHeader>
+        <AccordionPanel data-testid="panel-one">First <input aria-label="Note" /></AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="two" onOpenChange={(open) => { opened := open ? "two open" : "two closed" }}>
+        <AccordionHeader><AccordionTrigger>Two</AccordionTrigger></AccordionHeader>
+        <AccordionPanel data-testid="panel-two">Second</AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="three" disabled data-testid="item-three">
+        <AccordionHeader><AccordionTrigger>Three</AccordionTrigger></AccordionHeader>
+        <AccordionPanel>Third</AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="four">
+        <AccordionHeader><LinkTrigger /></AccordionHeader>
+        <AccordionPanel keepMounted data-testid="panel-four">Fourth</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="opened">{opened}</output>
+  </main>
+}

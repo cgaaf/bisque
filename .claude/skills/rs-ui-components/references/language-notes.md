@@ -30,6 +30,9 @@ More that isn't there, found while building components:
 - **No `Object` global and no computed keys** (`{ [k]: v }` is `PARSE`): build such objects in TypeScript.
 - **A function-type parameter on a `fn` needs parentheses**: `fn f(x: (() => void))`. Unparenthesised it is
   `PARSE expected ')'`. Usually the better answer is to put the action in the context.
+- **A ternary can't break before `?`** (`PARSE expression near '? …'`). Keep it on one line.
+- **A context and a function can't share a name** (`DUPLICATE_DECLARATION`, then `NOT_A_CONTEXT`). A part that
+  needs its own context beside its props function names the context differently (`tabsListOptions`).
 - **A type and a component can't share a name**: the component becomes "unknown component". Rename the type.
 
 Accepted, and useful: a context with a default (`export context x: T = { … }`): `use x` with no provider above
@@ -78,11 +81,19 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - Vitest's `fsModuleCache` must stay off (`vite.config.ts`). It caches an `.rx` entry by its own content, but
   the entry's output depends on every module it imports: edit only a dependency and the run fails with
   "imported as an .rx dependency, but no program built so far contains it".
+- The Vite dev server can serve stale output after an imported `.rx` changes, for the same reason. Restart it
+  with `--force`.
+- A component's `<style>` is scoped to that component's own elements, and a rule that matches none of them is
+  dropped. To style a library part from a demo, write `:global(.popup[data-open])`.
 - `scripts/rx-check.mjs` calls the compiler directly and answers in milliseconds, with no types.
 - The Vite plugin's `next` dist-tag has pointed at an older build than `3.0.0-next.57`, the first with `.rx`
   support. The version is pinned.
 
 ## Testing notes
+
+- Only awaited `user` events flush. After `element.dispatchEvent(…)` or `fireEvent`, call `flush()` (exported by
+  `src/test/mount.ts`) before asserting.
+- jsdom normalises a transform: `translate3d(0, 5px, 0)` reads back as `translate3d(0px, 5px, 0px)`.
 
 - Delays: fake only the timers, `vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })`, so
   `requestAnimationFrame` stays real and presence can still unmount. Give user-event
@@ -95,4 +106,4 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 ## Not yet tried here
 
 Server rendering and hydration (upstream calls SSR in Vite "not yet"), `for … in` over a keyed collection
-inside a part, scoped `<style>`, and anything async. Treat the guide as a claim to test, not a fact.
+inside a part, and anything async. Treat the guide as a claim to test, not a fact.

@@ -89,6 +89,10 @@ position, roving focus and typeahead). A call that returns nothing is still boun
 Inside a primitive: `createEffect(compute, apply)` with the cleanup returned from `apply`; read an accessor once
 with `untrack`; and never let one primitive depend on another's effect having run first.
 
+`createRovingFocus` suits a container that holds only items (a menu, a toolbar). Where free content sits
+between the items, as in an accordion, handle the keys on the item itself, or arrow keys typed into an input in
+that content get taken.
+
 Lists use the DOM as the registry: an item carries `data-rs-ui-item` (and `data-disabled`), and
 `createRovingFocus` finds items by querying. Parts don't register with a parent to be navigable.
 

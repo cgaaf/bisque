@@ -1,0 +1,23 @@
+import { AccordionRoot, AccordionItem, AccordionHeader, AccordionTrigger, AccordionPanel } from "../src/accordion/accordion.rx"
+
+export component AccordionDemo() {
+  <style>
+    :global(.accordion-panel) { overflow: hidden; height: var(--accordion-panel-height); transition: height 200ms ease }
+    :global(.accordion-panel[data-starting-style]), :global(.accordion-panel[data-ending-style]) { height: 0 }
+    :global(.accordion-header) { margin: 0 }
+  </style>
+  <AccordionRoot defaultValue={["shipping"]}>
+    <AccordionItem value="shipping">
+      <AccordionHeader class="accordion-header"><AccordionTrigger>Shipping</AccordionTrigger></AccordionHeader>
+      <AccordionPanel class="accordion-panel"><p>Orders ship within two working days.</p></AccordionPanel>
+    </AccordionItem>
+    <AccordionItem value="returns">
+      <AccordionHeader class="accordion-header"><AccordionTrigger>Returns</AccordionTrigger></AccordionHeader>
+      <AccordionPanel class="accordion-panel"><p>Return anything unused within 30 days.</p></AccordionPanel>
+    </AccordionItem>
+    <AccordionItem value="gift" disabled>
+      <AccordionHeader class="accordion-header"><AccordionTrigger>Gift wrap (unavailable)</AccordionTrigger></AccordionHeader>
+      <AccordionPanel class="accordion-panel"><p>Not offered yet.</p></AccordionPanel>
+    </AccordionItem>
+  </AccordionRoot>
+}

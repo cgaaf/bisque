@@ -1,0 +1,26 @@
+import { ScrollAreaRoot, ScrollAreaViewport, ScrollAreaContent, ScrollAreaScrollbar, ScrollAreaThumb, ScrollAreaCorner } from "../scroll-area.rx"
+
+export default component Fixture() {
+  <main>
+    <ScrollAreaRoot data-testid="root" class="mine" overflowEdgeThreshold={10}>
+      <ScrollAreaViewport data-testid="viewport">
+        <ScrollAreaContent data-testid="content">
+          <p>Long content</p>
+        </ScrollAreaContent>
+      </ScrollAreaViewport>
+      <ScrollAreaScrollbar data-testid="scrollbar-y">
+        <ScrollAreaThumb data-testid="thumb-y" />
+      </ScrollAreaScrollbar>
+      <ScrollAreaScrollbar orientation="horizontal" data-testid="scrollbar-x">
+        <ScrollAreaThumb data-testid="thumb-x" />
+      </ScrollAreaScrollbar>
+      <ScrollAreaCorner data-testid="corner" />
+    </ScrollAreaRoot>
+    <ScrollAreaRoot data-testid="kept-root">
+      <ScrollAreaViewport>Short</ScrollAreaViewport>
+      <ScrollAreaScrollbar keepMounted data-testid="kept">
+        <ScrollAreaThumb />
+      </ScrollAreaScrollbar>
+    </ScrollAreaRoot>
+  </main>
+}

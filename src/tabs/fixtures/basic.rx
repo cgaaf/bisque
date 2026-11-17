@@ -1,0 +1,25 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../tabs.rx"
+
+export default component Fixture() {
+  source changes := ""
+  source clicks := 0
+  <main>
+    <button>Before</button>
+    <TabsRoot data-testid="root" class="mine" onValueChange={(next) => { changes := changes + next + ";" }}>
+      <TabsList data-testid="list">
+        <TabsTab value="overview" onClick={() => { clicks := clicks + 1 }}>Overview</TabsTab>
+        <TabsTab value="projects">Projects</TabsTab>
+        <TabsTab value="billing" disabled onClick={() => { clicks := clicks + 100 }}>Billing</TabsTab>
+        <TabsTab value="account">Account</TabsTab>
+        <TabsIndicator data-testid="indicator" />
+      </TabsList>
+      <TabsPanel value="overview" data-testid="panel-overview">Overview panel</TabsPanel>
+      <TabsPanel value="projects" data-testid="panel-projects">Projects panel</TabsPanel>
+      <TabsPanel value="billing">Billing panel</TabsPanel>
+      <TabsPanel value="account" keepMounted data-testid="panel-account">Account panel</TabsPanel>
+    </TabsRoot>
+    <button>After</button>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="clicks">{clicks}</output>
+  </main>
+}

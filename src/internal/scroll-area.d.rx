@@ -1,0 +1,8 @@
+// How .rx may use ./scroll-area.js (implemented in ./impl/scroll-area.ts): the scroll area's viewport.
+// A `ref` parameter is passed live; the others are read once. Bind every call. The metrics are an object whose
+// fields track (read `m.top`, not `m.top()`).
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./scroll-area.d.ts.
+export pure fn createScrollMetrics(ref viewport: HTMLElement | undefined, ref scrollbarY: HTMLElement | undefined, ref scrollbarX: HTMLElement | undefined): { top: number; left: number; scrollHeight: number; scrollWidth: number; clientHeight: number; clientWidth: number; trackY: number; thicknessY: number; trackX: number; thicknessX: number; scrollingX: boolean; scrollingY: boolean }
+export fn setScrollPosition(element: HTMLElement | undefined, axis: "x" | "y", value: number): void
+export fn capturePointer(element: HTMLElement | undefined, pointerId: number): void
+export fn releasePointer(element: HTMLElement | undefined, pointerId: number): void
