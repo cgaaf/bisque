@@ -1,4 +1,4 @@
-import { ToastProvider, ToastPortal, ToastViewport, ToastRoot, ToastTitle, toast } from "../toast.rx"
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, toast } from "../toast.rx"
 import { appToastManager } from "./app-toasts.js"
 
 component Toasts() {
@@ -13,10 +13,8 @@ component Toasts() {
 export default component Fixture() {
   manager = appToastManager()
   <ToastProvider toastManager={manager} timeout={0}>
-    <ToastPortal>
-      <ToastViewport>
-        <Toasts />
-      </ToastViewport>
-    </ToastPortal>
+    <ToastViewport>
+      <Toasts />
+    </ToastViewport>
   </ToastProvider>
 }

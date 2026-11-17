@@ -48,6 +48,16 @@ function sizeAlong(element: HTMLElement, direction: SwipeDirection): number {
   return direction === "left" || direction === "right" ? element.offsetWidth : element.offsetHeight;
 }
 
+function inside(element: HTMLElement, event: PointerEvent): boolean {
+  const box = element.getBoundingClientRect();
+  return (
+    event.clientX >= box.left &&
+    event.clientX <= box.right &&
+    event.clientY >= box.top &&
+    event.clientY <= box.bottom
+  );
+}
+
 function damp(delta: number): number {
   return delta > 0 ? Math.sqrt(delta) : -Math.sqrt(-delta);
 }
@@ -101,6 +111,8 @@ export function createSwipe(
       const onPointerDown = (event: PointerEvent) => {
         if (event.button !== 0 || pointerId !== undefined) return;
         if (!untrack(options).enabled) return;
+        // A press on a dialog's ::backdrop targets the dialog itself, outside its box: that is not a swipe.
+        if (event.target === el && !inside(el, event)) return;
         if (event.target instanceof Element) {
           if (event.target.closest(IGNORE)) return;
           const text = untrack(options).textSelector;
@@ -114,7 +126,11 @@ export function createSwipe(
         maxDisplacement = 0;
         cancelled = false;
         current = { dx: 0, dy: 0 };
-        el.setPointerCapture?.(event.pointerId);
+        try {
+          el.setPointerCapture?.(event.pointerId);
+        } catch {
+          // The pointer is no longer active (Firefox throws then); the document listeners still follow it.
+        }
         document.addEventListener("pointermove", onPointerMove);
         document.addEventListener("pointerup", onPointerUp);
         document.addEventListener("pointercancel", onPointerUp);

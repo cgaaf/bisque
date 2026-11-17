@@ -1,4 +1,4 @@
-import { ToastProvider, ToastPortal, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "../src/toast/toast.rx"
+import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "../src/toast/toast.rx"
 
 component ToastList() {
   c = use toast
@@ -36,12 +36,21 @@ component ToastButtons() {
 }
 
 export component ToastDemo() {
+  // The viewport is an open popover: placed in the bottom-right corner instead of the browser's centred box, and
+  // letting presses through where it has no toast. Toasts animate in with @starting-style and out under
+  // [data-ending-style], and follow a swipe.
+  <style>
+    :global(.toast-viewport) { inset: auto 1rem 1rem auto; margin: 0; padding: 0; border: 0; background: none; overflow: visible; width: 20rem; display: flex; flex-direction: column-reverse; gap: 0.5rem; pointer-events: none }
+    :global(.toast) { pointer-events: auto; background: white; border: 1px solid #ddd; border-radius: 8px; padding: 0.75rem; box-shadow: 0 4px 12px rgb(0 0 0 / 0.1); transform: translate(var(--toast-swipe-movement-x), var(--toast-swipe-movement-y)); transition: opacity 200ms, transform 200ms }
+    :global(.toast[data-swiping]) { transition: none }
+    @starting-style { :global(.toast) { opacity: 0; transform: translateY(1rem) } }
+    :global(.toast[data-ending-style]) { opacity: 0 }
+    :global(.toast[data-limited]) { display: none }
+  </style>
   <ToastProvider>
     <ToastButtons />
-    <ToastPortal>
-      <ToastViewport class="toast-viewport">
-        <ToastList />
-      </ToastViewport>
-    </ToastPortal>
+    <ToastViewport class="toast-viewport">
+      <ToastList />
+    </ToastViewport>
   </ToastProvider>
 }

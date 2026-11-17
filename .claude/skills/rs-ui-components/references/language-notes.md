@@ -155,6 +155,14 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
   end point, so hover twice.
 - Two popovers shown by script with no user gesture both close on one Escape, in all three engines. Open them
   with real input in tests.
+- Firefox delivers `toggle` late (not there after two frames): poll for its effect.
+- Real `dragAndDrop` in Firefox makes test files running beside it fail, and its drags flake. Drags are real in
+  Chromium and WebKit and dispatched in Firefox (`mouseDrag` in the drawer and toast tests). A drop point must
+  be on the target element and inside the viewport; a failed drag leaves the button down for the next test.
+- Fake timers advance during `user.*` calls (about 50ms for a hover). Install them before the interaction that
+  starts the timer and assert with a tolerance.
+- Testing Library gives a `<summary>` no `button` role: query it by text.
+- Firefox throws from `setPointerCapture` for a dispatched pointer id; primitives catch it.
 - A popup can't be written inside a `<p>`: the compiler refuses it (`CONTENT_MODEL`), as the HTML parser would
   close the paragraph.
 

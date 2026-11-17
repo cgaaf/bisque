@@ -1,7 +1,15 @@
-import { mergeProps, createId } from "../internal/props.js"
-import { createPresence } from "../internal/dom.js"
-import { createPanelSize, focusAdjacentTrigger } from "../internal/disclosure.js"
-import { DivProps, ButtonProps, HeadingProps, PartProps, TransitionStatus } from "../internal/types.rx"
+// A set of disclosures, each item a native <details>. The browser holds each item's open state, toggles it from
+// its <summary> (click, Enter, Space), hides closed content (`::details-content`) and opens it for find-in-page;
+// when only one item may be open, the items share a `name` and the browser closes the others. This family adds the
+// value (which items are open, controlled or not), `disabled`, arrow-key movement between triggers, the panels'
+// measured size and their exit animation. Style items with `[open]` and panels with `[data-ending-style]`.
+//
+// There is no Header part. Base UI wraps its trigger button in a heading; here the trigger is the <summary>, which
+// must be the first child of its <details>, so nothing can wrap it. A summary may contain a heading instead:
+// `<AccordionTrigger><h3>Shipping</h3></AccordionTrigger>`.
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createDisclosure, focusAdjacentTrigger } from "../internal/disclosure.js"
+import { DivProps, DetailsProps, SummaryProps, PartProps } from "../internal/types.rx"
 
 export type AccordionOrientation = "vertical" | "horizontal"
 
@@ -11,7 +19,8 @@ export type AccordionContext = {
   disabled: boolean
   orientation: AccordionOrientation
   loopFocus: boolean
-  keepMounted: boolean
+  // The `name` the items share when only one may be open, so the browser keeps the others closed.
+  name: string | undefined
   setItemOpen: (item: string, open: boolean) => void
 }
 
@@ -28,19 +37,18 @@ export type AccordionRootProps = {
   orientation?: AccordionOrientation
   // Whether the arrow keys wrap around at the ends. Default: true.
   loopFocus?: boolean
-  // Keep closed panels in the DOM (hidden). An item's panel can override it. Default: false.
-  keepMounted?: boolean
   children?: View
 } & Omit<DivProps, "children">
 
 export component AccordionRoot(props: AccordionRootProps) {
-  source uncontrolled: string[] := peek(props.defaultValue ?? [])
+  source uncontrolled: string[] := peek([...(props.defaultValue ?? [])])
   current = props.value ?? uncontrolled
   isDisabled = props.disabled ?? false
   axis = props.orientation ?? "vertical"
+  groupName = createId("accordion")
 
   action setItemOpen(item: string, open: boolean) {
-    if (isDisabled) { return }
+    if (current.includes(item) == open) { return }
     let others = current.filter((v) => v != item)
     let next = open ? ((props.multiple ?? false) ? [...others, item] : [item]) : others
     uncontrolled := next
@@ -52,11 +60,11 @@ export component AccordionRoot(props: AccordionRootProps) {
     disabled: isDisabled,
     orientation: axis,
     loopFocus: props.loopFocus ?? true,
-    keepMounted: props.keepMounted ?? false,
+    name: (props.multiple ?? false) ? undefined : groupName,
     setItemOpen: setItemOpen,
   }
 
-  { value, defaultValue, onValueChange, multiple, disabled, orientation, loopFocus, keepMounted, children, ...rest } = props
+  { value, defaultValue, onValueChange, multiple, disabled, orientation, loopFocus, children, ...rest } = props
   own = {
     "data-rs-ui-accordion": "",
     "data-orientation": axis,
@@ -69,14 +77,10 @@ export component AccordionRoot(props: AccordionRootProps) {
 export type AccordionItemContext = {
   value: string
   open: boolean
-  // True from opening until the panel has finished animating out.
-  mounted: boolean
-  status: TransitionStatus
   disabled: boolean
   triggerId: string
   panelId: string
-  panel: HTMLElement | undefined
-  toggle: () => void
+  setOpen: (open: boolean) => void
   setPanel: (element: HTMLElement) => void
 }
 
@@ -85,17 +89,16 @@ export context accordionItem: AccordionItemContext
 export type AccordionItemProps = {
   // Identifies the item in the root's `value`. Default: a generated id.
   value?: string
+  // Its trigger does nothing while disabled. Find-in-page still opens it: the browser's behaviour wins.
   disabled?: boolean
-  // Called before the root's `onValueChange` when this item's trigger is pressed.
+  // Called before the root's `onValueChange` when the item is opened or closed.
   onOpenChange?: (open: boolean) => void
   children?: View
-} & Omit<DivProps, "children">
+} & Omit<DetailsProps, "children" | "open" | "name">
 
-// The open, disabled and orientation attributes every part of an item carries.
+// The disabled and orientation attributes every part of an item carries.
 fn itemState(ref root: AccordionContext, ref item: AccordionItemContext): PartProps {
   {
-    "data-open": item.open ? "" : undefined,
-    "data-closed": item.open ? undefined : "",
     "data-disabled": item.disabled ? "" : undefined,
     "data-orientation": root.orientation,
   }
@@ -103,6 +106,7 @@ fn itemState(ref root: AccordionContext, ref item: AccordionItemContext): PartPr
 
 export component AccordionItem(props: AccordionItemProps) {
   root = use accordion
+  source details: HTMLDetailsElement | undefined := undefined
   source panel: HTMLElement | undefined := undefined
   fallbackValue = createId("accordion-item")
   triggerId = createId("accordion-trigger")
@@ -110,102 +114,93 @@ export component AccordionItem(props: AccordionItemProps) {
   itemValue = props.value ?? fallbackValue
   isOpen = root.value.includes(itemValue)
   isDisabled = (props.disabled ?? false) || root.disabled
+  // Rendered once, so an open item doesn't animate in on mount; the driver keeps it in step after that.
+  initiallyOpen = peek(isOpen)
 
-  action toggle() {
-    if (isDisabled) { return }
-    let next = !isOpen
+  action setOpen(next: boolean) {
+    if (next == isOpen) { return }
     if (props.onOpenChange) { props.onOpenChange(next) }
     root.setItemOpen(itemValue, next)
   }
-  action setPanel(element: HTMLElement) { panel := element }
+  action writeDetails(element: HTMLDetailsElement) { details := element }
+  setDetails = createRef(writeDetails)
+  action writePanel(element: HTMLElement) { panel := element }
+  setPanel = createRef(writePanel)
 
-  [mounted, status] = createPresence(isOpen, panel)
+  _details = createDisclosure(details, panel, isOpen, "accordion-panel", setOpen)
 
   self = {
     value: itemValue,
     open: isOpen,
-    mounted: mounted,
-    status: status,
     disabled: isDisabled,
     triggerId: triggerId,
     panelId: panelId,
-    panel: panel,
-    toggle: toggle,
+    setOpen: setOpen,
     setPanel: setPanel,
   }
   provide accordionItem = self
 
   { value, disabled, onOpenChange, children, ...rest } = props
-  own = itemState(root, self)
+  state = itemState(root, self)
+  own = {
+    ...state,
+    name: root.name,
+    open: initiallyOpen ? true : undefined,
+    ref: setDetails,
+  }
   merged = mergeProps(own, rest)
-  <div {...merged}>{children}</div>
+  <details {...merged}>{children}</details>
 }
 
-// The heading that wraps a trigger. Renders an <h3>; give a different level with your own heading and
-// `accordionHeader(use accordion, use accordionItem)`.
-export fn accordionHeader(ref root: AccordionContext, ref item: AccordionItemContext): PartProps {
-  state = itemState(root, item)
-  { ...state }
-}
-
-export component AccordionHeader({ children, ...rest }: HeadingProps) {
-  root = use accordion
-  item = use accordionItem
-  own = accordionHeader(root, item)
-  merged = mergeProps(own, rest)
-  <h3 {...merged}>{children}</h3>
-}
-
+// Spread on a <summary> that is the first child of the item's <details>: the toggling, focusability and the
+// expanded state come from that element, and it works on no other. A press asks the root instead of toggling, so
+// a controlled `value` decides and the close can animate. The arrow keys, Home and End move between triggers.
 export fn accordionTrigger(ref root: AccordionContext, ref item: AccordionItemContext): PartProps {
-  action press() { item.toggle() }
+  action press(event: MouseEvent) {
+    event.preventDefault()
+    if (item.disabled) { return }
+    item.setOpen(!item.open)
+  }
   action keyDown(event: KeyboardEvent) { focusAdjacentTrigger(event, root.orientation, root.loopFocus) }
+  state = itemState(root, item)
   {
-    type: "button",
+    ...state,
     id: item.triggerId,
-    "aria-expanded": item.open ? "true" : "false",
-    "aria-controls": item.open ? item.panelId : undefined,
-    disabled: item.disabled ? true : undefined,
+    "aria-disabled": item.disabled ? "true" : undefined,
+    tabindex: item.disabled ? "-1" : undefined,
     "data-rs-ui-accordion-trigger": "",
-    "data-panel-open": item.open ? "" : undefined,
-    "data-disabled": item.disabled ? "" : undefined,
-    "data-orientation": root.orientation,
     onClick: press,
     onKeyDown: keyDown,
   }
 }
 
-export component AccordionTrigger({ children, ...rest }: ButtonProps) {
+export component AccordionTrigger({ children, ...rest }: SummaryProps) {
   root = use accordion
   item = use accordionItem
   own = accordionTrigger(root, item)
   merged = mergeProps(own, rest)
-  <button {...merged}>{children}</button>
+  <summary {...merged}>{children}</summary>
 }
 
-// The panel's size is written to `--accordion-panel-height` and `--accordion-panel-width` (see createPanelSize in
-// ../internal/disclosure.js), and it stays mounted while it animates out.
+// A region labelled by its trigger. Its size is written to `--accordion-panel-height` and
+// `--accordion-panel-width`: px while it opens and closes, `auto` once open. Animate `height` from 0 with both
+// `details:not([open]) > .panel` and `@starting-style` (Chrome needs the second, Safari the first), and to 0
+// under `[data-ending-style]`.
 export fn accordionPanel(ref root: AccordionContext, ref item: AccordionItemContext): PartProps {
   state = itemState(root, item)
   {
+    ...state,
     id: item.panelId,
     role: "region",
     "aria-labelledby": item.triggerId,
-    hidden: !item.open && !item.mounted ? true : undefined,
-    "data-starting-style": item.status == "starting" ? "" : undefined,
-    "data-ending-style": item.status == "ending" ? "" : undefined,
     ref: item.setPanel,
-    ...state,
   }
 }
 
-export component AccordionPanel({ keepMounted, children, ...rest }: { keepMounted?: boolean } & DivProps) {
+export component AccordionPanel({ children, ...rest }: DivProps) {
   root = use accordion
   item = use accordionItem
-  _size = createPanelSize(item.open, item.panel, "accordion-panel")
-  keep = keepMounted ?? root.keepMounted
   own = accordionPanel(root, item)
   merged = mergeProps(own, rest)
-  {if item.mounted || keep {
-    <div {...merged}>{children}</div>
-  }}
+  <div {...merged}>{children}</div>
 }

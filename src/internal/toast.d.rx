@@ -16,3 +16,5 @@ export pure fn isFocusVisible(target: EventTarget | null): boolean
 export pure fn containsTarget(container: EventTarget | null | undefined, target: EventTarget | null): boolean
 export pure fn createElementHeight(ref element: HTMLElement | undefined): ref number
 export pure fn swipeDirections(value: "up" | "down" | "left" | "right" | ("up" | "down" | "left" | "right")[] | undefined, fallback: ("up" | "down" | "left" | "right")[]): ("up" | "down" | "left" | "right")[]
+export pure fn createToastLayer(ref viewport: HTMLElement | undefined) instantiates
+export pure fn createExitWait(ref active: boolean, ref element: HTMLElement | undefined, onDone: () => void) instantiates

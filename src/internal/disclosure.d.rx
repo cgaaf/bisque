@@ -1,5 +1,5 @@
-// How .rx may use ./disclosure.js (implemented in ./impl/disclosure.ts): collapsible and accordion panels.
-// A `ref` parameter is passed live; the others are read once. Bind every call: `_size = createPanelSize(…)`.
+// How .rx may use ./disclosure.js (implemented in ./impl/disclosure.ts): collapsible and accordion, on <details>.
+// A `ref` parameter is passed live; the others are read once. Bind every call: `_details = createDisclosure(…)`.
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./disclosure.d.ts.
-export pure fn createPanelSize(ref open: boolean, ref element: HTMLElement | undefined, prefix: string) instantiates
+export pure fn createDisclosure(ref element: HTMLDetailsElement | undefined, ref panel: HTMLElement | undefined, ref open: boolean, prefix: string, onOpenChange: (open: boolean) => void) instantiates
 export fn focusAdjacentTrigger(event: KeyboardEvent, orientation: "horizontal" | "vertical", loop: boolean): void

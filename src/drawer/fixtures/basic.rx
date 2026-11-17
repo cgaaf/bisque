@@ -1,23 +1,24 @@
-import { DrawerRoot, DrawerTrigger, DrawerPortal, DrawerBackdrop, DrawerViewport, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../drawer.rx"
+import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../drawer.rx"
 
 export default component Fixture() {
   source changes: string[] := []
+  // A 300 x 200 drawer at the bottom edge, following the drag; its backdrop fades with the swipe progress.
+  <style>
+    :global(.drawer) { margin: auto auto 0; width: 300px; height: 200px; padding: 0; border: 0; box-sizing: border-box; transform: translate(var(--drawer-swipe-movement-x), var(--drawer-swipe-movement-y)) }
+    :global(.drawer::backdrop) { opacity: calc(1 - var(--drawer-swipe-progress)) }
+    :global(.drawer[data-ending-style]) { transform: translateY(100%); transition: transform 100ms linear }
+  </style>
   <main>
     <DrawerRoot onOpenChange={(open) => { changes := [...changes, open ? "open" : "close"] }}>
       <DrawerTrigger>Open drawer</DrawerTrigger>
-      <DrawerPortal>
-        <DrawerBackdrop data-testid="backdrop" />
-        <DrawerViewport data-testid="viewport">
-          <DrawerPopup data-testid="popup">
-            <div data-testid="handle">Handle</div>
-            <DrawerContent data-testid="content">
-              <DrawerTitle>Filters</DrawerTitle>
-              <DrawerDescription>Narrow the results.</DrawerDescription>
-              <DrawerClose>Done</DrawerClose>
-            </DrawerContent>
-          </DrawerPopup>
-        </DrawerViewport>
-      </DrawerPortal>
+      <DrawerPopup data-testid="popup" class="drawer">
+        <div data-testid="handle" style="height: 40px">Handle</div>
+        <DrawerContent data-testid="content">
+          <DrawerTitle>Filters</DrawerTitle>
+          <DrawerDescription>Narrow the results.</DrawerDescription>
+          <DrawerClose>Done</DrawerClose>
+        </DrawerContent>
+      </DrawerPopup>
     </DrawerRoot>
     <output data-testid="changes">{changes.join(",")}</output>
   </main>

@@ -13,3 +13,5 @@ export declare function isFocusVisible(target: EventTarget | null): boolean;
 export declare function containsTarget(container: EventTarget | null | undefined, target: EventTarget | null): boolean;
 export declare function createElementHeight(element: HTMLElement | undefined): number;
 export declare function swipeDirections(value: "up" | "down" | "left" | "right" | ("up" | "down" | "left" | "right")[] | undefined, fallback: ("up" | "down" | "left" | "right")[]): ("up" | "down" | "left" | "right")[];
+export declare function createToastLayer(viewport: HTMLElement | undefined): void;
+export declare function createExitWait(active: boolean, element: HTMLElement | undefined, onDone: () => void): void;

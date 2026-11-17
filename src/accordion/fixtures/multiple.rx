@@ -1,27 +1,40 @@
-import { AccordionRoot, AccordionItem, AccordionHeader, AccordionTrigger, AccordionPanel } from "../accordion.rx"
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../accordion.rx"
 
 export default component Fixture() {
   source open: string[] := ["a"]
+  source locked: string[] := ["x"]
+  source requests := 0
   <main>
-    <AccordionRoot data-testid="controlled" multiple keepMounted orientation="horizontal" loopFocus={false} value={open} onValueChange={(next) => { open := next }}>
-      <AccordionItem value="a">
-        <AccordionHeader><AccordionTrigger>Alpha</AccordionTrigger></AccordionHeader>
+    <AccordionRoot data-testid="controlled" multiple orientation="horizontal" loopFocus={false} value={open} onValueChange={(next) => { open := next }}>
+      <AccordionItem value="a" data-testid="item-a">
+        <AccordionTrigger>Alpha</AccordionTrigger>
         <AccordionPanel data-testid="panel-a">A</AccordionPanel>
       </AccordionItem>
-      <AccordionItem value="b">
-        <AccordionHeader><AccordionTrigger>Beta</AccordionTrigger></AccordionHeader>
+      <AccordionItem value="b" data-testid="item-b">
+        <AccordionTrigger>Beta</AccordionTrigger>
         <AccordionPanel data-testid="panel-b">B</AccordionPanel>
       </AccordionItem>
-      <AccordionItem>
-        <AccordionHeader><AccordionTrigger>Gamma</AccordionTrigger></AccordionHeader>
-        <AccordionPanel keepMounted={false} data-testid="panel-c">C</AccordionPanel>
+      <AccordionItem data-testid="item-c">
+        <AccordionTrigger>Gamma</AccordionTrigger>
+        <AccordionPanel data-testid="panel-c">C</AccordionPanel>
       </AccordionItem>
     </AccordionRoot>
     <output data-testid="value">{open.join(",")}</output>
     <button onClick={() => { open := [] }}>Close all</button>
+    <AccordionRoot data-testid="locked" value={locked} onValueChange={(next) => { requests := requests + 1 }}>
+      <AccordionItem value="x" data-testid="item-x">
+        <AccordionTrigger>Ex</AccordionTrigger>
+        <AccordionPanel>X</AccordionPanel>
+      </AccordionItem>
+      <AccordionItem value="y" data-testid="item-y">
+        <AccordionTrigger>Why</AccordionTrigger>
+        <AccordionPanel>Y</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+    <output data-testid="requests">{requests}</output>
     <AccordionRoot data-testid="disabled" disabled>
-      <AccordionItem value="x">
-        <AccordionHeader><AccordionTrigger>Locked</AccordionTrigger></AccordionHeader>
+      <AccordionItem value="z" data-testid="item-z">
+        <AccordionTrigger>Locked</AccordionTrigger>
         <AccordionPanel>Never</AccordionPanel>
       </AccordionItem>
     </AccordionRoot>

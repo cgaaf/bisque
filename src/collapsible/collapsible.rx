@@ -1,17 +1,16 @@
-import { mergeProps, createId } from "../internal/props.js"
-import { createPresence } from "../internal/dom.js"
-import { createPanelSize } from "../internal/disclosure.js"
-import { DivProps, ButtonProps, PartProps, TransitionStatus } from "../internal/types.rx"
+// A disclosure on the native <details> element. The browser holds the open state, toggles it from the <summary>
+// (click, Enter, Space), hides the content (`::details-content`) and opens it for find-in-page. This family adds a
+// controlled `open`, `disabled`, the panel's measured size and the exit animation. Style it with `[open]`:
+// `details[open] > .panel`, and `[data-ending-style]` on the panel while it animates out.
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createDisclosure } from "../internal/disclosure.js"
+import { DetailsProps, SummaryProps, DivProps, PartProps } from "../internal/types.rx"
 
 export type CollapsibleContext = {
   open: boolean
-  // True from opening until the panel has finished animating out.
-  mounted: boolean
-  status: TransitionStatus
   disabled: boolean
   panelId: string
-  panel: HTMLElement | undefined
-  toggle: () => void
+  setOpen: (open: boolean) => void
   setPanel: (element: HTMLElement) => void
 }
 
@@ -21,88 +20,86 @@ export type CollapsibleRootProps = {
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
+  // The trigger does nothing while disabled. Find-in-page still opens it: the browser's behaviour wins.
   disabled?: boolean
   children?: View
-} & Omit<DivProps, "children">
+} & Omit<DetailsProps, "children" | "open">
 
 export component CollapsibleRoot(props: CollapsibleRootProps) {
-  source uncontrolled := peek(props.defaultOpen ?? false)
+  source uncontrolled: boolean := peek(props.defaultOpen ?? false)
+  source details: HTMLDetailsElement | undefined := undefined
   source panel: HTMLElement | undefined := undefined
   isOpen = props.open ?? uncontrolled
   isDisabled = props.disabled ?? false
+  // Rendered once, so an open disclosure doesn't animate in on mount; the driver keeps it in step after that.
+  initiallyOpen = peek(isOpen)
   panelId = createId("collapsible-panel")
 
-  action toggle() {
-    if (isDisabled) { return }
-    let next = !isOpen
+  action setOpen(next: boolean) {
+    if (next == isOpen) { return }
     uncontrolled := next
     if (props.onOpenChange) { props.onOpenChange(next) }
   }
-  action setPanel(element: HTMLElement) { panel := element }
+  action writeDetails(element: HTMLDetailsElement) { details := element }
+  setDetails = createRef(writeDetails)
+  action writePanel(element: HTMLElement) { panel := element }
+  setPanel = createRef(writePanel)
 
-  [mounted, status] = createPresence(isOpen, panel)
+  _details = createDisclosure(details, panel, isOpen, "collapsible-panel", setOpen)
 
   provide collapsible = {
     open: isOpen,
-    mounted: mounted,
-    status: status,
     disabled: isDisabled,
     panelId: panelId,
-    panel: panel,
-    toggle: toggle,
+    setOpen: setOpen,
     setPanel: setPanel,
   }
 
   { open, defaultOpen, onOpenChange, disabled, children, ...rest } = props
   own = {
-    "data-open": isOpen ? "" : undefined,
-    "data-closed": isOpen ? undefined : "",
+    open: initiallyOpen ? true : undefined,
     "data-disabled": isDisabled ? "" : undefined,
+    ref: setDetails,
   }
   merged = mergeProps(own, rest)
-  <div {...merged}>{children}</div>
+  <details {...merged}>{children}</details>
 }
 
+// Spread on a <summary> that is the first child of the root's <details>: the toggling, focusability and the
+// expanded state come from that element, and it works on no other. A press asks the root instead of toggling, so a
+// controlled `open` decides and the close can animate.
 export fn collapsibleTrigger(ref c: CollapsibleContext): PartProps {
-  action press() { c.toggle() }
+  action press(event: MouseEvent) {
+    event.preventDefault()
+    if (c.disabled) { return }
+    c.setOpen(!c.open)
+  }
   {
-    type: "button",
-    "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.open ? c.panelId : undefined,
-    disabled: c.disabled ? true : undefined,
-    "data-panel-open": c.open ? "" : undefined,
+    "aria-disabled": c.disabled ? "true" : undefined,
+    tabindex: c.disabled ? "-1" : undefined,
     "data-disabled": c.disabled ? "" : undefined,
     onClick: press,
   }
 }
 
-export component CollapsibleTrigger({ children, ...rest }: ButtonProps) {
+export component CollapsibleTrigger({ children, ...rest }: SummaryProps) {
   c = use collapsible
   own = collapsibleTrigger(c)
   merged = mergeProps(own, rest)
-  <button {...merged}>{children}</button>
+  <summary {...merged}>{children}</summary>
 }
 
-// The panel's size is written to `--collapsible-panel-height` and `--collapsible-panel-width` (see
-// createPanelSize in ../internal/disclosure.js), and it stays mounted while it animates out.
+// The content after the summary. Its size is written to `--collapsible-panel-height` and
+// `--collapsible-panel-width`: px while it opens and closes, `auto` once open. Animate `height` from 0 with both
+// `details:not([open]) > .panel` and `@starting-style` (Chrome needs the second, Safari the first), and to 0
+// under `[data-ending-style]`.
 export fn collapsiblePanel(ref c: CollapsibleContext): PartProps {
-  {
-    id: c.panelId,
-    hidden: !c.open && !c.mounted ? true : undefined,
-    "data-open": c.open ? "" : undefined,
-    "data-closed": c.open ? undefined : "",
-    "data-starting-style": c.status == "starting" ? "" : undefined,
-    "data-ending-style": c.status == "ending" ? "" : undefined,
-    ref: c.setPanel,
-  }
+  { id: c.panelId, ref: c.setPanel }
 }
 
-export component CollapsiblePanel({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & DivProps) {
+export component CollapsiblePanel({ children, ...rest }: DivProps) {
   c = use collapsible
-  _size = createPanelSize(c.open, c.panel, "collapsible-panel")
   own = collapsiblePanel(c)
   merged = mergeProps(own, rest)
-  {if c.mounted || keepMounted {
-    <div {...merged}>{children}</div>
-  }}
+  <div {...merged}>{children}</div>
 }

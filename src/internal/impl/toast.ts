@@ -391,3 +391,69 @@ export function swipeDirections(
   if (value === undefined) return fallback;
   return Array.isArray(value) ? value : [value];
 }
+
+/**
+ * Keeps the viewport, a `popover="manual"` element, shown for as long as it is mounted: that puts it in the top
+ * layer, above the page, with no portal. It stays shown while empty, so its live region exists before the first
+ * toast does. The top layer is ordered by when each element entered it, so a modal `<dialog>` opened later would
+ * cover it: when one opens, the viewport is hidden and shown again to move it back on top. (The page outside a
+ * modal dialog is still inert, toasts included, until the dialog closes.)
+ */
+export function createToastLayer(viewport: Accessor<MaybeElement>): void {
+  createEffect(
+    () => viewport(),
+    (el) => {
+      if (!el) return;
+      if (!el.matches(":popover-open")) el.showPopover();
+      // `toggle` doesn't bubble; a capture listener on the document still sees every dialog's.
+      const onToggle = (event: Event) => {
+        const dialog = event.target as HTMLElement;
+        if ((event as ToggleEvent).newState !== "open" || dialog === el || dialog.tagName !== "DIALOG")
+          return;
+        if (!dialog.matches(":modal") || dialog.contains(el) || !el.matches(":popover-open")) return;
+        // Hiding a popover that holds focus would drop it.
+        if (el.contains(document.activeElement)) return;
+        el.hidePopover();
+        el.showPopover();
+      };
+      document.addEventListener("toggle", onToggle, true);
+      return () => {
+        document.removeEventListener("toggle", onToggle, true);
+        if (el.isConnected && el.matches(":popover-open")) el.hidePopover();
+      };
+    },
+  );
+}
+
+/**
+ * Once `active` turns on (the element has just been given its ending style), waits for the element's
+ * animations and transitions to finish, then calls `onDone`: a closing toast leaves the list only when it has
+ * animated out. The ending style stays on until then.
+ */
+export function createExitWait(
+  active: Accessor<boolean>,
+  element: Accessor<MaybeElement>,
+  onDone: () => void,
+): void {
+  createEffect(
+    () => active(),
+    (isActive) => {
+      if (!isActive) return;
+      const el = untrack(element);
+      let cancelled = false;
+      const finish = () => {
+        if (!cancelled) onDone();
+      };
+      // The ending style has to be applied before the animations it starts can be found.
+      const id = requestAnimationFrame(() => {
+        const running = el?.getAnimations({ subtree: true }) ?? [];
+        if (running.length === 0) finish();
+        else void Promise.allSettled(running.map((animation) => animation.finished)).then(finish);
+      });
+      return () => {
+        cancelled = true;
+        cancelAnimationFrame(id);
+      };
+    },
+  );
+}

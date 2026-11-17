@@ -1,28 +1,42 @@
 import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel, collapsible, collapsibleTrigger } from "../collapsible.rx"
 
-component LinkTrigger() {
+// A summary the consumer writes, with a heading inside (a summary may hold one).
+component OwnTrigger() {
   c = use collapsible
   t = collapsibleTrigger(c)
-  <a href="#details" data-testid="link" {...t} type={undefined}>as a link</a>
+  <summary data-testid="own" {...t}><h3>Own heading</h3></summary>
 }
 
 export default component Fixture() {
   source controlled := false
-  source changes := 0
+  source requests := 0
+  source changes: string[] := []
+  source clicks := 0
+  <style>
+    :global(.anim) { overflow: hidden; height: var(--collapsible-panel-height); transition: height 200ms linear }
+    :global(details:not([open]) > .anim), :global(.anim[data-ending-style]) { height: 0 }
+    @starting-style { :global(details[open] > .anim) { height: 0 } }
+  </style>
   <main>
-    <CollapsibleRoot data-testid="uncontrolled" class="mine">
-      <CollapsibleTrigger onClick={() => { changes := changes + 1 }}>Toggle</CollapsibleTrigger>
-      <LinkTrigger />
-      <CollapsiblePanel data-testid="panel">Content</CollapsiblePanel>
+    <CollapsibleRoot data-testid="uncontrolled" class="mine" onOpenChange={(open) => { changes := [...changes, open ? "open" : "close"] }}>
+      <CollapsibleTrigger class="trigger" onClick={() => { clicks := clicks + 1 }}>Toggle</CollapsibleTrigger>
+      <CollapsiblePanel data-testid="panel" class="anim"><div style="height: 120px; width: 200px">Content</div></CollapsiblePanel>
     </CollapsibleRoot>
-    <CollapsibleRoot data-testid="controlled" open={controlled} onOpenChange={(next) => { controlled := next }}>
+    <CollapsibleRoot data-testid="controlled" open={controlled} onOpenChange={(next) => { requests := requests + 1 }}>
       <CollapsibleTrigger>Controlled</CollapsibleTrigger>
-      <CollapsiblePanel keepMounted data-testid="kept">Kept</CollapsiblePanel>
+      <CollapsiblePanel data-testid="kept">Kept</CollapsiblePanel>
+    </CollapsibleRoot>
+    <button onClick={() => { controlled := !controlled }}>Flip</button>
+    <CollapsibleRoot data-testid="own-root" defaultOpen>
+      <OwnTrigger />
+      <CollapsiblePanel data-testid="own-panel">Own content</CollapsiblePanel>
     </CollapsibleRoot>
     <CollapsibleRoot disabled data-testid="disabled">
       <CollapsibleTrigger>Disabled</CollapsibleTrigger>
-      <CollapsiblePanel>Never</CollapsiblePanel>
+      <CollapsiblePanel data-testid="never">Never</CollapsiblePanel>
     </CollapsibleRoot>
-    <output data-testid="changes">{changes}</output>
+    <output data-testid="changes">{changes.join(",")}</output>
+    <output data-testid="requests">{requests}</output>
+    <output data-testid="clicks">{clicks}</output>
   </main>
 }

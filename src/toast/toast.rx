@@ -1,13 +1,17 @@
 // Toasts: short messages that appear without taking focus and go away by themselves.
 //
+// The viewport is a `popover="manual"` element, open for as long as it is mounted, so the toasts are in the top
+// layer without a portal; when a modal <dialog> opens it is raised above it. Everything outside a modal dialog
+// is inert, though, in every engine: toasts shown over one can be seen but not reached, and assistive technology
+// doesn't get them until it closes. Timers, the queue, swipe and announcements are the library's.
+//
 // App code adds them through a ToastManager (`createToastManager()` from ../internal/toast.js): pass one to
 // ToastProvider as `toastManager` to add toasts from outside the component tree, even from plain `.ts`; inside
 // it, `(use toast).manager` is the provider's own. The provider owns the list; the app renders it with
 // `for t in (use toast).toasts { <ToastRoot toast={t}> … }`.
 import { mergeProps, createId } from "../internal/props.js"
-import { createPresence } from "../internal/dom.js"
 import { isEmptyView } from "../internal/field.js"
-import { createToastManager, subscribeToastManager, newToastRecord, updatedToastRecord, placeToasts, notifyToasts, createPausableTimeout, createWindowFocus, createToastHotkey, handOffToastFocus, isFocusVisible, containsTarget, createElementHeight, swipeDirections } from "../internal/toast.js"
+import { createToastManager, subscribeToastManager, newToastRecord, updatedToastRecord, placeToasts, notifyToasts, createPausableTimeout, createWindowFocus, createToastHotkey, handOffToastFocus, isFocusVisible, containsTarget, createElementHeight, swipeDirections, createToastLayer, createExitWait } from "../internal/toast.js"
 import { createSwipe } from "../internal/swipe.js"
 import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
@@ -127,14 +131,11 @@ export component ToastProvider(props: ToastProviderProps) {
   {props.children}
 }
 
-// Renders its children at the end of <body>.
-export component ToastPortal(props: { children?: View }) {
-  portal { {props.children} }
-}
-
-// The live region the toasts are rendered in. Hovering it or moving keyboard focus into it expands the stack
-// and stops the timers. F6 moves focus to it while there are toasts; F6 again goes back. `--toast-frontmost-height`
-// is the newest toast's height.
+// The live region the toasts are rendered in, spread on the element that holds them. It is a `popover="manual"`
+// shown while mounted: the top layer, with no portal. Being a popover it gets the browser's popover styles
+// (centred, bordered), so give it a position, and `pointer-events: none` where it is empty if it covers the page.
+// Hovering it or moving keyboard focus into it expands the stack and stops the timers. F6 moves focus to it while
+// there are toasts; F6 again goes back. `--toast-frontmost-height` is the newest toast's height.
 export fn toastViewport(ref c: ToastContext): PartProps {
   action enter() { c.setHovering(true) }
   action leave() { c.setHovering(false) }
@@ -147,6 +148,7 @@ export fn toastViewport(ref c: ToastContext): PartProps {
   front = c.toasts.find(t => !t.closing)
   {
     role: "region",
+    popover: "manual",
     tabindex: "-1",
     "aria-live": "polite",
     "aria-atomic": "false",
@@ -167,22 +169,26 @@ export fn toastViewport(ref c: ToastContext): PartProps {
 export component ToastViewport({ children, ...rest }: DivProps) {
   c = use toast
   _hotkey = createToastHotkey(c.toasts.length > 0, c.viewport)
+  _layer = createToastLayer(c.viewport)
   own = toastViewport(c)
   merged = mergeProps(own, rest)
   // High-priority toasts are announced once, assertively, from here; their roots are hidden from assistive
-  // technology until the user moves into the viewport.
+  // technology until the user moves into the viewport. Inside the viewport, so they share its top layer: outside
+  // it they would be under the inert page whenever a modal dialog is open.
   urgent = c.toasts.filter(t => t.priority == "high" && !t.closing)
-  <div {...merged}>{children}</div>
-  {if !c.focused && urgent.length > 0 {
-    <div style={{ position: "fixed", width: "1px", height: "1px", margin: "-1px", padding: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "white-space": "nowrap", border: "0" }}>
-      {for t in urgent {
-        <div role="alert" aria-atomic="true">
-          <div>{t.title}</div>
-          <div>{t.description}</div>
-        </div>
-      }}
-    </div>
-  }}
+  <div {...merged}>
+    {children}
+    {if !c.focused && urgent.length > 0 {
+      <div style={{ position: "fixed", width: "1px", height: "1px", margin: "-1px", padding: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "white-space": "nowrap", border: "0" }}>
+        {for t in urgent {
+          <div role="alert" aria-atomic="true">
+            <div>{t.title}</div>
+            <div>{t.description}</div>
+          </div>
+        }}
+      </div>
+    }}
+  </div>
 }
 
 export type ToastRootContext = {
@@ -208,10 +214,10 @@ export type ToastRootProps = {
 
 // One toast. It closes after its timeout, on Escape while focus is in it, and when swiped past the threshold.
 // While dragged it carries `data-swiping` and `--toast-swipe-movement-x`/`-y`; `--toast-index`,
-// `--toast-offset-y` and `--toast-height` place it in the stack.
+// `--toast-offset-y` and `--toast-height` place it in the stack. Animate it in with `@starting-style`; while it
+// closes it has `data-ending-style`, and it leaves the list when its animations have finished.
 export component ToastRoot(props: ToastRootProps) {
   c = use toast
-  source shown := false
   source element: HTMLElement | undefined := undefined
   source titleId: string | undefined := undefined
   source descriptionId: string | undefined := undefined
@@ -228,20 +234,16 @@ export component ToastRoot(props: ToastRootProps) {
     if (event.key == "Escape" && !event.defaultPrevented) { c.close(t.id) }
   }
 
-  // Present from the frame after it mounts, so a new toast gets `data-starting-style` for one frame.
-  [mounted, status] = createPresence(shown && !closing, element)
   swipe = createSwipe(element, { enabled: !closing && directions.length > 0, directions: directions, threshold: props.swipeThreshold ?? 40, velocity: 0, textSelector: "" }, swiped)
   _timer = createPausableTimeout(!closing && t.type != "loading", c.paused || swipe.swiping, t.timeout ?? c.timeout, t.timerKey, closeThis)
   height = createElementHeight(element)
+  // Gone from the list once it has animated out.
+  action removeThis() { c.remove(t.id) }
+  _exit = createExitWait(closing, element, removeThis)
 
-  effect () { shown := true }
   effect (height) { c.setHeight(t.id, $0) }
   effect (closing) {
     if ($0) { handOffToastFocus(element) }
-  }
-  // Gone from the list once it has animated out.
-  effect (mounted, closing) {
-    if (!$0 && $1) { c.remove(t.id) }
   }
 
   provide toastRoot = {
@@ -270,8 +272,7 @@ export component ToastRoot(props: ToastRootProps) {
     "data-limited": t.limited ? "" : undefined,
     "data-swiping": swipe.swiping ? "" : undefined,
     "data-swipe-direction": swipe.direction,
-    "data-starting-style": status == "starting" ? "" : undefined,
-    "data-ending-style": closing || status == "ending" ? "" : undefined,
+    "data-ending-style": closing ? "" : undefined,
     style: {
       "--toast-index": `${closing ? t.index : t.visibleIndex}`,
       "--toast-offset-y": `${t.offsetY}px`,

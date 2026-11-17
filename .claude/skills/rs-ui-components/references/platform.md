@@ -47,6 +47,14 @@ on the "not yet" list, because features move off it with each release.
 - **Opening a popover during a press.** A release (the primary button in all three, the right button in Firefox
   and WebKit) light-dismisses a popover that was shown during its own press. ContextMenu opens after the
   release, in a later task.
+- **Animating a `<details>` closed.** Its content is hidden the moment it closes; only Chrome can keep it
+  visible (`content-visibility` with `allow-discrete` on `::details-content`). `createDisclosure` closes late
+  instead: the panel gets `data-ending-style` and the element closes when its animations end. An accordion item
+  that the browser closes because a sibling with the same `name` opened closes at once.
+- **Animating a `<details>` open** needs two CSS rules: Chrome animates only through `@starting-style`, WebKit
+  only through a plain transition from a `details:not([open])` rule. Firefox does either.
+- **A popover above a modal dialog.** One shown before `showModal()` is painted under the backdrop; hiding and
+  showing it again raises it (`createToastLayer`). It is still inert: toasts can't be pressed under a modal.
 - **Returning focus from a nested popover.** After Escape closes a nested popover, no engine puts focus back on
   the item that opened it. Menu does.
 
@@ -69,4 +77,9 @@ lists, multi-thumb sliders, number parsing, toast queues and timers, and Field's
   defines: a child declared inside its parent, opened with `source`, stays open with it and closes first.
 - **Don't write to an element's inline style from a primitive.** Solid rewrites the whole `style` attribute when
   a part's props recompute, and the write is lost. Put the declaration in the part's props.
+- **A `<summary>` is the first child of its `<details>`**, so nothing wraps a trigger: Accordion has no Header
+  part, and a heading goes inside the trigger. The content of a closed `<details>` is still laid out, so its
+  size can be measured before it opens.
+- **`::backdrop` inherits its dialog's custom properties** in all three engines, so a Backdrop part isn't needed
+  to drive it from state (Drawer's swipe progress).
 - **Tests run in real browsers.** jsdom implements none of `showModal()`, `popover` or anchor positioning.

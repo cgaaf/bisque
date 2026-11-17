@@ -1,20 +1,25 @@
-import { DrawerRoot, DrawerTrigger, DrawerPortal, DrawerBackdrop, DrawerViewport, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../src/drawer/drawer.rx"
+import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../src/drawer/drawer.rx"
 
 export component DrawerDemo() {
+  // The popup is the <dialog>: placed at the bottom edge, following the drag, sliding in with @starting-style
+  // and out under [data-ending-style]. Its ::backdrop fades with --drawer-swipe-progress, inherited from it.
+  <style>
+    :global(.drawer) { margin: auto auto 0; width: min(100%, 32rem); max-width: none; border: 0; border-radius: 12px 12px 0 0; padding: 1rem; box-sizing: border-box; transform: translateY(var(--drawer-swipe-movement-y)); transition: transform 200ms ease }
+    :global(.drawer[data-swiping]) { transition: none }
+    @starting-style { :global(.drawer[open]) { transform: translateY(100%) } }
+    :global(.drawer[data-ending-style]) { transform: translateY(100%) }
+    :global(.drawer::backdrop) { background: rgb(0 0 0 / 0.4); opacity: calc(1 - var(--drawer-swipe-progress)) }
+    :global(.drawer-handle) { width: 3rem; height: 0.3rem; margin: 0 auto 1rem; border-radius: 1rem; background: #ccc }
+  </style>
   <DrawerRoot>
     <DrawerTrigger>Open filters</DrawerTrigger>
-    <DrawerPortal>
-      <DrawerBackdrop class="backdrop" />
-      <DrawerViewport class="drawer-viewport">
-        <DrawerPopup class="drawer">
-          <div class="drawer-handle" />
-          <DrawerContent>
-            <DrawerTitle>Filters</DrawerTitle>
-            <DrawerDescription>Swipe down or press Done to close.</DrawerDescription>
-            <DrawerClose>Done</DrawerClose>
-          </DrawerContent>
-        </DrawerPopup>
-      </DrawerViewport>
-    </DrawerPortal>
+    <DrawerPopup class="drawer">
+      <div class="drawer-handle" />
+      <DrawerContent>
+        <DrawerTitle>Filters</DrawerTitle>
+        <DrawerDescription>Swipe down or press Done to close.</DrawerDescription>
+        <DrawerClose>Done</DrawerClose>
+      </DrawerContent>
+    </DrawerPopup>
   </DrawerRoot>
 }

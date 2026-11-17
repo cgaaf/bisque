@@ -1,0 +1,41 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, ToastClose, toast } from "../toast.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle } from "../../dialog/dialog.rx"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t}>
+      <ToastTitle />
+      <ToastClose>Dismiss</ToastClose>
+    </ToastRoot>
+  }
+}
+
+component AddButton() {
+  c = use toast
+  <button onClick={() => { c.manager.add({ title: "Saved", timeout: 0 }) }}>Add toast</button>
+}
+
+// A toast viewport in a corner, painted solid red, and a modal dialog with a blue backdrop.
+export default component Fixture() {
+  <style>
+    :global(.corner) { inset: auto 0 0 auto; margin: 0; padding: 0; border: 0; width: 160px; height: 80px; background: rgb(255, 0, 0) }
+    :global(.modal) { width: 60px; height: 60px }
+    :global(.modal::backdrop) { background: rgb(0, 0, 255) }
+  </style>
+  <main>
+    <ToastProvider timeout={0}>
+      <AddButton />
+      <ToastViewport data-testid="viewport" class="corner">
+        <Toasts />
+      </ToastViewport>
+      <DialogRoot>
+        <DialogTrigger>Open dialog</DialogTrigger>
+        <DialogPopup class="modal">
+          <DialogTitle>Modal</DialogTitle>
+          <AddButton />
+        </DialogPopup>
+      </DialogRoot>
+    </ToastProvider>
+  </main>
+}
