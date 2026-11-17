@@ -30,7 +30,8 @@
     "gen:dts": "node scripts/gen-dts.mjs",
     "rx-check": "node scripts/rx-check.mjs",
     "build:demo": "vite build --outDir node_modules/.cache/demo --emptyOutDir --logLevel warn",
-    "baseline": "node scripts/baseline.mjs"
+    "baseline": "node scripts/baseline.mjs",
+    "test:browser": "vitest run --config vitest.browser.config.ts"
   },
   "dependencies": {
     "@floating-ui/dom": "1.8.0"
@@ -46,9 +47,11 @@
     "@testing-library/dom": "10.4.2",
     "@testing-library/user-event": "14.6.12",
     "@types/node": "26.6.6",
+    "@vitest/browser-playwright": "5.1.0",
     "jsdom": "31.0.1",
     "oxfmt": "0.79.0",
     "oxlint": "1.94.0",
+    "playwright": "1.64.1",
     "solid-js": "2.0.0-rc.22",
     "tsrs": "0.25.0-ts7.1.0-beta",
     "vite": "8.3.8",

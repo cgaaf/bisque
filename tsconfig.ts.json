@@ -2,5 +2,5 @@
   // Read by `tsrs`: the plain TypeScript in the project. `.rx` files need `rx-tsc` (see tsconfig.json).
   "extends": "./tsconfig.json",
   "compilerOptions": { "verbatimModuleSyntax": true, "types": ["vite/client", "node"] },
-  "include": ["src/**/*.ts", "demo/**/*.ts", "vite.config.ts"]
+  "include": ["src/**/*.ts", "demo/**/*.ts", "vite.config.ts", "vitest.browser.config.ts"]
 }
