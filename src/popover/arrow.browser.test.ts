@@ -126,11 +126,31 @@ test("a popup that slides in over its trigger keeps its side and the arrow its p
       expect(popup.getAnimations().length).toBeGreaterThan(0);
       // Mid-slide, where the engine's computed style reports the translate being drawn (Firefox's doesn't, for a
       // flipped popup: the measurement when the slide ends corrects it there).
-      if (getComputedStyle(popup).translate !== "none") {
-        expect(popup.getAttribute("data-side")).toBe("top");
-        expect(arrow.getAttribute("data-side")).toBe("top");
-        expect(arrow.style.left).not.toBe("0px");
-      }
+      const reportsSlide = getComputedStyle(popup).translate !== "none";
+      const midSlide = [
+        popup.getAttribute("data-side"),
+        arrow.getAttribute("data-side"),
+        arrow.style.left !== "0px",
+      ];
+      expect(reportsSlide ? midSlide : ["top", "top", true]).toEqual(["top", "top", true]);
+      await Promise.allSettled(popup.getAnimations().map((animation) => animation.finished));
+      await frame();
+      await frame();
+      expect(popup.getAttribute("data-side")).toBe("top");
+      expect(arrow.getAttribute("data-side")).toBe("top");
+      expect(Math.abs(centre(arrow).x - centre(trigger).x)).toBeLessThanOrEqual(1);
+      expect(Math.abs(centre(arrow).y - popup.getBoundingClientRect().bottom)).toBeLessThanOrEqual(1);
+    },
+  );
+});
+
+test("a flipped popup that scales in ends with its side and the arrow centred on the trigger", async () => {
+  await withStyle(
+    `[aria-label="Flipped panel"] { transform-origin: right bottom; transition: scale 300ms; }
+     @starting-style { [aria-label="Flipped panel"]:popover-open { scale: 0.8; } }`,
+    async () => {
+      const { trigger, arrow, popup } = await openPopover("Low", "flipped-arrow");
+      expect(popup.getAnimations().length).toBeGreaterThan(0);
       await Promise.allSettled(popup.getAnimations().map((animation) => animation.finished));
       await frame();
       await frame();

@@ -289,6 +289,8 @@ const clamp = (value: number, max: number) => Math.min(Math.max(value, 0), max);
 
 type Box = { left: number; top: number; right: number; bottom: number };
 
+const px = (value: string) => parseFloat(value) || 0;
+
 /** A computed `translate` component in pixels; a percentage is of the element's own size. */
 const length = (value: string | undefined, size: number) =>
   value === undefined ? 0 : value.endsWith("%") ? (parseFloat(value) / 100) * size : parseFloat(value) || 0;
@@ -303,19 +305,43 @@ const length = (value: string | undefined, size: number) =>
  * rotation, skew, flip or zero scale has no box to take it out to: the transformed box is used as it is.
  *
  * The computed style is not always the value being drawn: in Firefox, a popup that anchor positioning has flipped
- * reported its `@starting-style` scale (and `none` for a translate) all through the transition. The popup is
- * measured again when its own transitions and animations end, which corrects that.
+ * reported its `@starting-style` scale (and `none` for a translate) all through the transition. Undefined when the
+ * drawn size disagrees with the computed transform, so that a stale reading isn't written as a placement; the
+ * popup is measured again when its own transitions and animations end. (A stale translate doesn't change the size,
+ * so it isn't caught; that same measurement at the end corrects it.)
  */
-function layoutBox(element: HTMLElement): Box {
+function layoutBox(element: HTMLElement): Box | undefined {
   const rect = element.getBoundingClientRect();
   const style = getComputedStyle(element);
-  if (style.transform === "none" && style.translate === "none" && style.scale === "none") return rect;
   if (style.rotate !== "none" && parseFloat(style.rotate.split(" ").pop()!) !== 0) return rect;
+  // The border box's size as laid out: exact, where `offsetWidth` is rounded.
+  const content = style.boxSizing !== "border-box";
+  const width =
+    px(style.width) +
+    (content
+      ? px(style.paddingLeft) +
+        px(style.paddingRight) +
+        px(style.borderLeftWidth) +
+        px(style.borderRightWidth)
+      : 0);
+  const height =
+    px(style.height) +
+    (content
+      ? px(style.paddingTop) +
+        px(style.paddingBottom) +
+        px(style.borderTopWidth) +
+        px(style.borderBottomWidth)
+      : 0);
+  const drawnAs = (sx: number, sy: number) =>
+    Math.abs(rect.width - width * sx) < 0.05 && Math.abs(rect.height - height * sy) < 0.05;
+  if (style.transform === "none" && style.translate === "none" && style.scale === "none") {
+    return drawnAs(1, 1) ? rect : undefined;
+  }
   const [ox = 0, oy = 0] = style.transformOrigin.split(" ").map(parseFloat);
   let matrix = new DOMMatrix().translate(ox, oy);
   if (style.translate !== "none") {
     const [tx, ty] = style.translate.split(" ");
-    matrix = matrix.translate(length(tx, element.offsetWidth), length(ty, element.offsetHeight));
+    matrix = matrix.translate(length(tx, width), length(ty, height));
   }
   if (style.scale !== "none") {
     const [sx = 1, sy = sx] = style.scale.split(" ").map(parseFloat);
@@ -325,9 +351,10 @@ function layoutBox(element: HTMLElement): Box {
   matrix = matrix.translate(-ox, -oy);
   // A point of the border box at (x, y) is drawn at (left + a·x + e, top + d·y + f).
   if (!matrix.is2D || matrix.b !== 0 || matrix.c !== 0 || !(matrix.a > 0) || !(matrix.d > 0)) return rect;
+  if (!drawnAs(matrix.a, matrix.d)) return undefined;
   const left = rect.left - matrix.e;
   const top = rect.top - matrix.f;
-  return { left, top, right: left + rect.width / matrix.a, bottom: top + rect.height / matrix.d };
+  return { left, top, right: left + width, bottom: top + height };
 }
 
 /**
@@ -362,6 +389,7 @@ export function createPlacement(
     if (!popup.isConnected || !shown(popup)) return;
     // The popup's box as laid out, not as drawn mid-animation, so the first measurement is already the final one.
     const p = layoutBox(popup);
+    if (!p) return;
     const a = against.getBoundingClientRect();
     // Half a pixel of slack: engines round the two boxes independently.
     const side: Side | undefined =
