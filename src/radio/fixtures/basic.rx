@@ -5,6 +5,7 @@ import { Form } from "../../form/form.rx"
 export default component Fixture() {
   source fruit := "apple"
   source submitted := ""
+  source refusals := 0
   <div>
     <form data-testid="form">
       <RadioGroup aria-label="Fruit" name="fruit" value={fruit} onValueChange={(next) => { fruit := next }}>
@@ -23,6 +24,11 @@ export default component Fixture() {
         <label><RadioRoot value="a" />A</label>
         <label><RadioRoot value="b" />B</label>
       </RadioGroup>
+      <RadioGroup aria-label="Pinned" value="x" onValueChange={() => { refusals := refusals + 1 }}>
+        <label><RadioRoot value="x" />X</label>
+        <label><RadioRoot value="y" />Y</label>
+      </RadioGroup>
+      <output data-testid="refusals">{refusals}</output>
     </form>
     <Form onFormSubmit={(values) => { submitted := `plan=${values.plan}` }}>
       <FieldRoot name="plan" data-testid="plan-root">

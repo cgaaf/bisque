@@ -114,14 +114,16 @@ function comesBefore(a: Node, b: Node): boolean {
 
 /**
  * Focuses a field's control. A control that can't take focus itself (a radio group, a checkbox group) passes it to
- * its current item, else its first tabbable element. An input's text is selected.
+ * its checked radio or current item, else its first tabbable element. An input's text is selected.
  */
 export function focusControl(control: HTMLElement | undefined): void {
   if (!control) return;
   const focusable = control.tabIndex >= 0 || control.matches("input, select, textarea, button");
   const target = focusable
     ? control
-    : (control.querySelector<HTMLElement>("[data-rs-ui-current]:not([data-disabled])") ??
+    : (control.querySelector<HTMLElement>(
+        'input[type="radio"]:checked:not(:disabled), [data-rs-ui-current]:not([data-disabled])',
+      ) ??
       tabbables(control)[0] ??
       control);
   target.focus();
@@ -302,12 +304,45 @@ export function isEmptyView(view: unknown): boolean {
 }
 
 /**
- * Clicks the focused element if it is an item of `container`: a radio group's arrow keys move focus (roving focus,
- * ./roving.ts) and then select what they moved to.
+ * Keeps a native checkbox or radio showing the component's state. The browser toggles `checked` (and clears
+ * `indeterminate`) itself on a click, before any handler runs, and an owner of a controlled value may refuse the
+ * change; Solid writes a property only when its value changes, so both are written again after every change
+ * (`revision`). `indeterminate` is a property with no attribute, so it can only be set this way. A form reset puts
+ * the element back to its `checked` attribute without an event: the component's state is written back after it.
  */
-export function clickFocusedItem(container: HTMLElement | undefined): void {
-  const focused = container?.ownerDocument.activeElement;
-  if (focused instanceof HTMLElement && focused !== container && container?.contains(focused)) {
-    if (focused.matches("[data-rs-ui-item]")) focused.click();
-  }
+export function createCheckedInput(
+  element: Accessor<HTMLInputElement | undefined>,
+  checked: Accessor<boolean>,
+  indeterminate: Accessor<boolean>,
+  revision: Accessor<number>,
+): void {
+  const apply = (input: HTMLInputElement) => {
+    input.checked = untrack(checked);
+    input.indeterminate = untrack(indeterminate);
+  };
+  createEffect(
+    () => [element(), checked(), indeterminate(), revision()] as const,
+    ([input]) => {
+      if (input) apply(input);
+    },
+  );
+  createEffect(
+    () => element(),
+    (input) => {
+      const form = input?.form;
+      if (!input || !form) return;
+      // The reset event fires before the form resets its controls, and a microtask queued from it still runs
+      // first (the listener returns to an empty stack): wait for a task.
+      let timer: ReturnType<typeof setTimeout> | undefined;
+      const reset = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => apply(input), 0);
+      };
+      form.addEventListener("reset", reset);
+      return () => {
+        clearTimeout(timer);
+        form.removeEventListener("reset", reset);
+      };
+    },
+  );
 }

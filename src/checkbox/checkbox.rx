@@ -1,8 +1,18 @@
-import { mergeProps } from "../internal/props.js"
-import { field, fieldControlProps } from "../field/field.rx"
+// A checkbox on the native <input type="checkbox">, which can be styled whole with `appearance: none`. The browser
+// provides the checked state, Space, label association, form submission, `required` validation and the style hooks
+// `:checked`, `:indeterminate`, `:disabled`, `:focus-visible` and `:user-invalid`. This family adds a controlled
+// value, `readOnly`, `indeterminate` (a property with no attribute), the checkbox group, and the Field wiring.
+//
+// An <input> can't have children, so CheckboxRoot renders its children right after the box: CheckboxIndicator, or
+// any element of the consumer's, is the box's next sibling and is styled from it (`input:checked + span`), or the
+// box draws its own mark (`input:checked::before`).
+import { mergeProps, createRef } from "../internal/props.js"
+import { createCheckedInput } from "../internal/field.js"
+import { field, fieldInputProps } from "../field/field.rx"
 import { checkboxGroup } from "../checkbox-group/checkbox-group.rx"
-import { ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+import { InputProps, SpanProps } from "../internal/types.rx"
 
+// For a custom indicator that renders differently per state (CheckboxRoot provides it to its children).
 export type CheckboxContext = {
   checked: boolean
   indeterminate: boolean
@@ -17,36 +27,30 @@ export type CheckboxRootProps = {
   checked?: boolean
   defaultChecked?: boolean
   onCheckedChange?: (checked: boolean) => void
-  // Neither checked nor unchecked: a parent box whose children are mixed. Pressing it checks it.
+  // Neither checked nor unchecked: a parent box whose children are mixed. A press clears it and toggles the box,
+  // as the browser does; a controlled `indeterminate` that stays true is set again.
   indeterminate?: boolean
   disabled?: boolean
+  // Focusable and announced, but a press doesn't change it (`readonly` has no effect on a native checkbox).
   readOnly?: boolean
   required?: boolean
-  // With a name (or inside a named FieldRoot), the box takes part in a <form>: it submits `value` (default "on")
-  // while checked.
+  // With a name (or inside a named FieldRoot), the box submits `value` (default "on") with its form while checked.
   name?: string
   // Inside a CheckboxGroup, also the value the group's list holds while the box is checked.
   value?: string
   // Inside a CheckboxGroup with `allValues`: the box that checks or clears them all, mixed while some are checked.
   parent?: boolean
-} & Omit<ButtonProps, "value" | "name" | "disabled">
-
-// The state attributes the root and its indicator share.
-fn checkboxState(ref c: CheckboxContext): PartProps {
-  {
-    "data-checked": c.checked && !c.indeterminate ? "" : undefined,
-    "data-unchecked": !c.checked && !c.indeterminate ? "" : undefined,
-    "data-indeterminate": c.indeterminate ? "" : undefined,
-    "data-disabled": c.disabled ? "" : undefined,
-    "data-readonly": c.readOnly ? "" : undefined,
-    "data-required": c.required ? "" : undefined,
-  }
-}
+  // Rendered after the box, as its siblings: a CheckboxIndicator or the consumer's own.
+  children?: View
+} & Omit<InputProps, "value" | "name" | "disabled" | "checked" | "defaultChecked" | "readOnly" | "readonly" | "required" | "type" | "children">
 
 export component CheckboxRoot(props: CheckboxRootProps) {
   f = use field
   group = use checkboxGroup
   source uncontrolled := peek(props.defaultChecked ?? false)
+  // Counts the browser's changes, so the box is set back to the state after each one (createCheckedInput).
+  source revision := 0
+  source element: HTMLInputElement | undefined := undefined
   isParent = group != undefined && (props.parent ?? false)
   // A member of a group: a box with a value inside one. The group, not the box, is then the field's control.
   inGroup = group != undefined && !isParent && props.value != undefined
@@ -64,10 +68,12 @@ export component CheckboxRoot(props: CheckboxRootProps) {
   inputName = isParent ? undefined : props.name ?? f?.name
 
   effect (isChecked) { if (fieldOf) { fieldOf.setValue($0) } }
+  _input = createCheckedInput(element, isChecked, self.indeterminate, revision)
 
-  action toggle() {
-    if (self.disabled || self.readOnly) { return }
-    let next = self.indeterminate ? true : !isChecked
+  // The browser has already toggled the box: report that, and let the state decide what it shows.
+  action change(event: Event & { currentTarget: HTMLInputElement }) {
+    let next = event.currentTarget.checked
+    revision := revision + 1
     if (isParent && group) {
       group.pressParent()
     } else if (inGroup && group) {
@@ -77,37 +83,40 @@ export component CheckboxRoot(props: CheckboxRootProps) {
     }
     if (props.onCheckedChange) { props.onCheckedChange(next) }
   }
-  action setInput(element: HTMLInputElement) { if (fieldOf) { fieldOf.setInput(element) } }
+  // Cancelling the click is what keeps a native box unchanged: the browser restores it and fires no change.
+  action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
+  action writeElement(input: HTMLInputElement) {
+    element := input
+    if (fieldOf) { fieldOf.setInput(input) }
+  }
+  setElement = createRef(writeElement)
 
   provide checkbox = self
 
   { checked, defaultChecked, onCheckedChange, indeterminate, disabled, readOnly, required, name, value, parent, children, ...rest } = props
-  state = checkboxState(self)
-  inField = fieldControlProps(fieldOf)
+  inField = fieldInputProps(fieldOf)
   own = mergeProps(inField, {
-    type: "button",
-    role: "checkbox",
-    "aria-checked": self.indeterminate ? "mixed" : isChecked ? "true" : "false",
-    "aria-readonly": self.readOnly ? "true" : undefined,
-    "aria-required": self.required ? "true" : undefined,
+    type: "checkbox",
+    name: inputName,
+    value: value,
     disabled: self.disabled ? true : undefined,
+    required: self.required ? true : undefined,
+    "aria-readonly": self.readOnly ? "true" : undefined,
+    "data-readonly": self.readOnly ? "" : undefined,
     "data-parent": isParent ? "" : undefined,
-    onClick: toggle,
-    ...state,
+    ref: setElement,
+    onChange: change,
+    onClick: click,
   })
   merged = mergeProps(own, rest)
-  <button {...merged}>{children}</button>
-  {if inputName != undefined || (fieldOf != undefined && !isParent) {
-    <input type="checkbox" hidden aria-hidden="true" tabindex="-1" name={inputName} value={value ?? "on"} checked={isChecked} disabled={self.disabled} required={self.required} ref={setInput} />
-  }}
+  <input {...merged} />
+  {children}
 }
 
-// Shown only while the box is checked or indeterminate, unless `keepMounted`.
-export component CheckboxIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
-  c = use checkbox
-  state = checkboxState(c)
-  merged = mergeProps(state, rest)
-  {if c.checked || c.indeterminate || keepMounted {
-    <span {...merged}>{children}</span>
-  }}
+// A mark beside the box, always in the document: place it in CheckboxRoot, where it is the box's next sibling,
+// and show it with `input:checked + *` and `input:indeterminate + *`. Hidden from assistive technology, which
+// hears the box's own state.
+export component CheckboxIndicator({ children, ...rest }: SpanProps) {
+  merged = mergeProps({ "aria-hidden": "true" }, rest)
+  <span {...merged}>{children}</span>
 }

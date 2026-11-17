@@ -1,13 +1,18 @@
+// A separator is an <hr>, which has the separator role and is horizontal by default; `aria-orientation` is written
+// only when it is vertical. Style it with `hr`, and a vertical one with `[aria-orientation="vertical"]`.
 import { mergeProps } from "../internal/props.js"
-import { DivProps, PartProps } from "../internal/types.rx"
+import { PartProps } from "../internal/types.rx"
 
 export type SeparatorOrientation = "horizontal" | "vertical"
+// No alias for <hr> in src/internal/types.rx yet.
+export type HrProps = import("../internal/impl/types.ts").ElementProps<"hr">
 
 export type SeparatorProps = {
   orientation?: SeparatorOrientation
-} & DivProps
+} & HrProps
 
-// What a separator is, on whatever element plays it: a line between groups, announced as one.
+// What a separator is on an element that doesn't have the role itself (a <div> in a toolbar): the role, and both
+// orientations spelled out. Separator's own <hr> needs none of it.
 export fn separator(ref orientation: SeparatorOrientation): PartProps {
   {
     role: "separator",
@@ -17,7 +22,7 @@ export fn separator(ref orientation: SeparatorOrientation): PartProps {
 }
 
 export component Separator({ orientation = "horizontal", ...rest }: SeparatorProps) {
-  own = separator(orientation)
+  own = { "aria-orientation": orientation == "vertical" ? "vertical" : undefined }
   merged = mergeProps(own, rest)
-  <div {...merged} />
+  <hr {...merged} />
 }

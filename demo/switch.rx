@@ -1,10 +1,29 @@
 import { SwitchRoot, SwitchThumb } from "../src/switch/switch.rx"
 
+// The track is the native input with `appearance: none`; the thumb is its next sibling, moved by `:checked`.
 export component SwitchDemo() {
-  <label>
-    <SwitchRoot name="notifications" defaultChecked>
-      <SwitchThumb />
-    </SwitchRoot>
-    {" "}Notifications
-  </label>
+  <style>
+    :global(.switch) { position: relative; display: inline-block; vertical-align: middle }
+    :global(.switch > input) { appearance: none; margin: 0; display: block; width: 2.2rem; height: 1.2rem; border-radius: 1rem; background: #bbb; transition: background 150ms }
+    :global(.switch > input:checked) { background: #2a7 }
+    :global(.switch > input:focus-visible) { outline: 2px solid #4a7dff; outline-offset: 2px }
+    :global(.switch > input:disabled) { opacity: 0.4 }
+    :global(.switch-thumb) { position: absolute; top: 0.1rem; left: 0.1rem; width: 1rem; height: 1rem; border-radius: 50%; background: white; pointer-events: none; transition: translate 150ms }
+    :global(.switch > input:checked + .switch-thumb) { translate: 1rem 0 }
+  </style>
+  <div>
+    <label>
+      <span class="switch">
+        <SwitchRoot name="notifications" defaultChecked>
+          <SwitchThumb class="switch-thumb" />
+        </SwitchRoot>
+      </span>
+      {" "}Notifications
+    </label>
+    <br />
+    <label>
+      <span class="switch"><SwitchRoot disabled><SwitchThumb class="switch-thumb" /></SwitchRoot></span>
+      {" "}Airplane mode (disabled)
+    </label>
+  </div>
 }

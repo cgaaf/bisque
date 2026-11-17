@@ -1,9 +1,18 @@
-import { RadioGroup, RadioRoot, RadioIndicator } from "../src/radio/radio.rx"
+import { RadioGroup, RadioRoot } from "../src/radio/radio.rx"
 
+// The radios draw their own dot: `appearance: none` and `::before`, shown from `:checked`. The arrow keys move
+// between them; Tab enters and leaves the group once.
 export component RadioDemo() {
+  <style>
+    :global(.radio) { appearance: none; margin: 0 0.25rem 0 0; width: 1rem; height: 1rem; border: 1px solid #888; border-radius: 50%; display: inline-grid; place-content: center; vertical-align: middle }
+    :global(.radio::before) { content: ""; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: #222; scale: 0; transition: scale 120ms }
+    :global(.radio:checked::before) { scale: 1 }
+    :global(.radio:focus-visible) { outline: 2px solid #4a7dff; outline-offset: 2px }
+    :global(.radio:disabled) { opacity: 0.4 }
+  </style>
   <RadioGroup aria-label="Storage" name="storage" defaultValue="ssd">
-    <label><RadioRoot value="ssd"><RadioIndicator>•</RadioIndicator></RadioRoot> SSD</label>
-    <label><RadioRoot value="hdd"><RadioIndicator>•</RadioIndicator></RadioRoot> HDD</label>
-    <label><RadioRoot value="tape" disabled><RadioIndicator>•</RadioIndicator></RadioRoot> Tape</label>
+    <label><RadioRoot class="radio" value="ssd" />SSD</label>{" "}
+    <label><RadioRoot class="radio" value="hdd" />HDD</label>{" "}
+    <label><RadioRoot class="radio" value="tape" disabled />Tape</label>
   </RadioGroup>
 }

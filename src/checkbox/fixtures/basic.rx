@@ -1,8 +1,15 @@
-import { CheckboxRoot, CheckboxIndicator } from "../checkbox.rx"
+import { CheckboxRoot, CheckboxIndicator, checkbox } from "../checkbox.rx"
+
+// A custom indicator: reads the box's state from the context.
+component Mark() {
+  c = use checkbox
+  <span data-testid="mark" aria-hidden="true">{c.indeterminate ? "–" : c.checked ? "✓" : ""}</span>
+}
 
 export default component Fixture() {
   source agreed := false
-  source submitted := ""
+  source changes := 0
+  source mixed := true
   <form data-testid="form">
     <label>
       <CheckboxRoot name="terms" value="yes" checked={agreed} onCheckedChange={(next) => { agreed := next }}>
@@ -10,11 +17,15 @@ export default component Fixture() {
       </CheckboxRoot>
       Accept terms
     </label>
-    <CheckboxRoot aria-label="Select all" indeterminate>
-      <CheckboxIndicator data-testid="mixed">–</CheckboxIndicator>
-    </CheckboxRoot>
+    <output data-testid="agreed">{agreed ? "yes" : "no"}</output>
+    <label><CheckboxRoot name="news" defaultChecked />News</label>
+    <label><CheckboxRoot checked={false} onCheckedChange={() => { changes := changes + 1 }} />Refused</label>
+    <output data-testid="changes">{changes}</output>
+    <label><CheckboxRoot indeterminate={mixed}><Mark /></CheckboxRoot>Select all</label>
+    <button type="button" onClick={() => { mixed := !mixed }}>Toggle mixed</button>
+    <button type="button" onClick={() => { agreed := !agreed }}>Agree from outside</button>
     <CheckboxRoot aria-label="Locked" disabled defaultChecked />
     <CheckboxRoot aria-label="Fixed" readOnly />
-    <output data-testid="agreed">{agreed ? "yes" : "no"}</output>
+    <button type="reset">Reset</button>
   </form>
 }

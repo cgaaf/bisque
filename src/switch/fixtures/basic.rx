@@ -5,6 +5,7 @@ import { Form } from "../../form/form.rx"
 export default component Fixture() {
   source wifi := false
   source submitted := ""
+  source refusals := 0
   <div>
     <form data-testid="form">
       <label>
@@ -17,6 +18,8 @@ export default component Fixture() {
       <SwitchRoot aria-label="Bluetooth" defaultChecked />
       <SwitchRoot aria-label="Airplane" disabled />
       <SwitchRoot aria-label="Roaming" readOnly />
+      <SwitchRoot aria-label="Pinned" checked onCheckedChange={() => { refusals := refusals + 1 }} />
+      <output data-testid="refusals">{refusals}</output>
     </form>
     <Form onFormSubmit={(values) => { submitted := `consent=${values.consent}` }}>
       <FieldRoot name="consent" data-testid="consent-root">

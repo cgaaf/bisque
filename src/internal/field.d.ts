@@ -9,4 +9,4 @@ export declare function withoutErrors(errors: import("./impl/field.ts").FormErro
 export declare function sameValue(a: unknown, b: unknown): boolean;
 export declare function isFilled(value: unknown): boolean;
 export declare function isEmptyView(view: unknown): boolean;
-export declare function clickFocusedItem(container: HTMLElement | undefined): void;
+export declare function createCheckedInput(element: HTMLInputElement | undefined, checked: boolean, indeterminate: boolean, revision: number): void;

@@ -1,5 +1,6 @@
 import { FieldsetRoot, FieldsetLegend } from "../fieldset.rx"
 import { FieldRoot, FieldLabel, FieldControl } from "../../field/field.rx"
+import { CheckboxRoot } from "../../checkbox/checkbox.rx"
 
 export default component Fixture() {
   source locked: boolean := false
@@ -10,6 +11,7 @@ export default component Fixture() {
         <FieldLabel>Company</FieldLabel>
         <FieldControl />
       </FieldRoot>
+      <label><CheckboxRoot />Invoice by post</label>
     </FieldsetRoot>
     <button onClick={() => { locked := !locked }}>Lock</button>
   </div>

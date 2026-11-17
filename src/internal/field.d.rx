@@ -11,4 +11,4 @@ export pure fn withoutErrors(errors: import("./impl/field.ts").FormErrors | unde
 export pure fn sameValue(a: unknown, b: unknown): boolean
 export pure fn isFilled(value: unknown): boolean
 export pure fn isEmptyView(view: unknown): boolean
-export fn clickFocusedItem(container: HTMLElement | undefined): void
+export pure fn createCheckedInput(ref element: HTMLInputElement | undefined, ref checked: boolean, ref indeterminate: boolean, ref revision: number) instantiates

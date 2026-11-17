@@ -1,18 +1,27 @@
-import { mergeProps } from "../internal/props.js"
-import { createRovingFocus } from "../internal/dom.js"
-import { clickFocusedItem } from "../internal/field.js"
+// Radios on the native <input type="radio">, styleable whole with `appearance: none`. Radios that share a `name`
+// are one Tab stop (the checked radio, else the first), and the browser moves between them and checks them with
+// the arrow keys, skipping disabled ones; it also provides Space, label association, form submission, `required`
+// validation and the style hooks `:checked`, `:disabled`, `:focus-visible` and `:user-invalid`. This family adds
+// the group's role and labelling, a controlled value, a shared name when none is given, `readOnly`, and the Field
+// wiring.
+//
+// An <input> can't have children, so RadioRoot renders its children right after the radio: RadioIndicator is the
+// radio's next sibling, styled from it (`input:checked + span`), or the radio draws its own mark (`::before`).
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createCheckedInput } from "../internal/field.js"
 import { field, fieldGroupProps } from "../field/field.rx"
-import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+import { DivProps, InputProps, SpanProps } from "../internal/types.rx"
 
 export type RadioGroupContext = {
   value: string | undefined
-  // The radios' hidden inputs' name: the group's, else its FieldRoot's.
-  name: string | undefined
-  // Whether the radios render hidden inputs: with a name, or inside a field.
-  hasInputs: boolean
+  // The radios' shared name: the group's, else its FieldRoot's, else a generated one. Sharing it is what makes the
+  // browser treat them as one group.
+  name: string
   disabled: boolean
   readOnly: boolean
   required: boolean
+  // Counts the browser's changes, so every radio is set back to the state after each one (createCheckedInput).
+  revision: number
   select: (value: string) => void
   setInput: (element: HTMLInputElement) => void
 }
@@ -24,47 +33,43 @@ export type RadioGroupProps = {
   defaultValue?: string
   onValueChange?: (value: string) => void
   disabled?: boolean
+  // The radios are focusable and the arrow keys move between them, but nothing is checked.
   readOnly?: boolean
   required?: boolean
-  // With a name (or inside a named FieldRoot), the group takes part in a <form>: it submits the checked value.
+  // The radios' name: they submit the checked value under it with their form. Without one (and outside a named
+  // FieldRoot) a generated name groups them, and a form they are in submits the value under that name.
   name?: string
 } & DivProps
 
-// A set of radios of which one is checked. One Tab stop: the checked radio, else the first; the arrow keys move
-// between the radios and check the one they reach. Inside a FieldRoot it is the field's control.
+// A set of radios of which one is checked. Inside a FieldRoot it is the field's control.
 export component RadioGroup(props: RadioGroupProps) {
   f = use field
   source uncontrolled: string | undefined := peek(props.defaultValue)
-  source container: HTMLElement | undefined := undefined
+  source revision := 0
   current = props.value ?? uncontrolled
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
-  inputName = props.name ?? f?.name
+  generatedName = createId("radio-group")
 
-  _roving = createRovingFocus(container, { orientation: "both", loop: true, typeahead: false, tabStop: true })
   effect (current) { if (f) { f.setValue($0) } }
 
+  // The browser has already checked the radio: report that, and let the state decide what is checked.
   action select(value: string) {
+    revision := revision + 1
     if (isDisabled || isReadOnly || value == current) { return }
     uncontrolled := value
     if (props.onValueChange) { props.onValueChange(value) }
   }
-  action setContainer(element: HTMLElement) { container := element }
   action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
-  action keyDown(event: KeyboardEvent) {
-    // Roving focus listens on this element itself, so by now it has moved focus (and prevented the default).
-    let arrow = event.key == "ArrowUp" || event.key == "ArrowDown" || event.key == "ArrowLeft" || event.key == "ArrowRight"
-    if (arrow && event.defaultPrevented) { clickFocusedItem(container) }
-  }
 
   provide radioGroup = {
     value: current,
-    name: inputName,
-    hasInputs: inputName != undefined || f != undefined,
+    name: props.name ?? f?.name ?? generatedName,
     disabled: isDisabled,
     readOnly: isReadOnly,
     required: isRequired,
+    revision: revision,
     select: select,
     setInput: setInput,
   }
@@ -77,13 +82,13 @@ export component RadioGroup(props: RadioGroupProps) {
     "aria-readonly": isReadOnly ? "true" : undefined,
     "aria-required": isRequired ? "true" : undefined,
     "data-disabled": isDisabled ? "" : undefined,
-    ref: setContainer,
-    onKeyDown: keyDown,
+    "data-readonly": isReadOnly ? "" : undefined,
   })
   merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 
+// For a custom indicator that renders differently per state (RadioRoot provides it to its children).
 export type RadioContext = {
   checked: boolean
   disabled: boolean
@@ -93,69 +98,57 @@ export type RadioContext = {
 
 export context radio: RadioContext
 
-fn radioState(ref c: RadioContext): PartProps {
-  {
-    "data-checked": c.checked ? "" : undefined,
-    "data-unchecked": c.checked ? undefined : "",
-    "data-disabled": c.disabled ? "" : undefined,
-    "data-readonly": c.readOnly ? "" : undefined,
-    "data-required": c.required ? "" : undefined,
-  }
-}
-
-export fn radioRoot(ref g: RadioGroupContext, ref c: RadioContext, ref value: string): PartProps {
-  action press() { if (!c.disabled && !c.readOnly) { g.select(value) } }
-  action keyDown(event: KeyboardEvent) {
-    // A radio is checked by Space or an arrow key, never Enter.
-    if (event.key == "Enter") { event.preventDefault() }
-  }
-  state = radioState(c)
-  {
-    type: "button",
-    role: "radio",
-    "aria-checked": c.checked ? "true" : "false",
-    disabled: c.disabled ? true : undefined,
-    "data-rs-ui-item": "",
-    "data-rs-ui-current": c.checked ? "" : undefined,
-    onClick: press,
-    onKeyDown: keyDown,
-    ...state,
-  }
-}
-
 export type RadioRootProps = {
   value: string
   disabled?: boolean
   readOnly?: boolean
-} & Omit<ButtonProps, "value" | "disabled">
+  // Rendered after the radio, as its siblings: a RadioIndicator or the consumer's own.
+  children?: View
+} & Omit<InputProps, "value" | "name" | "disabled" | "checked" | "defaultChecked" | "readOnly" | "readonly" | "required" | "type" | "children">
 
 export component RadioRoot(props: RadioRootProps) {
   g = use radioGroup
+  source element: HTMLInputElement | undefined := undefined
   self = {
     checked: g.value == props.value,
     disabled: g.disabled || (props.disabled ?? false),
     readOnly: g.readOnly || (props.readOnly ?? false),
     required: g.required,
   }
-  // A local action, not `ref={g.setInput}`: a ref is read once, untracked, and a read of the context there is
-  // STRICT_READ_UNTRACKED.
-  action setInput(element: HTMLInputElement) { g.setInput(element) }
+  _input = createCheckedInput(element, self.checked, false, g.revision)
+
+  action change() { g.select(props.value) }
+  // Cancelling the click keeps the radios as they were: the browser restores them and fires no change. The arrow
+  // keys dispatch a click too (in all three engines), so focus still moves through a read-only group.
+  action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
+  action writeElement(input: HTMLInputElement) {
+    element := input
+    g.setInput(input)
+  }
+  setElement = createRef(writeElement)
+
   provide radio = self
+
   { value, disabled, readOnly, children, ...rest } = props
-  own = radioRoot(g, self, value)
+  own = {
+    type: "radio",
+    name: g.name,
+    value: value,
+    disabled: self.disabled ? true : undefined,
+    required: self.required ? true : undefined,
+    "data-readonly": self.readOnly ? "" : undefined,
+    ref: setElement,
+    onChange: change,
+    onClick: click,
+  }
   merged = mergeProps(own, rest)
-  <button {...merged}>{children}</button>
-  {if g.hasInputs {
-    <input type="radio" hidden aria-hidden="true" tabindex="-1" name={g.name} value={value} checked={self.checked} disabled={self.disabled} required={g.required} ref={setInput} />
-  }}
+  <input {...merged} />
+  {children}
 }
 
-// Shown only while its radio is checked, unless `keepMounted`.
-export component RadioIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
-  c = use radio
-  state = radioState(c)
-  merged = mergeProps(state, rest)
-  {if c.checked || keepMounted {
-    <span {...merged}>{children}</span>
-  }}
+// A mark beside the radio, always in the document: place it in RadioRoot, where it is the radio's next sibling,
+// and show it with `input:checked + *`. Hidden from assistive technology.
+export component RadioIndicator({ children, ...rest }: SpanProps) {
+  merged = mergeProps({ "aria-hidden": "true" }, rest)
+  <span {...merged}>{children}</span>
 }

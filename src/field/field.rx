@@ -27,9 +27,19 @@ export type FieldState = {
 // Read optionally (`use field` is undefined outside a FieldRoot). A control takes part in a field with
 // `fieldControlProps(f)` on its focusable element (or `fieldGroupProps(f)` on a group) and three calls:
 //   - `setValue(v)` from an effect on its value: the first call is the initial value, later ones are changes;
-//   - `setInput(el)` as the `ref` of the native input whose constraints count (its hidden input, if it has one);
-//   - `name` and `disabled` for its hidden input and itself.
+//   - `setInput(el)` as the `ref` of the native input whose constraints count: the control itself where it is a
+//     native input (Input, Checkbox, Switch, a radio of a RadioGroup), else a hidden input that mirrors its value;
+//   - `name` and `disabled` for that input and itself.
 // The rest is for the field's own parts.
+//
+// What the browser already does is left to it: a FieldLabel is a native `<label for>`, and the native input's
+// `ValidityState` is what the native constraints are read from. `:user-invalid` and `:invalid` on that input are
+// the browser's own answer and need no attribute. The field's `data-*` state stays, because it is not the
+// browser's: `data-invalid` also counts `validate`, the `invalid` prop and the form's errors, and follows the
+// validation mode; touched, dirty and filled have no selector; and the root, label, description, error and a
+// group are not form controls, so `:disabled` and `:focus` don't apply to them. A native input takes
+// `fieldInputProps`, which leaves out `data-disabled` and `data-focused`; a custom control (a Select trigger, a
+// slider thumb's input) keeps `fieldControlProps` and all of them.
 export type FieldContext = {
   // The id the control's focusable element carries: FieldLabel's `for`. Set by fieldControlProps.
   controlId: string
@@ -202,6 +212,13 @@ export fn fieldControlProps(ref f: FieldContext | undefined): PartProps {
   } : {}
 }
 
+// fieldControlProps for a native form control (an <input>, which Input, FieldControl, Checkbox and Switch are):
+// without `data-disabled` and `data-focused`, which `:disabled` and `:focus` express on the element.
+export fn fieldInputProps(ref f: FieldContext | undefined): PartProps {
+  base = fieldControlProps(f)
+  { ...base, "data-disabled": undefined, "data-focused": undefined }
+}
+
 // The same for a group of controls (radio group, checkbox group): labelled by FieldLabel's id, focused while focus
 // is anywhere inside it, blurred when focus leaves it.
 export fn fieldGroupProps(ref f: FieldContext | undefined): PartProps {
@@ -321,7 +338,7 @@ export fn fieldControl(ref f: FieldContext | undefined, ref controlled: string |
     if (onValueChange) { onValueChange(next) }
   }
   action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
-  base = fieldControlProps(f)
+  base = fieldInputProps(f)
   own = {
     name: f?.name,
     value: current,

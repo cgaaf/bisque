@@ -1,10 +1,36 @@
 import { CheckboxRoot, CheckboxIndicator } from "../src/checkbox/checkbox.rx"
 
+// The box is the native input with `appearance: none`; the indicator is its next sibling, laid over it and shown
+// from `:checked` and `:indeterminate`.
 export component CheckboxDemo() {
-  <label>
-    <CheckboxRoot name="updates">
-      <CheckboxIndicator>✓</CheckboxIndicator>
-    </CheckboxRoot>
-    {" "}Email me updates
-  </label>
+  <style>
+    :global(.checkbox) { display: inline-grid; place-items: center; vertical-align: middle }
+    :global(.checkbox > input) { appearance: none; margin: 0; width: 1.1rem; height: 1.1rem; border: 1px solid #888; border-radius: 0.2rem; grid-area: 1 / 1 }
+    :global(.checkbox > input:checked), :global(.checkbox > input:indeterminate) { background: #222; border-color: #222 }
+    :global(.checkbox > input:focus-visible) { outline: 2px solid #4a7dff; outline-offset: 2px }
+    :global(.checkbox > input:disabled) { opacity: 0.4 }
+    :global(.checkbox > input:user-invalid) { border-color: #c22 }
+    :global(.checkbox-mark) { grid-area: 1 / 1; color: white; font-size: 0.8rem; pointer-events: none; visibility: hidden }
+    :global(.checkbox > input:checked + .checkbox-mark) { visibility: visible }
+  </style>
+  <div>
+    <label>
+      <span class="checkbox">
+        <CheckboxRoot name="updates">
+          <CheckboxIndicator class="checkbox-mark">✓</CheckboxIndicator>
+        </CheckboxRoot>
+      </span>
+      {" "}Email me updates
+    </label>
+    <br />
+    <label>
+      <span class="checkbox"><CheckboxRoot name="terms" required /></span>
+      {" "}I accept the terms (required)
+    </label>
+    <br />
+    <label>
+      <span class="checkbox"><CheckboxRoot disabled defaultChecked><CheckboxIndicator class="checkbox-mark">✓</CheckboxIndicator></CheckboxRoot></span>
+      {" "}Locked
+    </label>
+  </div>
 }

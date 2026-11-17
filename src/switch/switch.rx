@@ -1,13 +1,21 @@
-import { mergeProps } from "../internal/props.js"
-import { field, fieldControlProps } from "../field/field.rx"
-import { ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+// A switch: a native <input type="checkbox" role="switch">, styleable whole with `appearance: none`. The browser
+// provides the on state, Space, label association, form submission, `required` validation and the style hooks
+// `:checked`, `:disabled`, `:focus-visible` and `:user-invalid`, and exposes the checked state as the switch's.
+// This family adds a controlled value, `readOnly` and the Field wiring.
+//
+// An <input> can't have children, so SwitchRoot renders its children right after the input: SwitchThumb is the
+// input's next sibling, styled from it (`input:checked + span`), or the input draws its own thumb (`::before`).
+import { mergeProps, createRef } from "../internal/props.js"
+import { createCheckedInput } from "../internal/field.js"
+import { field, fieldInputProps } from "../field/field.rx"
+import { InputProps, SpanProps } from "../internal/types.rx"
 
+// For a custom thumb that renders differently per state (SwitchRoot provides it to its children).
 export type SwitchContext = {
   checked: boolean
   disabled: boolean
   readOnly: boolean
   required: boolean
-  toggle: () => void
 }
 
 // `switch` is a reserved word, so the family's context has a longer name.
@@ -18,81 +26,74 @@ export type SwitchRootProps = {
   defaultChecked?: boolean
   onCheckedChange?: (checked: boolean) => void
   disabled?: boolean
+  // Focusable and announced, but a press doesn't change it (`readonly` has no effect on a native checkbox).
   readOnly?: boolean
   required?: boolean
-  // With a name (or inside a named FieldRoot), the switch takes part in a <form>: it submits `value` (default "on")
-  // while on.
+  // With a name (or inside a named FieldRoot), the switch submits `value` (default "on") with its form while on.
   name?: string
   value?: string
-} & Omit<ButtonProps, "value" | "name" | "disabled">
-
-// The state attributes the root and its thumb share.
-fn switchState(ref c: SwitchContext): PartProps {
-  {
-    "data-checked": c.checked ? "" : undefined,
-    "data-unchecked": c.checked ? undefined : "",
-    "data-disabled": c.disabled ? "" : undefined,
-    "data-readonly": c.readOnly ? "" : undefined,
-    "data-required": c.required ? "" : undefined,
-  }
-}
-
-export fn switchRoot(ref c: SwitchContext): PartProps {
-  action press() { c.toggle() }
-  state = switchState(c)
-  {
-    type: "button",
-    role: "switch",
-    "aria-checked": c.checked ? "true" : "false",
-    "aria-readonly": c.readOnly ? "true" : undefined,
-    "aria-required": c.required ? "true" : undefined,
-    disabled: c.disabled ? true : undefined,
-    onClick: press,
-    ...state,
-  }
-}
+  // Rendered after the input, as its siblings: a SwitchThumb or the consumer's own.
+  children?: View
+} & Omit<InputProps, "value" | "name" | "disabled" | "checked" | "defaultChecked" | "readOnly" | "readonly" | "required" | "type" | "role" | "children">
 
 // An on/off control. Inside a FieldRoot it is the field's control.
 export component SwitchRoot(props: SwitchRootProps) {
   f = use field
   source uncontrolled := peek(props.defaultChecked ?? false)
+  // Counts the browser's changes, so the input is set back to the state after each one (createCheckedInput).
+  source revision := 0
+  source element: HTMLInputElement | undefined := undefined
   isChecked = props.checked ?? uncontrolled
   self = {
     checked: isChecked,
     disabled: (props.disabled ?? false) || (f?.disabled ?? false),
     readOnly: props.readOnly ?? false,
     required: props.required ?? false,
-    toggle: toggle,
   }
-  inputName = props.name ?? f?.name
 
   effect (isChecked) { if (f) { f.setValue($0) } }
+  _input = createCheckedInput(element, isChecked, false, revision)
 
-  action toggle() {
-    if (self.disabled || self.readOnly) { return }
-    let next = !isChecked
+  // The browser has already toggled the input: report that, and let the state decide what it shows.
+  action change(event: Event & { currentTarget: HTMLInputElement }) {
+    let next = event.currentTarget.checked
+    revision := revision + 1
     uncontrolled := next
     if (props.onCheckedChange) { props.onCheckedChange(next) }
   }
-  action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+  // Cancelling the click is what keeps a native checkbox unchanged: the browser restores it and fires no change.
+  action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
+  action writeElement(input: HTMLInputElement) {
+    element := input
+    if (f) { f.setInput(input) }
+  }
+  setElement = createRef(writeElement)
 
   provide switchContext = self
 
   { checked, defaultChecked, onCheckedChange, disabled, readOnly, required, name, value, children, ...rest } = props
-  inField = fieldControlProps(f)
-  rootProps = switchRoot(self)
-  own = mergeProps(inField, rootProps)
+  inField = fieldInputProps(f)
+  own = mergeProps(inField, {
+    type: "checkbox",
+    role: "switch",
+    name: name ?? f?.name,
+    value: value,
+    disabled: self.disabled ? true : undefined,
+    required: self.required ? true : undefined,
+    "aria-readonly": self.readOnly ? "true" : undefined,
+    "data-readonly": self.readOnly ? "" : undefined,
+    ref: setElement,
+    onChange: change,
+    onClick: click,
+  })
   merged = mergeProps(own, rest)
-  <button {...merged}>{children}</button>
-  {if inputName != undefined || f != undefined {
-    <input type="checkbox" hidden aria-hidden="true" tabindex="-1" name={inputName} value={value ?? "on"} checked={isChecked} disabled={self.disabled} required={self.required} ref={setInput} />
-  }}
+  <input {...merged} />
+  {children}
 }
 
-// The moving part. Always rendered; style it from `data-checked` and `data-unchecked`.
+// The moving part, always in the document: place it in SwitchRoot, where it is the input's next sibling, and
+// style it with `input:checked + *`. Hidden from assistive technology.
 export component SwitchThumb({ children, ...rest }: SpanProps) {
-  c = use switchContext
-  state = switchState(c)
-  merged = mergeProps(state, rest)
+  merged = mergeProps({ "aria-hidden": "true" }, rest)
   <span {...merged}>{children}</span>
 }

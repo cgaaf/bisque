@@ -1,8 +1,8 @@
 import { Separator, separator } from "../separator.rx"
 
-component RuleSeparator() {
+component DivSeparator() {
   s = separator("vertical")
-  <hr data-testid="hr" {...s} />
+  <div data-testid="div" {...s} />
 }
 
 export default component Fixture() {
@@ -12,6 +12,6 @@ export default component Fixture() {
     <Separator data-testid="vertical" orientation="vertical" />
     <Separator data-testid="switch" orientation={vertical ? "vertical" : "horizontal"} />
     <button onClick={() => { vertical := !vertical }}>Flip</button>
-    <RuleSeparator />
+    <DivSeparator />
   </main>
 }
