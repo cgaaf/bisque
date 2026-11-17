@@ -1,0 +1,36 @@
+import { Form } from "../form.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldError } from "../../field/field.rx"
+import { register } from "./server.js"
+
+// A form whose handler asks a server that takes 150ms: it refuses the username "taken" and fails for "offline".
+export default component Fixture() {
+  source calls := 0
+  source saved := ""
+  source failure := ""
+  <div>
+    <Form data-testid="form" onFormSubmit={(values) => {
+      onFlush(() => { calls := calls + 1; failure := "" })
+      try {
+        let refused = await register(values, 150)
+        if (!refused) { saved := `${values.username}` }
+        return refused
+      } catch (error) {
+        failure := error.message
+      }
+    }}>
+      <FieldRoot name="username" data-testid="username-root">
+        <FieldLabel>Username</FieldLabel>
+        <FieldControl required />
+        <FieldError data-testid="username-error" />
+      </FieldRoot>
+      <FieldRoot name="city" data-testid="city-root">
+        <FieldLabel>City</FieldLabel>
+        <FieldControl />
+      </FieldRoot>
+      <button type="submit">Submit</button>
+    </Form>
+    <output data-testid="calls">{calls}</output>
+    <output data-testid="saved">{saved}</output>
+    <output data-testid="failure">{failure}</output>
+  </div>
+}

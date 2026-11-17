@@ -107,11 +107,17 @@ export component FieldRoot(props: FieldRootProps) {
   source labelId: string | undefined := undefined
   source descriptionIds: string[] := []
   source errorId: string | undefined := undefined
+  // The form answer that was current when the value last changed: its error for this field is retired.
+  source retiredAnswer: number := -1
   controlId = createId("field-control")
 
   isDisabled = (set?.disabled ?? false) || (props.disabled ?? false)
   mode = props.validationMode ?? formCtx?.validationMode ?? "onSubmit"
-  formErrors = formErrorsFor(formCtx?.errors, props.name)
+  // An error the form's handler came back with shows until the field changes, like any other. It is also about
+  // the value that was sent, so it never shows on a field that was edited while the request was out.
+  answered = props.name != undefined && formCtx != undefined && formCtx.answer.id != retiredAnswer && sameValue(value, formCtx.answer.values[props.name]) ? formErrorsFor(formCtx.answer.errors, props.name) : []
+  passedIn = formErrorsFor(formCtx?.errors, props.name)
+  formErrors = answered.length > 0 ? answered : passedIn
   externalInvalid = props.invalid == true || formErrors.length > 0
   [checked, run] = createFieldValidation(formCtx?.registry, {
     name: props.name,
@@ -152,6 +158,7 @@ export component FieldRoot(props: FieldRootProps) {
     }
     if (sameValue(next, value)) { return }
     value := next
+    if (formCtx) { retiredAnswer := formCtx.answer.id }
     if (formCtx && props.name != undefined) { formCtx.clearError(props.name) }
     let onChange = mode == "onChange" || (mode == "onSubmit" && (formCtx?.submitted ?? false))
     run(next, onChange ? "commit" : "revalidate", !sameValue(next, initial))

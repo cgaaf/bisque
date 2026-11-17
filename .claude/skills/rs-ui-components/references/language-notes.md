@@ -80,6 +80,31 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
   `NOT_A_CONTEXT`. Rename it in the pattern (`{ toast: _toast, … }`).
 - **One fixture can't import from another**: put a shared component in a library module.
 
+## Actions, holds and components
+
+An action (anything that writes and awaits) is one change, held until it ends. That is right for an app's own
+state and wrong for a component's interactive state, so a component does not put an `await` in its own handlers.
+What was observed, with the Form's submit as the case:
+
+- **An action holds whatever it touched.** A submit that validated its fields inside an action made every field
+  part of the change: typing in one while the request was out did not register (no `data-dirty`, no validation)
+  until the server answered. Removing `affects` made no difference.
+- **A source the action writes after its `await` is held for the whole action**, including an earlier write to
+  it through `onFlush`. A "busy" flag set before the await and cleared after it never shows as set.
+- **`affects x` with `pending? x` is the language's busy flag**, but a context whose provision reads `pending?`
+  must be declared `lane` (`ROW_NARROWER_THAN_INFERRED`), and everything that reads the context then waits.
+- **An action started inside a handler's run takes that run's writes with it.** Calling the consumer's
+  `onFormSubmit` (an action) directly from the submit handler froze the fields again.
+- **An awaiting handler must catch its failures**: the compiler refuses one that doesn't
+  (`UNCAUGHT_ACTION_FAILURE`). Calling an action returns a promise of what its body returns, so JavaScript can
+  wait for it.
+
+So work that takes time goes in a TypeScript primitive that holds plain signals: it starts the consumer's
+handler in a microtask, sets `pending`, and writes the result when the promise settles. `createSubmission`
+(`src/internal/impl/field.ts`) is the model. The consumer's handler may be an action; its hold is its own. Test
+the three real cases with a fixture whose server takes time: a second request while one is out, input that
+changes while one is out, and a request that fails.
+
 ## The type projection
 
 - `rx-tsc` narrows a source inside an `if`, and with it the type of a write there: `if (!flag) { flag := true }`

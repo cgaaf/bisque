@@ -10,3 +10,5 @@ export declare function sameValue(a: unknown, b: unknown): boolean;
 export declare function isFilled(value: unknown): boolean;
 export declare function isEmptyView(view: unknown): boolean;
 export declare function createCheckedInput(element: HTMLInputElement | undefined, checked: boolean, indeterminate: boolean, revision: number): void;
+export declare function reportFailure(error: unknown): void;
+export declare function createSubmission(): [import("./impl/field.ts").FormSubmission, (handler: (values: any) => any, values: import("./impl/field.ts").FormValues, id: number, onDone: () => void, onError: (error: unknown) => void) => void];

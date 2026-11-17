@@ -2,7 +2,7 @@
 // synchronously while a submit event is still cancelable. `.rx` keeps the field's own state (touched, dirty,
 // focused, filled) and decides when to validate; this module reads `input.validity`, runs the consumer's
 // `validate`, and keeps the form's registry of fields. `../field.d.rx` declares how `.rx` may call it.
-import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
+import { createEffect, createSignal, onCleanup, untrack, type Accessor } from "solid-js";
 import { tabbables } from "./dom.ts";
 
 export type ValidityFlags = {
@@ -165,6 +165,77 @@ export function focusFirstInvalid(registry: FormRegistry | undefined, errors: Fo
     (field) => field.enabled() && (formErrorsFor(errors, field.name()).length > 0 || !field.valid()),
   );
   focusControl(firstInvalidControl(registry, invalid));
+}
+
+/** What a form's last submit came back with: `id` numbers the submits, so a field can tell one answer from the next. */
+export type FormAnswer = { id: number; errors: FormErrors; values: FormValues };
+export type FormSubmission = { pending: boolean; answer: FormAnswer };
+type SubmitHandler = (values: FormValues) => FormErrors | void | Promise<FormErrors | void>;
+
+/**
+ * Sends a form's values to its handler and holds what happens: `pending` while the handler is out, then the
+ * errors it resolved to, with the values they are about.
+ *
+ * This is plain signals and a promise, not a ReactiveScript action, on purpose. An action is one change, held
+ * until it ends, and a submit validates every field inside it: the fields would join the change, and typing in
+ * one while the request was out would not register until the server answered. The handler is started in a
+ * microtask for the same reason: an action started inside a handler's run takes that run's writes with it. The
+ * handler itself may well be an action that awaits; its hold is then its own.
+ *
+ * `send` does nothing while a request is out. `onDone` runs once the answer is on screen, `onError` if the
+ * handler threw or its promise rejected.
+ */
+export function createSubmission(): [
+  Accessor<FormSubmission>,
+  (
+    handler: SubmitHandler,
+    values: FormValues,
+    id: number,
+    onDone: () => void,
+    onError: (error: unknown) => void,
+  ) => void,
+] {
+  const [state, setState] = createSignal<FormSubmission>({
+    pending: false,
+    answer: { id: 0, errors: {}, values: {} },
+  });
+  let live = true;
+  onCleanup(() => {
+    live = false;
+  });
+  const send = (
+    handler: SubmitHandler,
+    values: FormValues,
+    id: number,
+    onDone: () => void,
+    onError: (error: unknown) => void,
+  ) => {
+    if (untrack(state).pending) return;
+    setState((before) => ({ ...before, pending: true }));
+    void Promise.resolve()
+      .then(() => handler(values))
+      .then(
+        (found) => {
+          if (!live) return;
+          setState({ pending: false, answer: { id, errors: found ?? {}, values } });
+          // After the fields have taken the answer in.
+          setTimeout(() => {
+            if (live) onDone();
+          }, 0);
+        },
+        (error: unknown) => {
+          if (!live) return;
+          setState((before) => ({ ...before, pending: false }));
+          onError(error);
+        },
+      );
+  };
+  return [state, send];
+}
+
+/** Hands a failure nobody handled to the page, as an uncaught error is: the console, `window.onerror`, monitoring. */
+export function reportFailure(error: unknown): void {
+  reportError(error);
 }
 
 /** The messages `errors` holds for `name`, as a list. */

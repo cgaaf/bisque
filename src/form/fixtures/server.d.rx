@@ -1,0 +1,1 @@
+export fn register(values: any, delay: number): Promise<any>

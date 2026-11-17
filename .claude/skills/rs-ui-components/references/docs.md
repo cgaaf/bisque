@@ -54,6 +54,7 @@ In this order, as Base UI's pages are:
 
   Parts get plain class names (`Trigger`, `Popup`, `Item`). A scoped `<style>` in the view can't be used: its
   rules don't reach the element a part renders (only `:global(…)` would), and the reader should see the CSS.
+
 - The CSS is half the documentation of an unstyled, native-first library. Use the native hooks (`[open]`,
   `:popover-open`, `:checked`, `::backdrop`, `@starting-style`, `[data-side]`…) and comment the non-obvious
   line. Colours use `light-dark(…)` so a demo works in both themes; the palette in `popover/hero.css` is the

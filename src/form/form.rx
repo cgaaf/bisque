@@ -1,11 +1,12 @@
 import { mergeProps } from "../internal/props.js"
-import { createFormRegistry, submitForm, focusFirstInvalid, withoutErrors } from "../internal/field.js"
+import { createFormRegistry, createSubmission, submitForm, focusFirstInvalid, withoutErrors, reportFailure } from "../internal/field.js"
 import { FormProps } from "../internal/types.rx"
 
 export type FormValidationMode = "onSubmit" | "onBlur" | "onChange"
 // Errors keyed by field name (the `name` of a FieldRoot), typically returned by a server.
 export type FormErrors = import("../internal/impl/field.ts").FormErrors
 export type FormValues = import("../internal/impl/field.ts").FormValues
+export type FormAnswer = import("../internal/impl/field.ts").FormAnswer
 export type FormRegistry = import("../internal/impl/field.ts").FormRegistry
 
 // Read optionally, by FieldRoot only: a Field inside a Form registers with it, so a submit validates it.
@@ -17,6 +18,8 @@ export type FormContext = {
   validationMode: FormValidationMode
   // True once a submit was attempted: an "onSubmit" field validates on every change from then on.
   submitted: boolean
+  // The errors the last `onFormSubmit` resolved to, and the values it was sent.
+  answer: FormAnswer
   // A field whose value changed retires the form's error for its name.
   clearError: (name: string) => void
 }
@@ -26,24 +29,34 @@ export context form: FormContext | undefined = undefined
 export type FormRootProps = {
   // When fields validate, unless a FieldRoot says otherwise. Default: "onSubmit".
   validationMode?: FormValidationMode
-  // Errors to show on fields, keyed by field name. An entry is hidden once its field's value changes, until `errors`
-  // changes. Changes are seen by content (an .rx object source keeps its identity when written), so reset it (to {})
-  // when a submit starts: the same errors coming back for the next submit are then a change, and show again.
+  // Errors to show on fields, keyed by field name, from somewhere other than a submit (a page loaded with them).
+  // An entry is hidden once its field's value changes, and shown again by the next submit.
   errors?: FormErrors
-  // Called on a valid submit with the values of the named fields; the native submission is then prevented.
-  onFormSubmit?: (values: FormValues) => void
+  // Called on a valid submit with the values of the named fields; the native submission is then prevented. It may
+  // take its time: return a promise (or be an action that awaits) and the form stays `data-submitting` until it
+  // ends, ignoring further submits. What it resolves to, if anything, is the errors the server found, keyed by
+  // field name: they are shown on their fields and the first one takes focus. An error for a field that was edited
+  // while the request was out is dropped: it was about a value that is no longer there.
+  onFormSubmit?: (values: FormValues) => FormErrors | void | Promise<FormErrors | void>
+  // Called when `onFormSubmit` throws or its promise rejects (the network failed). Without it the failure is
+  // reported to the page as an uncaught error. Either way the form can be submitted again.
+  onFormError?: (error: unknown) => void
   // Called on a valid submit, before `onFormSubmit`.
   onSubmit?: (event: SubmitEvent) => void
 } & Omit<FormProps, "onSubmit">
 
-// A native <form> that validates its Fields on submit, focuses the first invalid one, and shows errors passed in.
+// A native <form> that validates its Fields on submit, focuses the first invalid one, waits for the handler that
+// sends it, and shows the errors that come back.
 export component Form(props: FormRootProps) {
   source cleared: string[] := []
   source submitCount := 0
-  // True from a valid submit until the next `errors`: errors that arrive for it move focus to their field.
+  // True from a valid submit until `errors` next changes: errors that arrive for it move focus to their field.
   source awaitingErrors: boolean := false
   registry = createFormRegistry()
   errors = withoutErrors(props.errors, cleared)
+  // Whether `onFormSubmit` is out, and what the last one resolved to with the values it was sent. Kept outside
+  // the reactive graph's actions (../internal/impl/field.ts says why), so fields stay live during a submit.
+  [submission, send] = createSubmission()
 
   effect (props.errors) {
     cleared := []
@@ -58,9 +71,19 @@ export component Form(props: FormRootProps) {
   action clearError(name: string) {
     cleared := old => old.includes(name) ? old : [...old, name]
   }
+  action answered() { focusFirstInvalid(registry, undefined) }
+  action failed(error: unknown) {
+    if (props.onFormError) { props.onFormError(error) } else { reportFailure(error) }
+  }
 
   action submit(event: SubmitEvent) {
-    submitCount := submitCount + 1
+    // One request at a time: a second submit while the first is out would race it.
+    if (submission.pending) {
+      event.preventDefault()
+      return
+    }
+    let count = submitCount + 1
+    submitCount := count
     let result = submitForm(registry)
     if (!result.valid) {
       event.preventDefault()
@@ -70,7 +93,7 @@ export component Form(props: FormRootProps) {
     if (props.onSubmit) { props.onSubmit(event) }
     if (props.onFormSubmit) {
       event.preventDefault()
-      props.onFormSubmit(result.values)
+      send(props.onFormSubmit, result.values, count, answered, failed)
     }
   }
 
@@ -79,10 +102,11 @@ export component Form(props: FormRootProps) {
     errors: errors,
     validationMode: props.validationMode ?? "onSubmit",
     submitted: submitCount > 0,
+    answer: submission.answer,
     clearError: clearError,
   }
 
-  { validationMode, errors: _errors, onFormSubmit, onSubmit, children, ...rest } = props
-  merged = mergeProps({ novalidate: true, onSubmit: submit }, rest)
+  { validationMode, errors: _errors, onFormSubmit, onFormError, onSubmit, children, ...rest } = props
+  merged = mergeProps({ novalidate: true, "data-submitting": submission.pending ? "" : undefined, "aria-busy": submission.pending ? "true" : undefined, onSubmit: submit }, rest)
   <form {...merged}>{children}</form>
 }
