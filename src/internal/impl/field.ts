@@ -206,8 +206,9 @@ function messages(result: ValidateResult): string[] {
  * - `"commit"` checks the native constraints of `options.input`, then, if they pass, `options.validate`. A missing
  *   value (`required`) counts only once the field was changed (`markDirty`) or a submit validated it, so a field
  *   isn't marked invalid before the user has done anything.
- * - `"revalidate"` only retires a `valueMissing` error that a new value has fixed; other errors wait for the next
- *   commit. It is what a change does when the field doesn't validate on change.
+ * - `"revalidate"` retires the field's error, whatever it was, unless the input is still missing its value; it
+ *   doesn't look for new errors, which wait for the next commit. It is what a change does when the field doesn't
+ *   validate on change.
  *
  * While `form` is a registry, the field is in it, so a submit validates it.
  */

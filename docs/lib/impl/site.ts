@@ -154,11 +154,15 @@ export function headings(): Accessor<Heading[]> {
     const sections = [...document.querySelectorAll<HTMLElement>("article h2[id], article h3[id]")].filter(
       (heading) => !heading.closest(".demo"),
     );
-    const next = sections.map((heading) => ({
-      id: heading.id,
-      text: heading.textContent ?? "",
-      level: heading.tagName === "H2" ? 2 : 3,
-    }));
+    // An entry that is still there keeps its object, so the list that renders them keeps its rows.
+    const known = new Map(found().map((entry) => [entry.id, entry]));
+    const next = sections.map((heading) => {
+      const text = heading.textContent ?? "";
+      const before = known.get(heading.id);
+      return before && before.text === text
+        ? before
+        : { id: heading.id, text, level: heading.tagName === "H2" ? 2 : 3 };
+    });
     if (!sameHeadings(found(), next)) setFound(next);
   };
   const observer = new MutationObserver(scan);

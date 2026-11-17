@@ -81,6 +81,9 @@ What the source doesn't say goes in `docs/api-notes/<family>.json`, keyed by par
 }
 ```
 
+A data attribute set to `null` in the notes is left out: use it where the generator follows a shared props
+function to an attribute the part then clears.
+
 Every part needs a description, and every prop and data attribute a meaning, written for someone using the
 library (the source comments are written for someone maintaining it). If a prop's comment in the source is
 missing or wrong, fix the comment in `src/` too when it is a one-line change; otherwise put the text in the

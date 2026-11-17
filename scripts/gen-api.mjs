@@ -280,7 +280,11 @@ function describe(family) {
     if (wrapped && allComponents.has(wrapped[1])) {
       for (const name of dataAttributes(allComponents.get(wrapped[1]).body)) attributes.add(name);
     }
-    for (const name of Object.keys(note.dataAttributes ?? {})) attributes.add(name);
+    // A note adds an attribute the source doesn't show, or (with null) removes one the part never sets.
+    for (const [name, meaning] of Object.entries(note.dataAttributes ?? {})) {
+      if (meaning === null) attributes.delete(name);
+      else attributes.add(name);
+    }
 
     const own = /\bown = (\w+)\(/.exec(component.body);
     const fn = own && allFunctions.get(own[1]);
