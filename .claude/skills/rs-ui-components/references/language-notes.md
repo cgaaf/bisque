@@ -25,7 +25,8 @@ More that isn't there, found while building components:
   were passed.
 - **`==` is strict**: it compiles to `===`.
 - **A `fn` with a `ref` parameter must be bound before it is another `fn`'s result**: `item = itemState(c)` then
-  `item` on the last line. Returning the call directly is `INSTANTIATION_NOT_BOUND`.
+  `item` on the last line. Returning the call directly, or passing it straight to another call
+  (`withoutHandlers(fieldControlProps(f), true)`), is `INSTANTIATION_NOT_BOUND`.
 
 - **No `Object` global and no computed keys** (`{ [k]: v }` is `PARSE`): build such objects in TypeScript.
 - **A function-type parameter on a `fn` needs parentheses**: `fn f(x: (() => void))`. Unparenthesised it is
@@ -33,6 +34,10 @@ More that isn't there, found while building components:
 - **A ternary can't break before `?`** (`PARSE expression near '? …'`). Keep it on one line.
 - **A context and a function can't share a name** (`DUPLICATE_DECLARATION`, then `NOT_A_CONTEXT`). A part that
   needs its own context beside its props function names the context differently (`tabsListOptions`).
+- **DOM constructors aren't values**: `x instanceof Node` is `UNBOUND`. Type the event instead
+  (`FocusEvent & { relatedTarget: Node | null }`).
+- **Quoted keys can't be destructured** (`{ "aria-label": label } = props` is `PARSE`), and `from` can't be a
+  local name. Read `props["aria-label"]`.
 - **A type and a component can't share a name**: the component becomes "unknown component". Rename the type.
 
 Accepted, and useful: a context with a default (`export context x: T = { … }`): `use x` with no provider above

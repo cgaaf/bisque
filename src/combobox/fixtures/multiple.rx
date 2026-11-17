@@ -1,0 +1,33 @@
+import { combobox, ComboboxRoot, ComboboxInput, ComboboxChips, ComboboxChip, ComboboxChipRemove, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxItemIndicator } from "../combobox.rx"
+
+// Chips for whatever is selected, read from the context: how an uncontrolled multiple combobox lists its values.
+component SelectedChips() {
+  c = use combobox
+  {for value in c.selected {
+    <ComboboxChip value={value} data-testid="chip">{value}<ComboboxChipRemove aria-label={`Remove ${value}`}>×</ComboboxChipRemove></ComboboxChip>
+  }}
+}
+
+export default component Fixture() {
+  source picked := ""
+  <form data-testid="form">
+    <ComboboxRoot multiple name="langs" defaultValues={["rx"]} onValuesChange={(next) => { picked := next.join(",") }}>
+      <ComboboxChips data-testid="chips">
+        <SelectedChips />
+        <ComboboxInput aria-label="Languages" />
+      </ComboboxChips>
+      <ComboboxPortal>
+        <ComboboxPositioner>
+          <ComboboxPopup>
+            <ComboboxList>
+              <ComboboxItem value="rx" label="ReactiveScript"><ComboboxItemIndicator>✓</ComboboxItemIndicator>ReactiveScript</ComboboxItem>
+              <ComboboxItem value="ts" label="TypeScript"><ComboboxItemIndicator>✓</ComboboxItemIndicator>TypeScript</ComboboxItem>
+              <ComboboxItem value="rs" label="Rust"><ComboboxItemIndicator>✓</ComboboxItemIndicator>Rust</ComboboxItem>
+            </ComboboxList>
+          </ComboboxPopup>
+        </ComboboxPositioner>
+      </ComboboxPortal>
+    </ComboboxRoot>
+    <output data-testid="picked">{picked}</output>
+  </form>
+}

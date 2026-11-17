@@ -1,0 +1,97 @@
+// An input with suggestions: its text is the value, and the options only help to fill it in. It is Combobox
+// underneath (InputListRoot in ../combobox/combobox.rx, with the same list navigation): the parts read the
+// `combobox` context, so a custom part imports `combobox` and the `combobox*` props functions from there.
+import { InputListRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator, AutocompleteMode } from "../combobox/combobox.rx"
+import { DivProps, ButtonProps, SpanProps, InputProps } from "../internal/types.rx"
+
+export type AutocompleteRootProps = {
+  // The input's text.
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+  // "list" (default) filters the suggestions by what was typed; "inline" shows the highlighted suggestion in the
+  // input; "both" does both; "none" neither (the suggestions are static).
+  mode?: AutocompleteMode
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // Whether a suggestion labelled `label` matches what was typed. Default: case- and accent-insensitive "contains".
+  filter?: (label: string, query: string) => boolean
+  // Highlight the first matching suggestion as the user types. Default: false.
+  autoHighlight?: boolean
+  // Whether the arrow keys go from the last suggestion back to the input, and on to the first. Default: true.
+  loop?: boolean
+  // Whether a click in the input opens the list. Default: false.
+  openOnInputClick?: boolean
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  children?: View
+}
+
+export component AutocompleteRoot(props: AutocompleteRootProps) {
+  <InputListRoot kind="autocomplete" mode={props.mode} inputValue={props.value} defaultInputValue={props.defaultValue ?? ""} onInputValueChange={props.onValueChange} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} filter={props.filter} autoHighlight={props.autoHighlight} loop={props.loop} openOnInputClick={props.openOnInputClick ?? false} disabled={props.disabled} readOnly={props.readOnly} required={props.required}>
+    {props.children}
+  </InputListRoot>
+}
+
+// The text input; give it a `name` to submit its text with a <form>.
+export component AutocompleteInput(props: InputProps) {
+  <ComboboxInput {...props} />
+}
+
+export component AutocompleteTrigger({ children, ...rest }: ButtonProps) {
+  <ComboboxTrigger {...rest}>{children}</ComboboxTrigger>
+}
+
+export component AutocompleteClear({ keepMounted, children, ...rest }: { keepMounted?: boolean } & ButtonProps) {
+  <ComboboxClear keepMounted={keepMounted} {...rest}>{children}</ComboboxClear>
+}
+
+export component AutocompleteValue({ placeholder, children, ...rest }: { placeholder?: string } & SpanProps) {
+  <ComboboxValue placeholder={placeholder} {...rest}>{children}</ComboboxValue>
+}
+
+export component AutocompletePortal(props: { children?: View }) {
+  <ComboboxPortal>{props.children}</ComboboxPortal>
+}
+
+export component AutocompletePositioner({ children, ...rest }: { side?: "top" | "bottom" | "left" | "right"; align?: "start" | "center" | "end"; sideOffset?: number; alignOffset?: number; collisionPadding?: number } & DivProps) {
+  <ComboboxPositioner {...rest}>{children}</ComboboxPositioner>
+}
+
+export component AutocompletePopup({ children, ...rest }: DivProps) {
+  <ComboboxPopup {...rest}>{children}</ComboboxPopup>
+}
+
+export component AutocompleteList({ children, ...rest }: DivProps) {
+  <ComboboxList {...rest}>{children}</ComboboxList>
+}
+
+// A suggestion. Choosing it fills the input with its label: `label`, else its text.
+// (Props pass through whole and `children` is read in the markup: destructuring it here would build the
+// children before ComboboxItem provides its context.)
+export component AutocompleteItem(props: { value: string; label?: string; disabled?: boolean } & DivProps) {
+  <ComboboxItem {...props}>{props.children}</ComboboxItem>
+}
+
+// Props pass through whole, as for AutocompleteItem: ComboboxGroup provides a context its children read.
+export component AutocompleteGroup(props: DivProps) {
+  <ComboboxGroup {...props}>{props.children}</ComboboxGroup>
+}
+
+export component AutocompleteGroupLabel({ children, ...rest }: DivProps) {
+  <ComboboxGroupLabel {...rest}>{children}</ComboboxGroupLabel>
+}
+
+export component AutocompleteEmpty({ children, ...rest }: DivProps) {
+  <ComboboxEmpty {...rest}>{children}</ComboboxEmpty>
+}
+
+export component AutocompleteStatus({ children, ...rest }: DivProps) {
+  <ComboboxStatus {...rest}>{children}</ComboboxStatus>
+}
+
+export component AutocompleteSeparator(props: DivProps) {
+  <ComboboxSeparator {...props} />
+}

@@ -1,0 +1,20 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectPortal, SelectPositioner, SelectPopup, SelectItem, SelectItemText, SelectItemIndicator } from "../select.rx"
+
+export default component Fixture() {
+  source picked := ""
+  <form data-testid="form">
+    <SelectRoot multiple name="toppings" defaultValues={["cheese"]} onValuesChange={(next) => { picked := next.join(",") }}>
+      <SelectTrigger data-testid="trigger"><SelectValue data-testid="value" placeholder="None" /></SelectTrigger>
+      <SelectPortal>
+        <SelectPositioner>
+          <SelectPopup>
+            <SelectItem value="cheese"><SelectItemIndicator data-testid="cheese-indicator">✓</SelectItemIndicator><SelectItemText>Cheese</SelectItemText></SelectItem>
+            <SelectItem value="ham">Ham</SelectItem>
+            <SelectItem value="olives">Olives</SelectItem>
+          </SelectPopup>
+        </SelectPositioner>
+      </SelectPortal>
+    </SelectRoot>
+    <output data-testid="picked">{picked}</output>
+  </form>
+}

@@ -1,0 +1,42 @@
+import { ComboboxRoot, ComboboxInput, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `city=${values.city}` }}>
+    <FieldRoot name="city">
+      <FieldLabel>City</FieldLabel>
+      <ComboboxRoot required>
+        <ComboboxInput />
+        <ComboboxPortal>
+          <ComboboxPositioner>
+            <ComboboxPopup>
+              <ComboboxList>
+                <ComboboxItem value="ams">Amsterdam</ComboboxItem>
+                <ComboboxItem value="ber">Berlin</ComboboxItem>
+              </ComboboxList>
+            </ComboboxPopup>
+          </ComboboxPositioner>
+        </ComboboxPortal>
+      </ComboboxRoot>
+      <FieldDescription data-testid="city-description">Where you live.</FieldDescription>
+      <FieldError data-testid="city-error">Choose a city</FieldError>
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <ComboboxRoot>
+        <ComboboxInput />
+        <ComboboxPortal>
+          <ComboboxPositioner>
+            <ComboboxPopup>
+              <ComboboxList><ComboboxItem value="x">X</ComboboxItem></ComboboxList>
+            </ComboboxPopup>
+          </ComboboxPositioner>
+        </ComboboxPortal>
+      </ComboboxRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

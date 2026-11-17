@@ -1,0 +1,491 @@
+import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
+import { createFocusScope, createFloating, createRovingFocus, createScrollLock, focusElement, clickElement } from "../internal/dom.js"
+import { createArrow } from "../internal/overlay.js"
+import { createTypeahead, elementText, itemValue } from "../internal/listbox.js"
+import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { field, fieldControlProps } from "../field/field.rx"
+import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+
+// A value and the text that names it: what SelectValue shows for a value whose item isn't rendered.
+export type SelectItemLabel = { value: string; label: string }
+
+export type SelectOpenFocus = "container" | "first-item" | "last-item" | "current-item"
+
+export type SelectContext = PopupState & {
+  listboxId: string
+  multiple: boolean
+  // The selected values: none or one, or any number when `multiple`.
+  selected: string[]
+  // What names each value: the `items` prop, then what each mounted item registered.
+  labels: SelectItemLabel[]
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  // Where focus goes when the popup opens (`current-item` is the selected item, else the first).
+  openFocus: SelectOpenFocus
+  openWith: (focus: SelectOpenFocus) => void
+  // Selects `value` (single: and closes), or toggles it (multiple).
+  choose: (value: string) => void
+  // Typeahead: on the closed trigger it selects the match, in the open popup it focuses it.
+  typeClosed: (key: string) => void
+  typeOpen: (key: string) => void
+  resetTypeahead: () => void
+  // Focus for an enclosing Field: in while on the trigger or in the popup, out once it leaves both.
+  fieldFocus: () => void
+  fieldBlur: (next: Node | null) => void
+  registerLabel: (value: string, label: string) => void
+  unregisterLabel: (value: string) => void
+}
+
+export context select: SelectContext
+
+export type SelectRootProps = {
+  // Single selection: the selected value, null for none.
+  value?: string | null
+  defaultValue?: string | null
+  onValueChange?: (value: string | null) => void
+  // Any number of values may be selected; they are then `values`, `defaultValues` and `onValuesChange`.
+  multiple?: boolean
+  values?: string[]
+  defaultValues?: string[]
+  onValuesChange?: (values: string[]) => void
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  disabled?: boolean
+  // The popup can be opened and browsed, but nothing can be selected.
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot) the select submits its value with a <form>; with `multiple`, one
+  // entry per selected value.
+  name?: string
+  // Whether the page scrolls while the popup is open. Default: true (it doesn't).
+  modal?: boolean
+  // The label of each value, for SelectValue before an item has rendered (items render hidden, so this is only
+  // needed when a label must be known without the items, or differs from the item's text).
+  items?: SelectItemLabel[]
+  children?: View
+}
+
+fn labelFor(labels: SelectItemLabel[], value: string): string => labels.find((entry) => entry.value == value)?.label ?? value
+
+export component SelectRoot(props: SelectRootProps) {
+  f = use field
+  source single: string | null := peek(props.defaultValue ?? null)
+  source many: string[] := peek([...(props.defaultValues ?? [])])
+  source registered: SelectItemLabel[] := []
+  source openFocus: SelectOpenFocus := "container"
+  isMultiple = props.multiple ?? false
+  currentSingle = props.value != undefined ? props.value : single
+  selected = isMultiple ? props.values ?? many : currentSingle == null ? [] : [currentSingle]
+  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+  isReadOnly = props.readOnly ?? false
+  isRequired = props.required ?? false
+  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
+  listboxId = createId("select-listbox")
+  labels = [...(props.items ?? []), ...registered]
+  inputName = props.name ?? f?.name
+  [match, resetMatch] = createTypeahead()
+
+  action openWith(focus: SelectOpenFocus) {
+    if (isDisabled) { return }
+    openFocus := focus
+    state.setOpen(true)
+  }
+  action choose(value: string) {
+    if (isDisabled || isReadOnly) { return }
+    if (isMultiple) {
+      let next = selected.includes(value) ? selected.filter((other) => other != value) : [...selected, value]
+      many := next
+      if (props.onValuesChange) { props.onValuesChange(next) }
+      return
+    }
+    if (currentSingle != value) {
+      single := value
+      if (props.onValueChange) { props.onValueChange(value) }
+    }
+    state.setOpen(false)
+  }
+  action typeClosed(key: string) {
+    if (isDisabled || isReadOnly || isMultiple) { return }
+    let found = itemValue(match(state.popup, key, currentSingle ?? undefined))
+    if (found != undefined) { choose(found) }
+  }
+  action typeOpen(key: string) {
+    focusElement(match(state.popup, key, undefined))
+  }
+  action resetTypeahead() { resetMatch() }
+  action fieldFocus() { if (f) { f.setFocused(true) } }
+  action fieldBlur(next: Node | null) {
+    let inside = (state.popup != undefined && state.popup.contains(next)) || (state.trigger != undefined && state.trigger.contains(next))
+    if (f && !inside) { f.setFocused(false) }
+  }
+  action registerLabel(value: string, label: string) {
+    registered := old => [...old.filter((entry) => entry.value != value), { value: value, label: label }]
+  }
+  action unregisterLabel(value: string) {
+    registered := old => old.filter((entry) => entry.value != value)
+  }
+  action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+
+  _scope = createFocusScope(state.open, state.popup, false, openFocus)
+  _lock = createScrollLock(state.open && (props.modal ?? true))
+
+  effect (selected) { if (f) { f.setValue(isMultiple ? $0 : $0.length > 0 ? $0[0] : null) } }
+
+  provide select = {
+    ...state,
+    listboxId: listboxId,
+    multiple: isMultiple,
+    selected: selected,
+    labels: labels,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    openFocus: openFocus,
+    openWith: openWith,
+    choose: choose,
+    typeClosed: typeClosed,
+    typeOpen: typeOpen,
+    resetTypeahead: resetTypeahead,
+    fieldFocus: fieldFocus,
+    fieldBlur: fieldBlur,
+    registerLabel: registerLabel,
+    unregisterLabel: unregisterLabel,
+  }
+
+  {props.children}
+  {if inputName != undefined || f != undefined {
+    <input hidden aria-hidden="true" tabindex="-1" name={isMultiple ? undefined : inputName} value={selected.join(",")} required={isRequired} disabled={isDisabled} ref={setInput} />
+  }}
+  {if isMultiple && inputName != undefined {
+    {for entry in selected {
+      <input type="hidden" name={inputName} value={entry} disabled={isDisabled} />
+    }}
+  }}
+}
+
+// The state attributes the trigger, value and icon share.
+fn selectState(ref c: SelectContext): PartProps {
+  {
+    "data-popup-open": c.open ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-readonly": c.readOnly ? "" : undefined,
+    "data-required": c.required ? "" : undefined,
+    "data-placeholder": c.selected.length == 0 ? "" : undefined,
+  }
+}
+
+export fn selectTrigger(ref c: SelectContext): PartProps {
+  action press() {
+    if (c.open) { c.setOpen(false) } else { c.openWith(c.selected.length > 0 ? "current-item" : "container") }
+  }
+  action keyDown(event: KeyboardEvent) {
+    if (event.key == "ArrowDown" || event.key == "Enter" || event.key == " ") {
+      event.preventDefault()
+      if (!c.open) { c.openWith("current-item") }
+    } else if (event.key == "ArrowUp") {
+      event.preventDefault()
+      if (!c.open) { c.openWith(c.selected.length > 0 ? "current-item" : "last-item") }
+    } else if (!event.ctrlKey && !event.metaKey && !event.altKey && !c.open) {
+      c.typeClosed(event.key)
+    }
+  }
+  action focus() { c.fieldFocus() }
+  action blur(event: FocusEvent & { relatedTarget: Node | null }) {
+    c.resetTypeahead()
+    c.fieldBlur(event.relatedTarget)
+  }
+  state = selectState(c)
+  {
+    type: "button",
+    role: "combobox",
+    "aria-haspopup": "listbox",
+    "aria-expanded": c.open ? "true" : "false",
+    "aria-controls": c.open ? c.listboxId : undefined,
+    "aria-readonly": c.readOnly ? "true" : undefined,
+    "aria-required": c.required ? "true" : undefined,
+    disabled: c.disabled ? true : undefined,
+    ref: c.setTrigger,
+    onClick: press,
+    onKeyDown: keyDown,
+    onFocus: focus,
+    onBlur: blur,
+    ...state,
+  }
+}
+
+export component SelectTrigger({ children, ...rest }: ButtonProps) {
+  c = use select
+  f = use field
+  // The field's focus handlers are left out: the trigger reports focus through the select, which counts the
+  // popup as inside.
+  fieldProps = fieldControlProps(f)
+  inField = withoutHandlers(fieldProps, true)
+  own = selectTrigger(c)
+  withField = mergeProps(inField, own)
+  merged = mergeProps(withField, rest)
+  <button {...merged}>{children}</button>
+}
+
+export type SelectValueProps = {
+  // Shown while nothing is selected (the value then carries `data-placeholder`).
+  placeholder?: string
+} & SpanProps
+
+// The selected item's label (labels joined by ", " when `multiple`), or the placeholder.
+export component SelectValue({ placeholder, children, ...rest }: SelectValueProps) {
+  c = use select
+  text = c.selected.length == 0 ? placeholder ?? "" : c.selected.map((value) => labelFor(c.labels, value)).join(", ")
+  state = selectState(c)
+  merged = mergeProps(state, rest)
+  <span {...merged}>{text}</span>
+}
+
+// A decoration beside the value (a chevron), hidden from assistive technology.
+export component SelectIcon({ children, ...rest }: SpanProps) {
+  c = use select
+  state = selectState(c)
+  merged = mergeProps({ "aria-hidden": "true", ...state }, rest)
+  <span {...merged}>{children}</span>
+}
+
+// Renders its children at the end of <body>. They stay mounted, hidden, while the select is closed: the items
+// name the selected value and answer typeahead on the closed trigger.
+export component SelectPortal(props: { children?: View }) {
+  portal { {props.children} }
+}
+
+export component SelectBackdrop({ children, ...rest }: DivProps) {
+  c = use select
+  state = popupStateAttributes(c)
+  merged = mergeProps({ role: "presentation", ...state }, rest)
+  {if c.mounted {
+    <div {...merged}>{children}</div>
+  }}
+}
+
+// Where the positioner put the popup, for the popup and the arrow inside it.
+export type SelectPositionerContext = {
+  side: "top" | "bottom" | "left" | "right"
+  align: "start" | "center" | "end"
+  arrowUncentered: boolean
+  setArrow: (element: HTMLElement) => void
+}
+
+export context selectPositioner: SelectPositionerContext
+
+export type SelectPositionerProps = {
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
+  sideOffset?: number
+  alignOffset?: number
+  collisionPadding?: number
+} & DivProps
+
+// Positions the popup against the trigger, and hides it while the select is closed. Carries `data-side` and
+// `data-align`: where it ended up.
+export component SelectPositioner(props: SelectPositionerProps) {
+  c = use select
+  source arrow: HTMLElement | undefined := undefined
+  action setArrow(element: HTMLElement) { arrow := element }
+  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
+    side: props.side ?? "bottom",
+    align: props.align ?? "start",
+    sideOffset: props.sideOffset ?? 0,
+    alignOffset: props.alignOffset ?? 0,
+    collisionPadding: props.collisionPadding ?? 5,
+  })
+  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
+  provide selectPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
+  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
+  state = popupStateAttributes(c)
+  merged = mergeProps({
+    role: "presentation",
+    hidden: c.mounted ? undefined : true,
+    "data-side": usedSide,
+    "data-align": usedAlign,
+    ref: c.setPositioner,
+    ...state,
+  }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn selectPopup(ref c: SelectContext): PartProps {
+  _roving = createRovingFocus(c.popup, { orientation: "vertical", loop: false, typeahead: false, tabStop: false })
+  action keyDown(event: KeyboardEvent) {
+    // Tab leaves the select, so it closes: focus returns to the trigger and moves on from there.
+    if (event.key == "Tab") {
+      c.setOpen(false)
+    } else if (!event.ctrlKey && !event.metaKey && !event.altKey) {
+      c.typeOpen(event.key)
+    }
+  }
+  action focusOut(event: FocusEvent & { relatedTarget: Node | null }) { c.fieldBlur(event.relatedTarget) }
+  state = popupStateAttributes(c)
+  {
+    id: c.listboxId,
+    role: "listbox",
+    tabindex: "-1",
+    "aria-multiselectable": c.multiple ? "true" : undefined,
+    "aria-readonly": c.readOnly ? "true" : undefined,
+    ref: c.setPopup,
+    onKeyDown: keyDown,
+    onFocusOut: focusOut,
+    ...state,
+  }
+}
+
+export component SelectPopup({ children, ...rest }: DivProps) {
+  c = use select
+  p = use selectPositioner
+  own = selectPopup(c)
+  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
+// by `data-side`.
+export component SelectArrow({ children, ...rest }: DivProps) {
+  c = use select
+  p = use selectPositioner
+  state = popupStateAttributes(c)
+  merged = mergeProps({
+    "aria-hidden": "true",
+    "data-side": p.side,
+    "data-align": p.align,
+    "data-uncentered": p.arrowUncentered ? "" : undefined,
+    ref: p.setArrow,
+    ...state,
+  }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type SelectItemContext = {
+  selected: boolean
+  disabled: boolean
+  highlighted: boolean
+  setText: (element: HTMLElement) => void
+}
+
+export context selectItemState: SelectItemContext
+
+export type SelectItemProps = {
+  value: string
+  // The text that names the value, in SelectValue and for typeahead. Default: SelectItemText's text, else the
+  // item's.
+  label?: string
+  disabled?: boolean
+} & DivProps
+
+export fn selectItem(ref c: SelectContext, ref value: string, ref label: string | undefined, ref disabled: boolean, ref highlighted: boolean, ref onHighlight: ((highlighted: boolean) => void)): PartProps {
+  isSelected = c.selected.includes(value)
+  action focus() { onHighlight(true) }
+  action blur() { onHighlight(false) }
+  action pointerMove(event: PointerEvent & { currentTarget: HTMLElement }) {
+    if (!disabled) { focusElement(event.currentTarget) }
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    if (event.key == "Enter" || event.key == " ") {
+      event.preventDefault()
+      clickElement(event.currentTarget)
+    }
+  }
+  action click() { if (!disabled) { c.choose(value) } }
+  {
+    role: "option",
+    tabindex: "-1",
+    "aria-selected": isSelected ? "true" : "false",
+    "aria-disabled": disabled ? "true" : undefined,
+    "data-rs-ui-item": "",
+    "data-rs-ui-current": isSelected ? "" : undefined,
+    "data-value": value,
+    "data-label": label,
+    "data-selected": isSelected ? "" : undefined,
+    "data-highlighted": highlighted ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    onFocus: focus,
+    onBlur: blur,
+    onPointerMove: pointerMove,
+    onKeyDown: keyDown,
+    onClick: click,
+  }
+}
+
+export component SelectItem(props: SelectItemProps) {
+  c = use select
+  source highlighted: boolean := false
+  source element: HTMLElement | undefined := undefined
+  source textElement: HTMLElement | undefined := undefined
+  isDisabled = props.disabled ?? false
+  isSelected = c.selected.includes(props.value)
+  action highlight(next: boolean) { highlighted := next }
+  action setElement(el: HTMLElement) { element := el }
+  action setText(el: HTMLElement) { textElement := el }
+
+  // Register the value's label once the item (and its text) are in the document.
+  effect (element) {
+    if ($0) {
+      let value = peek(props.value)
+      c.registerLabel(value, peek(props.label) ?? elementText(peek(textElement) ?? $0))
+      return () => { c.unregisterLabel(value) }
+    }
+  }
+
+  provide selectItemState = { selected: isSelected, disabled: isDisabled, highlighted: highlighted, setText: setText }
+
+  { value, label, disabled, children, ...rest } = props
+  own = selectItem(c, value, label, isDisabled, highlighted, highlight)
+  withRef = mergeProps(own, { ref: setElement })
+  merged = mergeProps(withRef, withoutHandlers(rest, isDisabled))
+  <div {...merged}>{children}</div>
+}
+
+// The item's text: what SelectValue shows for it, when the item holds more than its label (an indicator).
+export component SelectItemText({ children, ...rest }: SpanProps) {
+  item = use selectItemState
+  action setText(element: HTMLElement) { item.setText(element) }
+  merged = mergeProps({ ref: setText }, rest)
+  <span {...merged}>{children}</span>
+}
+
+// Shown while its item is selected, unless `keepMounted`.
+export component SelectItemIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
+  item = use selectItemState
+  merged = mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
+  {if item.selected || keepMounted {
+    <span {...merged}>{children}</span>
+  }}
+}
+
+export type SelectGroupContext = {
+  labelId: string | undefined
+  setLabelId: (id: string | undefined) => void
+}
+
+export context selectGroup: SelectGroupContext
+
+export component SelectGroup(props: DivProps) {
+  source labelId: string | undefined := undefined
+  action setLabelId(id: string | undefined) { labelId := id }
+  provide selectGroup = { labelId: labelId, setLabelId: setLabelId }
+  { children, ...rest } = props
+  merged = mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component SelectGroupLabel({ children, ...rest }: DivProps) {
+  group = use selectGroup
+  id = createId("select-group-label")
+  effect () {
+    group.setLabelId(id)
+    return () => { group.setLabelId(undefined) }
+  }
+  merged = mergeProps({ id: id }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component SelectSeparator(props: DivProps) {
+  merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
+  <div {...merged} />
+}

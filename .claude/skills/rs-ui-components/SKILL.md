@@ -56,8 +56,12 @@ Conventions the existing families follow, and consumers will rely on:
 1. **Provide before anything reads `children`.** In a component that has `provide`, take `props` whole, write
    the `provide`, and only then destructure. Destructuring `children` first (in the parameter list too)
    instantiates the children before the context exists: it compiles, then throws `no provision for …` at run time.
+   The same applies to a thin wrapper around a providing part: take `props` whole and write
+   `<Inner {...props}>{props.children}</Inner>`. If the context has a default there is no error at all; the
+   children just read the default.
 2. **Render children explicitly** beneath a `provide`: `{children}`. Children that arrive only through a spread
-   are invisible to the checker (`CONTEXT_NOT_FOUND`).
+   are invisible to the checker (`CONTEXT_NOT_FOUND`), and a self-closing `<Inner {...props} />` passes none: its
+   own empty children win over the spread's.
 3. **A handler body goes in a named `action`** unless it is written directly on an element
    (`onClick={() => { … }}`). In an object literal, a `ref`, or an argument, a statement-bodied arrow is
    `REACTIVE_WRITE_IN_OWNED_SCOPE`. Element refs are actions too: `action setPopup(element: HTMLElement) { popup := element }`, passed as `ref: setPopup`.

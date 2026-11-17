@@ -1,0 +1,55 @@
+import { AutocompleteRoot, AutocompleteInput, AutocompleteTrigger, AutocompleteClear, AutocompleteValue, AutocompletePortal, AutocompletePositioner, AutocompletePopup, AutocompleteList, AutocompleteItem, AutocompleteGroup, AutocompleteGroupLabel, AutocompleteEmpty, AutocompleteStatus, AutocompleteSeparator } from "../autocomplete.rx"
+
+// One autocomplete per mode, with the same suggestions.
+component Tags(props: { mode: "list" | "both" | "inline" | "none"; label: string; name: string }) {
+  source text := ""
+  <div>
+    <AutocompleteRoot mode={props.mode} value={text} onValueChange={(next) => { text := next }}>
+      <AutocompleteInput aria-label={props.label} name={props.name} />
+      <AutocompleteTrigger aria-label={`${props.label} suggestions`}>▾</AutocompleteTrigger>
+      <AutocompleteClear aria-label={`Clear ${props.label}`}>×</AutocompleteClear>
+      <AutocompleteValue data-testid={`${props.name}-value`} placeholder="empty" />
+      <AutocompletePortal>
+        <AutocompletePositioner>
+          <AutocompletePopup>
+            <AutocompleteStatus>Suggestions</AutocompleteStatus>
+            <AutocompleteEmpty data-testid={`${props.name}-empty`}>No suggestions</AutocompleteEmpty>
+            <AutocompleteList>
+              <AutocompleteGroup>
+                <AutocompleteGroupLabel>Features</AutocompleteGroupLabel>
+                <AutocompleteItem value="feature">feature</AutocompleteItem>
+                <AutocompleteItem value="fix">fix</AutocompleteItem>
+              </AutocompleteGroup>
+              <AutocompleteSeparator />
+              <AutocompleteItem value="docs">docs</AutocompleteItem>
+              <AutocompleteItem value="refactor" disabled>refactor</AutocompleteItem>
+            </AutocompleteList>
+          </AutocompletePopup>
+        </AutocompletePositioner>
+      </AutocompletePortal>
+    </AutocompleteRoot>
+    <output data-testid={`${props.name}-text`}>{text}</output>
+  </div>
+}
+
+export default component Fixture() {
+  <form data-testid="form">
+    <Tags mode="list" label="List" name="list" />
+    <Tags mode="both" label="Both" name="both" />
+    <Tags mode="inline" label="Inline" name="inline" />
+    <Tags mode="none" label="None" name="none" />
+    <AutocompleteRoot defaultValue="draft">
+      <AutocompleteInput aria-label="Uncontrolled" name="status" />
+      <AutocompletePortal>
+        <AutocompletePositioner>
+          <AutocompletePopup>
+            <AutocompleteList>
+              <AutocompleteItem value="draft">draft</AutocompleteItem>
+              <AutocompleteItem value="done">done</AutocompleteItem>
+            </AutocompleteList>
+          </AutocompletePopup>
+        </AutocompletePositioner>
+      </AutocompletePortal>
+    </AutocompleteRoot>
+  </form>
+}

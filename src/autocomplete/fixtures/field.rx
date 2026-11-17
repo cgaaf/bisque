@@ -1,0 +1,28 @@
+import { AutocompleteRoot, AutocompleteInput, AutocompletePortal, AutocompletePositioner, AutocompletePopup, AutocompleteList, AutocompleteItem } from "../autocomplete.rx"
+import { FieldRoot, FieldLabel, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form onFormSubmit={(values) => { submitted := `tag=${values.tag}` }}>
+    <FieldRoot name="tag">
+      <FieldLabel>Tag</FieldLabel>
+      <AutocompleteRoot required>
+        <AutocompleteInput />
+        <AutocompletePortal>
+          <AutocompletePositioner>
+            <AutocompletePopup>
+              <AutocompleteList>
+                <AutocompleteItem value="alpha">alpha</AutocompleteItem>
+                <AutocompleteItem value="beta">beta</AutocompleteItem>
+              </AutocompleteList>
+            </AutocompletePopup>
+          </AutocompletePositioner>
+        </AutocompletePortal>
+      </AutocompleteRoot>
+      <FieldError data-testid="tag-error">Enter a tag</FieldError>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

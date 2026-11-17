@@ -1,0 +1,755 @@
+// An input that filters a list of options. Focus stays in the input: the highlighted option is named by
+// `aria-activedescendant`, not focused. Autocomplete (../autocomplete) is the same interaction where the input's
+// text is the value: both are built on InputListRoot below, and its parts read the `combobox` context.
+import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
+import { createPresence, createDismiss, createFloating, focusElement } from "../internal/dom.js"
+import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, elementText, matchesFilter } from "../internal/listbox.js"
+import { popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { field, fieldControlProps } from "../field/field.rx"
+import { DivProps, ButtonProps, SpanProps, InputProps, PartProps } from "../internal/types.rx"
+
+// A value and the text that names it: what the input and ComboboxValue show for a selected value.
+export type ComboboxItemLabel = { value: string; label: string }
+
+// How an autocomplete completes what is typed: "list" filters the options; "inline" shows the highlighted
+// option's label in the input; "both" does both; "none" neither. A combobox is always "list".
+export type AutocompleteMode = "list" | "both" | "inline" | "none"
+
+export type ComboboxContext = PopupState & {
+  kind: "combobox" | "autocomplete"
+  mode: AutocompleteMode
+  listId: string
+  multiple: boolean
+  // The selected values (none for an autocomplete).
+  selected: string[]
+  labels: ComboboxItemLabel[]
+  // What the input shows.
+  inputValue: string
+  // What the options are filtered by: "" (everything) while the input shows the selection.
+  query: string
+  filtering: boolean
+  filter: ((label: string, query: string) => boolean) | undefined
+  // The id of the highlighted option, the input's `aria-activedescendant`.
+  activeId: string | undefined
+  // How many options pass the filter.
+  visibleCount: number
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  openOnInputClick: boolean
+  // What the popup is positioned against: ComboboxChips when there is one, else the input.
+  anchor: HTMLElement | undefined
+  input: HTMLElement | undefined
+  list: HTMLElement | undefined
+  setInput: (element: HTMLElement) => void
+  setList: (element: HTMLElement) => void
+  setChips: (element: HTMLElement) => void
+  setClear: (element: HTMLElement) => void
+  // The user typed `text`.
+  changeInput: (text: string) => void
+  // Opens with an option highlighted: the selected one, else the first or last.
+  openAt: (direction: "next" | "previous") => void
+  move: (direction: "next" | "previous") => void
+  highlight: (id: string | undefined) => void
+  // Enter in the input: chooses the highlighted option.
+  enter: (event: KeyboardEvent) => void
+  choose: (value: string, label: string) => void
+  remove: (value: string) => void
+  removeLast: () => void
+  clear: () => void
+  addVisible: (count: number) => void
+  registerLabel: (value: string, label: string) => void
+  unregisterLabel: (value: string) => void
+}
+
+export context combobox: ComboboxContext
+
+// Everything ComboboxRoot and AutocompleteRoot take, for the root both of them render.
+export type InputListRootProps = {
+  kind: "combobox" | "autocomplete"
+  mode?: AutocompleteMode
+  value?: string | null
+  defaultValue?: string | null
+  onValueChange?: (value: string | null) => void
+  multiple?: boolean
+  values?: string[]
+  defaultValues?: string[]
+  onValuesChange?: (values: string[]) => void
+  inputValue?: string
+  defaultInputValue?: string
+  onInputValueChange?: (value: string) => void
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  filter?: (label: string, query: string) => boolean
+  autoHighlight?: boolean
+  loop?: boolean
+  openOnInputClick?: boolean
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  name?: string
+  items?: ComboboxItemLabel[]
+  children?: View
+}
+
+fn labelFor(labels: ComboboxItemLabel[], value: string): string => labels.find((entry) => entry.value == value)?.label ?? value
+
+// The root ComboboxRoot and AutocompleteRoot render. Not meant to be used directly.
+export component InputListRoot(props: InputListRootProps) {
+  f = use field
+  source single: string | null := peek(props.defaultValue ?? null)
+  source many: string[] := peek([...(props.defaultValues ?? [])])
+  // What the user typed; undefined while a single combobox's input shows its selection.
+  source typed: string | undefined := peek(props.defaultInputValue)
+  // Inline completion: the highlighted option's label, shown in the input until the user types again.
+  source preview: string | undefined := undefined
+  source activeId: string | undefined := undefined
+  source visibleCount := 0
+  source registered: ComboboxItemLabel[] := []
+  source uncontrolledOpen := peek(props.defaultOpen ?? false)
+  source input: HTMLElement | undefined := undefined
+  source trigger: HTMLElement | undefined := undefined
+  source positioner: HTMLElement | undefined := undefined
+  source popup: HTMLElement | undefined := undefined
+  source list: HTMLElement | undefined := undefined
+  source chips: HTMLElement | undefined := undefined
+  source clearButton: HTMLElement | undefined := undefined
+
+  isAutocomplete = props.kind == "autocomplete"
+  mode = isAutocomplete ? props.mode ?? "list" : "list"
+  isMultiple = !isAutocomplete && (props.multiple ?? false)
+  currentSingle = props.value != undefined ? props.value : single
+  selected = isAutocomplete ? [] : isMultiple ? props.values ?? many : currentSingle == null ? [] : [currentSingle]
+  labels = [...(props.items ?? []), ...registered]
+  selectedLabel = !isAutocomplete && !isMultiple && currentSingle != null ? labelFor(labels, currentSingle) : ""
+  shownText = props.inputValue ?? typed ?? selectedLabel
+  inputValue = preview ?? shownText
+  filtering = mode == "list" || mode == "both"
+  showsSelection = !isAutocomplete && !isMultiple && currentSingle != null && shownText == selectedLabel
+  query = filtering && !showsSelection ? shownText : ""
+  isOpen = props.open ?? uncontrolledOpen
+  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+  isReadOnly = props.readOnly ?? false
+  isRequired = props.required ?? false
+  loop = props.loop ?? true
+  listId = createId("combobox-list")
+  hiddenName = isAutocomplete ? undefined : props.name ?? f?.name
+
+  action reportInput(text: string) {
+    if (props.onInputValueChange && text != shownText) { props.onInputValueChange(text) }
+  }
+  // Opens or closes, leaving the input's text alone.
+  action writeOpen(next: boolean) {
+    if (next == isOpen) { return }
+    uncontrolledOpen := next
+    activeId := undefined
+    preview := undefined
+    if (props.onOpenChange) { props.onOpenChange(next) }
+  }
+  // Closing without choosing puts a single combobox's selection back in the input.
+  action setOpen(next: boolean) {
+    if (next && (isDisabled || isReadOnly)) { return }
+    // Tested through a local: narrowing `typed` itself would type the write below as `string` (rx-tsc).
+    let editing = typed != undefined
+    if (!next && !isAutocomplete && !isMultiple && editing) {
+      typed := undefined
+      reportInput(selectedLabel)
+    }
+    writeOpen(next)
+  }
+  action dismiss() { setOpen(false) }
+  action setInput(element: HTMLElement) { input := element }
+  action setTrigger(element: HTMLElement) { trigger := element }
+  action setPositioner(element: HTMLElement) { positioner := element }
+  action setPopup(element: HTMLElement) { popup := element }
+  action setList(element: HTMLElement) { list := element }
+  action setChips(element: HTMLElement) { chips := element }
+  action setClear(element: HTMLElement) { clearButton := element }
+
+  action changeInput(text: string) {
+    if (isDisabled || isReadOnly) { return }
+    preview := undefined
+    typed := text
+    activeId := undefined
+    reportInput(text)
+    // Emptying a single combobox's input clears its selection, as in Base UI.
+    if (text == "" && !isAutocomplete && !isMultiple && currentSingle != null) {
+      single := null
+      if (props.onValueChange) { props.onValueChange(null) }
+    }
+    writeOpen(true)
+  }
+  // Highlights an option. Inline completion (modes "inline" and "both") follows the keyboard, not the pointer.
+  action activate(id: string | undefined, inline: boolean) {
+    activeId := id
+    scrollItemIntoView(list, id)
+    preview := inline && (mode == "inline" || mode == "both") && id != undefined ? itemLabel(list, id) : undefined
+  }
+  action highlight(id: string | undefined) { activate(id, false) }
+  action move(direction: "next" | "previous") {
+    activate(adjacentItemId(list, activeId, direction, loop), true)
+  }
+  action openAt(direction: "next" | "previous") {
+    if (isDisabled || isReadOnly) { return }
+    let current = itemIdByValue(list, selected.length > 0 ? selected[0] : undefined)
+    writeOpen(true)
+    activate(current ?? adjacentItemId(list, undefined, direction, loop), true)
+  }
+  action enter(event: KeyboardEvent) {
+    if (!isOpen) { return }
+    if (activeId != undefined) {
+      event.preventDefault()
+      clickItem(list, activeId)
+    } else if (isAutocomplete) {
+      writeOpen(false)
+    }
+  }
+  action choose(value: string, label: string) {
+    if (isDisabled || isReadOnly) { return }
+    preview := undefined
+    if (isAutocomplete) {
+      typed := label
+      reportInput(label)
+      writeOpen(false)
+    } else if (isMultiple) {
+      let next = selected.includes(value) ? selected.filter((other) => other != value) : [...selected, value]
+      many := next
+      if (props.onValuesChange) { props.onValuesChange(next) }
+      typed := ""
+      reportInput("")
+    } else {
+      if (currentSingle != value) {
+        single := value
+        if (props.onValueChange) { props.onValueChange(value) }
+      }
+      typed := undefined
+      reportInput(label)
+      writeOpen(false)
+    }
+  }
+  action remove(value: string) {
+    if (isDisabled || isReadOnly || !selected.includes(value)) { return }
+    let next = selected.filter((other) => other != value)
+    many := next
+    if (props.onValuesChange) { props.onValuesChange(next) }
+  }
+  action removeLast() {
+    if (selected.length > 0) { remove(selected[selected.length - 1]) }
+  }
+  action clear() {
+    if (isDisabled || isReadOnly) { return }
+    preview := undefined
+    activeId := undefined
+    if (isMultiple && selected.length > 0) {
+      many := []
+      if (props.onValuesChange) { props.onValuesChange([]) }
+    } else if (!isAutocomplete && !isMultiple && currentSingle != null) {
+      single := null
+      if (props.onValueChange) { props.onValueChange(null) }
+    }
+    typed := isAutocomplete || isMultiple ? "" : undefined
+    reportInput("")
+    focusElement(input)
+  }
+  action addVisible(count: number) { visibleCount := n => n + count }
+  action registerLabel(value: string, label: string) {
+    registered := old => [...old.filter((entry) => entry.value != value), { value: value, label: label }]
+  }
+  action unregisterLabel(value: string) {
+    registered := old => old.filter((entry) => entry.value != value)
+  }
+  action highlightFirst() { highlight(adjacentItemId(list, undefined, "next", false)) }
+  action setHiddenInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+
+  [mounted, status] = createPresence(isOpen, popup)
+  _dismiss = createDismiss(isOpen, [popup, input, trigger, chips, clearButton], dismiss)
+
+  // `autoHighlight`: once the options have been filtered for new input, the first one is highlighted.
+  effect (query) { if ((props.autoHighlight ?? false) && peek(isOpen) && $0 != "") { highlightFirst() } }
+  effect (selected, inputValue) {
+    if (f) { f.setValue(isAutocomplete ? $1 : isMultiple ? $0 : $0.length > 0 ? $0[0] : null) }
+  }
+
+  provide combobox = {
+    open: isOpen,
+    mounted: mounted,
+    status: status,
+    trigger: trigger,
+    positioner: positioner,
+    popup: popup,
+    setOpen: setOpen,
+    setTrigger: setTrigger,
+    setPositioner: setPositioner,
+    setPopup: setPopup,
+    kind: props.kind,
+    mode: mode,
+    listId: listId,
+    multiple: isMultiple,
+    selected: selected,
+    labels: labels,
+    inputValue: inputValue,
+    query: query,
+    filtering: filtering,
+    filter: props.filter,
+    activeId: activeId,
+    visibleCount: visibleCount,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    openOnInputClick: props.openOnInputClick ?? true,
+    anchor: chips ?? input,
+    input: input,
+    list: list,
+    setInput: setInput,
+    setList: setList,
+    setChips: setChips,
+    setClear: setClear,
+    changeInput: changeInput,
+    openAt: openAt,
+    move: move,
+    highlight: highlight,
+    enter: enter,
+    choose: choose,
+    remove: remove,
+    removeLast: removeLast,
+    clear: clear,
+    addVisible: addVisible,
+    registerLabel: registerLabel,
+    unregisterLabel: unregisterLabel,
+  }
+
+  {props.children}
+  {if hiddenName != undefined || (f != undefined && !isAutocomplete) {
+    <input hidden aria-hidden="true" tabindex="-1" name={isMultiple ? undefined : hiddenName} value={selected.join(",")} required={isRequired} disabled={isDisabled} ref={setHiddenInput} />
+  }}
+  {if isMultiple && hiddenName != undefined {
+    {for entry in selected {
+      <input type="hidden" name={hiddenName} value={entry} disabled={isDisabled} />
+    }}
+  }}
+}
+
+export type ComboboxRootProps = {
+  // Single selection: the selected value, null for none.
+  value?: string | null
+  defaultValue?: string | null
+  onValueChange?: (value: string | null) => void
+  // Any number of values may be selected; they are then `values`, `defaultValues` and `onValuesChange`.
+  multiple?: boolean
+  values?: string[]
+  defaultValues?: string[]
+  onValuesChange?: (values: string[]) => void
+  // The input's text. By default it shows the selected option's label (single) or what was typed (multiple).
+  inputValue?: string
+  defaultInputValue?: string
+  onInputValueChange?: (value: string) => void
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // Whether an option labelled `label` matches what was typed. Default: case- and accent-insensitive "contains".
+  filter?: (label: string, query: string) => boolean
+  // Highlight the first matching option as the user types. Default: false.
+  autoHighlight?: boolean
+  // Whether the arrow keys go from the last option back to the input, and on to the first. Default: true.
+  loop?: boolean
+  // Whether a click in the input opens the list. Default: true.
+  openOnInputClick?: boolean
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot) the selected value is submitted with a <form>; with `multiple`,
+  // one entry per value.
+  name?: string
+  // The label of each value, when it must be known before the option has rendered.
+  items?: ComboboxItemLabel[]
+  children?: View
+}
+
+export component ComboboxRoot(props: ComboboxRootProps) {
+  <InputListRoot kind="combobox" value={props.value} defaultValue={props.defaultValue} onValueChange={props.onValueChange} multiple={props.multiple} values={props.values} defaultValues={props.defaultValues} onValuesChange={props.onValuesChange} inputValue={props.inputValue} defaultInputValue={props.defaultInputValue} onInputValueChange={props.onInputValueChange} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} filter={props.filter} autoHighlight={props.autoHighlight} loop={props.loop} openOnInputClick={props.openOnInputClick} disabled={props.disabled} readOnly={props.readOnly} required={props.required} name={props.name} items={props.items}>
+    {props.children}
+  </InputListRoot>
+}
+
+// The state attributes the input, trigger, clear button and value share.
+fn comboboxState(ref c: ComboboxContext): PartProps {
+  {
+    "data-popup-open": c.open ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-readonly": c.readOnly ? "" : undefined,
+    "data-required": c.required ? "" : undefined,
+  }
+}
+
+export fn comboboxInput(ref c: ComboboxContext): PartProps {
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) { c.changeInput(event.currentTarget.value) }
+  action click() { if (c.openOnInputClick && !c.open) { c.setOpen(true) } }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+    if (event.key == "ArrowDown" || event.key == "ArrowUp") {
+      event.preventDefault()
+      let direction: "next" | "previous" = event.key == "ArrowDown" ? "next" : "previous"
+      if (c.open) { c.move(direction) } else { c.openAt(direction) }
+    } else if (event.key == "Enter") {
+      c.enter(event)
+    } else if (event.key == "Tab") {
+      if (c.open) { c.setOpen(false) }
+    } else if (event.key == "Backspace" && c.multiple && event.currentTarget.value == "") {
+      c.removeLast()
+    }
+  }
+  state = comboboxState(c)
+  {
+    type: "text",
+    role: "combobox",
+    autocomplete: "off",
+    "aria-autocomplete": c.mode,
+    "aria-expanded": c.open ? "true" : "false",
+    "aria-haspopup": "listbox",
+    "aria-controls": c.open ? c.listId : undefined,
+    "aria-activedescendant": c.open ? c.activeId : undefined,
+    "aria-readonly": c.readOnly ? "true" : undefined,
+    value: c.inputValue,
+    disabled: c.disabled ? true : undefined,
+    readonly: c.readOnly ? true : undefined,
+    ref: c.setInput,
+    onInput: input,
+    onClick: click,
+    onKeyDown: keyDown,
+    ...state,
+  }
+}
+
+export component ComboboxInput(props: InputProps) {
+  c = use combobox
+  f = use field
+  inField = fieldControlProps(f)
+  own = comboboxInput(c)
+  // An autocomplete's input is its value: it carries the name and the constraints the field validates.
+  action setFieldInput(element: HTMLInputElement) { if (f && c.kind == "autocomplete") { f.setInput(element) } }
+  forAutocomplete = c.kind == "autocomplete" ? { name: f?.name, required: c.required ? true : undefined, ref: setFieldInput } : {}
+  withField = mergeProps(mergeProps(inField, own), forAutocomplete)
+  merged = mergeProps(withField, props)
+  <input {...merged} />
+}
+
+export fn comboboxTrigger(ref c: ComboboxContext): PartProps {
+  action press() {
+    if (c.open) { c.setOpen(false) } else { c.setOpen(true) }
+    focusElement(c.input)
+  }
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  state = comboboxState(c)
+  {
+    type: "button",
+    tabindex: "-1",
+    "aria-haspopup": "listbox",
+    "aria-expanded": c.open ? "true" : "false",
+    "aria-controls": c.open ? c.listId : undefined,
+    disabled: c.disabled ? true : undefined,
+    ref: c.setTrigger,
+    onMouseDown: mouseDown,
+    onClick: press,
+    ...state,
+  }
+}
+
+export component ComboboxTrigger({ children, ...rest }: ButtonProps) {
+  c = use combobox
+  own = comboboxTrigger(c)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export fn comboboxClear(ref c: ComboboxContext): PartProps {
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  action press() { c.clear() }
+  state = comboboxState(c)
+  {
+    type: "button",
+    tabindex: "-1",
+    disabled: c.disabled ? true : undefined,
+    ref: c.setClear,
+    onMouseDown: mouseDown,
+    onClick: press,
+    ...state,
+  }
+}
+
+// Clears the selection and the input. Rendered only while there is something to clear, unless `keepMounted`.
+export component ComboboxClear({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & ButtonProps) {
+  c = use combobox
+  own = comboboxClear(c)
+  merged = mergeProps(own, rest)
+  {if keepMounted || c.selected.length > 0 || c.inputValue != "" {
+    <button {...merged}>{children}</button>
+  }}
+}
+
+export type ComboboxValueProps = {
+  // Shown while nothing is selected (the value then carries `data-placeholder`).
+  placeholder?: string
+} & SpanProps
+
+// The selected option's label (labels joined by ", " when `multiple`); an autocomplete's input text.
+export component ComboboxValue({ placeholder, children, ...rest }: ComboboxValueProps) {
+  c = use combobox
+  text = c.kind == "autocomplete" ? c.inputValue : c.selected.map((value) => labelFor(c.labels, value)).join(", ")
+  state = comboboxState(c)
+  merged = mergeProps({ "data-placeholder": text == "" ? "" : undefined, ...state }, rest)
+  <span {...merged}>{text == "" ? placeholder ?? "" : text}</span>
+}
+
+// Renders its children at the end of <body>. They stay mounted, hidden, while the list is closed, so the options
+// name the selected values.
+export component ComboboxPortal(props: { children?: View }) {
+  portal { {props.children} }
+}
+
+export type ComboboxPositionerProps = {
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
+  sideOffset?: number
+  alignOffset?: number
+  collisionPadding?: number
+} & DivProps
+
+// Positions the popup against the input (or ComboboxChips), and hides it while closed.
+export component ComboboxPositioner({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, collisionPadding = 5, children, ...rest }: ComboboxPositionerProps) {
+  c = use combobox
+  [usedSide, usedAlign] = createFloating(c.mounted, c.anchor, c.positioner, {
+    side: side,
+    align: align,
+    sideOffset: sideOffset,
+    alignOffset: alignOffset,
+    collisionPadding: collisionPadding,
+  })
+  state = popupStateAttributes(c)
+  merged = mergeProps({
+    role: "presentation",
+    hidden: c.mounted ? undefined : true,
+    "data-side": usedSide,
+    "data-align": usedAlign,
+    ref: c.setPositioner,
+    ...state,
+  }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn comboboxPopup(ref c: ComboboxContext): PartProps {
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  state = popupStateAttributes(c)
+  {
+    "data-empty": c.visibleCount == 0 ? "" : undefined,
+    ref: c.setPopup,
+    onMouseDown: mouseDown,
+    ...state,
+  }
+}
+
+export component ComboboxPopup({ children, ...rest }: DivProps) {
+  c = use combobox
+  own = comboboxPopup(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn comboboxList(ref c: ComboboxContext): PartProps {
+  {
+    id: c.listId,
+    role: "listbox",
+    "aria-multiselectable": c.multiple ? "true" : undefined,
+    "data-empty": c.visibleCount == 0 ? "" : undefined,
+    ref: c.setList,
+  }
+}
+
+export component ComboboxList({ children, ...rest }: DivProps) {
+  c = use combobox
+  own = comboboxList(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type ComboboxGroupContext = {
+  labelId: string | undefined
+  setLabelId: (id: string | undefined) => void
+  addVisible: (count: number) => void
+}
+
+export context comboboxGroup: ComboboxGroupContext | undefined = undefined
+
+export type ComboboxItemContext = {
+  selected: boolean
+  highlighted: boolean
+  disabled: boolean
+}
+
+export context comboboxItemState: ComboboxItemContext
+
+export type ComboboxItemProps = {
+  value: string
+  // The text the filter matches and the input shows once chosen. Default: the option's text.
+  label?: string
+  disabled?: boolean
+} & DivProps
+
+export fn comboboxItem(ref c: ComboboxContext, ref id: string, ref value: string, ref label: string, ref disabled: boolean): PartProps {
+  isSelected = c.selected.includes(value)
+  highlighted = c.activeId == id
+  action click() { if (!disabled) { c.choose(value, label) } }
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  action pointerMove() { if (!disabled && c.activeId != id) { c.highlight(id) } }
+  {
+    id: id,
+    role: "option",
+    "aria-selected": c.kind == "autocomplete" ? undefined : isSelected ? "true" : "false",
+    "aria-disabled": disabled ? "true" : undefined,
+    "data-rs-ui-item": "",
+    "data-value": value,
+    "data-label": label,
+    "data-selected": isSelected ? "" : undefined,
+    "data-highlighted": highlighted ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    onClick: click,
+    onMouseDown: mouseDown,
+    onPointerMove: pointerMove,
+  }
+}
+
+// An option. It hides itself (it isn't rendered) while it doesn't match what was typed.
+export component ComboboxItem(props: ComboboxItemProps) {
+  c = use combobox
+  g = use comboboxGroup
+  source element: HTMLElement | undefined := undefined
+  source text: string | undefined := undefined
+  id = createId("combobox-item")
+  isDisabled = props.disabled ?? false
+  label = props.label ?? (text != undefined && text != "" ? text : props.value)
+  visible = !c.filtering || matchesFilter(c.filter, label, c.query)
+  action setElement(el: HTMLElement) { element := el }
+  action setText(next: string) { text := next }
+
+  effect (element) { if ($0) { setText(elementText($0)) } }
+  effect (label) {
+    let value = peek(props.value)
+    c.registerLabel(value, $0)
+    return () => { c.unregisterLabel(value) }
+  }
+  effect (visible) {
+    if ($0) {
+      c.addVisible(1)
+      if (g) { g.addVisible(1) }
+      return () => {
+        c.addVisible(-1)
+        if (g) { g.addVisible(-1) }
+      }
+    }
+  }
+
+  provide comboboxItemState = { selected: c.selected.includes(props.value), highlighted: c.activeId == id, disabled: isDisabled }
+
+  { value, label: _label, disabled, children, ...rest } = props
+  own = comboboxItem(c, id, value, label, isDisabled)
+  withRef = mergeProps(own, { ref: setElement })
+  merged = mergeProps(withRef, withoutHandlers(rest, isDisabled))
+  {if visible {
+    <div {...merged}>{children}</div>
+  }}
+}
+
+// Shown while its option is selected, unless `keepMounted`.
+export component ComboboxItemIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
+  item = use comboboxItemState
+  merged = mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
+  {if item.selected || keepMounted {
+    <span {...merged}>{children}</span>
+  }}
+}
+
+// Groups options under a label. Hidden while none of its options match.
+export component ComboboxGroup(props: DivProps) {
+  source labelId: string | undefined := undefined
+  source count := 0
+  action setLabelId(id: string | undefined) { labelId := id }
+  action addVisible(n: number) { count := old => old + n }
+  provide comboboxGroup = { labelId: labelId, setLabelId: setLabelId, addVisible: addVisible }
+  { children, ...rest } = props
+  merged = mergeProps({ role: "group", "aria-labelledby": labelId, hidden: count == 0 ? true : undefined }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component ComboboxGroupLabel({ children, ...rest }: DivProps) {
+  group = use comboboxGroup
+  id = createId("combobox-group-label")
+  effect () {
+    if (group) { group.setLabelId(id) }
+    return () => { if (group) { group.setLabelId(undefined) } }
+  }
+  merged = mergeProps({ id: id }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Its children show while no option matches. The element stays, so screen readers announce the change.
+export component ComboboxEmpty({ children, ...rest }: DivProps) {
+  c = use combobox
+  merged = mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
+  <div {...merged}>
+    {if c.visibleCount == 0 {
+      {children}
+    }}
+  </div>
+}
+
+// A polite live region for a message about the list ("3 results", "Loading…").
+export component ComboboxStatus({ children, ...rest }: DivProps) {
+  merged = mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component ComboboxSeparator(props: DivProps) {
+  merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
+  <div {...merged} />
+}
+
+// Multiple selection: the container of the chips and the input. The popup is positioned against it.
+export component ComboboxChips({ children, ...rest }: DivProps) {
+  c = use combobox
+  action setChips(element: HTMLElement) { c.setChips(element) }
+  merged = mergeProps({ ref: setChips }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type ComboboxChipContext = { value: string }
+
+export context comboboxChip: ComboboxChipContext
+
+// One selected value. Render one per value from the `combobox` context's `selected` (or your own `values`).
+export component ComboboxChip(props: { value: string } & DivProps) {
+  c = use combobox
+  provide comboboxChip = { value: props.value }
+  { value, children, ...rest } = props
+  merged = mergeProps({ "data-disabled": c.disabled ? "" : undefined, "data-readonly": c.readOnly ? "" : undefined }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn comboboxChipRemove(ref c: ComboboxContext, ref value: string): PartProps {
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  action press() { c.remove(value) }
+  {
+    type: "button",
+    tabindex: "-1",
+    disabled: c.disabled || c.readOnly ? true : undefined,
+    onMouseDown: mouseDown,
+    onClick: press,
+  }
+}
+
+// Removes its chip's value from the selection.
+export component ComboboxChipRemove({ children, ...rest }: ButtonProps) {
+  c = use combobox
+  chip = use comboboxChip
+  own = comboboxChipRemove(c, chip.value)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}

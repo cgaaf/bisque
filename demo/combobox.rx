@@ -1,0 +1,51 @@
+import { combobox, ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxChips, ComboboxChip, ComboboxChipRemove, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxItemIndicator, ComboboxEmpty } from "../src/combobox/combobox.rx"
+
+// A chip per selected value, read from the context.
+component Chips() {
+  c = use combobox
+  {for value in c.selected {
+    <ComboboxChip value={value}>{value} <ComboboxChipRemove aria-label={`Remove ${value}`}>×</ComboboxChipRemove></ComboboxChip>
+  }}
+}
+
+export component ComboboxDemo() {
+  <div>
+    <ComboboxRoot name="fruit">
+      <ComboboxInput aria-label="Fruit" placeholder="Search fruit" />
+      <ComboboxTrigger aria-label="Show fruit">▾</ComboboxTrigger>
+      <ComboboxClear aria-label="Clear">×</ComboboxClear>
+      <ComboboxPortal>
+        <ComboboxPositioner sideOffset={4}>
+          <ComboboxPopup class="popup">
+            <ComboboxEmpty>No fruit found</ComboboxEmpty>
+            <ComboboxList>
+              <ComboboxItem value="apple"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Apple</ComboboxItem>
+              <ComboboxItem value="banana"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Banana</ComboboxItem>
+              <ComboboxItem value="cherry"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Cherry</ComboboxItem>
+              <ComboboxItem value="durian" disabled>Durian</ComboboxItem>
+            </ComboboxList>
+          </ComboboxPopup>
+        </ComboboxPositioner>
+      </ComboboxPortal>
+    </ComboboxRoot>
+    {" "}
+    <ComboboxRoot multiple autoHighlight>
+      <ComboboxChips>
+        <Chips />
+        <ComboboxInput aria-label="Languages" placeholder="Add a language" />
+      </ComboboxChips>
+      <ComboboxPortal>
+        <ComboboxPositioner sideOffset={4}>
+          <ComboboxPopup class="popup">
+            <ComboboxEmpty>No match</ComboboxEmpty>
+            <ComboboxList>
+              <ComboboxItem value="ReactiveScript">ReactiveScript</ComboboxItem>
+              <ComboboxItem value="TypeScript">TypeScript</ComboboxItem>
+              <ComboboxItem value="Rust">Rust</ComboboxItem>
+            </ComboboxList>
+          </ComboboxPopup>
+        </ComboboxPositioner>
+      </ComboboxPortal>
+    </ComboboxRoot>
+  </div>
+}

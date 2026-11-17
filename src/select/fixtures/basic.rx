@@ -1,0 +1,33 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPortal, SelectBackdrop, SelectPositioner, SelectPopup, SelectArrow, SelectItem, SelectItemText, SelectItemIndicator, SelectGroup, SelectGroupLabel, SelectSeparator } from "../select.rx"
+
+export default component Fixture() {
+  source changes := ""
+  source opens := ""
+  <form data-testid="form">
+    <SelectRoot name="fruit" onValueChange={(next) => { changes := `${changes}${next ?? "null"};` }} onOpenChange={(next) => { opens := `${opens}${next ? "open" : "close"};` }}>
+      <SelectTrigger data-testid="trigger">
+        <SelectValue data-testid="value" placeholder="Pick a fruit" />
+        <SelectIcon>▾</SelectIcon>
+      </SelectTrigger>
+      <SelectPortal>
+        <SelectBackdrop data-testid="backdrop" />
+        <SelectPositioner data-testid="positioner" sideOffset={4}>
+          <SelectPopup>
+            <SelectArrow data-testid="arrow" />
+            <SelectGroup>
+              <SelectGroupLabel>Fruits</SelectGroupLabel>
+              <SelectItem value="apple"><SelectItemIndicator>✓</SelectItemIndicator><SelectItemText>Apple</SelectItemText></SelectItem>
+              <SelectItem value="apricot" disabled><SelectItemIndicator>✓</SelectItemIndicator><SelectItemText>Apricot</SelectItemText></SelectItem>
+              <SelectItem value="avocado"><SelectItemIndicator>✓</SelectItemIndicator><SelectItemText>Avocado</SelectItemText></SelectItem>
+              <SelectItem value="banana"><SelectItemIndicator>✓</SelectItemIndicator><SelectItemText>Banana</SelectItemText></SelectItem>
+            </SelectGroup>
+            <SelectSeparator />
+            <SelectItem value="fr" label="France">Option FR</SelectItem>
+          </SelectPopup>
+        </SelectPositioner>
+      </SelectPortal>
+    </SelectRoot>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="opens">{opens}</output>
+  </form>
+}
