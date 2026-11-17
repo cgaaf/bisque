@@ -1,0 +1,15 @@
+== taken
+   22ms sent           name=taken  dirty=yes  busy=yes  error=  saved=  saving=yes
+   77ms typed          name=edited  dirty=yes  busy=yes  error=  saved=  saving=yes
+  129ms +50            name=edited  dirty=yes  busy=yes  error=  saved=  saving=yes
+  432ms ended          name=edited  dirty=yes  busy=no  error=already registered  saved=taken  saving=no
+== ok
+   22ms sent           name=ok  dirty=yes  busy=yes  error=  saved=  saving=yes
+   77ms typed          name=edited  dirty=yes  busy=yes  error=  saved=  saving=yes
+  130ms +50            name=edited  dirty=yes  busy=yes  error=  saved=  saving=yes
+  432ms ended          name=edited  dirty=yes  busy=no  error=  saved=ok  saving=no
+== offline
+   23ms sent           name=offline  dirty=yes  busy=yes  error=  saved=  saving=yes
+   78ms typed          name=edited  dirty=yes  busy=yes  error=  saved=  saving=yes
+  130ms +50            name=edited  dirty=yes  busy=yes  error=  saved=  saving=yes
+  433ms ended          name=edited  dirty=yes  busy=no  error=network down  saved=  saving=no

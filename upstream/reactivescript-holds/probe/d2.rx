@@ -1,0 +1,47 @@
+import { wait, refuse } from "./api.js"
+
+// A form component written with no JavaScript: it waits for its handler and keeps its own state live.
+component Form(props: { onSend: (name: string) => Promise<string> }) {
+  source name := ""
+  source dirty := false
+  source busy := false
+  source error := ""
+  <div>
+    <input id="name" value={name} onInput={(e) => { name := e.target.value; dirty := true }} />
+    <button id="send" disabled={busy} onClick={() => {
+      let sent = name
+      onFlush(() => { busy := true; error := "" })
+      try {
+        let refused = await props.onSend(sent)
+        error := refused
+        busy := false
+      } catch (e) {
+        error := "failed"
+        busy := false
+      }
+    }}>send</button>
+    <p data-o="name">{name}</p>
+    <p data-o="dirty">{dirty ? "yes" : "no"}</p>
+    <p data-o="busy">{busy ? "yes" : "no"}</p>
+    <p data-o="error">{error}</p>
+  </div>
+}
+
+export default component App() {
+  source saved := ""
+  source step := 1
+  <div>
+    <Form onSend={(name) => {
+      affects saved
+      try {
+        let answer = await (name == "offline" ? refuse(300, "down") : wait(300, name == "taken" ? "already registered" : ""))
+        saved := name
+        return answer
+      } catch (e) {
+        return "network down"
+      }
+    }} />
+    <p data-o="saved">{saved}</p>
+    <p data-o="saving">{pending? saved ? "yes" : "no"}</p>
+  </div>
+}

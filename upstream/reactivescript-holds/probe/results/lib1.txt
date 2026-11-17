@@ -1,0 +1,10 @@
+== no action in flight
+mounted                      step=1 details.open=false data-open=false aria-expanded=null
+trigger clicked              step=1 details.open=true data-open=false aria-expanded=null
++100ms                       step=1 details.open=true data-open=false aria-expanded=null
+action ended                 step=1 details.open=true data-open=false aria-expanded=null
+== action in flight
+mounted                      step=1 details.open=false data-open=false aria-expanded=null
+trigger clicked              step=1 details.open=false data-open=false aria-expanded=null
++100ms                       step=1 details.open=false data-open=false aria-expanded=null
+action ended                 step=2 details.open=true data-open=false aria-expanded=null

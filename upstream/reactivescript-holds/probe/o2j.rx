@@ -1,0 +1,29 @@
+import { wait } from "./api.js"
+import { createFlag } from "./lib.js"
+
+context form: { status: string }
+
+component Field() {
+  source dirty := false
+  shown = dirty ? (use form).status : "clean"
+  <div>
+    <button id="edit" onClick={() => { dirty := true }}>edit</button>
+    <p data-o="dirty">{dirty ? "yes" : "no"}</p>
+    <p data-o="shown">{shown}</p>
+  </div>
+}
+
+export default component App() {
+  [status, setStatus] = createFlag("idle")
+  source done := 0
+  provide form = { status: status }
+  action submit() {
+
+    try { await wait(300, 0); setStatus("sent"); done := done + 1 } catch (e) { done := -1 }
+  }
+  <div>
+    <button id="submit" onClick={() => { submit() }}>submit</button>
+    <p data-o="status">{status}</p>
+    <Field />
+  </div>
+}

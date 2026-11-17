@@ -1,0 +1,13 @@
+export context form: lane { busy: boolean; title: string }
+
+export component Field() {
+  source dirty := false
+  mark = dirty ? (use form).title + "*" : (use form).title
+  <div>
+    <button id="edit" onClick={() => { dirty := true }}>edit</button>
+    <p data-o="dirty">{dirty ? "yes" : "no"}</p>
+    <p data-o="ctx.busy">{(use form).busy ? "yes" : "no"}</p>
+    <p data-o="ctx.title">{(use form).title}</p>
+    <p data-o="mark">{mark}</p>
+  </div>
+}

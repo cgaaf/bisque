@@ -1,0 +1,4 @@
+   55ms in-flight      status=idle  dirty=no  ctx=idle
+   57ms edited         status=idle  dirty=yes  ctx=idle
+  159ms +100           status=idle  dirty=yes  ctx=idle
+  462ms ended          status=sending  dirty=yes  ctx=sending

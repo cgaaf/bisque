@@ -1,0 +1,5 @@
+   55ms in-flight      done=0  dirty=no  touched=no
+   56ms edit           done=0  dirty=yes  touched=no
+  109ms blur           done=0  dirty=yes  touched=no
+  161ms +50            done=0  dirty=yes  touched=no
+  465ms ended          done=1  dirty=yes  touched=no

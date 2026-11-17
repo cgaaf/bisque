@@ -1,0 +1,19 @@
+import { wait } from "./api.js"
+
+// The onFlush callback also writes `tries`, which the action wrote before its await (a held slot).
+export default component App() {
+  source busy := false
+  source tries := 0
+  source other := 0
+  action go() {
+    tries := tries + 1
+    onFlush(() => { busy := true; tries := 100; other := 1 })
+    try { await wait(300, 0); busy := false } catch (e) { busy := false }
+  }
+  <div>
+    <button id="go" onClick={() => { go() }}>go</button>
+    <p data-o="busy">{busy ? "yes" : "no"}</p>
+    <p data-o="tries">{tries}</p>
+    <p data-o="other">{other}</p>
+  </div>
+}

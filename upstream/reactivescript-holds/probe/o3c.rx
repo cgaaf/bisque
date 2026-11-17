@@ -1,0 +1,17 @@
+import { wait } from "./o3/api.js"
+import { form, Field } from "./o3/ctx.rx"
+
+export default component App() {
+  source title := "a"
+  source saved := ""
+  provide form = { busy: pending? saved, title: title }
+  <div>
+    <button id="submit" onClick={() => {
+      affects saved
+      try { let r = await wait(300, "ok"); saved := r } catch (e) { saved := "failed" }
+    }}>submit</button>
+    <button id="retitle" onClick={() => { title := "b" }}>retitle</button>
+    <p data-o="saved">{saved}</p>
+    <Field />
+  </div>
+}

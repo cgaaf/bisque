@@ -1,0 +1,19 @@
+import { wait } from "./api.js"
+
+// As o1b, but the action never writes `busy`: a second onFlush clears it.
+export default component App() {
+  source busy := false
+  source done := 0
+  <div>
+    <button id="go" onClick={() => {
+      onFlush(() => { busy := true })
+      try {
+        await wait(300, 0)
+        done := done + 1
+        onFlush(() => { busy := false })
+      } catch (e) { done := -1 }
+    }}>go</button>
+    <p data-o="busy">{busy ? "yes" : "no"}</p>
+    <p data-o="done">{done}</p>
+  </div>
+}

@@ -1,0 +1,6 @@
+    1ms mounted        busy=no  tries=0  other=0
+    3ms clicked        busy=no  tries=0  other=0
+  105ms +100           busy=no  tries=0  other=0
+  407ms ended          busy=no  tries=100  other=1
+  509ms second+100     busy=no  tries=100  other=1
+  811ms ended          busy=no  tries=100  other=1

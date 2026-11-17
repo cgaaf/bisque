@@ -1,0 +1,6 @@
+    1ms mounted        busy=no  state.busy=no  both=no/0  tries=0
+    4ms clicked        busy=no  state.busy=no  both=no/0  tries=0
+  106ms +100           busy=no  state.busy=no  both=no/0  tries=0
+  407ms ended          busy=no  state.busy=no  both=no/1  tries=1
+  511ms second+100     busy=no  state.busy=no  both=no/1  tries=1
+  813ms ended          busy=no  state.busy=no  both=no/2  tries=2

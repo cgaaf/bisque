@@ -1,0 +1,12 @@
+== c-latest
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: yes
+click toggle +100ms                step: 1 | open: yes
+click toggle +100ms +300ms         step: 2 | open: yes
+== c-guess
+mount                              step: 1 | open: no
+click next                         step: 2 | open: no
+click toggle                       step: 2 | open: yes
+click toggle +100ms                step: 2 | open: yes
+click toggle +100ms +300ms         step: 1 | open: yes

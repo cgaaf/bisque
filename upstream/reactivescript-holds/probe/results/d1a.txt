@@ -1,0 +1,6 @@
+    7ms toggled        step=1  open=yes  disabled=no
+    8ms toggled        step=1  open=no  disabled=no
+    9ms next           step=1  open=no  disabled=no
+   62ms toggled        step=1  open=no  disabled=no
+  115ms +50            step=1  open=no  disabled=no
+  418ms ended          step=2  open=yes  disabled=yes

@@ -1,0 +1,20 @@
+<!doctype html>
+<button>go</button><button>close</button>
+<p></p><p></p>
+<script type="module">
+import { createRoot, createSignal, createMemo, createRenderEffect, action } from "solid-js";
+const lazy = new URLSearchParams(location.search).has("lazy");
+const [go, close] = document.querySelectorAll("button");
+const [openText, pageText] = document.querySelectorAll("p");
+createRoot(() => {
+  const [open, setOpen] = createSignal(true);
+  const [page, setPage] = createSignal(1);
+  createMemo(() => ({ open: open(), page: page() }), lazy ? { lazy: true } : undefined); // never read
+  const run = action(function* () { setPage(2); yield new Promise((r) => setTimeout(r, 300)); });
+  go.onclick = () => run();
+  close.onclick = () => setOpen(false);
+  createRenderEffect(open, (v) => { openText.textContent = "open: " + (v ? "yes" : "no"); });
+  createRenderEffect(page, (v) => { pageText.textContent = "page: " + v; });
+});
+window.ready = true;
+</script>

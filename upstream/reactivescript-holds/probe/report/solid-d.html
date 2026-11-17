@@ -1,0 +1,24 @@
+<!doctype html>
+<button>next</button><button>toggle</button>
+<p></p><p></p>
+<script type="module">
+import { createRoot, createSignal, createMemo, createRenderEffect, action } from "solid-js";
+const getters = new URLSearchParams(location.search).has("getters");
+const [next, toggle] = document.querySelectorAll("button");
+const [stepText, openText] = document.querySelectorAll("p");
+createRoot(() => {
+  const [step, setStep] = createSignal(1);
+  const [open, setOpen] = createSignal(false);
+  const disabled = () => step() === 2;
+  // the context value: an object of getters, or one memo over the whole object (what `provide` emits)
+  const menu = getters
+    ? () => ({ get open() { return open(); }, get disabled() { return disabled(); } })
+    : createMemo(() => ({ open: open(), disabled: disabled() }));
+  const hold = action(function* () { setStep(2); yield new Promise((r) => setTimeout(r, 300)); });
+  next.onclick = () => hold();
+  toggle.onclick = () => setOpen((o) => !o);
+  createRenderEffect(step, (v) => { stepText.textContent = "step: " + v; });
+  createRenderEffect(() => menu().open, (v) => { openText.textContent = "open: " + (v ? "yes" : "no"); });
+});
+window.ready = true;
+</script>

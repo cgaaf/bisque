@@ -1,0 +1,9 @@
+import { fetch } from "./h6/lib.js"
+
+export default component App() {
+  source out := ""
+  <div>
+    <button id="go" onClick={() => { out := fetch("x") }}>go</button>
+    <p data-o="out">{out}</p>
+  </div>
+}

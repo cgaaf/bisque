@@ -1,0 +1,34 @@
+import { wait } from "./api.js"
+
+// The parent's action writes the child's own source before its await, through an action the child provides.
+type Touch = () => void
+context form: { register: (touch: Touch) => void }
+
+component Field() {
+  source dirty := false
+  source touched := false
+  action touch() { touched := true }
+  effect () { (use form).register(touch) }
+  <div>
+    <button id="edit" onClick={() => { dirty := true }}>edit</button>
+    <button id="blur" onClick={() => { touched := false }}>blur</button>
+    <p data-o="dirty">{dirty ? "yes" : "no"}</p>
+    <p data-o="touched">{touched ? "yes" : "no"}</p>
+  </div>
+}
+
+export default component App() {
+  source fields: Touch[] := []
+  source done := 0
+  action register(touch: Touch) { fields := fs => [...fs, touch] }
+  provide form = { register: register }
+  action submit() {
+    fields.map(touch => touch())
+    try { await wait(300, 0); done := done + 1 } catch (e) { done := -1 }
+  }
+  <div>
+    <button id="submit" onClick={() => { submit() }}>submit</button>
+    <p data-o="done">{done}</p>
+    <Field />
+  </div>
+}

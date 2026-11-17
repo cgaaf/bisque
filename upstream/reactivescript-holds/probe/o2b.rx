@@ -1,0 +1,28 @@
+import { wait } from "./api.js"
+
+context form: { error: string }
+
+component Field() {
+  source dirty := false
+
+  <div>
+    <button id="edit" onClick={() => { dirty := true }}>edit</button>
+    <p data-o="dirty">{dirty ? "yes" : "no"}</p>
+    <p data-o="ctx">{(use form).error}</p>
+  </div>
+}
+
+export default component App() {
+  source error := ""
+  source sent := 0
+  provide form = { error: error }
+  action submit() {
+
+    try { let r = await wait(300, "refused"); error := r } catch (e) { error := "failed" }
+  }
+  <div>
+    <button id="submit" onClick={() => { submit() }}>submit</button>
+    <p data-o="error">{error}</p>
+    <Field />
+  </div>
+}

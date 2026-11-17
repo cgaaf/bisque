@@ -1,0 +1,5 @@
+mount                              step: 1 | open: no | disabled: no
+click next                         step: 1 | open: no | disabled: yes
+click toggle                       step: 1 | open: yes | disabled: yes
+click toggle +100ms                step: 1 | open: yes | disabled: yes
+click toggle +100ms +300ms         step: 2 | open: yes | disabled: yes

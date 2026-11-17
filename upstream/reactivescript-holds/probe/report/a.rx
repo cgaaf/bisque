@@ -1,0 +1,9 @@
+import { fetch } from "./lib.js"
+
+export default component App() {
+  source out := "-"
+  <div>
+    <button onClick={() => { out := fetch("x") }}>go</button>
+    <p>{out}</p>
+  </div>
+}

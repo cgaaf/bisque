@@ -1,0 +1,6 @@
+    1ms mounted        busy=no  result=  shown=0
+    7ms clicked        busy=yes  result=  shown=1
+  109ms +100           busy=yes  result=  shown=1
+  411ms ended          busy=no  result=ok  shown=1
+  513ms second+100     busy=yes  result=  shown=2
+  816ms ended          busy=no  result=ok  shown=2

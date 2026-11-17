@@ -1,0 +1,12 @@
+import { len, str, map, filter, sum, fail, fetch, every, indexOf, other } from "./h3.js"
+
+export default component App() {
+  source out := ""
+  fn name(f) => f.name
+  <div>
+    <button id="go" onClick={() => {
+      out := [len, str, map, filter, sum, fail, fetch, every, indexOf, other].map(f => f.name).join(" ")
+    }}>go</button>
+    <p data-o="out">{out}</p>
+  </div>
+}

@@ -1,0 +1,20 @@
+import { chromium } from "playwright";
+const browser = await chromium.launch();
+const page = await browser.newPage();
+await page.goto(`http://localhost:5195/?p=lib1`);
+await page.waitForFunction(() => window.ready === true);
+const snap = async (label) => console.log(label.padEnd(28), await page.evaluate(() => {
+  const item = document.getElementById("item");
+  return `step=${document.querySelector("[data-o=step]").textContent} details.open=${item.open} data-open=${item.hasAttribute("data-open")} aria-expanded=${document.getElementById("trigger").getAttribute("aria-expanded")}`;
+}));
+const flags = process.argv.includes("--idle");
+await snap("mounted");
+if (!flags) await page.click("#next");
+await page.waitForTimeout(50);
+await page.click("#trigger");
+await snap("trigger clicked");
+await page.waitForTimeout(100);
+await snap("+100ms");
+await page.waitForTimeout(300);
+await snap("action ended");
+await browser.close();

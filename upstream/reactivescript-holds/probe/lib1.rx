@@ -1,0 +1,21 @@
+import { wait } from "./api.js"
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../../../src/accordion/accordion.rx"
+
+// rs-ui's Accordion, with one prop derived from a source that an app action holds.
+export default component App() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await wait(300, 0) } catch (e) { }
+  }
+  <div>
+    <button id="next" onClick={() => { next() }}>next</button>
+    <p data-o="step">{step}</p>
+    <AccordionRoot loopFocus={step == 1}>
+      <AccordionItem value="one" id="item">
+        <AccordionTrigger id="trigger">One</AccordionTrigger>
+        <AccordionPanel>First</AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+  </div>
+}

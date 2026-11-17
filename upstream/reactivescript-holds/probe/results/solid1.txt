@@ -1,0 +1,9 @@
+== solid1.html
+   57ms toggled        step=1  open=false
+  459ms ended          step=2  open=true
+== solid1.html?unread
+   56ms toggled        step=1  open=false
+  459ms ended          step=2  open=true
+== solid1.html?split
+   56ms toggled        step=1  open=true
+  458ms ended          step=2  open=true

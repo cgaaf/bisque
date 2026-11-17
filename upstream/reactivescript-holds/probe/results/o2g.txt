@@ -1,0 +1,4 @@
+   54ms in-flight      error=  dirty=no  shown=
+   56ms edited         error=  dirty=yes  shown=
+  158ms +100           error=  dirty=yes  shown=
+  459ms ended          error=refused  dirty=yes  shown=refused

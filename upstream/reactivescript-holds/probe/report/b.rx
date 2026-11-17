@@ -1,0 +1,17 @@
+import { wait } from "./api.js"
+
+export default component App() {
+  source open := true
+  source page := 1
+  both = { open: open, page: page }
+  action go() {
+    page := 2
+    try { await wait(300, 0) } catch (e) { }
+  }
+  <div>
+    <button onClick={() => { go() }}>go</button>
+    <button onClick={() => { open := false }}>close</button>
+    <p>open: {open ? "yes" : "no"}</p>
+    <p>page: {page}</p>
+  </div>
+}

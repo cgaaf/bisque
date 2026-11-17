@@ -1,0 +1,27 @@
+import { wait } from "./api.js"
+
+component Picker(props: { onPick: (n: number) => void }) {
+  source count := 0
+  source open := true
+  <div>
+    <button id="pick" onClick={() => {
+      let n = count + 1
+      onFlush(() => { count := n })
+      props.onPick(n)
+    }}>pick</button>
+    <button id="toggle" onClick={() => { open := !open }}>toggle</button>
+    <button id="bump" onClick={() => { count := c => c + 10 }}>bump</button>
+    <p data-o="count">{count}</p>
+    <p data-o="open">{open ? "yes" : "no"}</p>
+  </div>
+}
+
+export default component App() {
+  source saved := 0
+  <div>
+    <Picker onPick={(n) => {
+      try { let r = await wait(300, n); saved := r } catch (e) { saved := -1 }
+    }} />
+    <p data-o="saved">{saved}</p>
+  </div>
+}

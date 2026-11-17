@@ -1,0 +1,1 @@
+export pure fn createFlag(initial: string): [ref string, (v: string) => void]

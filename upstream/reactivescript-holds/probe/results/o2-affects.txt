@@ -1,0 +1,10 @@
+== o2m
+   52ms in-flight      error=  dirty=no  shown=
+   55ms edited         error=  dirty=yes  shown=
+  156ms +100           error=  dirty=yes  shown=
+  460ms ended          error=refused  dirty=yes  shown=refused
+== o2n
+   54ms in-flight      error=  dirty=no  ctx=
+   56ms edited         error=  dirty=yes  ctx=
+  157ms +100           error=  dirty=yes  ctx=
+  459ms ended          error=refused  dirty=yes  ctx=refused

@@ -1,0 +1,49 @@
+== solid1 (plain Solid 2.0.0)
+   55ms toggled        step=1  open=false
+  459ms ended          step=2  open=true
+== solid1?split
+   54ms toggled        step=1  open=true
+  458ms ended          step=2  open=true
+== o1b
+    3ms clicked        busy=yes  done=0
+  105ms +100           busy=yes  done=0
+  409ms ended          busy=no  done=1
+== o1i
+    3ms clicked        busy=no  state.busy=no  tries=0
+  105ms +100           busy=no  state.busy=no  tries=0
+  408ms ended          busy=no  state.busy=no  tries=1
+== o1g
+    2ms clicked        busy=yes  tries=0
+  105ms +100           busy=yes  tries=0
+  407ms ended          busy=no  tries=1
+== o2c
+   55ms edited         error=  dirty=yes  shown=
+  457ms ended          error=refused  dirty=yes  shown=refused
+== o2f
+   55ms edited         error=  dirty=no  shown=
+  458ms ended          error=refused  dirty=yes  shown=refused
+== d1a
+   56ms toggled        step=1  open=no  disabled=no
+  459ms ended          step=2  open=yes  disabled=yes
+== d1b
+   55ms toggled        step=1  open=yes  disabled=no
+  459ms ended          step=2  open=yes  disabled=yes
+== o4a
+    2ms picked         count=0  open=yes  saved=0
+   56ms bumped         count=0  open=yes  saved=0
+  458ms ended          count=11  open=yes  saved=1
+== o4c
+    3ms picked         count=1  open=yes  saved=0
+   56ms bumped         count=11  open=yes  saved=0
+  459ms ended          count=11  open=yes  saved=1
+== o4d
+    7ms picked         count=1  open=yes  saved=0
+   60ms bumped         count=11  open=yes  saved=0
+  462ms ended          count=11  open=yes  saved=1
+== o3d
+    3ms submitted      saved=  dirty=no  ctx.busy=yes  ctx.title=a  mark=a
+   56ms edited         saved=  dirty=yes  ctx.busy=yes  ctx.title=a  mark=a*
+   57ms retitled       saved=  dirty=yes  ctx.busy=yes  ctx.title=b  mark=b*
+  460ms ended          saved=ok  dirty=yes  ctx.busy=no  ctx.title=b  mark=b*
+== h4
+    2ms clicked        out={"key":"x","first":{},"queue":[],"waiters":[],"started":false}

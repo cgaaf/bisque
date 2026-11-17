@@ -1,0 +1,22 @@
+<!doctype html>
+<html><body>
+<button id="next">next</button><button id="toggle">toggle</button>
+<p data-o="step"></p><p data-o="open"></p>
+<script type="module">
+// d1a without ReactiveScript: plain solid-js 2.0.0-rc.22.
+import { createRoot, createSignal, createMemo, createRenderEffect, action } from "solid-js";
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const show = (name, read) => createRenderEffect(read, (v) => { document.querySelector(`[data-o=${name}]`).textContent = String(v); });
+createRoot(() => {
+  const [step, setStep] = createSignal(1);
+  const [open, setOpen] = createSignal(false);
+  const q = new URLSearchParams(location.search);
+  const menu = q.has("split") ? null : createMemo(() => ({ open: open(), disabled: step() === 2 }), q.has("lazy") ? { lazy: true } : undefined);
+  const next = action(function* () { setStep(2); yield wait(300); });
+  document.getElementById("next").onclick = () => next();
+  document.getElementById("toggle").onclick = () => setOpen((o) => !o);
+  show("step", step);
+  show("open", menu && !q.has("unread") ? () => menu().open : open);
+});
+window.ready = true;
+</script></body></html>

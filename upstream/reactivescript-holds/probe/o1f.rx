@@ -1,0 +1,17 @@
+import { wait } from "./api.js"
+
+// The onFlush callback also writes a source the action writes only after its await.
+export default component App() {
+  source busy := false
+  source result := ""
+  source shown := 0
+  <div>
+    <button id="go" onClick={() => {
+      onFlush(() => { busy := true; result := ""; shown := shown + 1 })
+      try { let r = await wait(300, "ok"); result := r; busy := false } catch (e) { busy := false }
+    }}>go</button>
+    <p data-o="busy">{busy ? "yes" : "no"}</p>
+    <p data-o="result">{result}</p>
+    <p data-o="shown">{shown}</p>
+  </div>
+}

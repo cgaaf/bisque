@@ -1,0 +1,5 @@
+    3ms picked         count=1  open=yes  saved=0
+   56ms toggled        count=1  open=no  saved=0
+   57ms bumped         count=11  open=no  saved=0
+  109ms +50            count=11  open=no  saved=0
+  410ms ended          count=11  open=no  saved=1

@@ -1,0 +1,30 @@
+import { wait } from "./api.js"
+
+context form: lane { busy: boolean; title: string }
+
+component Field() {
+  source dirty := false
+  mark = dirty ? (use form).title + "*" : (use form).title
+  <div>
+    <button id="edit" onClick={() => { dirty := true }}>edit</button>
+    <p data-o="dirty">{dirty ? "yes" : "no"}</p>
+    <p data-o="ctx.busy">{(use form).busy ? "yes" : "no"}</p>
+    <p data-o="ctx.title">{(use form).title}</p>
+    <p data-o="mark">{mark}</p>
+  </div>
+}
+
+export default component App() {
+  source title := "a"
+  source saved := ""
+  provide form = { busy: pending? saved, title: title }
+  <div>
+    <button id="submit" onClick={() => {
+      affects saved
+      try { let r = await wait(300, "ok"); saved := r } catch (e) { saved := "failed" }
+    }}>submit</button>
+    <button id="retitle" onClick={() => { title := "b" }}>retitle</button>
+    <p data-o="saved">{saved}</p>
+    <Field />
+  </div>
+}

@@ -1,0 +1,10 @@
+<!doctype html>
+<html><body><div id="app"></div>
+<script type="module">
+import { createApp } from "@reactivescript/runtime";
+const mods = import.meta.glob("./*.rx");
+const main = (await mods[`./${new URLSearchParams(location.search).get("p")}.rx`]()).default;
+const app = createApp({ root: document.getElementById("app") });
+app.mount(main(app));
+window.ready = true;
+</script></body></html>

@@ -1,0 +1,4 @@
+    1ms mounted        busy=no  both=no/0  tries=0
+    8ms clicked        busy=yes  both=yes/0  tries=0
+  110ms +100           busy=yes  both=yes/0  tries=0
+  412ms ended          busy=no  both=no/1  tries=1

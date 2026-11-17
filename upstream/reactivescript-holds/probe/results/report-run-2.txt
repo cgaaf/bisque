@@ -1,0 +1,83 @@
+== A  a.rx
+mount                              -
+click go                           {"key":"x","first":{},"queue":[],"waiters":[],"started":false}
+== B  b.rx
+mount                              open: yes | page: 1
+click go                           open: yes | page: 1
+click go +100ms                    open: yes | page: 1
+click go +100ms +300ms             open: no | page: 2
+== B  b-no-equation.rx
+mount                              open: yes | page: 1
+click go                           open: no | page: 1
+click go +100ms                    open: no | page: 1
+click go +100ms +300ms             open: no | page: 2
+== C  b-shown.rx
+mount                              open: yes | page: 1 | both.open: yes
+click go                           open: yes | page: 1 | both.open: yes
+click go +100ms                    open: yes | page: 1 | both.open: yes
+click go +100ms +300ms             open: no | page: 2 | both.open: no
+== C  b-view-reader.rx
+mount                              open: yes | page: 1 | open on 1
+click go                           open: no | page: 1 | closed on 1
+click go +100ms                    open: no | page: 1 | closed on 1
+click go +100ms +300ms             open: no | page: 2 | closed on 2
+== D  c.rx
+mount                              step: 1 | open: no
+click toggle                       step: 1 | open: yes
+click toggle                       step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: no
+click toggle +100ms                step: 1 | open: no
+click toggle +100ms +300ms         step: 2 | open: yes
+== D  c-two-contexts.rx
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: yes
+click toggle +100ms                step: 1 | open: yes
+click toggle +100ms +300ms         step: 2 | open: yes
+== D  c-closures.rx
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: yes
+click toggle +100ms                step: 1 | open: yes
+click toggle +100ms +300ms         step: 2 | open: yes
+== D  c-onflush.rx
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: no
+click toggle +100ms                step: 1 | open: no
+click toggle +100ms +300ms         step: 2 | open: yes
+== D  c-latest.rx
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: yes
+click toggle +100ms                step: 1 | open: yes
+click toggle +100ms +300ms         step: 2 | open: yes
+== D  c-guess.rx
+mount                              step: 1 | open: no
+click next                         step: 2 | open: no
+click toggle                       step: 2 | open: yes
+click toggle +100ms                step: 2 | open: yes
+click toggle +100ms +300ms         step: 1 | open: yes
+== B  solid.html
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: no
+click toggle +100ms                step: 1 | open: no
+click toggle +100ms +300ms         step: 2 | open: yes
+== B  solid.html?lazy
+mount                              step: 1 | open: no
+click next                         step: 1 | open: no
+click toggle                       step: 1 | open: yes
+click toggle +100ms                step: 1 | open: yes
+click toggle +100ms +300ms         step: 2 | open: yes
+== owner  d.rx
+mount                              count: 0 | saved: 0
+click pick                         count: 0 | saved: 0
+click pick +100ms                  count: 0 | saved: 0
+click pick +100ms +300ms           count: 1 | saved: 1
+== owner  d-onflush.rx
+mount                              count: 0 | saved: 0
+click pick                         count: 1 | saved: 0
+click pick +100ms                  count: 1 | saved: 0
+click pick +100ms +300ms           count: 1 | saved: 1

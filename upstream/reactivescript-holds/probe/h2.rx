@@ -1,0 +1,9 @@
+import { fail } from "./h2.js"
+
+export default component App() {
+  source out := ""
+  <div>
+    <button id="go" onClick={() => { out := fail("x") }}>go</button>
+    <p data-o="out">{out}</p>
+  </div>
+}

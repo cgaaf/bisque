@@ -1,0 +1,30 @@
+import pure { load } from "./api.js"
+import { wait, refuse } from "./api.js"
+
+// The guide's async.md section 3 example, with a fake server. `next == "bad"` is declined.
+source profile: string = await load()
+source saveError: string := ""
+
+action save(next: string) {
+  guess profile := next
+  onFlush(() => { saveError := "" })
+  affects profile
+  try {
+    let answer = await (next == "bad" ? refuse(300, "declined") : wait(300, next))
+    profile := answer
+  } catch (e) {
+    saveError := e.message
+  }
+}
+
+export default component App() {
+  <div>
+    <button id="bad" onClick={() => { save("bad") }}>bad</button>
+    <button id="good" onClick={() => { save("good") }}>good</button>
+    {loading fallback { <p>loading</p> } {
+      <p data-o="profile">{profile catch (e) => "failed"}</p>
+      <p data-o="pending">{pending? profile ? "yes" : "no"}</p>
+    }}
+    <p data-o="saveError">{saveError}</p>
+  </div>
+}

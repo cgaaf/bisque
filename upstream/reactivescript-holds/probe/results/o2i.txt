@@ -1,0 +1,4 @@
+   53ms in-flight      status=idle  dirty=no  shown=clean
+   55ms edited         status=idle  dirty=no  shown=clean
+  157ms +100           status=idle  dirty=no  shown=clean
+  461ms ended          status=sending  dirty=yes  shown=sending

@@ -1,0 +1,6 @@
+    1ms mounted        saved=  dirty=no  ctx.busy=no  ctx.title=a  mark=a
+    3ms submitted      saved=  dirty=no  ctx.busy=yes  ctx.title=a  mark=a
+   56ms edited         saved=  dirty=yes  ctx.busy=yes  ctx.title=a  mark=a*
+  110ms retitled       saved=  dirty=yes  ctx.busy=yes  ctx.title=b  mark=b*
+  162ms +50            saved=  dirty=yes  ctx.busy=yes  ctx.title=b  mark=b*
+  462ms ended          saved=ok  dirty=yes  ctx.busy=no  ctx.title=b  mark=b*

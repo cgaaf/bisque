@@ -4,7 +4,7 @@
   "categories": { "correctness": "error", "suspicious": "warn", "perf": "warn" },
   // Type-aware rules, run by tsrs (oxlint finds the installed one).
   "options": { "typeAware": true },
-  "ignorePatterns": ["dist", "node_modules"],
+  "ignorePatterns": ["dist", "upstream", "node_modules"],
   "rules": {
     // A Solid effect returns its cleanup, and only on the paths that set something up.
     "typescript/consistent-return": "off"

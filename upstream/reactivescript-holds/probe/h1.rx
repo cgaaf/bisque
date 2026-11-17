@@ -1,0 +1,15 @@
+import { wait } from "./api.js"
+
+export default component App() {
+  source touched := false
+  source done := 0
+  action touch() { touched := true }
+  <div>
+    <button id="go" onClick={() => {
+      touch()
+      try { await wait(300, 0); done := done + 1 } catch (e) { done := -1 }
+    }}>go</button>
+    <p data-o="touched">{touched ? "yes" : "no"}</p>
+    <p data-o="done">{done}</p>
+  </div>
+}

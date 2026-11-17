@@ -1,0 +1,30 @@
+import { wait } from "./api.js"
+
+context menu: { open: boolean; disabled: boolean }
+
+component Popup() {
+  <p data-o="open">{(use menu).open ? "yes" : "no"}</p>
+  <p data-o="disabled">{(use menu).disabled ? "yes" : "no"}</p>
+}
+
+component Menu(props: { disabled: boolean }) {
+  source open := false
+  provide menu = { open: open, disabled: props.disabled }
+  <div>
+    <button id="toggle" onClick={() => { open := !open }}>toggle</button>
+    <Popup />
+  </div>
+}
+
+export default component App() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await wait(300, 0) } catch (e) { }
+  }
+  <div>
+    <button id="next" onClick={() => { next() }}>next</button>
+    <p data-o="step">{step}</p>
+    <Menu disabled={step == 2} />
+  </div>
+}

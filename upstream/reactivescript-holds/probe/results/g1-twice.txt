@@ -1,0 +1,4 @@
+  505ms declined       profile=start  pending=no  saveError=declined
+  508ms clicked-again  profile=bad  pending=yes  saveError=
+  609ms +100           profile=bad  pending=yes  saveError=
+  911ms declined-again profile=start  pending=no  saveError=declined

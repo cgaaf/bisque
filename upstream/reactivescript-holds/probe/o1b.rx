@@ -1,0 +1,18 @@
+import { wait } from "./api.js"
+
+export default component App() {
+  source busy := false
+  source done := 0
+  <div>
+    <button id="go" onClick={() => {
+      onFlush(() => { busy := true })
+      try {
+        await wait(300, 0)
+        busy := false
+        done := done + 1
+      } catch (e) { busy := false }
+    }}>go</button>
+    <p data-o="busy">{busy ? "yes" : "no"}</p>
+    <p data-o="done">{done}</p>
+  </div>
+}

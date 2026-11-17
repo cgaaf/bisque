@@ -1,0 +1,4 @@
+   53ms in-flight      error=  dirty=no  ctx=
+   55ms edited         error=  dirty=yes  ctx=
+  158ms +100           error=  dirty=yes  ctx=
+  462ms ended          error=refused  dirty=yes  ctx=refused

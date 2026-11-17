@@ -1,0 +1,9 @@
+    0ms mounted        busy=no  done=0
+    6ms clicked        busy=yes  done=0
+  108ms +100           busy=yes  done=0
+  [console.warning] [SILENT_HOLD] click on button#go "go" started an action that held "signal" (0 → 1) for 303ms and the screen showed nothing for the whole round-trip: no optimistic value, no isPending() reader, no affects() mark, and no effect ran while it was held. Pair the action with a createOptimistic/createOptimisticStore write for the expected outcome (it reverts on failure), or co-write a createOptimistic(false) "saving" flag the UI reads.
+  in <V$App>
+[SILENT_HOLD] what it means and how to fix it: https://v2.solidjs.com/reference/solid-js/diagnostics/silent-hold
+[SILENT_HOLD] agent repair guide: node_modules/solid-js/skills/reactivity-diagnostics/SKILL.md#silent_hold — https://github.com/solidjs/solid/blob/next/packages/solid/skills/reactivity-diagnostics/SKILL.md#silent_hold
+[SILENT_HOLD] deeper evidence: import { attribution } from "solid-js/attribution"; attribution.enable() explains every re-run — why-chains, costs(), feedback(), history("hold" | "waterfall") — agent loop: node_modules/@solidjs/diagnostics/skills/agent-loops/SKILL.md — https://github.com/solidjs/solid/blob/next/packages/diagnostics/skills/agent-loops/SKILL.md
+  410ms ended          busy=no  done=1

@@ -1,0 +1,3 @@
+   56ms toggled        step=1  open=no  disabled=no  label=closed
+  108ms +50            step=1  open=no  disabled=no  label=closed
+  410ms ended          step=2  open=yes  disabled=no  label=off

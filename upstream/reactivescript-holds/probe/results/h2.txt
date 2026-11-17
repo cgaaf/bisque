@@ -1,0 +1,4 @@
+  [uncaught] x
+    3ms clicked        out=
+  104ms +100           out=
+  407ms ended          out=

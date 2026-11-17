@@ -1,0 +1,9 @@
+import { fetch as get, log } from "./h5.js"
+
+export default component App() {
+  source out := ""
+  <div>
+    <button id="go" onClick={() => { log("x"); out := get("x") }}>go</button>
+    <p data-o="out">{out}</p>
+  </div>
+}
