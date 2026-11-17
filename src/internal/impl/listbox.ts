@@ -4,6 +4,8 @@
 // The DOM is the registry, as in ./roving.ts: an option carries `data-rs-ui-item`, its value as `data-value`,
 // `data-label` when its label differs from its text, and `data-disabled` while it can't be chosen.
 
+import { createEffect, untrack, type Accessor } from "solid-js";
+
 type MaybeElement = HTMLElement | undefined;
 
 const ITEM = "[data-rs-ui-item]";
@@ -150,4 +152,50 @@ export function matchesFilter(
   if (trimmed === "") return true;
   if (filter) return filter(label, trimmed);
   return fold(label).includes(fold(trimmed));
+}
+
+/**
+ * Calls `onShown` each time the popover `popup` has been shown: an item can't take focus, nor an option be scrolled
+ * into view, while the popup is hidden. Listens to the `toggle` event itself, once per element: a `toggle` handler
+ * passed as an element prop is re-attached whenever the part's props recompute, and the state write the native
+ * popover driver makes on that same event recomputes them, so such a handler misses the event.
+ */
+export function createOnShow(popup: Accessor<MaybeElement>, onShown: () => void): void {
+  const onToggle = (event: Event) => {
+    if ((event as ToggleEvent).newState === "open") onShown();
+  };
+  createEffect(
+    () => popup(),
+    (el) => {
+      if (!el) return;
+      el.addEventListener("toggle", onToggle);
+      return () => el.removeEventListener("toggle", onToggle);
+    },
+  );
+}
+
+/**
+ * While `active`, calls `onOutside` when a press starts outside every element of `inside`. For a
+ * `popover="manual"` list whose anchor is an input (combobox, autocomplete): the browser's light dismiss treats a
+ * press on that input as a press outside (the `source` of `showPopover()` isn't exempt), so the list can't be
+ * `popover="auto"` and closes itself on a press outside instead.
+ */
+export function createOutsidePress(
+  active: Accessor<boolean>,
+  inside: Accessor<MaybeElement[]>,
+  onOutside: () => void,
+): void {
+  const onPointerDown = (event: PointerEvent) => {
+    const path = event.composedPath();
+    if (untrack(inside).some((el) => el !== undefined && path.includes(el))) return;
+    onOutside();
+  };
+  createEffect(
+    () => active(),
+    (on) => {
+      if (!on) return;
+      document.addEventListener("pointerdown", onPointerDown, true);
+      return () => document.removeEventListener("pointerdown", onPointerDown, true);
+    },
+  );
 }

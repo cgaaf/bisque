@@ -1,4 +1,4 @@
-import { combobox, ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxChips, ComboboxChip, ComboboxChipRemove, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxItemIndicator, ComboboxEmpty } from "../src/combobox/combobox.rx"
+import { combobox, ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxChips, ComboboxChip, ComboboxChipRemove, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxItemIndicator, ComboboxEmpty } from "../src/combobox/combobox.rx"
 
 // A chip per selected value, read from the context.
 component Chips() {
@@ -14,19 +14,15 @@ export component ComboboxDemo() {
       <ComboboxInput aria-label="Fruit" placeholder="Search fruit" />
       <ComboboxTrigger aria-label="Show fruit">▾</ComboboxTrigger>
       <ComboboxClear aria-label="Clear">×</ComboboxClear>
-      <ComboboxPortal>
-        <ComboboxPositioner sideOffset={4}>
-          <ComboboxPopup class="popup">
-            <ComboboxEmpty>No fruit found</ComboboxEmpty>
-            <ComboboxList>
-              <ComboboxItem value="apple"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Apple</ComboboxItem>
-              <ComboboxItem value="banana"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Banana</ComboboxItem>
-              <ComboboxItem value="cherry"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Cherry</ComboboxItem>
-              <ComboboxItem value="durian" disabled>Durian</ComboboxItem>
-            </ComboboxList>
-          </ComboboxPopup>
-        </ComboboxPositioner>
-      </ComboboxPortal>
+      <ComboboxPopup class="popup" sideOffset={4}>
+        <ComboboxEmpty>No fruit found</ComboboxEmpty>
+        <ComboboxList>
+          <ComboboxItem value="apple"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Apple</ComboboxItem>
+          <ComboboxItem value="banana"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Banana</ComboboxItem>
+          <ComboboxItem value="cherry"><ComboboxItemIndicator>✓ </ComboboxItemIndicator>Cherry</ComboboxItem>
+          <ComboboxItem value="durian" disabled>Durian</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
     </ComboboxRoot>
     {" "}
     <ComboboxRoot multiple autoHighlight>
@@ -34,18 +30,14 @@ export component ComboboxDemo() {
         <Chips />
         <ComboboxInput aria-label="Languages" placeholder="Add a language" />
       </ComboboxChips>
-      <ComboboxPortal>
-        <ComboboxPositioner sideOffset={4}>
-          <ComboboxPopup class="popup">
-            <ComboboxEmpty>No match</ComboboxEmpty>
-            <ComboboxList>
-              <ComboboxItem value="ReactiveScript">ReactiveScript</ComboboxItem>
-              <ComboboxItem value="TypeScript">TypeScript</ComboboxItem>
-              <ComboboxItem value="Rust">Rust</ComboboxItem>
-            </ComboboxList>
-          </ComboboxPopup>
-        </ComboboxPositioner>
-      </ComboboxPortal>
+      <ComboboxPopup class="popup" sideOffset={4}>
+        <ComboboxEmpty>No match</ComboboxEmpty>
+        <ComboboxList>
+          <ComboboxItem value="ReactiveScript">ReactiveScript</ComboboxItem>
+          <ComboboxItem value="TypeScript">TypeScript</ComboboxItem>
+          <ComboboxItem value="Rust">Rust</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
     </ComboboxRoot>
   </div>
 }

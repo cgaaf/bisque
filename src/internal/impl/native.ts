@@ -129,8 +129,9 @@ export function createNativeDialog(
  * With `popover="auto"` the browser closes the popup itself on Escape and on a press outside (light dismiss),
  * and opens it from a `popovertarget` button. Those can't be vetoed, so they are reported after the fact through
  * `onOpenChange`; if the owner's state then disagrees (a controlled `open` that didn't change), the element is
- * put back to match. Opening passes `source`, which makes that element the popup's implicit CSS anchor and
- * exempts it from light dismiss.
+ * put back to match. Opening passes `source`, which makes that element the popup's implicit CSS anchor. It does
+ * not protect the source from light dismiss: only a `popovertarget` button is exempt, so a popup opened from
+ * anything else (a combobox's input) that must survive a press on it uses `popover="manual"`.
  *
  * Nothing here animates the popup out: a light dismiss can't be delayed, so exit animation is left to CSS where
  * the engine supports it (`transition-behavior: allow-discrete` with `overlay`). `@starting-style` animates it

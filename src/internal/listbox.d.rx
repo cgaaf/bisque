@@ -10,3 +10,5 @@ export fn itemLabel(list: HTMLElement | undefined, id: string | undefined): stri
 export fn clickItem(list: HTMLElement | undefined, id: string | undefined): void
 export fn itemIdByValue(list: HTMLElement | undefined, value: string | undefined): string | undefined
 export pure fn matchesFilter(filter: ((label: string, query: string) => boolean) | undefined, label: string, query: string): boolean
+export pure fn createOnShow(ref popup: HTMLElement | undefined, onShown: () => void) instantiates
+export pure fn createOutsidePress(ref active: boolean, ref inside: (HTMLElement | undefined)[], onOutside: () => void) instantiates

@@ -1,4 +1,4 @@
-import { AutocompleteRoot, AutocompleteInput, AutocompletePortal, AutocompletePositioner, AutocompletePopup, AutocompleteList, AutocompleteItem } from "../autocomplete.rx"
+import { AutocompleteRoot, AutocompleteInput, AutocompletePopup, AutocompleteList, AutocompleteItem } from "../autocomplete.rx"
 import { FieldRoot, FieldLabel, FieldError } from "../../field/field.rx"
 import { Form } from "../../form/form.rx"
 
@@ -9,16 +9,12 @@ export default component Fixture() {
       <FieldLabel>Tag</FieldLabel>
       <AutocompleteRoot required>
         <AutocompleteInput />
-        <AutocompletePortal>
-          <AutocompletePositioner>
-            <AutocompletePopup>
-              <AutocompleteList>
-                <AutocompleteItem value="alpha">alpha</AutocompleteItem>
-                <AutocompleteItem value="beta">beta</AutocompleteItem>
-              </AutocompleteList>
-            </AutocompletePopup>
-          </AutocompletePositioner>
-        </AutocompletePortal>
+        <AutocompletePopup>
+          <AutocompleteList>
+            <AutocompleteItem value="alpha">alpha</AutocompleteItem>
+            <AutocompleteItem value="beta">beta</AutocompleteItem>
+          </AutocompleteList>
+        </AutocompletePopup>
       </AutocompleteRoot>
       <FieldError data-testid="tag-error">Enter a tag</FieldError>
     </FieldRoot>

@@ -1,4 +1,4 @@
-import { SelectRoot, SelectTrigger, SelectValue, SelectPortal, SelectPositioner, SelectPopup, SelectItem } from "../select.rx"
+import { SelectRoot, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "../select.rx"
 
 export default component Fixture() {
   source fruit: string | null := "cherry"
@@ -7,39 +7,39 @@ export default component Fixture() {
   <main>
     <SelectRoot value={fruit} onValueChange={(next) => { fruit := next }} open={open} onOpenChange={(next) => { open := next }} items={[{ value: "cherry", label: "Cherry" }, { value: "plum", label: "Plum" }]}>
       <SelectTrigger data-testid="trigger"><SelectValue data-testid="value" /></SelectTrigger>
-      <SelectPortal>
-        <SelectPositioner>
-          <SelectPopup data-testid="popup">
-            <SelectItem value="cherry">Cherry</SelectItem>
-            <SelectItem value="plum">Plum</SelectItem>
-          </SelectPopup>
-        </SelectPositioner>
-      </SelectPortal>
+      <SelectPopup data-testid="popup">
+        <SelectItem value="cherry">Cherry</SelectItem>
+        <SelectItem value="plum">Plum</SelectItem>
+      </SelectPopup>
     </SelectRoot>
     <output data-testid="fruit">{fruit ?? "null"}</output>
     <output data-testid="open">{open ? "open" : "closed"}</output>
     <button type="button" onClick={() => { fruit := "plum" }}>Set plum</button>
     <button type="button" onClick={() => { fruit := null }}>Clear</button>
+    <button type="button" onClick={() => { open := true }}>Open from outside</button>
     <SelectRoot value={fixed} onValueChange={(next) => { fixed := next }} readOnly>
       <SelectTrigger data-testid="readonly-trigger"><SelectValue /></SelectTrigger>
-      <SelectPortal>
-        <SelectPositioner>
-          <SelectPopup>
-            <SelectItem value="a">A</SelectItem>
-            <SelectItem value="b">B</SelectItem>
-          </SelectPopup>
-        </SelectPositioner>
-      </SelectPortal>
+      <SelectPopup>
+        <SelectItem value="a">A</SelectItem>
+        <SelectItem value="b">B</SelectItem>
+      </SelectPopup>
     </SelectRoot>
     <SelectRoot disabled>
       <SelectTrigger data-testid="disabled-trigger"><SelectValue placeholder="Off" /></SelectTrigger>
-      <SelectPortal>
-        <SelectPositioner>
-          <SelectPopup>
-            <SelectItem value="x">X</SelectItem>
-          </SelectPopup>
-        </SelectPositioner>
-      </SelectPortal>
+      <SelectPopup>
+        <SelectItem value="x">X</SelectItem>
+      </SelectPopup>
+    </SelectRoot>
+    <SelectRoot>
+      <SelectTrigger data-testid="low-trigger" style="position: fixed; bottom: 4px; left: 200px">Low</SelectTrigger>
+      <SelectPopup data-testid="low-popup" style="height: 150px; padding: 0; border: 0; overflow: auto">
+        <SelectItem value="1" style="height: 40px">One</SelectItem>
+        <SelectItem value="2" style="height: 40px">Two</SelectItem>
+        <SelectItem value="3" style="height: 40px">Three</SelectItem>
+        <SelectItem value="4" style="height: 40px">Four</SelectItem>
+        <SelectItem value="5" style="height: 40px">Five</SelectItem>
+        <SelectItem value="6" style="height: 40px">Six</SelectItem>
+      </SelectPopup>
     </SelectRoot>
   </main>
 }

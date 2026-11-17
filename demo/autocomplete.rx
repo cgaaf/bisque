@@ -1,21 +1,17 @@
-import { AutocompleteRoot, AutocompleteInput, AutocompleteClear, AutocompletePortal, AutocompletePositioner, AutocompletePopup, AutocompleteList, AutocompleteItem, AutocompleteEmpty } from "../src/autocomplete/autocomplete.rx"
+import { AutocompleteRoot, AutocompleteInput, AutocompleteClear, AutocompletePopup, AutocompleteList, AutocompleteItem, AutocompleteEmpty } from "../src/autocomplete/autocomplete.rx"
 
 export component AutocompleteDemo() {
   <AutocompleteRoot mode="both">
     <AutocompleteInput aria-label="Tag" name="tag" placeholder="feature, fix, docs…" />
     <AutocompleteClear aria-label="Clear">×</AutocompleteClear>
-    <AutocompletePortal>
-      <AutocompletePositioner sideOffset={4}>
-        <AutocompletePopup class="popup">
-          <AutocompleteEmpty>No suggestions</AutocompleteEmpty>
-          <AutocompleteList>
-            <AutocompleteItem value="feature">feature</AutocompleteItem>
-            <AutocompleteItem value="fix">fix</AutocompleteItem>
-            <AutocompleteItem value="docs">docs</AutocompleteItem>
-            <AutocompleteItem value="refactor">refactor</AutocompleteItem>
-          </AutocompleteList>
-        </AutocompletePopup>
-      </AutocompletePositioner>
-    </AutocompletePortal>
+    <AutocompletePopup class="popup" sideOffset={4}>
+      <AutocompleteEmpty>No suggestions</AutocompleteEmpty>
+      <AutocompleteList>
+        <AutocompleteItem value="feature">feature</AutocompleteItem>
+        <AutocompleteItem value="fix">fix</AutocompleteItem>
+        <AutocompleteItem value="docs">docs</AutocompleteItem>
+        <AutocompleteItem value="refactor">refactor</AutocompleteItem>
+      </AutocompleteList>
+    </AutocompletePopup>
   </AutocompleteRoot>
 }

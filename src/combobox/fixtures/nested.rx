@@ -1,0 +1,39 @@
+import { ComboboxRoot, ComboboxInput, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
+import { SelectRoot, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "../../select/select.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle } from "../../dialog/dialog.rx"
+
+// The lists inside a modal dialog, and a combobox that starts open.
+export default component Fixture() {
+  source dialogOpen := ""
+  <main style="padding: 40px 0 0 60px">
+    <DialogRoot onOpenChange={(open) => { dialogOpen := open ? "open" : "closed" }}>
+      <DialogTrigger>Open dialog</DialogTrigger>
+      <DialogPopup data-testid="dialog">
+        <DialogTitle>Settings</DialogTitle>
+        <ComboboxRoot>
+          <ComboboxInput aria-label="City" />
+          <ComboboxPopup data-testid="city-popup">
+            <ComboboxList>
+              <ComboboxItem value="ams">Amsterdam</ComboboxItem>
+              <ComboboxItem value="ber">Berlin</ComboboxItem>
+            </ComboboxList>
+          </ComboboxPopup>
+        </ComboboxRoot>
+        <SelectRoot>
+          <SelectTrigger aria-label="Size"><SelectValue placeholder="Size" /></SelectTrigger>
+          <SelectPopup data-testid="size-popup">
+            <SelectItem value="s">Small</SelectItem>
+            <SelectItem value="l">Large</SelectItem>
+          </SelectPopup>
+        </SelectRoot>
+      </DialogPopup>
+    </DialogRoot>
+    <output data-testid="dialog-open">{dialogOpen}</output>
+    <ComboboxRoot defaultOpen>
+      <ComboboxInput aria-label="Starts open" style="width: 200px" />
+      <ComboboxPopup data-testid="start-popup" style="padding: 0; border: 0">
+        <ComboboxList><ComboboxItem value="x">X</ComboboxItem></ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+  </main>
+}

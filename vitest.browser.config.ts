@@ -9,6 +9,7 @@ export default defineConfig({
   plugins: [solid()],
   test: {
     include: ["src/**/*.browser.test.ts"],
+    setupFiles: ["src/test/browser-setup.ts"],
     // See vite.config.ts: an `.rx` entry can't be cached by its own content.
     fsModuleCache: false,
     browser: {

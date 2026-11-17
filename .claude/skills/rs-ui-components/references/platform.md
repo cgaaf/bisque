@@ -34,6 +34,9 @@ on the "not yet" list, because features move off it with each release.
   Escape or light dismiss from the browser, the library closes those two itself.
 - **Closing a dialog on a press outside** (`<dialog closedby>`: not in Safari). Detected from a click on the
   dialog's own backdrop area.
+- **A popup opened from something other than a button.** Only a `popovertarget` button is exempt from light
+  dismiss; an element passed as `showPopover({ source })` is not, so a press on a combobox's input would close
+  an `auto` popup. Combobox and Autocomplete use `popover="manual"` and close themselves.
 - **Roving focus** (`focusgroup`: Chrome only). Menu, Tabs, Toolbar and ToggleGroup keep `createRovingFocus`.
 - **Styleable `<select>`** (`appearance: base-select`: not in Firefox). Select stays a custom listbox.
 - **Knowing which fallback position was used.** There is no shipped way to read it, so popups have no

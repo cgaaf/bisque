@@ -135,6 +135,16 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - WebKit can round a geometry difference to `-0`, which `toBe(0)` rejects. Compare `Math.abs(…)`.
 - `preventDefault()` on an Escape keydown stops an enclosing `popover="auto"` from closing on it, and on a
   click it cancels the `popovertarget` toggle, in all three engines.
+- Playwright waits for a disabled control to become enabled, so a click on one times out: assert `:disabled`.
+  It won't click an `aria-disabled` element without `{ force: true }`, and an open popup intercepts clicks on
+  whatever it covers: press an uncovered point. `position` on `document.body` is relative to the body's box.
+- A Solid diagnostic fails the test it happened in (`src/test/browser-setup.ts`); the browser's console doesn't
+  reliably reach the terminal.
+- A listener for a non-delegated event (`toggle`) inside a props object is removed and re-added whenever the
+  object recomputes, and one added during a dispatch misses that event. Attach such a listener once, in a
+  TypeScript primitive.
+- WebKit leaves focus on a popover that has just been hidden if a button press opened it. The part moves focus.
+- WebKit's native radio group doesn't wrap at its ends with the arrow keys; Chromium and Firefox do.
 - A popup can't be written inside a `<p>`: the compiler refuses it (`CONTENT_MODEL`), as the HTML parser would
   close the paragraph.
 

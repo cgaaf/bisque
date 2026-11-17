@@ -1,4 +1,4 @@
-import { SelectRoot, SelectTrigger, SelectValue, SelectPortal, SelectPositioner, SelectPopup, SelectItem } from "../select.rx"
+import { SelectRoot, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "../select.rx"
 import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
 import { Form } from "../../form/form.rx"
 
@@ -9,14 +9,10 @@ export default component Fixture() {
       <FieldLabel>Size</FieldLabel>
       <SelectRoot required>
         <SelectTrigger><SelectValue placeholder="Choose" /></SelectTrigger>
-        <SelectPortal>
-          <SelectPositioner>
-            <SelectPopup>
-              <SelectItem value="s">Small</SelectItem>
-              <SelectItem value="l">Large</SelectItem>
-            </SelectPopup>
-          </SelectPositioner>
-        </SelectPortal>
+        <SelectPopup>
+          <SelectItem value="s">Small</SelectItem>
+          <SelectItem value="l">Large</SelectItem>
+        </SelectPopup>
       </SelectRoot>
       <FieldDescription data-testid="size-description">Pick one.</FieldDescription>
       <FieldError data-testid="size-error">Choose a size</FieldError>
@@ -25,13 +21,9 @@ export default component Fixture() {
       <FieldLabel>Locked</FieldLabel>
       <SelectRoot>
         <SelectTrigger><SelectValue /></SelectTrigger>
-        <SelectPortal>
-          <SelectPositioner>
-            <SelectPopup>
-              <SelectItem value="x">X</SelectItem>
-            </SelectPopup>
-          </SelectPositioner>
-        </SelectPortal>
+        <SelectPopup>
+          <SelectItem value="x">X</SelectItem>
+        </SelectPopup>
       </SelectRoot>
     </FieldRoot>
     <button type="submit">Submit</button>

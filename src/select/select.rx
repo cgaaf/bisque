@@ -1,8 +1,12 @@
+// A select on a custom listbox. A styleable native <select> (`appearance: base-select`) isn't shipped in Firefox
+// yet, so the roles, selection, typeahead and keyboard navigation are the library's. The popup is a native
+// `popover`: the trigger opens and closes it with `popovertarget`, and the browser provides the top layer,
+// closing on Escape and on a press outside, and the placement against the trigger (CSS anchor positioning). There
+// is no Portal, Positioner, Backdrop or Arrow part, and the items stay in the document while it is closed.
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
-import { createFocusScope, createFloating, createRovingFocus, createScrollLock, focusElement, clickElement } from "../internal/dom.js"
-import { createArrow } from "../internal/overlay.js"
-import { createTypeahead, elementText, itemValue } from "../internal/listbox.js"
-import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { createRovingFocus, focusElement, focusListItem, clickElement } from "../internal/dom.js"
+import { createTypeahead, elementText, itemValue, createOnShow } from "../internal/listbox.js"
+import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
 
@@ -11,19 +15,21 @@ export type SelectItemLabel = { value: string; label: string }
 
 export type SelectOpenFocus = "container" | "first-item" | "last-item" | "current-item"
 
-export type SelectContext = PopupState & {
-  listboxId: string
+// `popupId` (from PopoverState) is the listbox's id.
+export type SelectContext = PopoverState & {
   multiple: boolean
   // The selected values: none or one, or any number when `multiple`.
   selected: string[]
-  // What names each value: the `items` prop, then what each mounted item registered.
+  // What names each value: the `items` prop, then what each item registered.
   labels: SelectItemLabel[]
   disabled: boolean
   readOnly: boolean
   required: boolean
   // Where focus goes when the popup opens (`current-item` is the selected item, else the first).
   openFocus: SelectOpenFocus
+  setOpenFocus: (focus: SelectOpenFocus) => void
   openWith: (focus: SelectOpenFocus) => void
+  focusTrigger: () => void
   // Selects `value` (single: and closes), or toggles it (multiple).
   choose: (value: string) => void
   // Typeahead: on the closed trigger it selects the match, in the open popup it focuses it.
@@ -51,6 +57,8 @@ export type SelectRootProps = {
   onValuesChange?: (values: string[]) => void
   open?: boolean
   defaultOpen?: boolean
+  // Called after the browser or a part opened or closed it. A press outside and Escape can't be refused: a
+  // controlled select that keeps `open` true is shown again.
   onOpenChange?: (open: boolean) => void
   disabled?: boolean
   // The popup can be opened and browsed, but nothing can be selected.
@@ -59,10 +67,7 @@ export type SelectRootProps = {
   // With a name (or inside a named FieldRoot) the select submits its value with a <form>; with `multiple`, one
   // entry per selected value.
   name?: string
-  // Whether the page scrolls while the popup is open. Default: true (it doesn't).
-  modal?: boolean
-  // The label of each value, for SelectValue before an item has rendered (items render hidden, so this is only
-  // needed when a label must be known without the items, or differs from the item's text).
+  // The label of each value, when it must be known before its item has rendered, or differs from the item's text.
   items?: SelectItemLabel[]
   children?: View
 }
@@ -81,17 +86,25 @@ export component SelectRoot(props: SelectRootProps) {
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
-  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
-  listboxId = createId("select-listbox")
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
   labels = [...(props.items ?? []), ...registered]
   inputName = props.name ?? f?.name
   [match, resetMatch] = createTypeahead()
 
+  action setOpenFocus(focus: SelectOpenFocus) { openFocus := focus }
   action openWith(focus: SelectOpenFocus) {
     if (isDisabled) { return }
     openFocus := focus
     state.setOpen(true)
   }
+  action focusOpened() {
+    if (openFocus == "container") {
+      focusElement(state.popup)
+    } else {
+      focusListItem(state.popup, openFocus == "last-item" ? "last" : openFocus == "current-item" ? "current" : "first")
+    }
+  }
+  action focusTrigger() { focusElement(state.trigger) }
   action choose(value: string) {
     if (isDisabled || isReadOnly) { return }
     if (isMultiple) {
@@ -104,6 +117,8 @@ export component SelectRoot(props: SelectRootProps) {
       single := value
       if (props.onValueChange) { props.onValueChange(value) }
     }
+    // Focus leaves the popup before it closes, so it lands on the trigger in every engine.
+    focusElement(state.trigger)
     state.setOpen(false)
   }
   action typeClosed(key: string) {
@@ -128,14 +143,13 @@ export component SelectRoot(props: SelectRootProps) {
   }
   action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
 
-  _scope = createFocusScope(state.open, state.popup, false, openFocus)
-  _lock = createScrollLock(state.open && (props.modal ?? true))
+  // Focus moves in once the popup is shown: an item can't take focus while it is hidden.
+  _focusOnShow = createOnShow(state.popup, focusOpened)
 
   effect (selected) { if (f) { f.setValue(isMultiple ? $0 : $0.length > 0 ? $0[0] : null) } }
 
   provide select = {
     ...state,
-    listboxId: listboxId,
     multiple: isMultiple,
     selected: selected,
     labels: labels,
@@ -143,7 +157,9 @@ export component SelectRoot(props: SelectRootProps) {
     readOnly: isReadOnly,
     required: isRequired,
     openFocus: openFocus,
+    setOpenFocus: setOpenFocus,
     openWith: openWith,
+    focusTrigger: focusTrigger,
     choose: choose,
     typeClosed: typeClosed,
     typeOpen: typeOpen,
@@ -176,12 +192,17 @@ fn selectState(ref c: SelectContext): PartProps {
   }
 }
 
+// Spread on a <button>: `popovertarget` makes the browser open and close the popup on a click, Enter and Space,
+// and anchor the popup to it. The arrow keys open it through the select, and typing on the closed trigger selects.
 export fn selectTrigger(ref c: SelectContext): PartProps {
-  action press() {
-    if (c.open) { c.setOpen(false) } else { c.openWith(c.selected.length > 0 ? "current-item" : "container") }
+  base = popoverTriggerProps(c)
+  // A click from the keyboard (Enter, Space) has no pointer detail: it opens on the selected item, else the
+  // first. A pointer opens on the selected item, else on the list itself.
+  action press(event: MouseEvent) {
+    c.setOpenFocus(event.detail == 0 || c.selected.length > 0 ? "current-item" : "container")
   }
   action keyDown(event: KeyboardEvent) {
-    if (event.key == "ArrowDown" || event.key == "Enter" || event.key == " ") {
+    if (event.key == "ArrowDown") {
       event.preventDefault()
       if (!c.open) { c.openWith("current-item") }
     } else if (event.key == "ArrowUp") {
@@ -198,15 +219,12 @@ export fn selectTrigger(ref c: SelectContext): PartProps {
   }
   state = selectState(c)
   {
-    type: "button",
+    ...base,
     role: "combobox",
     "aria-haspopup": "listbox",
-    "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.open ? c.listboxId : undefined,
     "aria-readonly": c.readOnly ? "true" : undefined,
     "aria-required": c.required ? "true" : undefined,
     disabled: c.disabled ? true : undefined,
-    ref: c.setTrigger,
     onClick: press,
     onKeyDown: keyDown,
     onFocus: focus,
@@ -250,114 +268,53 @@ export component SelectIcon({ children, ...rest }: SpanProps) {
   <span {...merged}>{children}</span>
 }
 
-// Renders its children at the end of <body>. They stay mounted, hidden, while the select is closed: the items
-// name the selected value and answer typeahead on the closed trigger.
-export component SelectPortal(props: { children?: View }) {
-  portal { {props.children} }
-}
-
-export component SelectBackdrop({ children, ...rest }: DivProps) {
-  c = use select
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", ...state }, rest)
-  {if c.mounted {
-    <div {...merged}>{children}</div>
-  }}
-}
-
-// Where the positioner put the popup, for the popup and the arrow inside it.
-export type SelectPositionerContext = {
-  side: "top" | "bottom" | "left" | "right"
-  align: "start" | "center" | "end"
-  arrowUncentered: boolean
-  setArrow: (element: HTMLElement) => void
-}
-
-export context selectPositioner: SelectPositionerContext
-
-export type SelectPositionerProps = {
+export type SelectPopupProps = {
+  // Which side of the trigger it sits on; the browser flips it when it doesn't fit. Default: "bottom".
   side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the trigger it lines up with. Default: "start".
   align?: "start" | "center" | "end"
+  // Gap between trigger and popup, in pixels. Default: 0.
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: number
 } & DivProps
 
-// Positions the popup against the trigger, and hides it while the select is closed. Carries `data-side` and
-// `data-align`: where it ended up.
-export component SelectPositioner(props: SelectPositionerProps) {
-  c = use select
-  source arrow: HTMLElement | undefined := undefined
-  action setArrow(element: HTMLElement) { arrow := element }
-  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
-    side: props.side ?? "bottom",
-    align: props.align ?? "start",
-    sideOffset: props.sideOffset ?? 0,
-    alignOffset: props.alignOffset ?? 0,
-    collisionPadding: props.collisionPadding ?? 5,
-  })
-  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
-  provide selectPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
-  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    role: "presentation",
-    hidden: c.mounted ? undefined : true,
-    "data-side": usedSide,
-    "data-align": usedAlign,
-    ref: c.setPositioner,
-    ...state,
-  }, rest)
-  <div {...merged}>{children}</div>
-}
-
-export fn selectPopup(ref c: SelectContext): PartProps {
+// The listbox, on a `popover="auto"` element placed against the trigger with CSS anchor positioning and at least
+// as wide as it (`min-width: anchor-size(width)`). The browser closes it on Escape and on a press outside; style
+// it with `:popover-open` and `@starting-style`.
+export fn selectPopup(ref c: SelectContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   _roving = createRovingFocus(c.popup, { orientation: "vertical", loop: false, typeahead: false, tabStop: false })
+  base = popoverPopupProps(c, "auto", side, align, sideOffset, alignOffset)
   action keyDown(event: KeyboardEvent) {
-    // Tab leaves the select, so it closes: focus returns to the trigger and moves on from there.
     if (event.key == "Tab") {
+      // Tab leaves the select, so it closes.
       c.setOpen(false)
+    } else if (event.key == "Escape") {
+      // The browser closes it; focus goes back to the trigger first, which the browser alone does only when
+      // the trigger had focus when it opened (Safari doesn't focus a clicked button).
+      c.focusTrigger()
     } else if (!event.ctrlKey && !event.metaKey && !event.altKey) {
       c.typeOpen(event.key)
     }
   }
   action focusOut(event: FocusEvent & { relatedTarget: Node | null }) { c.fieldBlur(event.relatedTarget) }
-  state = popupStateAttributes(c)
   {
-    id: c.listboxId,
+    ...base,
+    style: { ...base.style, "min-width": "anchor-size(width)" },
     role: "listbox",
     tabindex: "-1",
     "aria-multiselectable": c.multiple ? "true" : undefined,
     "aria-readonly": c.readOnly ? "true" : undefined,
-    ref: c.setPopup,
     onKeyDown: keyDown,
     onFocusOut: focusOut,
-    ...state,
   }
 }
 
-export component SelectPopup({ children, ...rest }: DivProps) {
+// The items stay in the document while it is closed: they name the selected value and answer typeahead on the
+// closed trigger.
+export component SelectPopup({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: SelectPopupProps) {
   c = use select
-  p = use selectPositioner
-  own = selectPopup(c)
-  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
-// by `data-side`.
-export component SelectArrow({ children, ...rest }: DivProps) {
-  c = use select
-  p = use selectPositioner
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    "aria-hidden": "true",
-    "data-side": p.side,
-    "data-align": p.align,
-    "data-uncentered": p.arrowUncentered ? "" : undefined,
-    ref: p.setArrow,
-    ...state,
-  }, rest)
+  own = selectPopup(c, side, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }
 

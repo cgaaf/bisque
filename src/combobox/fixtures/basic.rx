@@ -1,35 +1,34 @@
-import { ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxItemIndicator, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator } from "../combobox.rx"
+import { ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxItemIndicator, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator } from "../combobox.rx"
 
 export default component Fixture() {
   source changes := ""
   source typed := ""
-  <form data-testid="form">
-    <ComboboxRoot name="fruit" onValueChange={(next) => { changes := `${changes}${next ?? "null"};` }} onInputValueChange={(next) => { typed := next }}>
-      <ComboboxInput aria-label="Fruit" />
+  source opens := ""
+  <form data-testid="form" style="padding: 80px 0 0 120px">
+    <button type="button">Elsewhere</button>
+    <ComboboxRoot name="fruit" onValueChange={(next) => { changes := `${changes}${next ?? "null"};` }} onInputValueChange={(next) => { typed := next }} onOpenChange={(next) => { opens := `${opens}${next ? "open" : "close"};` }}>
+      <ComboboxInput aria-label="Fruit" style="width: 240px; box-sizing: border-box" />
       <ComboboxTrigger aria-label="Show fruits">▾</ComboboxTrigger>
       <ComboboxClear aria-label="Clear">×</ComboboxClear>
       <ComboboxValue data-testid="value" placeholder="none" />
-      <ComboboxPortal>
-        <ComboboxPositioner data-testid="positioner">
-          <ComboboxPopup data-testid="popup">
-            <ComboboxStatus data-testid="status">Fruits</ComboboxStatus>
-            <ComboboxEmpty data-testid="empty">No fruit found</ComboboxEmpty>
-            <ComboboxList>
-              <ComboboxGroup data-testid="group">
-                <ComboboxGroupLabel>Common</ComboboxGroupLabel>
-                <ComboboxItem value="apple"><ComboboxItemIndicator>✓</ComboboxItemIndicator>Apple</ComboboxItem>
-                <ComboboxItem value="banana" label="Banana">Banana</ComboboxItem>
-                <ComboboxItem value="blueberry" disabled>Blueberry</ComboboxItem>
-              </ComboboxGroup>
-              <ComboboxSeparator />
-              <ComboboxItem value="creme" label="Crème brûlée">Crème brûlée</ComboboxItem>
-              <ComboboxItem value="cherry" label="Cherry">Cherry</ComboboxItem>
-            </ComboboxList>
-          </ComboboxPopup>
-        </ComboboxPositioner>
-      </ComboboxPortal>
+      <ComboboxPopup data-testid="popup" sideOffset={4} style="padding: 0; border: 0; max-height: 90px; overflow: auto">
+        <ComboboxStatus data-testid="status">Fruits</ComboboxStatus>
+        <ComboboxEmpty data-testid="empty">No fruit found</ComboboxEmpty>
+        <ComboboxList>
+          <ComboboxGroup data-testid="group">
+            <ComboboxGroupLabel>Common</ComboboxGroupLabel>
+            <ComboboxItem value="apple"><ComboboxItemIndicator>✓</ComboboxItemIndicator>Apple</ComboboxItem>
+            <ComboboxItem value="banana" label="Banana">Banana</ComboboxItem>
+            <ComboboxItem value="blueberry" disabled>Blueberry</ComboboxItem>
+          </ComboboxGroup>
+          <ComboboxSeparator />
+          <ComboboxItem value="creme" label="Crème brûlée">Crème brûlée</ComboboxItem>
+          <ComboboxItem value="cherry" label="Cherry">Cherry</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
     </ComboboxRoot>
     <output data-testid="changes">{changes}</output>
     <output data-testid="typed">{typed}</output>
+    <output data-testid="opens">{opens}</output>
   </form>
 }

@@ -27,3 +27,4 @@ export type NavProps = import("./impl/types.ts").ElementProps<"nav">
 export type DialogElementProps = import("./impl/types.ts").ElementProps<"dialog">
 export type DetailsProps = import("./impl/types.ts").ElementProps<"details">
 export type SummaryProps = import("./impl/types.ts").ElementProps<"summary">
+export type HrProps = import("./impl/types.ts").ElementProps<"hr">

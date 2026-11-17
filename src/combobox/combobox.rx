@@ -1,10 +1,16 @@
 // An input that filters a list of options. Focus stays in the input: the highlighted option is named by
 // `aria-activedescendant`, not focused. Autocomplete (../autocomplete) is the same interaction where the input's
 // text is the value: both are built on InputListRoot below, and its parts read the `combobox` context.
-import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
-import { createPresence, createDismiss, createFloating, focusElement } from "../internal/dom.js"
-import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, elementText, matchesFilter } from "../internal/listbox.js"
-import { popupStateAttributes, PopupState } from "../internal/popup.rx"
+//
+// The popup is a native `popover`, placed against the input (or ComboboxChips) with CSS anchor positioning and at
+// least as wide as it. It is `popover="manual"`: the browser's light dismiss counts a press on the input that
+// opened it as a press outside (in Chrome, Firefox and Safari alike: the `source` of `showPopover()` is not
+// exempt), so this family closes it itself, on Escape, on Tab and on a press outside. There is no Portal or
+// Positioner part, and the options stay in the document while it is closed.
+import { mergeProps, withoutHandlers, createId, createRef } from "../internal/props.js"
+import { focusElement } from "../internal/dom.js"
+import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, elementText, matchesFilter, createOnShow, createOutsidePress } from "../internal/listbox.js"
+import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, InputProps, PartProps } from "../internal/types.rx"
 
@@ -15,7 +21,9 @@ export type ComboboxItemLabel = { value: string; label: string }
 // option's label in the input; "both" does both; "none" neither. A combobox is always "list".
 export type AutocompleteMode = "list" | "both" | "inline" | "none"
 
-export type ComboboxContext = PopupState & {
+// From PopoverState: `trigger` is what the popup is anchored to (ComboboxChips when there is one, else the
+// input), `popup` the ComboboxPopup element.
+export type ComboboxContext = PopoverState & {
   kind: "combobox" | "autocomplete"
   mode: AutocompleteMode
   listId: string
@@ -37,13 +45,12 @@ export type ComboboxContext = PopupState & {
   readOnly: boolean
   required: boolean
   openOnInputClick: boolean
-  // What the popup is positioned against: ComboboxChips when there is one, else the input.
-  anchor: HTMLElement | undefined
   input: HTMLElement | undefined
   list: HTMLElement | undefined
   setInput: (element: HTMLElement) => void
   setList: (element: HTMLElement) => void
   setChips: (element: HTMLElement) => void
+  setButton: (element: HTMLElement) => void
   setClear: (element: HTMLElement) => void
   // The user typed `text`.
   changeInput: (text: string) => void
@@ -107,14 +114,19 @@ export component InputListRoot(props: InputListRootProps) {
   source activeId: string | undefined := undefined
   source visibleCount := 0
   source registered: ComboboxItemLabel[] := []
-  source uncontrolledOpen := peek(props.defaultOpen ?? false)
   source input: HTMLElement | undefined := undefined
-  source trigger: HTMLElement | undefined := undefined
-  source positioner: HTMLElement | undefined := undefined
-  source popup: HTMLElement | undefined := undefined
   source list: HTMLElement | undefined := undefined
   source chips: HTMLElement | undefined := undefined
+  source button: HTMLElement | undefined := undefined
   source clearButton: HTMLElement | undefined := undefined
+
+  // Every open or close, whoever made it: the highlight and inline preview start over.
+  action opened(next: boolean) {
+    activeId := undefined
+    preview := undefined
+    if (props.onOpenChange) { props.onOpenChange(next) }
+  }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), opened)
 
   isAutocomplete = props.kind == "autocomplete"
   mode = isAutocomplete ? props.mode ?? "list" : "list"
@@ -128,7 +140,7 @@ export component InputListRoot(props: InputListRootProps) {
   filtering = mode == "list" || mode == "both"
   showsSelection = !isAutocomplete && !isMultiple && currentSingle != null && shownText == selectedLabel
   query = filtering && !showsSelection ? shownText : ""
-  isOpen = props.open ?? uncontrolledOpen
+  isOpen = state.open
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
@@ -140,13 +152,7 @@ export component InputListRoot(props: InputListRootProps) {
     if (props.onInputValueChange && text != shownText) { props.onInputValueChange(text) }
   }
   // Opens or closes, leaving the input's text alone.
-  action writeOpen(next: boolean) {
-    if (next == isOpen) { return }
-    uncontrolledOpen := next
-    activeId := undefined
-    preview := undefined
-    if (props.onOpenChange) { props.onOpenChange(next) }
-  }
+  action writeOpen(next: boolean) { state.setOpen(next) }
   // Closing without choosing puts a single combobox's selection back in the input.
   action setOpen(next: boolean) {
     if (next && (isDisabled || isReadOnly)) { return }
@@ -159,13 +165,23 @@ export component InputListRoot(props: InputListRootProps) {
     writeOpen(next)
   }
   action dismiss() { setOpen(false) }
-  action setInput(element: HTMLElement) { input := element }
-  action setTrigger(element: HTMLElement) { trigger := element }
-  action setPositioner(element: HTMLElement) { positioner := element }
-  action setPopup(element: HTMLElement) { popup := element }
-  action setList(element: HTMLElement) { list := element }
-  action setChips(element: HTMLElement) { chips := element }
-  action setClear(element: HTMLElement) { clearButton := element }
+  // The popup is anchored to the chips container when there is one, else to the input.
+  action writeInput(element: HTMLElement) {
+    input := element
+    if (chips == undefined) { state.setTrigger(element) }
+  }
+  action writeChips(element: HTMLElement) {
+    chips := element
+    state.setTrigger(element)
+  }
+  action writeList(element: HTMLElement) { list := element }
+  action writeButton(element: HTMLElement) { button := element }
+  action writeClear(element: HTMLElement) { clearButton := element }
+  setInput = createRef(writeInput)
+  setChips = createRef(writeChips)
+  setList = createRef(writeList)
+  setButton = createRef(writeButton)
+  setClear = createRef(writeClear)
 
   action changeInput(text: string) {
     if (isDisabled || isReadOnly) { return }
@@ -261,9 +277,11 @@ export component InputListRoot(props: InputListRootProps) {
   }
   action highlightFirst() { highlight(adjacentItemId(list, undefined, "next", false)) }
   action setHiddenInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+  // A highlight set while the popup was hidden (ArrowDown on the closed input) is scrolled to once it shows.
+  action shown() { scrollItemIntoView(list, activeId) }
 
-  [mounted, status] = createPresence(isOpen, popup)
-  _dismiss = createDismiss(isOpen, [popup, input, trigger, chips, clearButton], dismiss)
+  _outside = createOutsidePress(isOpen, [state.popup, input, chips, button, clearButton], dismiss)
+  _scroll = createOnShow(state.popup, shown)
 
   // `autoHighlight`: once the options have been filtered for new input, the first one is highlighted.
   effect (query) { if ((props.autoHighlight ?? false) && peek(isOpen) && $0 != "") { highlightFirst() } }
@@ -272,16 +290,8 @@ export component InputListRoot(props: InputListRootProps) {
   }
 
   provide combobox = {
-    open: isOpen,
-    mounted: mounted,
-    status: status,
-    trigger: trigger,
-    positioner: positioner,
-    popup: popup,
+    ...state,
     setOpen: setOpen,
-    setTrigger: setTrigger,
-    setPositioner: setPositioner,
-    setPopup: setPopup,
     kind: props.kind,
     mode: mode,
     listId: listId,
@@ -298,12 +308,12 @@ export component InputListRoot(props: InputListRootProps) {
     readOnly: isReadOnly,
     required: isRequired,
     openOnInputClick: props.openOnInputClick ?? true,
-    anchor: chips ?? input,
     input: input,
     list: list,
     setInput: setInput,
     setList: setList,
     setChips: setChips,
+    setButton: setButton,
     setClear: setClear,
     changeInput: changeInput,
     openAt: openAt,
@@ -392,6 +402,11 @@ export fn comboboxInput(ref c: ComboboxContext): PartProps {
       if (c.open) { c.move(direction) } else { c.openAt(direction) }
     } else if (event.key == "Enter") {
       c.enter(event)
+    } else if (event.key == "Escape") {
+      if (c.open) {
+        event.preventDefault()
+        c.setOpen(false)
+      }
     } else if (event.key == "Tab") {
       if (c.open) { c.setOpen(false) }
     } else if (event.key == "Backspace" && c.multiple && event.currentTarget.value == "") {
@@ -406,7 +421,7 @@ export fn comboboxInput(ref c: ComboboxContext): PartProps {
     "aria-autocomplete": c.mode,
     "aria-expanded": c.open ? "true" : "false",
     "aria-haspopup": "listbox",
-    "aria-controls": c.open ? c.listId : undefined,
+    "aria-controls": c.listId,
     "aria-activedescendant": c.open ? c.activeId : undefined,
     "aria-readonly": c.readOnly ? "true" : undefined,
     value: c.inputValue,
@@ -433,6 +448,8 @@ export component ComboboxInput(props: InputProps) {
   <input {...merged} />
 }
 
+// A <button> beside the input that toggles the list. Not a `popovertarget` button: that would make it the
+// popup's anchor, and the popup belongs under the input.
 export fn comboboxTrigger(ref c: ComboboxContext): PartProps {
   action press() {
     if (c.open) { c.setOpen(false) } else { c.setOpen(true) }
@@ -445,9 +462,9 @@ export fn comboboxTrigger(ref c: ComboboxContext): PartProps {
     tabindex: "-1",
     "aria-haspopup": "listbox",
     "aria-expanded": c.open ? "true" : "false",
-    "aria-controls": c.open ? c.listId : undefined,
+    "aria-controls": c.listId,
     disabled: c.disabled ? true : undefined,
-    ref: c.setTrigger,
+    ref: c.setButton,
     onMouseDown: mouseDown,
     onClick: press,
     ...state,
@@ -500,56 +517,33 @@ export component ComboboxValue({ placeholder, children, ...rest }: ComboboxValue
   <span {...merged}>{text == "" ? placeholder ?? "" : text}</span>
 }
 
-// Renders its children at the end of <body>. They stay mounted, hidden, while the list is closed, so the options
-// name the selected values.
-export component ComboboxPortal(props: { children?: View }) {
-  portal { {props.children} }
-}
-
-export type ComboboxPositionerProps = {
+export type ComboboxPopupProps = {
+  // Which side of the input it sits on; the browser flips it when it doesn't fit. Default: "bottom".
   side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the input it lines up with. Default: "start".
   align?: "start" | "center" | "end"
+  // Gap between input and popup, in pixels. Default: 0.
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: number
 } & DivProps
 
-// Positions the popup against the input (or ComboboxChips), and hides it while closed.
-export component ComboboxPositioner({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, collisionPadding = 5, children, ...rest }: ComboboxPositionerProps) {
-  c = use combobox
-  [usedSide, usedAlign] = createFloating(c.mounted, c.anchor, c.positioner, {
-    side: side,
-    align: align,
-    sideOffset: sideOffset,
-    alignOffset: alignOffset,
-    collisionPadding: collisionPadding,
-  })
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    role: "presentation",
-    hidden: c.mounted ? undefined : true,
-    "data-side": usedSide,
-    "data-align": usedAlign,
-    ref: c.setPositioner,
-    ...state,
-  }, rest)
-  <div {...merged}>{children}</div>
-}
-
-export fn comboboxPopup(ref c: ComboboxContext): PartProps {
+// The popup: a `popover="manual"` element anchored to the input (or ComboboxChips) and at least as wide as it
+// (`min-width: anchor-size(width)`). Style it with `:popover-open` and `@starting-style`. A press inside it keeps
+// focus in the input.
+export fn comboboxPopup(ref c: ComboboxContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  base = popoverPopupProps(c, "manual", side, align, sideOffset, alignOffset)
   action mouseDown(event: MouseEvent) { event.preventDefault() }
-  state = popupStateAttributes(c)
   {
+    ...base,
+    style: { ...base.style, "min-width": "anchor-size(width)" },
     "data-empty": c.visibleCount == 0 ? "" : undefined,
-    ref: c.setPopup,
     onMouseDown: mouseDown,
-    ...state,
   }
 }
 
-export component ComboboxPopup({ children, ...rest }: DivProps) {
+export component ComboboxPopup({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: ComboboxPopupProps) {
   c = use combobox
-  own = comboboxPopup(c)
+  own = comboboxPopup(c, side, align, sideOffset, alignOffset)
   merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

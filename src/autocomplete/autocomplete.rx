@@ -1,7 +1,8 @@
 // An input with suggestions: its text is the value, and the options only help to fill it in. It is Combobox
 // underneath (InputListRoot in ../combobox/combobox.rx, with the same list navigation): the parts read the
-// `combobox` context, so a custom part imports `combobox` and the `combobox*` props functions from there.
-import { InputListRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator, AutocompleteMode } from "../combobox/combobox.rx"
+// `combobox` context, so a custom part imports `combobox` and the `combobox*` props functions from there. The
+// popup is the same native `popover="manual"` element, anchored to the input with CSS anchor positioning.
+import { InputListRoot, ComboboxInput, ComboboxTrigger, ComboboxClear, ComboboxValue, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxGroup, ComboboxGroupLabel, ComboboxEmpty, ComboboxStatus, ComboboxSeparator, AutocompleteMode } from "../combobox/combobox.rx"
 import { DivProps, ButtonProps, SpanProps, InputProps } from "../internal/types.rx"
 
 export type AutocompleteRootProps = {
@@ -52,15 +53,9 @@ export component AutocompleteValue({ placeholder, children, ...rest }: { placeho
   <ComboboxValue placeholder={placeholder} {...rest}>{children}</ComboboxValue>
 }
 
-export component AutocompletePortal(props: { children?: View }) {
-  <ComboboxPortal>{props.children}</ComboboxPortal>
-}
-
-export component AutocompletePositioner({ children, ...rest }: { side?: "top" | "bottom" | "left" | "right"; align?: "start" | "center" | "end"; sideOffset?: number; alignOffset?: number; collisionPadding?: number } & DivProps) {
-  <ComboboxPositioner {...rest}>{children}</ComboboxPositioner>
-}
-
-export component AutocompletePopup({ children, ...rest }: DivProps) {
+// Anchored to the input, on `side` and aligned to its `align` edge (default "bottom", "start"), at least as wide
+// as it. It stays in the document while closed.
+export component AutocompletePopup({ children, ...rest }: { side?: "top" | "bottom" | "left" | "right"; align?: "start" | "center" | "end"; sideOffset?: number; alignOffset?: number } & DivProps) {
   <ComboboxPopup {...rest}>{children}</ComboboxPopup>
 }
 

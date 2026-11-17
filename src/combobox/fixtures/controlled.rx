@@ -1,4 +1,4 @@
-import { ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
+import { ComboboxRoot, ComboboxInput, ComboboxTrigger, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
 
 fn startsWith(label: string, query: string): boolean => label.toLowerCase().startsWith(query.toLowerCase())
 
@@ -10,42 +10,37 @@ export default component Fixture() {
     <ComboboxRoot value={value} onValueChange={(next) => { value := next }} inputValue={text} onInputValueChange={(next) => { text := next }} open={open} onOpenChange={(next) => { open := next }} filter={startsWith} autoHighlight items={[{ value: "pear", label: "Pear" }]}>
       <ComboboxInput aria-label="Fruit" />
       <ComboboxTrigger aria-label="Toggle">▾</ComboboxTrigger>
-      <ComboboxPortal>
-        <ComboboxPositioner>
-          <ComboboxPopup>
-            <ComboboxList>
-              <ComboboxItem value="apple">Apple</ComboboxItem>
-              <ComboboxItem value="pear">Pear</ComboboxItem>
-              <ComboboxItem value="pineapple">Pineapple</ComboboxItem>
-              <ComboboxItem value="plum">Plum</ComboboxItem>
-            </ComboboxList>
-          </ComboboxPopup>
-        </ComboboxPositioner>
-      </ComboboxPortal>
+      <ComboboxPopup data-testid="popup">
+        <ComboboxList>
+          <ComboboxItem value="apple">Apple</ComboboxItem>
+          <ComboboxItem value="pear">Pear</ComboboxItem>
+          <ComboboxItem value="pineapple">Pineapple</ComboboxItem>
+          <ComboboxItem value="plum">Plum</ComboboxItem>
+        </ComboboxList>
+      </ComboboxPopup>
     </ComboboxRoot>
     <output data-testid="value">{value ?? "null"}</output>
     <output data-testid="text">{text}</output>
     <output data-testid="open">{open ? "open" : "closed"}</output>
     <button type="button" onClick={() => { value := "plum"; text := "Plum" }}>Pick plum</button>
+    <button type="button" onClick={() => { open := true }}>Open from outside</button>
     <ComboboxRoot disabled>
       <ComboboxInput aria-label="Disabled" />
-      <ComboboxPortal>
-        <ComboboxPositioner>
-          <ComboboxPopup>
-            <ComboboxList><ComboboxItem value="x">X</ComboboxItem></ComboboxList>
-          </ComboboxPopup>
-        </ComboboxPositioner>
-      </ComboboxPortal>
+      <ComboboxPopup>
+        <ComboboxList><ComboboxItem value="x">X</ComboboxItem></ComboboxList>
+      </ComboboxPopup>
     </ComboboxRoot>
     <ComboboxRoot readOnly defaultValue="y">
       <ComboboxInput aria-label="Read only" />
-      <ComboboxPortal>
-        <ComboboxPositioner>
-          <ComboboxPopup>
-            <ComboboxList><ComboboxItem value="y">Y</ComboboxItem><ComboboxItem value="z">Z</ComboboxItem></ComboboxList>
-          </ComboboxPopup>
-        </ComboboxPositioner>
-      </ComboboxPortal>
+      <ComboboxPopup>
+        <ComboboxList><ComboboxItem value="y">Y</ComboboxItem><ComboboxItem value="z">Z</ComboboxItem></ComboboxList>
+      </ComboboxPopup>
+    </ComboboxRoot>
+    <ComboboxRoot>
+      <ComboboxInput aria-label="Low" style="position: fixed; bottom: 4px; left: 200px" />
+      <ComboboxPopup data-testid="low-popup" style="height: 120px; padding: 0; border: 0">
+        <ComboboxList><ComboboxItem value="up">Up here</ComboboxItem></ComboboxList>
+      </ComboboxPopup>
     </ComboboxRoot>
   </main>
 }

@@ -1,4 +1,4 @@
-import { ComboboxRoot, ComboboxInput, ComboboxPortal, ComboboxPositioner, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
+import { ComboboxRoot, ComboboxInput, ComboboxPopup, ComboboxList, ComboboxItem } from "../combobox.rx"
 import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
 import { Form } from "../../form/form.rx"
 
@@ -9,16 +9,12 @@ export default component Fixture() {
       <FieldLabel>City</FieldLabel>
       <ComboboxRoot required>
         <ComboboxInput />
-        <ComboboxPortal>
-          <ComboboxPositioner>
-            <ComboboxPopup>
-              <ComboboxList>
-                <ComboboxItem value="ams">Amsterdam</ComboboxItem>
-                <ComboboxItem value="ber">Berlin</ComboboxItem>
-              </ComboboxList>
-            </ComboboxPopup>
-          </ComboboxPositioner>
-        </ComboboxPortal>
+        <ComboboxPopup>
+          <ComboboxList>
+            <ComboboxItem value="ams">Amsterdam</ComboboxItem>
+            <ComboboxItem value="ber">Berlin</ComboboxItem>
+          </ComboboxList>
+        </ComboboxPopup>
       </ComboboxRoot>
       <FieldDescription data-testid="city-description">Where you live.</FieldDescription>
       <FieldError data-testid="city-error">Choose a city</FieldError>
@@ -27,13 +23,9 @@ export default component Fixture() {
       <FieldLabel>Locked</FieldLabel>
       <ComboboxRoot>
         <ComboboxInput />
-        <ComboboxPortal>
-          <ComboboxPositioner>
-            <ComboboxPopup>
-              <ComboboxList><ComboboxItem value="x">X</ComboboxItem></ComboboxList>
-            </ComboboxPopup>
-          </ComboboxPositioner>
-        </ComboboxPortal>
+        <ComboboxPopup>
+          <ComboboxList><ComboboxItem value="x">X</ComboboxItem></ComboboxList>
+        </ComboboxPopup>
       </ComboboxRoot>
     </FieldRoot>
     <button type="submit">Submit</button>
