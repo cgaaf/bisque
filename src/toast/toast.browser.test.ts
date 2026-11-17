@@ -201,12 +201,11 @@ test("hovering the viewport pauses the timers and leaving resumes them with the 
   drift += Date.now();
   expect(viewport.hasAttribute("data-expanded")).toBe(false);
   // 400ms were left when it paused, less whatever ran during the two hovers.
-  const atLeast = 400 - drift - 10;
-  if (atLeast > 0) {
-    advance(atLeast);
-    expect(root.hasAttribute("data-ending-style")).toBe(false);
-  }
-  advance(400 - Math.max(atLeast, 0));
+  // If the hovers took so long that it may already be over, there is nothing certain left to wait out.
+  const certain = Math.max(400 - drift - 10, 0);
+  advance(certain);
+  expect(certain > 0 && root.hasAttribute("data-ending-style")).toBe(false);
+  advance(400 - certain);
   expect(root.hasAttribute("data-ending-style")).toBe(true);
 });
 

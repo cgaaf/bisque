@@ -22,13 +22,13 @@ element is finished, not thin.
 
 They are the specification of the house style. Pick the one closest to what you're building:
 
-| File | Shows |
-| --- | --- |
-| `src/dialog/dialog.rx` | A family on a native element (`<dialog>`): state mirrored to the browser, ids registered by child parts |
-| `src/popover/popover.rx` + `src/internal/popover.rx` | An anchored popup on `popover` and CSS anchor positioning; the shared state other popups build on |
-| `src/alert-dialog/alert-dialog.rx` | Reusing another family through thin wrappers |
-| `src/checkbox/checkbox.rx` | A form control and its Field integration |
-| `src/menu/menu.rx` | Behaviour the platform lacks: roving focus, typeahead, item kinds, nested contexts |
+| File                                                 | Shows                                                                                                   |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `src/dialog/dialog.rx`                               | A family on a native element (`<dialog>`): state mirrored to the browser, ids registered by child parts |
+| `src/popover/popover.rx` + `src/internal/popover.rx` | An anchored popup on `popover` and CSS anchor positioning; the shared state other popups build on       |
+| `src/alert-dialog/alert-dialog.rx`                   | Reusing another family through thin wrappers                                                            |
+| `src/checkbox/checkbox.rx`                           | A form control and its Field integration                                                                |
+| `src/menu/menu.rx`                                   | Behaviour the platform lacks: roving focus, typeahead, item kinds, nested contexts                      |
 
 Families that still import `src/internal/popup.rx`, `createFloating`, `createFocusScope`, `createDismiss` or
 `createPresence` predate platform first and are being moved off them: don't copy that plumbing.
