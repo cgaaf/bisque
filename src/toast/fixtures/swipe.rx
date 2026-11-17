@@ -1,0 +1,22 @@
+import { ToastProvider, ToastPortal, ToastViewport, ToastRoot, ToastTitle, toast } from "../toast.rx"
+import { appToastManager } from "./app-toasts.js"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t} swipeDirection="up" swipeThreshold={80}>
+      <ToastTitle />
+    </ToastRoot>
+  }
+}
+
+export default component Fixture() {
+  manager = appToastManager()
+  <ToastProvider toastManager={manager} timeout={0}>
+    <ToastPortal>
+      <ToastViewport>
+        <Toasts />
+      </ToastViewport>
+    </ToastPortal>
+  </ToastProvider>
+}

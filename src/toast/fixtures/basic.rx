@@ -1,0 +1,47 @@
+import { ToastProvider, ToastPortal, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "../toast.rx"
+import { appToastManager } from "./app-toasts.js"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t} data-testid={t.id}>
+      <ToastContent>
+        <ToastTitle />
+        <ToastDescription />
+        <ToastAction />
+        <ToastClose>Dismiss</ToastClose>
+      </ToastContent>
+    </ToastRoot>
+  }
+}
+
+component Buttons() {
+  c = use toast
+  source count := 0
+  action addOne() {
+    let n = count + 1
+    count := n
+    c.manager.add({ title: `Toast ${n}`, description: `Body ${n}` })
+  }
+  <div>
+    <button onClick={addOne}>Add</button>
+    <button onClick={() => { c.manager.add({ id: "fixed", title: "Fixed", priority: "high" }) }}>Add urgent</button>
+    <button onClick={() => { c.manager.add({ id: "undo", title: "Deleted", actionProps: { children: "Undo" }, timeout: 0 }) }}>Add with action</button>
+    <button onClick={() => { c.manager.close(undefined) }}>Close all</button>
+  </div>
+}
+
+export default component Fixture() {
+  manager = appToastManager()
+  <main>
+    <button>Before</button>
+    <ToastProvider toastManager={manager} timeout={1000} limit={2}>
+      <Buttons />
+      <ToastPortal>
+        <ToastViewport data-testid="viewport">
+          <Toasts />
+        </ToastViewport>
+      </ToastPortal>
+    </ToastProvider>
+  </main>
+}

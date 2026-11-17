@@ -1,0 +1,6 @@
+// Mounts the demo, which no entry this family may edit reaches.
+import { ToastDemo } from "../../../demo/toast.rx"
+
+export default component Fixture() {
+  <ToastDemo />
+}

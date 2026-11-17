@@ -1,0 +1,20 @@
+import { DrawerRoot, DrawerTrigger, DrawerPortal, DrawerBackdrop, DrawerViewport, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../src/drawer/drawer.rx"
+
+export component DrawerDemo() {
+  <DrawerRoot>
+    <DrawerTrigger>Open filters</DrawerTrigger>
+    <DrawerPortal>
+      <DrawerBackdrop class="backdrop" />
+      <DrawerViewport class="drawer-viewport">
+        <DrawerPopup class="drawer">
+          <div class="drawer-handle" />
+          <DrawerContent>
+            <DrawerTitle>Filters</DrawerTitle>
+            <DrawerDescription>Swipe down or press Done to close.</DrawerDescription>
+            <DrawerClose>Done</DrawerClose>
+          </DrawerContent>
+        </DrawerPopup>
+      </DrawerViewport>
+    </DrawerPortal>
+  </DrawerRoot>
+}

@@ -1,0 +1,18 @@
+// How .rx may use ./toast.js (implemented in ./impl/toast.ts): the toast manager, the provider's records, and
+// the DOM behaviour of toasts. A `ref` parameter is passed live; the others are read once. Bind every call.
+// Types come from ./impl/toast.ts; src/toast/toast.rx declares its own aliases of the ones it names.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./toast.d.ts.
+export pure fn createToastManager(): import("./impl/toast.ts").ToastManager
+export pure fn subscribeToastManager(ref manager: import("./impl/toast.ts").ToastManager, onAdd: (options: import("./impl/toast.ts").ToastOptions) => void, onUpdate: (id: string, updates: any) => void, onClose: (id: string | undefined) => void) instantiates
+export pure fn newToastRecord(options: import("./impl/toast.ts").ToastOptions): import("./impl/toast.ts").ToastRecord
+export pure fn updatedToastRecord(previous: import("./impl/toast.ts").ToastRecord, updates: any, restart: boolean): import("./impl/toast.ts").ToastRecord
+export pure fn placeToasts(records: import("./impl/toast.ts").ToastRecord[], limit: number): import("./impl/toast.ts").PlacedToast[]
+export fn notifyToasts(records: import("./impl/toast.ts").ToastRecord[], id: string | undefined, which: "onClose" | "onRemove"): void
+export pure fn createPausableTimeout(ref running: boolean, ref paused: boolean, ref duration: number, ref restartKey: number, onElapsed: () => void) instantiates
+export pure fn createWindowFocus(): ref boolean
+export pure fn createToastHotkey(ref active: boolean, ref viewport: HTMLElement | undefined) instantiates
+export fn handOffToastFocus(toast: HTMLElement | undefined): void
+export pure fn isFocusVisible(target: EventTarget | null): boolean
+export pure fn containsTarget(container: EventTarget | null | undefined, target: EventTarget | null): boolean
+export pure fn createElementHeight(ref element: HTMLElement | undefined): ref number
+export pure fn swipeDirections(value: "up" | "down" | "left" | "right" | ("up" | "down" | "left" | "right")[] | undefined, fallback: ("up" | "down" | "left" | "right")[]): ("up" | "down" | "left" | "right")[]

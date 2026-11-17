@@ -1,0 +1,155 @@
+// A panel that slides in from an edge of the screen and can be swiped back out. It is Dialog underneath (focus,
+// dismissal, scroll lock, presence, ids: ../dialog/dialog.rx), plus swipe to dismiss along `swipeDirection`.
+// A custom part reads both contexts: `dialog` (and the `dialog*` props functions) from ../dialog/dialog.rx, and
+// `drawer` from here.
+import { DialogRoot, DialogTrigger, DialogPortal, DialogBackdrop, DialogTitle, DialogDescription, DialogClose, dialog, dialogPopup, DialogContext } from "../dialog/dialog.rx"
+import { mergeProps } from "../internal/props.js"
+import { createSwipe } from "../internal/swipe.js"
+import { ButtonProps, DivProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
+
+export type DrawerSwipeDirection = "up" | "down" | "left" | "right"
+
+export type DrawerContext = {
+  // The edge it is swiped out through.
+  swipeDirection: DrawerSwipeDirection
+  swiping: boolean
+  // True when the last close came from a swipe, until it opens again.
+  swipeDismissed: boolean
+  // How far the popup has been dragged, in px.
+  movementX: number
+  movementY: number
+  // The drag towards `swipeDirection` as a fraction of the popup's size, 0 to 1.
+  progress: number
+  setPopup: (element: HTMLElement) => void
+}
+
+export context drawer: DrawerContext
+
+export type DrawerRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // Where a swipe dismisses it: the edge it slides out through. Default: "down".
+  swipeDirection?: DrawerSwipeDirection
+  // How far a swipe must travel to dismiss, in px. Default: half the popup's size along the direction. A fast
+  // flick (0.5 px/ms) dismisses whatever the distance.
+  swipeThreshold?: number
+  // As DialogRoot: modal by default, closed by Escape and a press outside.
+  modal?: boolean
+  dismissible?: boolean
+  disablePointerDismissal?: boolean
+  children?: View
+}
+
+export component DrawerRoot(props: DrawerRootProps) {
+  source uncontrolled := peek(props.defaultOpen ?? false)
+  source popup: HTMLElement | undefined := undefined
+  source swipeDismissed := false
+  isOpen = props.open ?? uncontrolled
+  direction = props.swipeDirection ?? "down"
+
+  action setOpen(next: boolean) {
+    if (next == isOpen) { return }
+    uncontrolled := next
+    if (next) { swipeDismissed := false }
+    if (props.onOpenChange) { props.onOpenChange(next) }
+  }
+  action swiped(towards: DrawerSwipeDirection) {
+    swipeDismissed := true
+    setOpen(false)
+  }
+  action setPopup(element: HTMLElement) { popup := element }
+
+  // Mouse presses in DrawerContent don't start a swipe, so its text can be selected; touch still swipes.
+  swipe = createSwipe(popup, { enabled: isOpen, directions: [direction], threshold: props.swipeThreshold ?? 0, velocity: 0.5, textSelector: "[data-drawer-content]" }, swiped)
+
+  provide drawer = {
+    swipeDirection: direction,
+    swiping: swipe.swiping,
+    swipeDismissed: swipeDismissed,
+    movementX: swipe.x,
+    movementY: swipe.y,
+    progress: swipe.progress,
+    setPopup: setPopup,
+  }
+
+  // DrawerRoot owns the open state; Dialog follows it and reports Escape, outside presses and its own parts.
+  <DialogRoot open={isOpen} onOpenChange={setOpen} modal={props.modal} dismissible={props.dismissible} disablePointerDismissal={props.disablePointerDismissal}>
+    {props.children}
+  </DialogRoot>
+}
+
+export component DrawerTrigger({ children, ...rest }: ButtonProps) {
+  <DialogTrigger {...rest}>{children}</DialogTrigger>
+}
+
+export component DrawerPortal(props: { keepMounted?: boolean; children?: View }) {
+  <DialogPortal keepMounted={props.keepMounted}>{props.children}</DialogPortal>
+}
+
+// `data-swiping` while the popup is dragged, and `--drawer-swipe-progress` (0 to 1) to fade along with it.
+export component DrawerBackdrop({ children, ...rest }: DivProps) {
+  d = use drawer
+  own = {
+    "data-swiping": d.swiping ? "" : undefined,
+    style: { "--drawer-swipe-progress": `${d.progress}` },
+  }
+  merged = mergeProps(own, rest)
+  <DialogBackdrop {...merged}>{children}</DialogBackdrop>
+}
+
+// A container to position the popup in, such as a flex box against the drawer's edge.
+export component DrawerViewport({ children, ...rest }: DivProps) {
+  c = use dialog
+  own = {
+    role: "presentation",
+    "data-open": c.open ? "" : undefined,
+    "data-closed": c.open ? undefined : "",
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The drawer: Dialog's popup, plus `data-swipe-direction`, `data-swiping`, `data-swipe-dismiss` and the
+// `--drawer-swipe-movement-x`/`-y` and `--drawer-swipe-progress` variables. A stylesheet translates it by the
+// movement while `data-swiping` is present; below the threshold the movement returns to 0 and it snaps back.
+export fn drawerPopup(ref c: DialogContext, ref d: DrawerContext): PartProps {
+  base = dialogPopup(c)
+  mergeProps(base, {
+    ref: d.setPopup,
+    "data-swipe-direction": d.swipeDirection,
+    "data-swiping": d.swiping ? "" : undefined,
+    "data-swipe-dismiss": d.swipeDismissed ? "" : undefined,
+    style: {
+      "--drawer-swipe-movement-x": `${d.movementX}px`,
+      "--drawer-swipe-movement-y": `${d.movementY}px`,
+      "--drawer-swipe-progress": `${d.progress}`,
+    },
+  })
+}
+
+export component DrawerPopup({ children, ...rest }: DivProps) {
+  c = use dialog
+  d = use drawer
+  own = drawerPopup(c, d)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Holds the drawer's content. A mouse press inside it selects text instead of starting a swipe.
+export component DrawerContent({ children, ...rest }: DivProps) {
+  merged = mergeProps({ "data-drawer-content": "" }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component DrawerTitle({ children, ...rest }: HeadingProps) {
+  <DialogTitle {...rest}>{children}</DialogTitle>
+}
+
+export component DrawerDescription({ children, ...rest }: ParagraphProps) {
+  <DialogDescription {...rest}>{children}</DialogDescription>
+}
+
+export component DrawerClose({ children, ...rest }: ButtonProps) {
+  <DialogClose {...rest}>{children}</DialogClose>
+}

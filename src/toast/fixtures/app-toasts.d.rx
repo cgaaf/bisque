@@ -1,0 +1,3 @@
+// How .rx may use ./app-toasts.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./app-toasts.d.ts.
+export pure fn appToastManager(): import("../../internal/impl/toast.ts").ToastManager

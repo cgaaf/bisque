@@ -1,0 +1,372 @@
+// Toasts: short messages that appear without taking focus and go away by themselves.
+//
+// App code adds them through a ToastManager (`createToastManager()` from ../internal/toast.js): pass one to
+// ToastProvider as `toastManager` to add toasts from outside the component tree, even from plain `.ts`; inside
+// it, `(use toast).manager` is the provider's own. The provider owns the list; the app renders it with
+// `for t in (use toast).toasts { <ToastRoot toast={t}> … }`.
+import { mergeProps, createId } from "../internal/props.js"
+import { createPresence } from "../internal/dom.js"
+import { isEmptyView } from "../internal/field.js"
+import { createToastManager, subscribeToastManager, newToastRecord, updatedToastRecord, placeToasts, notifyToasts, createPausableTimeout, createWindowFocus, createToastHotkey, handOffToastFocus, isFocusVisible, containsTarget, createElementHeight, swipeDirections } from "../internal/toast.js"
+import { createSwipe } from "../internal/swipe.js"
+import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
+
+export type ToastManager = import("../internal/impl/toast.ts").ToastManager
+export type ToastOptions = import("../internal/impl/toast.ts").ToastOptions
+export type ToastRecord = import("../internal/impl/toast.ts").ToastRecord
+// A toast as the list holds it: its options, `closing`, `height`, and where it stands in the stack (`index`,
+// `visibleIndex`, `offsetY`, `limited`).
+export type ToastObject = import("../internal/impl/toast.ts").PlacedToast
+export type SwipeDirection = "up" | "down" | "left" | "right"
+
+export type ToastContext = {
+  // Newest first. Rows keep their identity by id across updates, so a `for` over it keeps each ToastRoot.
+  toasts: ToastObject[]
+  manager: ToastManager
+  timeout: number
+  // The pointer is over the viewport or keyboard focus is in it: the stack is spread out.
+  expanded: boolean
+  focused: boolean
+  // Auto-dismiss timers are stopped: expanded, or the window doesn't have focus.
+  paused: boolean
+  viewport: HTMLElement | undefined
+  setViewport: (element: HTMLElement) => void
+  setHovering: (hovering: boolean) => void
+  setFocused: (focused: boolean) => void
+  setHeight: (id: string, height: number) => void
+  close: (id: string | undefined) => void
+  remove: (id: string) => void
+}
+
+export context toast: ToastContext
+
+export type ToastProviderProps = {
+  // Default time before a toast closes by itself, in ms; 0 never. Default: 5000.
+  timeout?: number
+  // How many toasts show at once. Older ones stay in the list as `limited` (inert, `data-limited`). Default: 3.
+  limit?: number
+  // A manager app code can reach from outside the tree. Read once. Default: one of the provider's own.
+  toastManager?: ToastManager
+  children?: View
+}
+
+export component ToastProvider(props: ToastProviderProps) {
+  source records: ToastRecord[] := []
+  source hovering := false
+  source focused := false
+  source viewport: HTMLElement | undefined := undefined
+  timeout = props.timeout ?? 5000
+  limit = props.limit ?? 3
+  manager = peek(props.toastManager) ?? createToastManager()
+  windowFocused = createWindowFocus()
+  isExpanded = hovering || focused
+  isPaused = isExpanded || !windowFocused
+  // A keyed equation, not the source: `source … key id` doesn't keep rows by id in 0.3.1, and every write
+  // here replaces a record.
+  toasts key id = placeToasts(records, limit)
+
+  action add(options: ToastOptions) {
+    let id = options.id ?? ""
+    let existing = records.find(r => r.id == id)
+    if (existing != undefined && !existing.closing) {
+      // The same id again updates the toast in place and gives it its full time again.
+      let next = updatedToastRecord(existing, options, true)
+      records := rs => rs.map(r => r.id == id ? next : r)
+      return
+    }
+    let record = newToastRecord(options)
+    records := rs => [record, ...rs.filter(r => r.id != id)]
+  }
+  action update(id: string, updates: any) {
+    let existing = records.find(r => r.id == id)
+    // A closing toast keeps what it had: a late promise result mustn't hold up its exit.
+    if (existing == undefined || existing.closing) { return }
+    let next = updatedToastRecord(existing, updates, existing.type == "loading")
+    records := rs => rs.map(r => r.id == id ? next : r)
+  }
+  action close(id: string | undefined) {
+    notifyToasts(records, id, "onClose")
+    let anyLeft = id != undefined && records.some(r => !r.closing && r.id != id)
+    records := rs => rs.map(r => (id == undefined || r.id == id) && !r.closing ? { ...r, closing: true, height: 0 } : r)
+    if (!anyLeft) {
+      hovering := false
+      focused := false
+    }
+  }
+  action remove(id: string) {
+    notifyToasts(records, id, "onRemove")
+    records := rs => rs.filter(r => r.id != id)
+  }
+  action setHeight(id: string, height: number) {
+    let i = records.findIndex(r => r.id == id)
+    if (i < 0 || records[i].closing || records[i].height == height) { return }
+    records[i].height := height
+  }
+  action setViewport(element: HTMLElement) { viewport := element }
+  action setHovering(next: boolean) { hovering := next }
+  action setFocused(next: boolean) { focused := next }
+
+  _subscription = subscribeToastManager(manager, add, update, close)
+
+  provide toast = {
+    toasts: toasts,
+    manager: manager,
+    timeout: timeout,
+    expanded: isExpanded,
+    focused: focused,
+    paused: isPaused,
+    viewport: viewport,
+    setViewport: setViewport,
+    setHovering: setHovering,
+    setFocused: setFocused,
+    setHeight: setHeight,
+    close: close,
+    remove: remove,
+  }
+
+  {props.children}
+}
+
+// Renders its children at the end of <body>.
+export component ToastPortal(props: { children?: View }) {
+  portal { {props.children} }
+}
+
+// The live region the toasts are rendered in. Hovering it or moving keyboard focus into it expands the stack
+// and stops the timers. F6 moves focus to it while there are toasts; F6 again goes back. `--toast-frontmost-height`
+// is the newest toast's height.
+export fn toastViewport(ref c: ToastContext): PartProps {
+  action enter() { c.setHovering(true) }
+  action leave() { c.setHovering(false) }
+  action focusIn(event: FocusEvent) {
+    if (!c.focused && isFocusVisible(event.target)) { c.setFocused(true) }
+  }
+  action focusOut(event: FocusEvent) {
+    if (c.focused && !containsTarget(c.viewport, event.relatedTarget)) { c.setFocused(false) }
+  }
+  front = c.toasts.find(t => !t.closing)
+  {
+    role: "region",
+    tabindex: "-1",
+    "aria-live": "polite",
+    "aria-atomic": "false",
+    "aria-relevant": "additions text",
+    "aria-label": "Notifications",
+    "data-expanded": c.expanded ? "" : undefined,
+    "data-rs-ui-toast-viewport": "",
+    style: { "--toast-frontmost-height": front != undefined && front.height > 0 ? `${front.height}px` : undefined },
+    ref: c.setViewport,
+    onMouseEnter: enter,
+    onMouseMove: enter,
+    onMouseLeave: leave,
+    onFocusIn: focusIn,
+    onFocusOut: focusOut,
+  }
+}
+
+export component ToastViewport({ children, ...rest }: DivProps) {
+  c = use toast
+  _hotkey = createToastHotkey(c.toasts.length > 0, c.viewport)
+  own = toastViewport(c)
+  merged = mergeProps(own, rest)
+  // High-priority toasts are announced once, assertively, from here; their roots are hidden from assistive
+  // technology until the user moves into the viewport.
+  urgent = c.toasts.filter(t => t.priority == "high" && !t.closing)
+  <div {...merged}>{children}</div>
+  {if !c.focused && urgent.length > 0 {
+    <div style={{ position: "fixed", width: "1px", height: "1px", margin: "-1px", padding: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "white-space": "nowrap", border: "0" }}>
+      {for t in urgent {
+        <div role="alert" aria-atomic="true">
+          <div>{t.title}</div>
+          <div>{t.description}</div>
+        </div>
+      }}
+    </div>
+  }}
+}
+
+export type ToastRootContext = {
+  toast: ToastObject
+  expanded: boolean
+  titleId: string | undefined
+  descriptionId: string | undefined
+  setTitleId: (id: string | undefined) => void
+  setDescriptionId: (id: string | undefined) => void
+  close: () => void
+}
+
+export context toastRoot: ToastRootContext
+
+export type ToastRootProps = {
+  toast: ToastObject
+  // Where a swipe dismisses it. `[]` turns swiping off. Default: ["down", "right"].
+  swipeDirection?: SwipeDirection | SwipeDirection[]
+  // How far a swipe must travel to dismiss, in px. Default: 40.
+  swipeThreshold?: number
+  children?: View
+} & Omit<DivProps, "children">
+
+// One toast. It closes after its timeout, on Escape while focus is in it, and when swiped past the threshold.
+// While dragged it carries `data-swiping` and `--toast-swipe-movement-x`/`-y`; `--toast-index`,
+// `--toast-offset-y` and `--toast-height` place it in the stack.
+export component ToastRoot(props: ToastRootProps) {
+  c = use toast
+  source shown := false
+  source element: HTMLElement | undefined := undefined
+  source titleId: string | undefined := undefined
+  source descriptionId: string | undefined := undefined
+  t = props.toast
+  closing = t.closing
+  directions = swipeDirections(props.swipeDirection, ["down", "right"])
+
+  action setElement(el: HTMLElement) { element := el }
+  action setTitleId(id: string | undefined) { titleId := id }
+  action setDescriptionId(id: string | undefined) { descriptionId := id }
+  action closeThis() { c.close(t.id) }
+  action swiped(direction: SwipeDirection) { c.close(t.id) }
+  action keyDown(event: KeyboardEvent) {
+    if (event.key == "Escape" && !event.defaultPrevented) { c.close(t.id) }
+  }
+
+  // Present from the frame after it mounts, so a new toast gets `data-starting-style` for one frame.
+  [mounted, status] = createPresence(shown && !closing, element)
+  swipe = createSwipe(element, { enabled: !closing && directions.length > 0, directions: directions, threshold: props.swipeThreshold ?? 40, velocity: 0, textSelector: "" }, swiped)
+  _timer = createPausableTimeout(!closing && t.type != "loading", c.paused || swipe.swiping, t.timeout ?? c.timeout, t.timerKey, closeThis)
+  height = createElementHeight(element)
+
+  effect () { shown := true }
+  effect (height) { c.setHeight(t.id, $0) }
+  effect (closing) {
+    if ($0) { handOffToastFocus(element) }
+  }
+  // Gone from the list once it has animated out.
+  effect (mounted, closing) {
+    if (!$0 && $1) { c.remove(t.id) }
+  }
+
+  provide toastRoot = {
+    toast: t,
+    expanded: c.expanded,
+    titleId: titleId,
+    descriptionId: descriptionId,
+    setTitleId: setTitleId,
+    setDescriptionId: setDescriptionId,
+    close: closeThis,
+  }
+
+  { toast: _toast, swipeDirection, swipeThreshold, children, ...rest } = props
+  urgent = t.priority == "high"
+  own = {
+    role: urgent ? "alertdialog" : "dialog",
+    tabindex: "0",
+    "aria-modal": "false",
+    "aria-labelledby": titleId,
+    "aria-describedby": descriptionId,
+    "aria-hidden": urgent && !c.focused ? "true" : undefined,
+    inert: t.limited ? true : undefined,
+    "data-rs-ui-toast": "",
+    "data-type": t.type,
+    "data-expanded": c.expanded ? "" : undefined,
+    "data-limited": t.limited ? "" : undefined,
+    "data-swiping": swipe.swiping ? "" : undefined,
+    "data-swipe-direction": swipe.direction,
+    "data-starting-style": status == "starting" ? "" : undefined,
+    "data-ending-style": closing || status == "ending" ? "" : undefined,
+    style: {
+      "--toast-index": `${closing ? t.index : t.visibleIndex}`,
+      "--toast-offset-y": `${t.offsetY}px`,
+      "--toast-height": t.height > 0 ? `${t.height}px` : undefined,
+      "--toast-swipe-movement-x": `${swipe.x}px`,
+      "--toast-swipe-movement-y": `${swipe.y}px`,
+    },
+    ref: setElement,
+    onKeyDown: keyDown,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Holds a toast's text and buttons. `data-behind` is on every toast but the frontmost.
+export component ToastContent({ children, ...rest }: DivProps) {
+  r = use toastRoot
+  own = {
+    "data-expanded": r.expanded ? "" : undefined,
+    "data-behind": r.toast.visibleIndex > 0 ? "" : undefined,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The toast's title: its children, or else the `title` it was added with. Renders nothing when it has neither.
+export component ToastTitle({ children, ...rest }: HeadingProps) {
+  r = use toastRoot
+  id = createId("toast-title")
+  ownChildren = !isEmptyView(children)
+  text = r.toast.title
+  present = ownChildren || (text != undefined && text != "")
+  // No cleanup: an action called while the toast's row is being disposed throws ACTION_CALLED_IN_OWNED_SCOPE.
+  effect (present) { r.setTitleId($0 ? id : undefined) }
+  merged = mergeProps({ id: id, "data-type": r.toast.type }, rest)
+  {if present {
+    <h2 {...merged}>
+      {if ownChildren { {children} } else { {text} }}
+    </h2>
+  }}
+}
+
+// The toast's description: its children, or else the `description` it was added with.
+export component ToastDescription({ children, ...rest }: ParagraphProps) {
+  r = use toastRoot
+  id = createId("toast-description")
+  ownChildren = !isEmptyView(children)
+  text = r.toast.description
+  present = ownChildren || (text != undefined && text != "")
+  // No cleanup: an action called while the toast's row is being disposed throws ACTION_CALLED_IN_OWNED_SCOPE.
+  effect (present) { r.setDescriptionId($0 ? id : undefined) }
+  merged = mergeProps({ id: id, "data-type": r.toast.type }, rest)
+  {if present {
+    <p {...merged}>
+      {if ownChildren { {children} } else { {text} }}
+    </p>
+  }}
+}
+
+// A button for the toast's action. Takes the toast's `actionProps` (their `children` as its label) and its own;
+// renders nothing without a label.
+export component ToastAction({ children, ...rest }: ButtonProps) {
+  r = use toastRoot
+  given = r.toast.actionProps
+  ownChildren = !isEmptyView(children)
+  label = given != undefined ? given.children : undefined
+  { children: _label, ...actionRest } = given ?? {}
+  own = mergeProps({ type: "button", "data-type": r.toast.type }, actionRest)
+  merged = mergeProps(own, rest)
+  {if ownChildren || (label != undefined && label != "") {
+    <button {...merged}>
+      {if ownChildren { {children} } else { {label} }}
+    </button>
+  }}
+}
+
+export fn toastClose(ref r: ToastRootContext): PartProps {
+  source hasFocus := false
+  action press() { r.close() }
+  action focus() { hasFocus := true }
+  action blur() { hasFocus := false }
+  {
+    type: "button",
+    // Out of the reading order while the stack is collapsed, as in Base UI.
+    "aria-hidden": !r.expanded && !hasFocus ? "true" : "false",
+    "data-type": r.toast.type,
+    onClick: press,
+    onFocus: focus,
+    onBlur: blur,
+  }
+}
+
+export component ToastClose({ children, ...rest }: ButtonProps) {
+  r = use toastRoot
+  own = toastClose(r)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}

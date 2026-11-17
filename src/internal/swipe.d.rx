@@ -1,0 +1,4 @@
+// How .rx may use ./swipe.js (implemented in ./impl/swipe.ts): swipe to dismiss, for toasts and drawers.
+// A `ref` parameter is passed live; the others are read once. The state is an object whose fields track.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./swipe.d.ts.
+export pure fn createSwipe(ref element: HTMLElement | undefined, ref options: { enabled: boolean; directions: ("up" | "down" | "left" | "right")[]; threshold: number; velocity: number; textSelector: string }, onDismiss: (direction: "up" | "down" | "left" | "right") => void): { swiping: boolean; direction: "up" | "down" | "left" | "right" | undefined; x: number; y: number; progress: number }

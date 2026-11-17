@@ -1,0 +1,17 @@
+import { DrawerRoot, DrawerTrigger, DrawerPortal, DrawerPopup, DrawerTitle } from "../drawer.rx"
+
+// Controlled, sliding out to the right, with a fixed threshold.
+export default component Fixture() {
+  source open := true
+  <main>
+    <DrawerRoot open={open} onOpenChange={(next) => { open := next }} swipeDirection="right" swipeThreshold={50}>
+      <DrawerTrigger>Open drawer</DrawerTrigger>
+      <DrawerPortal>
+        <DrawerPopup data-testid="popup">
+          <DrawerTitle>Side panel</DrawerTitle>
+        </DrawerPopup>
+      </DrawerPortal>
+    </DrawerRoot>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+  </main>
+}

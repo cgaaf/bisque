@@ -1,0 +1,2 @@
+// Generated from swipe.d.rx by scripts/gen-dts.mjs. Do not edit.
+export declare function createSwipe(element: HTMLElement | undefined, options: { enabled: boolean; directions: ("up" | "down" | "left" | "right")[]; threshold: number; velocity: number; textSelector: string }, onDismiss: (direction: "up" | "down" | "left" | "right") => void): { swiping: boolean; direction: "up" | "down" | "left" | "right" | undefined; x: number; y: number; progress: number };

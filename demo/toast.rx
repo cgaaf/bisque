@@ -1,0 +1,47 @@
+import { ToastProvider, ToastPortal, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "../src/toast/toast.rx"
+
+component ToastList() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t} class="toast">
+      <ToastContent>
+        <ToastTitle />
+        <ToastDescription />
+        <ToastAction />
+        <ToastClose aria-label="Close">×</ToastClose>
+      </ToastContent>
+    </ToastRoot>
+  }
+}
+
+component ToastButtons() {
+  c = use toast
+  source saved := 0
+  action save() {
+    let n = saved + 1
+    saved := n
+    c.manager.add({ title: "Saved", description: `Draft ${n} was saved.`, type: "success" })
+  }
+  action remove() {
+    c.manager.add({ title: "Message deleted", type: "info", actionProps: { children: "Undo" } })
+  }
+  action fail() {
+    c.manager.add({ title: "Upload failed", description: "The server didn't answer.", type: "error", priority: "high" })
+  }
+  <div>
+    <button onClick={save}>Save draft</button>{" "}
+    <button onClick={remove}>Delete message</button>{" "}
+    <button onClick={fail}>Fail upload</button>
+  </div>
+}
+
+export component ToastDemo() {
+  <ToastProvider>
+    <ToastButtons />
+    <ToastPortal>
+      <ToastViewport class="toast-viewport">
+        <ToastList />
+      </ToastViewport>
+    </ToastPortal>
+  </ToastProvider>
+}

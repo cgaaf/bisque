@@ -1,0 +1,24 @@
+import { DrawerRoot, DrawerTrigger, DrawerPortal, DrawerBackdrop, DrawerViewport, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../drawer.rx"
+
+export default component Fixture() {
+  source changes: string[] := []
+  <main>
+    <DrawerRoot onOpenChange={(open) => { changes := [...changes, open ? "open" : "close"] }}>
+      <DrawerTrigger>Open drawer</DrawerTrigger>
+      <DrawerPortal>
+        <DrawerBackdrop data-testid="backdrop" />
+        <DrawerViewport data-testid="viewport">
+          <DrawerPopup data-testid="popup">
+            <div data-testid="handle">Handle</div>
+            <DrawerContent data-testid="content">
+              <DrawerTitle>Filters</DrawerTitle>
+              <DrawerDescription>Narrow the results.</DrawerDescription>
+              <DrawerClose>Done</DrawerClose>
+            </DrawerContent>
+          </DrawerPopup>
+        </DrawerViewport>
+      </DrawerPortal>
+    </DrawerRoot>
+    <output data-testid="changes">{changes.join(",")}</output>
+  </main>
+}

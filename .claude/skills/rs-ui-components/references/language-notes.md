@@ -62,6 +62,19 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - **`ref={c.someAction}` inside `{if …}` markup** reads the context untracked (`STRICT_READ_UNTRACKED`). Wrap
   it in a local action.
 
+- **`for … in` keeps rows by object identity.** Only a keyed *equation* (`rows key id = …`) keeps a row when
+  its object is replaced; a keyed `source` does not, in either form. Hold the data in a plain source and loop
+  over a keyed equation of it (`src/toast/toast.rx`).
+- **Module state is one value per app**, and plain TypeScript can't import an `.rx` module's named exports, so
+  state that outside code must reach is a JS object passed in (the toast manager), not a module source.
+- **A write before an `await` in an action is hidden until the action ends.** `onFlush(() => { … })` shows it
+  early.
+- **An action called from an effect's cleanup can throw** `ACTION_CALLED_IN_OWNED_SCOPE` when the cleanup runs
+  because a `for` row was removed.
+- **A destructured prop can shadow a context**: `{ toast, ...rest } = props` beside `provide toast` is
+  `NOT_A_CONTEXT`. Rename it in the pattern (`{ toast: _toast, … }`).
+- **One fixture can't import from another**: put a shared component in a library module.
+
 ## The type projection
 
 - `rx-tsc` narrows a source inside an `if`, and with it the type of a write there: `if (!flag) { flag := true }`
@@ -95,7 +108,8 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
   `src/test/mount.ts`) before asserting.
 - jsdom normalises a transform: `translate3d(0, 5px, 0)` reads back as `translate3d(0px, 5px, 0px)`.
 
-- Delays: fake only the timers, `vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })`, so
+- Delays: fake only the timers, `vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })` (add `"Date"` for code that measures elapsed
+  time), so
   `requestAnimationFrame` stays real and presence can still unmount. Give user-event
   `advanceTimers: (ms) => vi.advanceTimersByTime(ms)`, and call `flush()` after advancing.
 - `vitest run src/toggle` also runs `src/toggle-group`: the path is a prefix match.

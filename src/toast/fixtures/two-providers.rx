@@ -1,0 +1,21 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, toast } from "../toast.rx"
+
+component Region(props: { label: string }) {
+  c = use toast
+  <div>
+    <button onClick={() => { c.manager.add({ title: `${props.label} toast`, timeout: 0 }) }}>Add to {props.label}</button>
+    <ToastViewport aria-label={props.label}>
+      {for t in c.toasts {
+        <ToastRoot toast={t}><ToastTitle /></ToastRoot>
+      }}
+    </ToastViewport>
+  </div>
+}
+
+// Two providers, each with its own manager and list.
+export default component Fixture() {
+  <main>
+    <ToastProvider><Region label="Left" /></ToastProvider>
+    <ToastProvider><Region label="Right" /></ToastProvider>
+  </main>
+}
