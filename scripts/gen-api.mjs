@@ -391,7 +391,10 @@ function describePart(component, seen = new Set()) {
     description,
     props,
     dataAttributes: [...attributes]
-      .toSorted((a, b) => a.localeCompare(b))
+
+      // By code unit, as a plain sort() does: the same order on every machine.
+      .toSorted((a, b) => (a < b ? -1 : a > b ? 1 : 0))
+
       .map((name) => ({
         name,
         description: note.dataAttributes?.[name] ?? COMMON[name] ?? "",

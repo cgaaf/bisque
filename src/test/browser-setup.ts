@@ -12,17 +12,21 @@ import { attribution } from "solid-js/attribution";
 import { afterEach, beforeEach, expect } from "vitest";
 
 const DIAGNOSTIC = /^\[[A-Z][A-Z_]+\]/;
-// Reports that measure time: a scope over its budget, a change held longer than a threshold. How long a test
-// takes depends on how busy the machine is (and Firefox's clock counts whole milliseconds), and the tests that
-// hold a change do it on purpose, so these say nothing reliable about the code in a test run.
-const TIMED = /^\[?(HOT_SCOPE_[A-Z_]+|LONG_HOLD)\b/;
+// A scope over its time budget: how long a test takes depends on how busy the machine is (and Firefox's clock
+// counts whole milliseconds), so it says nothing reliable about the code in a test run.
+const TIMED = /^\[?HOT_SCOPE_[A-Z_]+\b/;
+// A change held for more than half a second. The tests of a held prop and of a slow server hold one on purpose,
+// for as long as the test takes; anywhere else it is a component keeping the screen waiting, and a failure.
+const LONG_HOLD = /^\[?LONG_HOLD\b/;
+const holdsOnPurpose = () => /\.(held|async)\.browser\.test\.ts$/.test(expect.getState().testPath ?? "");
+const ignored = (code: string) => TIMED.test(code) || (LONG_HOLD.test(code) && holdsOnPurpose());
 const reported: string[] = [];
 
 for (const level of ["warn", "error"] as const) {
   const original = console[level].bind(console);
   console[level] = (...args: unknown[]) => {
     const first = typeof args[0] === "string" ? args[0] : "";
-    if (DIAGNOSTIC.test(first) && !TIMED.test(first)) reported.push(first.split("\n")[0]);
+    if (DIAGNOSTIC.test(first) && !ignored(first)) reported.push(first.split("\n")[0]);
     original(...args);
   };
 }
@@ -35,7 +39,13 @@ beforeEach(() => {
   reported.length = 0;
   // OBSERVE exists in Solid's dev and observe builds, which are what tests run on.
   capture = OBSERVE?.diagnostics.capture();
-  release = attribution.enable({ log: false });
+  // The library narrows what it reads from a context with small equations that re-run and give the same value;
+  // that is what they are for. Solid reports one once its discarded work passes 2ms in a second, which a busy
+  // machine reaches by itself. 20ms is still far below a memo that is really doing wasted work.
+  release = attribution.enable({
+    log: false,
+    wastedRecompute: { minRuns: 5, ratio: 0.8, budgetMs: 20, windowMs: 1000 },
+  });
 });
 
 afterEach(() => {
@@ -44,7 +54,7 @@ afterEach(() => {
     // A guess that goes back because the request was refused is the feature working. One that is replaced by a
     // different answer ("superseded") is a flash of the wrong state, and stays a failure.
     .filter((event) => !(event.code === "OPTIMISTIC_REVERTED" && event.data?.how === "reverted"))
-    .filter((event) => !TIMED.test(event.code))
+    .filter((event) => !ignored(event.code))
     .map((event) => `[${event.code}] ${event.message.split("\n")[0]}`);
   // oxlint-disable-next-line vitest/no-standalone-expect -- the hook runs inside each test, which is the point
   expect([...new Set([...reported, ...structured])], "Solid diagnostics reported during this test").toEqual(
