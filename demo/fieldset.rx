@@ -1,0 +1,16 @@
+import { FieldsetRoot, FieldsetLegend } from "../src/fieldset/fieldset.rx"
+import { FieldRoot, FieldLabel, FieldControl } from "../src/field/field.rx"
+
+export component FieldsetDemo() {
+  <FieldsetRoot>
+    <FieldsetLegend>Billing details</FieldsetLegend>
+    <FieldRoot>
+      <FieldLabel>Company</FieldLabel>{" "}
+      <FieldControl />
+    </FieldRoot>
+    <FieldRoot>
+      <FieldLabel>Tax ID</FieldLabel>{" "}
+      <FieldControl />
+    </FieldRoot>
+  </FieldsetRoot>
+}

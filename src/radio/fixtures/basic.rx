@@ -1,0 +1,40 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../radio.rx"
+import { FieldRoot, FieldLabel, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source fruit := "apple"
+  source submitted := ""
+  <div>
+    <form data-testid="form">
+      <RadioGroup aria-label="Fruit" name="fruit" value={fruit} onValueChange={(next) => { fruit := next }}>
+        <label><RadioRoot value="apple"><RadioIndicator data-testid="apple-indicator">•</RadioIndicator></RadioRoot>Apple</label>
+        <label><RadioRoot value="banana" />Banana</label>
+        <label><RadioRoot value="cherry" disabled />Cherry</label>
+        <label><RadioRoot value="date" />Date</label>
+      </RadioGroup>
+      <output data-testid="fruit">{fruit}</output>
+      <button type="button">After</button>
+      <RadioGroup aria-label="Size" name="size">
+        <label><RadioRoot value="s" />Small</label>
+        <label><RadioRoot value="l" />Large</label>
+      </RadioGroup>
+      <RadioGroup aria-label="Locked" defaultValue="a" readOnly>
+        <label><RadioRoot value="a" />A</label>
+        <label><RadioRoot value="b" />B</label>
+      </RadioGroup>
+    </form>
+    <Form onFormSubmit={(values) => { submitted := `plan=${values.plan}` }}>
+      <FieldRoot name="plan" data-testid="plan-root">
+        <FieldLabel>Plan</FieldLabel>
+        <RadioGroup required>
+          <label><RadioRoot value="free" />Free</label>
+          <label><RadioRoot value="pro" />Pro</label>
+        </RadioGroup>
+        <FieldError data-testid="plan-error">Choose a plan</FieldError>
+      </FieldRoot>
+      <button type="submit">Submit</button>
+    </Form>
+    <output data-testid="submitted">{submitted}</output>
+  </div>
+}

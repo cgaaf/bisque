@@ -1,0 +1,9 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../src/radio/radio.rx"
+
+export component RadioDemo() {
+  <RadioGroup aria-label="Storage" name="storage" defaultValue="ssd">
+    <label><RadioRoot value="ssd"><RadioIndicator>•</RadioIndicator></RadioRoot> SSD</label>
+    <label><RadioRoot value="hdd"><RadioIndicator>•</RadioIndicator></RadioRoot> HDD</label>
+    <label><RadioRoot value="tape" disabled><RadioIndicator>•</RadioIndicator></RadioRoot> Tape</label>
+  </RadioGroup>
+}

@@ -1,0 +1,36 @@
+import { SwitchRoot, SwitchThumb } from "../switch.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source wifi := false
+  source submitted := ""
+  <div>
+    <form data-testid="form">
+      <label>
+        <SwitchRoot name="wifi" value="enabled" checked={wifi} onCheckedChange={(next) => { wifi := next }}>
+          <SwitchThumb data-testid="thumb" />
+        </SwitchRoot>
+        Wi-Fi
+      </label>
+      <output data-testid="wifi">{wifi ? "on" : "off"}</output>
+      <SwitchRoot aria-label="Bluetooth" defaultChecked />
+      <SwitchRoot aria-label="Airplane" disabled />
+      <SwitchRoot aria-label="Roaming" readOnly />
+    </form>
+    <Form onFormSubmit={(values) => { submitted := `consent=${values.consent}` }}>
+      <FieldRoot name="consent" data-testid="consent-root">
+        <SwitchRoot required />
+        <FieldLabel>Share usage data</FieldLabel>
+        <FieldDescription data-testid="consent-description">Helps us improve.</FieldDescription>
+        <FieldError data-testid="consent-error">Required to continue</FieldError>
+      </FieldRoot>
+      <FieldRoot disabled>
+        <SwitchRoot />
+        <FieldLabel>Locked</FieldLabel>
+      </FieldRoot>
+      <button type="submit">Submit</button>
+    </Form>
+    <output data-testid="submitted">{submitted}</output>
+  </div>
+}

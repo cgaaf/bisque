@@ -1,0 +1,80 @@
+import { mergeProps } from "../internal/props.js"
+import { field, fieldGroupProps } from "../field/field.rx"
+import { DivProps } from "../internal/types.rx"
+
+// Read optionally by CheckboxRoot: a box with a `value` inside a group is checked while the group's value holds it;
+// a `parent` box checks or clears them all.
+export type CheckboxGroupContext = {
+  value: string[]
+  // Every value a box in the group can have: what the parent box checks.
+  allValues: string[]
+  disabled: boolean
+  setChecked: (value: string, checked: boolean) => void
+  // What pressing the parent box does: mixed, then all, then none, then the mixed selection again.
+  pressParent: () => void
+}
+
+export context checkboxGroup: CheckboxGroupContext | undefined = undefined
+
+export type CheckboxGroupProps = {
+  value?: string[]
+  defaultValue?: string[]
+  onValueChange?: (value: string[]) => void
+  // Needed for a parent box.
+  allValues?: string[]
+  disabled?: boolean
+} & DivProps
+
+// A set of checkboxes sharing one value: the list of the checked boxes' values. Inside a FieldRoot it is the
+// field's control.
+export component CheckboxGroup(props: CheckboxGroupProps) {
+  f = use field
+  // Seeded with copies: a write to a list source replaces its contents in place, so a source seeded with the
+  // consumer's array would change that array, and two sources seeded with one array would change together.
+  source uncontrolled: string[] := peek([...(props.defaultValue ?? [])])
+  current = props.value ?? uncontrolled
+  // The selection the parent box returns to after all and none, and where it is in that cycle.
+  source saved: string[] := peek([...(props.value ?? props.defaultValue ?? [])])
+  source status: "mixed" | "on" | "off" := "mixed"
+  all = props.allValues ?? []
+  isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
+
+  effect (current) { if (f) { f.setValue($0) } }
+
+  action commit(next: string[]) {
+    uncontrolled := next
+    if (props.onValueChange) { props.onValueChange(next) }
+  }
+  action setChecked(value: string, checked: boolean) {
+    let next = checked ? (current.includes(value) ? [...current] : [...current, value]) : current.filter((other) => other != value)
+    commit(next)
+    saved := next
+    status := "mixed"
+  }
+  action pressParent() {
+    if (saved.length == 0 || saved.length == all.length) {
+      commit(current.length == all.length ? [] : [...all])
+      return
+    }
+    // Compared through a local: narrowing `status` itself would type the writes below (rx-tsc).
+    let was = status
+    if (was == "mixed") {
+      commit([...all])
+      status := "on"
+    } else if (was == "on") {
+      commit([])
+      status := "off"
+    } else {
+      commit([...saved])
+      status := "mixed"
+    }
+  }
+
+  provide checkboxGroup = { value: current, allValues: all, disabled: isDisabled, setChecked: setChecked, pressParent: pressParent }
+
+  { value, defaultValue, onValueChange, allValues, disabled, children, ...rest } = props
+  group = fieldGroupProps(f)
+  own = mergeProps(group, { role: "group", "data-disabled": isDisabled ? "" : undefined })
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}

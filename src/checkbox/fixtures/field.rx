@@ -1,0 +1,21 @@
+import { CheckboxRoot, CheckboxIndicator } from "../checkbox.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `terms=${values.terms}` }}>
+    <FieldRoot name="terms" data-testid="terms-root">
+      <CheckboxRoot required value="yes"><CheckboxIndicator>✓</CheckboxIndicator></CheckboxRoot>
+      <FieldLabel>Accept terms</FieldLabel>
+      <FieldDescription data-testid="terms-description">You can read them first.</FieldDescription>
+      <FieldError data-testid="terms-error">Accept the terms to go on</FieldError>
+    </FieldRoot>
+    <FieldRoot disabled>
+      <CheckboxRoot />
+      <FieldLabel>Locked</FieldLabel>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

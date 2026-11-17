@@ -1,0 +1,14 @@
+// How .rx may use ./field.js (implemented in ./impl/field.ts): Field's validation engine and Form's registry.
+// Types come from ./impl/field.ts; an .rx module declares its own alias of the ones it names (see src/field/field.rx).
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./field.d.ts.
+export pure fn createFormRegistry(): import("./impl/field.ts").FormRegistry instantiates
+export pure fn createFieldValidation(ref form: import("./impl/field.ts").FormRegistry | undefined, ref options: import("./impl/field.ts").FieldValidationOptions): [ref import("./impl/field.ts").FieldValidity, (value: unknown, how: "commit" | "revalidate", markDirty: boolean) => void]
+export fn submitForm(registry: import("./impl/field.ts").FormRegistry | undefined): { valid: boolean; values: Record<string, unknown> }
+export fn focusFirstInvalid(registry: import("./impl/field.ts").FormRegistry | undefined, errors: import("./impl/field.ts").FormErrors | undefined): void
+export fn focusControl(control: HTMLElement | undefined): void
+export pure fn formErrorsFor(errors: import("./impl/field.ts").FormErrors | undefined, name: string | undefined): string[]
+export pure fn withoutErrors(errors: import("./impl/field.ts").FormErrors | undefined, cleared: string[]): import("./impl/field.ts").FormErrors
+export pure fn sameValue(a: unknown, b: unknown): boolean
+export pure fn isFilled(value: unknown): boolean
+export pure fn isEmptyView(view: unknown): boolean
+export fn clickFocusedItem(container: HTMLElement | undefined): void

@@ -1,0 +1,88 @@
+import { mergeProps } from "../internal/props.js"
+import { createFormRegistry, submitForm, focusFirstInvalid, withoutErrors } from "../internal/field.js"
+import { FormProps } from "../internal/types.rx"
+
+export type FormValidationMode = "onSubmit" | "onBlur" | "onChange"
+// Errors keyed by field name (the `name` of a FieldRoot), typically returned by a server.
+export type FormErrors = import("../internal/impl/field.ts").FormErrors
+export type FormValues = import("../internal/impl/field.ts").FormValues
+export type FormRegistry = import("../internal/impl/field.ts").FormRegistry
+
+// Read optionally, by FieldRoot only: a Field inside a Form registers with it, so a submit validates it.
+export type FormContext = {
+  // The fields of this form, for the validation engine (src/internal/impl/field.ts).
+  registry: FormRegistry
+  // The `errors` prop, minus the entries whose field has changed since.
+  errors: FormErrors
+  validationMode: FormValidationMode
+  // True once a submit was attempted: an "onSubmit" field validates on every change from then on.
+  submitted: boolean
+  // A field whose value changed retires the form's error for its name.
+  clearError: (name: string) => void
+}
+
+export context form: FormContext | undefined = undefined
+
+export type FormRootProps = {
+  // When fields validate, unless a FieldRoot says otherwise. Default: "onSubmit".
+  validationMode?: FormValidationMode
+  // Errors to show on fields, keyed by field name. An entry is hidden once its field's value changes, until `errors`
+  // changes. Changes are seen by content (an .rx object source keeps its identity when written), so reset it (to {})
+  // when a submit starts: the same errors coming back for the next submit are then a change, and show again.
+  errors?: FormErrors
+  // Called on a valid submit with the values of the named fields; the native submission is then prevented.
+  onFormSubmit?: (values: FormValues) => void
+  // Called on a valid submit, before `onFormSubmit`.
+  onSubmit?: (event: SubmitEvent) => void
+} & Omit<FormProps, "onSubmit">
+
+// A native <form> that validates its Fields on submit, focuses the first invalid one, and shows errors passed in.
+export component Form(props: FormRootProps) {
+  source cleared: string[] := []
+  source submitCount := 0
+  // True from a valid submit until the next `errors`: errors that arrive for it move focus to their field.
+  source awaitingErrors: boolean := false
+  registry = createFormRegistry()
+  errors = withoutErrors(props.errors, cleared)
+
+  effect (props.errors) {
+    cleared := []
+    // Tested through a local: narrowing `awaitingErrors` itself would type the write below as `true` (rx-tsc).
+    let waiting = awaitingErrors
+    if (waiting) {
+      awaitingErrors := false
+      focusFirstInvalid(registry, $0)
+    }
+  }
+
+  action clearError(name: string) {
+    cleared := old => old.includes(name) ? old : [...old, name]
+  }
+
+  action submit(event: SubmitEvent) {
+    submitCount := submitCount + 1
+    let result = submitForm(registry)
+    if (!result.valid) {
+      event.preventDefault()
+      return
+    }
+    awaitingErrors := true
+    if (props.onSubmit) { props.onSubmit(event) }
+    if (props.onFormSubmit) {
+      event.preventDefault()
+      props.onFormSubmit(result.values)
+    }
+  }
+
+  provide form = {
+    registry: registry,
+    errors: errors,
+    validationMode: props.validationMode ?? "onSubmit",
+    submitted: submitCount > 0,
+    clearError: clearError,
+  }
+
+  { validationMode, errors: _errors, onFormSubmit, onSubmit, children, ...rest } = props
+  merged = mergeProps({ novalidate: true, onSubmit: submit }, rest)
+  <form {...merged}>{children}</form>
+}

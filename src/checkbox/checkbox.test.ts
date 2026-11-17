@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import { mount } from "../test/mount.ts";
 import basic from "./fixtures/basic.rx";
+import field from "./fixtures/field.rx";
 
 test("toggles on press and from its label", async () => {
   const { getByRole, getByTestId, queryByTestId, getByText, user } = mount(basic);
@@ -54,4 +55,31 @@ test("disabled and read-only boxes don't change", async () => {
   expect(fixed.getAttribute("aria-readonly")).toBe("true");
   await user.click(fixed);
   expect(fixed.getAttribute("aria-checked")).toBe("false");
+});
+
+test("inside a field: labelled, described, named and validated by it", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(field);
+  const box = getByRole("checkbox", { name: "Accept terms" });
+  expect(box.getAttribute("aria-describedby")).toBe(getByTestId("terms-description").id);
+
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("submitted").textContent).toBe("");
+  expect(getByTestId("terms-error").textContent).toBe("Accept the terms to go on");
+  expect(box.getAttribute("aria-invalid")).toBe("true");
+  expect(box.hasAttribute("data-invalid")).toBe(true);
+  expect(document.activeElement).toBe(box);
+
+  await user.click(getByTestId("terms-root").querySelector("label")!);
+  expect(box.getAttribute("aria-checked")).toBe("true");
+  expect(queryByTestId("terms-error")).toBeNull();
+  expect(box.hasAttribute("data-dirty")).toBe(true);
+  expect(new FormData(getByTestId("form") as HTMLFormElement).get("terms")).toBe("yes");
+
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("submitted").textContent).toBe("terms=true");
+});
+
+test("inside a disabled field: disabled", () => {
+  const { getByRole } = mount(field);
+  expect((getByRole("checkbox", { name: "Locked" }) as HTMLButtonElement).disabled).toBe(true);
 });

@@ -1,0 +1,10 @@
+import { SwitchRoot, SwitchThumb } from "../src/switch/switch.rx"
+
+export component SwitchDemo() {
+  <label>
+    <SwitchRoot name="notifications" defaultChecked>
+      <SwitchThumb />
+    </SwitchRoot>
+    {" "}Notifications
+  </label>
+}

@@ -1,0 +1,341 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { createFieldValidation, formErrorsFor, sameValue, isFilled, isEmptyView } from "../internal/field.js"
+import { form, FormValidationMode, FormValues } from "../form/form.rx"
+import { fieldset } from "../fieldset/fieldset.rx"
+import { DivProps, LabelProps, InputProps, ParagraphProps, PartProps } from "../internal/types.rx"
+
+// A field's validity as of its last validation (src/internal/impl/field.ts): flags as in the DOM's ValidityState,
+// `valid` null until first validated, and the messages to show.
+export type FieldValidityData = import("../internal/impl/field.ts").FieldValidity
+export type ValidityKey = "badInput" | "customError" | "patternMismatch" | "rangeOverflow" | "rangeUnderflow" | "stepMismatch" | "tooLong" | "tooShort" | "typeMismatch" | "valueMissing"
+// What `validate` returns: a message or messages when the value is invalid; nothing, "" or [] when it is valid.
+export type ValidateResult = string | string[] | null | undefined
+
+// The state every part of a field carries as `data-*` attributes, and a control inside it too.
+export type FieldState = {
+  disabled: boolean
+  // Focused and then left at least once.
+  touched: boolean
+  // The value differs from the one the control first reported.
+  dirty: boolean
+  // null until validated, and while disabled.
+  valid: boolean | null
+  filled: boolean
+  focused: boolean
+}
+
+// Read optionally (`use field` is undefined outside a FieldRoot). A control takes part in a field with
+// `fieldControlProps(f)` on its focusable element (or `fieldGroupProps(f)` on a group) and three calls:
+//   - `setValue(v)` from an effect on its value: the first call is the initial value, later ones are changes;
+//   - `setInput(el)` as the `ref` of the native input whose constraints count (its hidden input, if it has one);
+//   - `name` and `disabled` for its hidden input and itself.
+// The rest is for the field's own parts.
+export type FieldContext = {
+  // The id the control's focusable element carries: FieldLabel's `for`. Set by fieldControlProps.
+  controlId: string
+  // FieldLabel's id while one is mounted: `aria-labelledby` for a control a `for` can't name (a group).
+  labelId: string | undefined
+  // FieldDescription ids, then FieldError's while it shows: the control's `aria-describedby`.
+  describedBy: string | undefined
+  name: string | undefined
+  disabled: boolean
+  state: FieldState
+  validity: FieldValidityData
+  initialValue: unknown
+  setValue: (value: unknown) => void
+  setInput: (element: HTMLInputElement) => void
+  setControl: (element: HTMLElement) => void
+  setFocused: (focused: boolean) => void
+  setLabelId: (id: string | undefined) => void
+  addDescription: (id: string) => void
+  removeDescription: (id: string) => void
+  setErrorId: (id: string | undefined) => void
+}
+
+export context field: FieldContext | undefined = undefined
+
+export type FieldRootProps = {
+  // Names the value in the form's values and errors, and the control's hidden input.
+  name?: string
+  disabled?: boolean
+  // Custom validation, run after the native constraints pass.
+  validate?: (value: unknown, formValues: FormValues) => ValidateResult
+  // When the field validates: after a submit attempt (then on every change), on blur, or on every change.
+  // Default: the Form's, else "onSubmit".
+  validationMode?: FormValidationMode
+  // Marks the field invalid, as an external library decides.
+  invalid?: boolean
+  // Controls the dirty state.
+  dirty?: boolean
+  // Controls the touched state.
+  touched?: boolean
+} & DivProps
+
+export fn fieldStateAttributes(ref s: FieldState | undefined): PartProps {
+  {
+    "data-disabled": s?.disabled ? "" : undefined,
+    "data-touched": s?.touched ? "" : undefined,
+    "data-dirty": s?.dirty ? "" : undefined,
+    "data-valid": s?.valid == true ? "" : undefined,
+    "data-invalid": s?.valid == false ? "" : undefined,
+    "data-filled": s?.filled ? "" : undefined,
+    "data-focused": s?.focused ? "" : undefined,
+  }
+}
+
+// Groups a control with its label, description and error, tracks its state and validates it.
+export component FieldRoot(props: FieldRootProps) {
+  formCtx = use form
+  set = use fieldset
+  source touchedState: boolean := false
+  source focused: boolean := false
+  source hasInitial: boolean := false
+  source initial: unknown := undefined
+  source value: unknown := undefined
+  source control: HTMLElement | undefined := undefined
+  source input: HTMLInputElement | undefined := undefined
+  source labelId: string | undefined := undefined
+  source descriptionIds: string[] := []
+  source errorId: string | undefined := undefined
+  controlId = createId("field-control")
+
+  isDisabled = (set?.disabled ?? false) || (props.disabled ?? false)
+  mode = props.validationMode ?? formCtx?.validationMode ?? "onSubmit"
+  formErrors = formErrorsFor(formCtx?.errors, props.name)
+  externalInvalid = props.invalid == true || formErrors.length > 0
+  [checked, run] = createFieldValidation(formCtx?.registry, {
+    name: props.name,
+    input: input,
+    control: control,
+    validate: props.validate,
+    value: value,
+    disabled: isDisabled,
+    invalid: externalInvalid,
+  })
+  valid = externalInvalid ? false : isDisabled ? null : checked.state.valid
+  errors = formErrors.length > 0 ? formErrors : checked.errors
+  validity = {
+    state: { ...checked.state, valid: valid },
+    errors: errors,
+    error: errors.length > 0 ? errors[0] : "",
+    value: checked.value,
+  }
+  state = {
+    disabled: isDisabled,
+    touched: props.touched ?? touchedState,
+    dirty: props.dirty ?? (hasInitial && !sameValue(value, initial)),
+    valid: valid,
+    filled: isFilled(value),
+    focused: focused,
+  }
+  describedIds = errorId != undefined ? [...descriptionIds, errorId] : descriptionIds
+  describedBy = describedIds.length > 0 ? describedIds.join(" ") : undefined
+
+  action setValue(next: unknown) {
+    // Tested through a local: narrowing `hasInitial` itself would type the write below as `false` (rx-tsc).
+    let first = !hasInitial
+    if (first) {
+      hasInitial := true
+      initial := next
+      value := next
+      return
+    }
+    if (sameValue(next, value)) { return }
+    value := next
+    if (formCtx && props.name != undefined) { formCtx.clearError(props.name) }
+    let onChange = mode == "onChange" || (mode == "onSubmit" && (formCtx?.submitted ?? false))
+    run(next, onChange ? "commit" : "revalidate", !sameValue(next, initial))
+  }
+  action setFocused(next: boolean) {
+    focused := next
+    if (next) { return }
+    touchedState := true
+    if (mode == "onBlur") { run(value, "commit", false) }
+  }
+  action setControl(element: HTMLElement) { control := element }
+  action setInput(element: HTMLInputElement) { input := element }
+  action setLabelId(id: string | undefined) { labelId := id }
+  action addDescription(id: string) { descriptionIds := old => [...old, id] }
+  action removeDescription(id: string) { descriptionIds := old => old.filter((other) => other != id) }
+  action setErrorId(id: string | undefined) { errorId := id }
+
+  provide field = {
+    controlId: controlId,
+    labelId: labelId,
+    describedBy: describedBy,
+    name: props.name,
+    disabled: isDisabled,
+    state: state,
+    validity: validity,
+    initialValue: initial,
+    setValue: setValue,
+    setInput: setInput,
+    setControl: setControl,
+    setFocused: setFocused,
+    setLabelId: setLabelId,
+    addDescription: addDescription,
+    removeDescription: removeDescription,
+    setErrorId: setErrorId,
+  }
+
+  { name, disabled, validate, validationMode, invalid, dirty, touched, children, ...rest } = props
+  attrs = fieldStateAttributes(state)
+  merged = mergeProps(attrs, rest)
+  <div {...merged}>{children}</div>
+}
+
+// What a control's focusable element needs to take part in a field: its id (FieldLabel's `for`),
+// `aria-describedby`, `aria-invalid`, the state attributes, and focus tracking. Nothing outside a field.
+export fn fieldControlProps(ref f: FieldContext | undefined): PartProps {
+  action focus() { if (f) { f.setFocused(true) } }
+  action blur() { if (f) { f.setFocused(false) } }
+  action setControl(element: HTMLElement) { if (f) { f.setControl(element) } }
+  attrs = fieldStateAttributes(f?.state)
+  f ? {
+    id: f.controlId,
+    "aria-describedby": f.describedBy,
+    "aria-invalid": f.state.valid == false ? "true" : undefined,
+    ref: setControl,
+    onFocus: focus,
+    onBlur: blur,
+    ...attrs,
+  } : {}
+}
+
+// The same for a group of controls (radio group, checkbox group): labelled by FieldLabel's id, focused while focus
+// is anywhere inside it, blurred when focus leaves it.
+export fn fieldGroupProps(ref f: FieldContext | undefined): PartProps {
+  action focusIn() { if (f) { f.setFocused(true) } }
+  action focusOut(event: FocusEvent & { currentTarget: HTMLElement; relatedTarget: Node | null }) {
+    if (f && !event.currentTarget.contains(event.relatedTarget)) { f.setFocused(false) }
+  }
+  action setControl(element: HTMLElement) { if (f) { f.setControl(element) } }
+  attrs = fieldStateAttributes(f?.state)
+  f ? {
+    "aria-labelledby": f.labelId,
+    "aria-describedby": f.describedBy,
+    "aria-invalid": f.state.valid == false ? "true" : undefined,
+    ref: setControl,
+    onFocusIn: focusIn,
+    onFocusOut: focusOut,
+    ...attrs,
+  } : {}
+}
+
+export component FieldLabel({ children, ...rest }: LabelProps) {
+  f = use field
+  id = createId("field-label")
+  effect () {
+    if (f) { f.setLabelId(id) }
+    return () => { if (f) { f.setLabelId(undefined) } }
+  }
+  attrs = fieldStateAttributes(f?.state)
+  merged = mergeProps({ id: id, for: f?.controlId, ...attrs }, rest)
+  <label {...merged}>{children}</label>
+}
+
+export component FieldDescription({ children, ...rest }: ParagraphProps) {
+  f = use field
+  id = createId("field-description")
+  effect () {
+    if (f) { f.addDescription(id) }
+    return () => { if (f) { f.removeDescription(id) } }
+  }
+  attrs = fieldStateAttributes(f?.state)
+  merged = mergeProps({ id: id, ...attrs }, rest)
+  <p {...merged}>{children}</p>
+}
+
+export type FieldErrorProps = {
+  // When to show: by default while the field is invalid; a validity key shows it only for that failure; `true`
+  // always.
+  match?: boolean | ValidityKey
+} & DivProps
+
+// Shows the field's error message (or messages, as a list), or its own children instead.
+export component FieldError({ match, children, ...rest }: FieldErrorProps) {
+  f = use field
+  id = createId("field-error")
+  shown = f == undefined ? false : match == true ? true : match != undefined && match != false ? f.validity.state[match] : f.state.valid == false
+  messages = f?.validity.errors ?? []
+  effect (shown) {
+    if ($0 && f) {
+      f.setErrorId(id)
+      return () => { f.setErrorId(undefined) }
+    }
+  }
+  attrs = fieldStateAttributes(f?.state)
+  merged = mergeProps({ id: id, ...attrs }, rest)
+  {if shown {
+    <div {...merged}>
+      {if !isEmptyView(children) {
+        {children}
+      } else if messages.length > 1 {
+        <ul>{for message in messages { <li>{message}</li> }}</ul>
+      } else {
+        {f?.validity.error}
+      }}
+    </div>
+  }}
+}
+
+// FieldValidity's children read the field's validity from this context: what Base UI passes to a render function.
+export type FieldValidityState = {
+  validity: import("../internal/impl/field.ts").ValidityFlags
+  errors: string[]
+  error: string
+  value: unknown
+  initialValue: unknown
+}
+
+export context fieldValidity: FieldValidityState
+
+export component FieldValidity(props: { children?: View }) {
+  f = use field
+  provide fieldValidity = {
+    validity: f?.validity.state ?? { badInput: false, customError: false, patternMismatch: false, rangeOverflow: false, rangeUnderflow: false, stepMismatch: false, tooLong: false, tooShort: false, typeMismatch: false, valueMissing: false, valid: null },
+    errors: f?.validity.errors ?? [],
+    error: f?.validity.error ?? "",
+    value: f?.validity.value,
+    initialValue: f?.initialValue,
+  }
+  {props.children}
+}
+
+export type FieldControlProps = {
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string) => void
+} & Omit<InputProps, "value">
+
+// A text input's behaviour, inside a field or not: value (controlled or not), reported to the field, which also
+// validates the input's native constraints.
+export fn fieldControl(ref f: FieldContext | undefined, ref controlled: string | undefined, initial: string, ref onValueChange: ((value: string) => void) | undefined, ref disabled: boolean): PartProps {
+  source uncontrolled := initial
+  current = controlled ?? uncontrolled
+  isDisabled = disabled || (f?.disabled ?? false)
+  effect (current) { if (f) { f.setValue($0) } }
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    let next = event.currentTarget.value
+    uncontrolled := next
+    if (onValueChange) { onValueChange(next) }
+  }
+  action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+  base = fieldControlProps(f)
+  own = {
+    name: f?.name,
+    value: current,
+    disabled: isDisabled ? true : undefined,
+    onInput: input,
+    ref: setInput,
+  }
+  mergeProps(base, own)
+}
+
+export component FieldControl(props: FieldControlProps) {
+  f = use field
+  { value, defaultValue, onValueChange, disabled, children, ...rest } = props
+  own = fieldControl(f, value, peek(defaultValue ?? ""), onValueChange, disabled == true)
+  merged = mergeProps(own, rest)
+  <input {...merged} />
+}

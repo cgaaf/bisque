@@ -1,0 +1,27 @@
+import { Form, FormErrors } from "../form.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldError } from "../../field/field.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  source errors: FormErrors := {}
+  <div>
+    <Form data-testid="form" errors={errors} onFormSubmit={(values) => {
+      submitted := `${values.email}|${values.username}`
+      errors := {}
+    }}>
+      <FieldRoot name="email" data-testid="email-root">
+        <FieldLabel>Email</FieldLabel>
+        <FieldControl type="email" required />
+        <FieldError data-testid="email-error" />
+      </FieldRoot>
+      <FieldRoot name="username" data-testid="username-root" validate={(value, values) => value == "admin" ? "That name is taken" : value == values.email ? "Pick a name other than your email" : null}>
+        <FieldLabel>Username</FieldLabel>
+        <FieldControl required />
+        <FieldError data-testid="username-error" />
+      </FieldRoot>
+      <button type="submit">Submit</button>
+    </Form>
+    <button onClick={() => { errors := { username: "Already registered" } }}>Server error</button>
+    <output data-testid="submitted">{submitted}</output>
+  </div>
+}

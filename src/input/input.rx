@@ -1,0 +1,14 @@
+import { mergeProps } from "../internal/props.js"
+import { field, fieldControl, FieldControlProps } from "../field/field.rx"
+
+export type InputComponentProps = FieldControlProps
+
+// A native <input>. Inside a FieldRoot it is the field's control: labelled and described by the field's parts,
+// disabled with it, and validated by it. `onValueChange` receives the new value on every input.
+export component Input(props: InputComponentProps) {
+  f = use field
+  { value, defaultValue, onValueChange, disabled, children, ...rest } = props
+  own = fieldControl(f, value, peek(defaultValue ?? ""), onValueChange, disabled == true)
+  merged = mergeProps(own, rest)
+  <input {...merged} />
+}

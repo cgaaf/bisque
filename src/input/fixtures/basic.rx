@@ -1,0 +1,21 @@
+import { Input } from "../input.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+
+export default component Fixture() {
+  source query := "initial"
+  <form data-testid="form">
+    <Input aria-label="Search" name="q" value={query} onValueChange={(next) => { query := next }} />
+    <output data-testid="query">{query}</output>
+    <Input aria-label="Notes" name="notes" defaultValue="draft" />
+    <FieldRoot name="city" data-testid="city-root" validationMode="onChange">
+      <FieldLabel>City</FieldLabel>
+      <Input required />
+      <FieldDescription data-testid="city-description">Where you live</FieldDescription>
+      <FieldError data-testid="city-error">Enter a city</FieldError>
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Country</FieldLabel>
+      <Input />
+    </FieldRoot>
+  </form>
+}

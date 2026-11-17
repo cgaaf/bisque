@@ -1,0 +1,98 @@
+import { mergeProps } from "../internal/props.js"
+import { field, fieldControlProps } from "../field/field.rx"
+import { ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type SwitchContext = {
+  checked: boolean
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  toggle: () => void
+}
+
+// `switch` is a reserved word, so the family's context has a longer name.
+export context switchContext: SwitchContext
+
+export type SwitchRootProps = {
+  checked?: boolean
+  defaultChecked?: boolean
+  onCheckedChange?: (checked: boolean) => void
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot), the switch takes part in a <form>: it submits `value` (default "on")
+  // while on.
+  name?: string
+  value?: string
+} & Omit<ButtonProps, "value" | "name" | "disabled">
+
+// The state attributes the root and its thumb share.
+fn switchState(ref c: SwitchContext): PartProps {
+  {
+    "data-checked": c.checked ? "" : undefined,
+    "data-unchecked": c.checked ? undefined : "",
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-readonly": c.readOnly ? "" : undefined,
+    "data-required": c.required ? "" : undefined,
+  }
+}
+
+export fn switchRoot(ref c: SwitchContext): PartProps {
+  action press() { c.toggle() }
+  state = switchState(c)
+  {
+    type: "button",
+    role: "switch",
+    "aria-checked": c.checked ? "true" : "false",
+    "aria-readonly": c.readOnly ? "true" : undefined,
+    "aria-required": c.required ? "true" : undefined,
+    disabled: c.disabled ? true : undefined,
+    onClick: press,
+    ...state,
+  }
+}
+
+// An on/off control. Inside a FieldRoot it is the field's control.
+export component SwitchRoot(props: SwitchRootProps) {
+  f = use field
+  source uncontrolled := peek(props.defaultChecked ?? false)
+  isChecked = props.checked ?? uncontrolled
+  self = {
+    checked: isChecked,
+    disabled: (props.disabled ?? false) || (f?.disabled ?? false),
+    readOnly: props.readOnly ?? false,
+    required: props.required ?? false,
+    toggle: toggle,
+  }
+  inputName = props.name ?? f?.name
+
+  effect (isChecked) { if (f) { f.setValue($0) } }
+
+  action toggle() {
+    if (self.disabled || self.readOnly) { return }
+    let next = !isChecked
+    uncontrolled := next
+    if (props.onCheckedChange) { props.onCheckedChange(next) }
+  }
+  action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+
+  provide switchContext = self
+
+  { checked, defaultChecked, onCheckedChange, disabled, readOnly, required, name, value, children, ...rest } = props
+  inField = fieldControlProps(f)
+  rootProps = switchRoot(self)
+  own = mergeProps(inField, rootProps)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+  {if inputName != undefined || f != undefined {
+    <input type="checkbox" hidden aria-hidden="true" tabindex="-1" name={inputName} value={value ?? "on"} checked={isChecked} disabled={self.disabled} required={self.required} ref={setInput} />
+  }}
+}
+
+// The moving part. Always rendered; style it from `data-checked` and `data-unchecked`.
+export component SwitchThumb({ children, ...rest }: SpanProps) {
+  c = use switchContext
+  state = switchState(c)
+  merged = mergeProps(state, rest)
+  <span {...merged}>{children}</span>
+}

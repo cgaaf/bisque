@@ -27,6 +27,11 @@ More that isn't there, found while building components:
 - **A `fn` with a `ref` parameter must be bound before it is another `fn`'s result**: `item = itemState(c)` then
   `item` on the last line. Returning the call directly is `INSTANTIATION_NOT_BOUND`.
 
+- **No `Object` global and no computed keys** (`{ [k]: v }` is `PARSE`): build such objects in TypeScript.
+- **A function-type parameter on a `fn` needs parentheses**: `fn f(x: (() => void))`. Unparenthesised it is
+  `PARSE expected ')'`. Usually the better answer is to put the action in the context.
+- **A type and a component can't share a name**: the component becomes "unknown component". Rename the type.
+
 Accepted, and useful: a context with a default (`export context x: T = { … }`): `use x` with no provider above
 returns it, which is how an optional parent (a Field around a control, a TooltipProvider) is read. The default
 is emitted before the module's actions, so it may call a `fn` but not reference an `action`. Also: `import("./impl/types.ts").T` as a type, intersection types, object spread in
@@ -41,7 +46,24 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - **A type imported from a JS or TS module**: passes the compiler, `rx-tsc` and Vitest; `vite build` fails with
   `MISSING_EXPORT`. The compiler elides a type import only from an `.rx` module, declared in a `.d.rx` or not.
 
+## Behaviour that surprises
+
+- **A list source aliases the array that seeded it.** The runtime wraps the seed in a store and a root write
+  replaces its contents in place, so two sources seeded from one prop array change together and the consumer's
+  array is mutated. Seed with a copy: `source items := peek([...props.defaultValue])`.
+- **An action returns a promise.** Its return value isn't available synchronously, and a write isn't readable
+  in the same run, so a decision that must be made synchronously from fresh state (whether to
+  `preventDefault()` a submit after validating) belongs in TypeScript. See `src/internal/impl/field.ts`.
+- **`effect (x)` compares its inputs by content**: writing equal content into an object source doesn't re-run
+  it.
+- **`ref={c.someAction}` inside `{if …}` markup** reads the context untracked (`STRICT_READ_UNTRACKED`). Wrap
+  it in a local action.
+
 ## The type projection
+
+- `rx-tsc` narrows a source inside an `if`, and with it the type of a write there: `if (!flag) { flag := true }`
+  is TS2345. Test through a local (`let unset = !flag`). Relatedly, `source b := false` is typed `false`:
+  annotate it `: boolean`.
 
 - `rx-tsc` checks an imported `.ts` module against its real signature, so a `ref` parameter looks like it wants
   an accessor and every call is a type error. That is why `.rx` imports a `.js` facade with a generated `.d.ts`.

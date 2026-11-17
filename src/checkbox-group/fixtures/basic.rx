@@ -1,0 +1,38 @@
+import { CheckboxGroup } from "../checkbox-group.rx"
+import { CheckboxRoot } from "../../checkbox/checkbox.rx"
+import { FieldRoot, FieldLabel } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source last := ""
+  source colors: string[] := ["red"]
+  source submitted := ""
+  <div>
+    <form data-testid="form">
+      <CheckboxGroup aria-label="Toppings" data-testid="toppings" allValues={["cheese", "ham", "olives"]} defaultValue={["cheese"]} onValueChange={(next) => { last := next.join(",") }}>
+        <label><CheckboxRoot parent />All toppings</label>
+        <label><CheckboxRoot name="toppings" value="cheese" />Cheese</label>
+        <label><CheckboxRoot name="toppings" value="ham" />Ham</label>
+        <label><CheckboxRoot name="toppings" value="olives" />Olives</label>
+      </CheckboxGroup>
+      <output data-testid="last">{last}</output>
+    </form>
+    <Form onFormSubmit={(values) => { submitted := `${values.colors}` }}>
+      <FieldRoot name="colors" data-testid="colors-root">
+        <FieldLabel>Colors</FieldLabel>
+        <CheckboxGroup value={colors} onValueChange={(next) => { colors := next }}>
+          <label><CheckboxRoot value="red" />Red</label>
+          <label><CheckboxRoot value="blue" />Blue</label>
+        </CheckboxGroup>
+      </FieldRoot>
+      <FieldRoot disabled>
+        <FieldLabel>Sizes</FieldLabel>
+        <CheckboxGroup>
+          <label><CheckboxRoot value="s" />Small</label>
+        </CheckboxGroup>
+      </FieldRoot>
+      <button type="submit">Submit</button>
+    </Form>
+    <output data-testid="submitted">{submitted}</output>
+  </div>
+}

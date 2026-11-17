@@ -1,0 +1,11 @@
+import { CheckboxGroup } from "../src/checkbox-group/checkbox-group.rx"
+import { CheckboxRoot, CheckboxIndicator } from "../src/checkbox/checkbox.rx"
+
+export component CheckboxGroupDemo() {
+  <CheckboxGroup aria-label="Apples" allValues={["fuji", "gala", "granny"]} defaultValue={["fuji"]}>
+    <label><CheckboxRoot parent><CheckboxIndicator>✓</CheckboxIndicator></CheckboxRoot> All apples</label>
+    <label><CheckboxRoot name="apple" value="fuji"><CheckboxIndicator>✓</CheckboxIndicator></CheckboxRoot> Fuji</label>
+    <label><CheckboxRoot name="apple" value="gala"><CheckboxIndicator>✓</CheckboxIndicator></CheckboxRoot> Gala</label>
+    <label><CheckboxRoot name="apple" value="granny"><CheckboxIndicator>✓</CheckboxIndicator></CheckboxRoot> Granny Smith</label>
+  </CheckboxGroup>
+}

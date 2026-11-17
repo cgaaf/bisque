@@ -1,0 +1,16 @@
+import { FieldsetRoot, FieldsetLegend } from "../fieldset.rx"
+import { FieldRoot, FieldLabel, FieldControl } from "../../field/field.rx"
+
+export default component Fixture() {
+  source locked: boolean := false
+  <div>
+    <FieldsetRoot data-testid="billing" disabled={locked}>
+      <FieldsetLegend data-testid="legend">Billing</FieldsetLegend>
+      <FieldRoot data-testid="field">
+        <FieldLabel>Company</FieldLabel>
+        <FieldControl />
+      </FieldRoot>
+    </FieldsetRoot>
+    <button onClick={() => { locked := !locked }}>Lock</button>
+  </div>
+}

@@ -1,0 +1,47 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { FieldsetProps, DivProps } from "../internal/types.rx"
+
+// Read optionally: a Field, or a control, inside a disabled fieldset is disabled.
+export type FieldsetContext = {
+  disabled: boolean
+  legendId: string | undefined
+  setLegendId: (id: string | undefined) => void
+}
+
+export context fieldset: FieldsetContext | undefined = undefined
+
+export type FieldsetRootProps = {
+  // Disables every Field and control inside it. Default: false.
+  disabled?: boolean
+} & FieldsetProps
+
+// A native <fieldset>, labelled by its legend.
+export component FieldsetRoot(props: FieldsetRootProps) {
+  source legendId: string | undefined := undefined
+  isDisabled = props.disabled ?? false
+  action setLegendId(id: string | undefined) { legendId := id }
+
+  provide fieldset = { disabled: isDisabled, legendId: legendId, setLegendId: setLegendId }
+
+  { disabled, children, ...rest } = props
+  own = {
+    "aria-labelledby": legendId,
+    disabled: isDisabled ? true : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+  }
+  merged = mergeProps(own, rest)
+  <fieldset {...merged}>{children}</fieldset>
+}
+
+// The fieldset's label. A <div> rather than <legend>, so it can be placed and styled freely; the root names it in
+// `aria-labelledby`.
+export component FieldsetLegend({ children, ...rest }: DivProps) {
+  f = use fieldset
+  id = createId("fieldset-legend")
+  effect () {
+    if (f) { f.setLegendId(id) }
+    return () => { if (f) { f.setLegendId(undefined) } }
+  }
+  merged = mergeProps({ id: id, "data-disabled": f?.disabled ? "" : undefined }, rest)
+  <div {...merged}>{children}</div>
+}

@@ -1,4 +1,6 @@
 import { mergeProps } from "../internal/props.js"
+import { field, fieldControlProps } from "../field/field.rx"
+import { checkboxGroup } from "../checkbox-group/checkbox-group.rx"
 import { ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
 
 export type CheckboxContext = {
@@ -20,9 +22,13 @@ export type CheckboxRootProps = {
   disabled?: boolean
   readOnly?: boolean
   required?: boolean
-  // With a name, the box takes part in a <form>: it submits `value` (default "on") while checked.
+  // With a name (or inside a named FieldRoot), the box takes part in a <form>: it submits `value` (default "on")
+  // while checked.
   name?: string
+  // Inside a CheckboxGroup, also the value the group's list holds while the box is checked.
   value?: string
+  // Inside a CheckboxGroup with `allValues`: the box that checks or clears them all, mixed while some are checked.
+  parent?: boolean
 } & Omit<ButtonProps, "value" | "name" | "disabled">
 
 // The state attributes the root and its indicator share.
@@ -38,41 +44,61 @@ fn checkboxState(ref c: CheckboxContext): PartProps {
 }
 
 export component CheckboxRoot(props: CheckboxRootProps) {
+  f = use field
+  group = use checkboxGroup
   source uncontrolled := peek(props.defaultChecked ?? false)
-  isChecked = props.checked ?? uncontrolled
+  isParent = group != undefined && (props.parent ?? false)
+  // A member of a group: a box with a value inside one. The group, not the box, is then the field's control.
+  inGroup = group != undefined && !isParent && props.value != undefined
+  groupValue = group?.value ?? []
+  groupAll = group?.allValues ?? []
+  isChecked = isParent ? groupAll.length > 0 && groupValue.length == groupAll.length : inGroup ? groupValue.includes(props.value ?? "") : props.checked ?? uncontrolled
   self = {
     checked: isChecked,
-    indeterminate: props.indeterminate ?? false,
-    disabled: props.disabled ?? false,
+    indeterminate: isParent ? groupValue.length > 0 && groupValue.length < groupAll.length : props.indeterminate ?? false,
+    disabled: (props.disabled ?? false) || (f?.disabled ?? false) || (group?.disabled ?? false),
     readOnly: props.readOnly ?? false,
     required: props.required ?? false,
   }
+  fieldOf = group == undefined ? f : undefined
+  inputName = isParent ? undefined : props.name ?? f?.name
+
+  effect (isChecked) { if (fieldOf) { fieldOf.setValue($0) } }
 
   action toggle() {
     if (self.disabled || self.readOnly) { return }
     let next = self.indeterminate ? true : !isChecked
-    uncontrolled := next
+    if (isParent && group) {
+      group.pressParent()
+    } else if (inGroup && group) {
+      group.setChecked(props.value ?? "", next)
+    } else {
+      uncontrolled := next
+    }
     if (props.onCheckedChange) { props.onCheckedChange(next) }
   }
+  action setInput(element: HTMLInputElement) { if (fieldOf) { fieldOf.setInput(element) } }
 
   provide checkbox = self
 
-  { checked, defaultChecked, onCheckedChange, indeterminate, disabled, readOnly, required, name, value, children, ...rest } = props
+  { checked, defaultChecked, onCheckedChange, indeterminate, disabled, readOnly, required, name, value, parent, children, ...rest } = props
   state = checkboxState(self)
-  own = {
+  inField = fieldControlProps(fieldOf)
+  own = mergeProps(inField, {
     type: "button",
     role: "checkbox",
     "aria-checked": self.indeterminate ? "mixed" : isChecked ? "true" : "false",
     "aria-readonly": self.readOnly ? "true" : undefined,
     "aria-required": self.required ? "true" : undefined,
     disabled: self.disabled ? true : undefined,
+    "data-parent": isParent ? "" : undefined,
     onClick: toggle,
     ...state,
-  }
+  })
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>
-  {if name != undefined {
-    <input type="checkbox" hidden aria-hidden="true" tabindex="-1" name={name} value={value ?? "on"} checked={isChecked} disabled={self.disabled} required={self.required} />
+  {if inputName != undefined || (fieldOf != undefined && !isParent) {
+    <input type="checkbox" hidden aria-hidden="true" tabindex="-1" name={inputName} value={value ?? "on"} checked={isChecked} disabled={self.disabled} required={self.required} ref={setInput} />
   }}
 }
 

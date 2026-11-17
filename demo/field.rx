@@ -1,0 +1,10 @@
+import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError } from "../src/field/field.rx"
+
+export component FieldDemo() {
+  <FieldRoot validationMode="onBlur" validate={(value) => value == "admin" ? "That name is taken" : null}>
+    <FieldLabel>Username</FieldLabel>{" "}
+    <FieldControl required minlength={3} />
+    <FieldDescription>At least three characters. Try "admin".</FieldDescription>
+    <FieldError />
+  </FieldRoot>
+}

@@ -1,0 +1,45 @@
+import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError, FieldValidity, fieldValidity } from "../field.rx"
+
+component ValidityReadout() {
+  v = use fieldValidity
+  <output data-testid="validity">{v.validity.valid == null ? "unknown" : v.validity.valid ? "valid" : "invalid"}:{v.error}</output>
+}
+
+export default component Fixture() {
+  source changes: string[] := []
+  <div>
+    <FieldRoot data-testid="email-root" validationMode="onBlur">
+      <FieldLabel data-testid="email-label">Email</FieldLabel>
+      <FieldControl type="email" required />
+      <FieldDescription data-testid="email-description">We never share it.</FieldDescription>
+      <FieldError data-testid="email-error" />
+    </FieldRoot>
+    <FieldRoot data-testid="name-root" validationMode="onChange" validate={(value) => value == "admin" ? "That name is taken" : null}>
+      <FieldLabel>Username</FieldLabel>
+      <FieldControl defaultValue="guest" onValueChange={(next) => { changes := [...changes, next] }} />
+      <FieldError data-testid="name-error" />
+      <FieldValidity><ValidityReadout /></FieldValidity>
+    </FieldRoot>
+    <FieldRoot data-testid="code-root" validationMode="onChange">
+      <FieldLabel>Code</FieldLabel>
+      <FieldControl required pattern="[0-9]+" />
+      <FieldError match="valueMissing" data-testid="code-missing">Enter a code</FieldError>
+      <FieldError match="patternMismatch" data-testid="code-pattern">Digits only</FieldError>
+    </FieldRoot>
+    <FieldRoot data-testid="locked-root" disabled>
+      <FieldLabel data-testid="locked-label">Locked</FieldLabel>
+      <FieldControl />
+    </FieldRoot>
+    <FieldRoot data-testid="pin-root" validationMode="onChange" validate={(value) => value == "" ? null : ["Too short", "Needs a letter"]}>
+      <FieldLabel>PIN</FieldLabel>
+      <FieldControl />
+      <FieldError data-testid="pin-error" />
+    </FieldRoot>
+    <FieldRoot data-testid="flagged-root" invalid>
+      <FieldLabel>Flagged</FieldLabel>
+      <FieldControl />
+      <FieldError data-testid="flagged-error">Flagged by the server</FieldError>
+    </FieldRoot>
+    <output data-testid="changes">{changes.join(",")}</output>
+  </div>
+}
