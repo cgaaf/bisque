@@ -83,7 +83,20 @@ What the source doesn't say goes in `docs/api-notes/<family>.json`, keyed by par
 ```
 
 A data attribute set to `null` in the notes is left out: use it where the generator follows a shared props
-function to an attribute the part then clears.
+function to an attribute the part then clears. The generator follows every function a part calls, exported or
+not, so an attribute a private helper writes (`itemState`) needs no note.
+
+A prop's default comes from the component body's equations (`x = props.x ?? false`, not a fallback inside an
+`action`), else from a destructuring default, else from "Default: …" at the end of the prop's comment. A part that
+only renders another library part and passes a prop on (ContextMenu's items, AutocompletePopup) takes that prop's
+missing default and description from the wrapped part. Two more keys of a part's notes adjust the result:
+
+- `"defaults": { "min": null, "filter": "the label contains the input" }`: `null` drops a default that is wrong
+  (a fallback that isn't what the prop defaults to); a string replaces it, written as the table shows it.
+- `"hidden": true`: leaves out a part that is exported only for the library's own use.
+
+`node scripts/gen-api.mjs --check` is part of `pnpm typecheck`: regenerate after changing a family's source or
+notes.
 
 Every part needs a description, and every prop and data attribute a meaning, written for someone using the
 library (the source comments are written for someone maintaining it). If a prop's comment in the source is

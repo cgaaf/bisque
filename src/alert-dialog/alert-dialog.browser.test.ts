@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 import controlled from "./fixtures/controlled.rx";
+import nativeClose from "./fixtures/native-close.rx";
 
 const closed = (dialog: HTMLElement) => expect.poll(() => (dialog as HTMLDialogElement).open).toBe(false);
 
@@ -57,4 +58,22 @@ test("can be controlled", async () => {
   await user.click(getByRole("button", { name: "Stay" }));
   expect(getByTestId("open").textContent).toBe("closed");
   await closed(popup);
+});
+
+test("a dialog form's close waits for the owner, and animates out once it agrees", async () => {
+  const { getByRole, getByTestId, user } = mount(nativeClose);
+  await user.click(getByRole("button", { name: "Delete" }));
+  const popup = getByRole("alertdialog") as HTMLDialogElement;
+  await user.click(getByRole("button", { name: "Confirm" }));
+  await frame();
+  expect(popup.open).toBe(true);
+  expect(popup.matches(":modal")).toBe(true);
+  expect(getByTestId("requests").textContent).toBe("2");
+
+  await user.click(getByRole("button", { name: "Unlock" }));
+  await user.click(getByRole("button", { name: "Confirm" }));
+  await expect.poll(() => popup.hasAttribute("data-ending-style")).toBe(true);
+  expect(popup.open).toBe(true);
+  await closed(popup);
+  expect(popup.returnValue).toBe("delete");
 });

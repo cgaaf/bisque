@@ -46,6 +46,12 @@ export default component Page() {
       ask to close it: a controlled dialog stays open until <code>open</code> becomes false, so it can refuse, for
       instance while there are unsaved changes.
     </p>
+    <p>
+      The same goes for the ways the browser closes a <code>{"<dialog>"}</code> by itself: a submit button of a{" "}
+      <code>{'<form method="dialog">'}</code> and a <code>command="close"</code> button. The library stops the
+      close before it happens and calls <code>onOpenChange(false)</code> instead; when the dialog does close, it
+      animates out as usual, and the button's <code>value</code> becomes the dialog's <code>returnValue</code>.
+    </p>
     <Demo source="dialog/controlled"><DialogControlled /></Demo>
 
     <h3 id="dismissal">Closing on Escape and a press outside</h3>

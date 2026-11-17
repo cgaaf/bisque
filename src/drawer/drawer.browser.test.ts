@@ -1,13 +1,37 @@
+import { OBSERVE } from "solid-js";
+import { attribution } from "solid-js/attribution";
 import { afterEach, expect, test, vi } from "vitest";
 import { server } from "vitest/browser";
 import { flush, frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 import right from "./fixtures/right.rx";
 import demo from "./fixtures/demo.rx";
+import nativeClose from "./fixtures/native-close.rx";
 
 afterEach(() => {
   vi.useRealTimers();
 });
+
+/**
+ * The EFFECT_RELAY_TEAR reports about signals of `primitive` while `run` runs. Solid checks for an effect that
+ * relays a change into a signal only while its attribution engine is on, which Vitest doesn't do, and reports the
+ * first two sightings at `info`, on the structured channel only: the console, and so `src/test/browser-setup.ts`,
+ * would see the third.
+ */
+async function relayTears(primitive: string, run: () => Promise<void>): Promise<string[]> {
+  // OBSERVE exists in Solid's dev and observe builds, which are what tests run on.
+  const capture = OBSERVE!.diagnostics.capture();
+  const release = attribution.enable({ log: false });
+  try {
+    await run();
+  } finally {
+    release();
+  }
+  type Diagnostic = { code: string; message: string; data?: { wrote?: string } };
+  return (capture.stop() as Diagnostic[])
+    .filter((event) => event.code === "EFFECT_RELAY_TEAR" && event.data?.wrote?.startsWith(`${primitive}.`))
+    .map((event) => event.message);
+}
 
 const closed = (dialog: HTMLElement) => expect.poll(() => (dialog as HTMLDialogElement).open).toBe(false);
 
@@ -280,6 +304,27 @@ test("opening again starts from rest", async () => {
   expect(popup.style.getPropertyValue("--drawer-swipe-movement-y")).toBe("0px");
 });
 
+test("opening resets the swipe without relaying the change through an effect", async () => {
+  const tears = await relayTears("createSwipe", async () => {
+    const { getByRole, getByTestId, user, popup } = await openDrawer();
+    await user.click(getByRole("button", { name: "Done" }));
+    await closed(popup);
+    await user.keyboard("{Enter}");
+    expect(popup.open).toBe(true);
+    const release = slowDrag(getByTestId("handle"), [
+      [50, 10],
+      [50, 160],
+    ]);
+    release([50, 160]);
+    await closed(popup);
+    vi.useRealTimers();
+    await user.keyboard("{Enter}");
+    expect(popup.open).toBe(true);
+    expect(popup.style.getPropertyValue("--drawer-swipe-movement-y")).toBe("0px");
+  });
+  expect(tears).toEqual([]);
+});
+
 test("swipeDirection and swipeThreshold: a controlled drawer swiped out to the right", async () => {
   const { getByTestId } = mount(right);
   const popup = getByTestId("popup") as HTMLDialogElement;
@@ -328,4 +373,31 @@ test("a touch drag keeps the page from scrolling, and only while it lasts", asyn
   expect(touchMove()).toBe(true);
   release([50, 30]);
   expect(touchMove()).toBe(false);
+});
+
+test("a close the browser would do itself waits for the owner, and slides out once it agrees", async () => {
+  const { getByRole, getByTestId, user } = mount(nativeClose);
+  await user.click(getByRole("button", { name: "Open drawer" }));
+  const popup = getByTestId("popup") as HTMLDialogElement;
+  for (const name of ["Apply", "Dismiss"]) {
+    // oxlint-disable-next-line no-await-in-loop -- each press acts on the drawer the one before left open
+    await user.click(getByRole("button", { name }));
+    // oxlint-disable-next-line no-await-in-loop
+    await frame();
+    expect(popup.open).toBe(true);
+  }
+  expect(getByTestId("requests").textContent).toBe("3");
+
+  await user.click(getByRole("button", { name: "Unlock" }));
+  for (const name of ["Apply", "Dismiss"]) {
+    // oxlint-disable-next-line no-await-in-loop -- one close after the other
+    if (!popup.open) await user.click(getByRole("button", { name: "Open drawer" }));
+    // oxlint-disable-next-line no-await-in-loop
+    await user.click(getByRole("button", { name }));
+    // oxlint-disable-next-line no-await-in-loop
+    await expect.poll(() => popup.hasAttribute("data-ending-style")).toBe(true);
+    expect(popup.open).toBe(true);
+    // oxlint-disable-next-line no-await-in-loop
+    await closed(popup);
+  }
 });

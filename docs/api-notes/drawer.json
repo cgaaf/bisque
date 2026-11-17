@@ -10,6 +10,9 @@
       "modal": "Whether the drawer is opened with `showModal()`: in the top layer, with a backdrop, the page behind it inert and its scroll locked. As DialogRoot's.",
       "dismissible": "Whether Escape and a press outside close the drawer. With `false` only its own buttons and a swipe do.",
       "disablePointerDismissal": "Whether a press outside is ignored. Escape and a swipe still close the drawer."
+    },
+    "defaults": {
+      "swipeThreshold": "half the drawer's size along `swipeDirection`"
     }
   },
   "DrawerTrigger": {

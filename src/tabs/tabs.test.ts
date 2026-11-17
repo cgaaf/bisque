@@ -132,9 +132,10 @@ test("the indicator carries the selected tab's position as CSS variables", async
   const { getByRole, getByTestId, user } = mount(basic);
   const indicator = getByTestId("indicator");
   expect(indicator.getAttribute("role")).toBe("presentation");
-  // jsdom has no layout: every size is 0, so the indicator stays hidden, but the variables are written.
+  // jsdom has no layout: every size is 0, so the indicator stays hidden, but the variables are written (after
+  // the flush that selected the tab: they are measured in a microtask).
   expect(indicator.hidden).toBe(true);
-  expect(indicator.style.getPropertyValue("--active-tab-width")).toBe("0px");
+  await expect.poll(() => indicator.style.getPropertyValue("--active-tab-width")).toBe("0px");
   expect(indicator.style.getPropertyValue("--active-tab-left")).toBe("0px");
 
   const account = getByRole("tab", { name: "Account" });
@@ -142,7 +143,7 @@ test("the indicator carries the selected tab's position as CSS variables", async
   Object.defineProperty(account, "offsetHeight", { configurable: true, get: () => 30 });
   account.getBoundingClientRect = () => new DOMRect(150, 0, 80, 30);
   await user.click(account);
-  expect(indicator.style.getPropertyValue("--active-tab-left")).toBe("150px");
+  await expect.poll(() => indicator.style.getPropertyValue("--active-tab-left")).toBe("150px");
   expect(indicator.style.getPropertyValue("--active-tab-width")).toBe("80px");
   expect(indicator.style.getPropertyValue("--active-tab-height")).toBe("30px");
   expect(indicator.hidden).toBe(false);
@@ -168,7 +169,7 @@ test("vertical, controlled and automatic: focus selects, Up/Down move, no wrap",
   expect(getByTestId("root").getAttribute("data-activation-direction")).toBe("up");
 
   await user.keyboard("{ArrowDown}{ArrowDown}");
-  const link = getByTestId("link-tab");
+  const link = getByTestId("link-tab-c");
   expect(document.activeElement).toBe(link);
   expect(link.tagName).toBe("A");
   expect(link.getAttribute("aria-selected")).toBe("true");
@@ -189,4 +190,23 @@ test("an uncontrolled default value is honoured", () => {
   expect(getByRole("tab", { name: "Two" }).getAttribute("aria-selected")).toBe("true");
   expect(getByRole("tab", { name: "One" }).getAttribute("aria-selected")).toBe("false");
   expect(getByRole("tabpanel", { name: "Two" }).textContent).toBe("Panel two");
+});
+
+test("a tab made with the props function alone registers with the root", async () => {
+  const { getByRole, getByTestId, user } = mount(controlled);
+  // Alone in its list, the first one is selected and is the list's Tab stop.
+  const inbox = getByTestId("link-tab-inbox");
+  const sent = getByTestId("link-tab-sent");
+  expect(inbox.getAttribute("aria-selected")).toBe("true");
+  expect(inbox.getAttribute("tabindex")).toBe("0");
+  expect(sent.getAttribute("tabindex")).toBe("-1");
+  expect(getByRole("tabpanel", { name: "Inbox" }).textContent).toBe("Inbox panel");
+
+  // Beside ordinary tabs in an uncontrolled root, it stays selected once chosen.
+  const three = getByTestId("link-tab-three");
+  await user.click(three);
+  expect(three.getAttribute("aria-selected")).toBe("true");
+  expect(three.getAttribute("tabindex")).toBe("0");
+  expect(getByRole("tab", { name: "Two" }).getAttribute("aria-selected")).toBe("false");
+  expect(getByRole("tabpanel", { name: "Three" }).textContent).toBe("Panel three");
 });

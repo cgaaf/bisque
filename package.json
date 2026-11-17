@@ -21,7 +21,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm typecheck:rx && pnpm typecheck:ts",
-    "typecheck:rx": "node scripts/gen-dts.mjs --check && rx-tsc --noEmit -p tsconfig.json",
+    "typecheck:rx": "node scripts/gen-dts.mjs --check && node scripts/gen-api.mjs --check && rx-tsc --noEmit -p tsconfig.json",
     "typecheck:ts": "tsrs --noEmit -p tsconfig.ts.json",
     "lint": "oxlint --deny-warnings",
     "format": "oxfmt",

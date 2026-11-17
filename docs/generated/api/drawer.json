@@ -37,7 +37,7 @@
         {
           "name": "swipeThreshold",
           "type": "number",
-          "default": "0",
+          "default": "half the drawer's size along `swipeDirection`",
           "required": false,
           "description": "How far a swipe must travel to close the drawer, in pixels. When it isn't given, half the drawer's size along `swipeDirection`. A fast flick closes it whatever the distance."
         },

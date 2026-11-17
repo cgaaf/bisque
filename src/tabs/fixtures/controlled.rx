@@ -1,10 +1,11 @@
 import { TabsRoot, TabsList, TabsTab, TabsPanel, tabs, tabsListOptions, tabsTab } from "../tabs.rx"
 
+// A custom tab made with the props function alone: it registers with the root through it.
 component LinkTab(props: { value: string; label: string }) {
   c = use tabs
   l = use tabsListOptions
   t = tabsTab(c, l, props.value, false)
-  <a href="#" data-testid="link-tab" {...t} type={undefined}>{props.label}</a>
+  <a href="#" data-testid={`link-tab-${props.value}`} {...t} type={undefined}>{props.label}</a>
 }
 
 export default component Fixture() {
@@ -26,9 +27,19 @@ export default component Fixture() {
       <TabsList>
         <TabsTab value="one">One</TabsTab>
         <TabsTab value="two">Two</TabsTab>
+        <LinkTab value="three" label="Three" />
       </TabsList>
       <TabsPanel value="one">Panel one</TabsPanel>
       <TabsPanel value="two">Panel two</TabsPanel>
+      <TabsPanel value="three">Panel three</TabsPanel>
+    </TabsRoot>
+    <TabsRoot data-testid="links-only">
+      <TabsList>
+        <LinkTab value="inbox" label="Inbox" />
+        <LinkTab value="sent" label="Sent" />
+      </TabsList>
+      <TabsPanel value="inbox">Inbox panel</TabsPanel>
+      <TabsPanel value="sent">Sent panel</TabsPanel>
     </TabsRoot>
   </main>
 }

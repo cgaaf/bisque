@@ -1,0 +1,52 @@
+import { DialogRoot, DialogTrigger, DialogPopup, dialog } from "../dialog.rx"
+
+// Buttons the browser closes a <dialog> with by itself: a `command="close"` button pointing at it.
+component CloseCommand(props: { value: string; label: string }) {
+  c = use dialog
+  <button command="close" commandfor={c.popupId} value={props.value}>{props.label}</button>
+}
+
+// A controlled dialog whose owner refuses to close it while `locked`, and an uncontrolled one that animates out.
+// Both can be closed by the browser itself: a submit button of a `<form method="dialog">`, a button with
+// `formmethod="dialog"`, and a `command="close"` button.
+export default component Fixture() {
+  source open := false
+  source locked := true
+  source requests := 0
+  source returned := ""
+  action change(next: boolean) {
+    requests := requests + 1
+    if (next || !locked) { open := next }
+  }
+  action recordReturn(event: Event & { currentTarget: HTMLDialogElement }) { returned := event.currentTarget.returnValue }
+  <style>
+    :global(dialog.animated) { transition: opacity 80ms }
+    :global(dialog.animated[data-ending-style]) { opacity: 0 }
+  </style>
+  <main>
+    <DialogRoot open={open} onOpenChange={change}>
+      <DialogTrigger>Open locked</DialogTrigger>
+      <DialogPopup aria-label="Locked" data-testid="locked" onClose={recordReturn}>
+        <button onClick={() => { locked := false }}>Unlock</button>
+        <form method="dialog">
+          <button value="saved">Save</button>
+        </form>
+        <form>
+          <button formmethod="dialog" value="kept">Keep</button>
+        </form>
+        <CloseCommand value="commanded" label="Dismiss" />
+      </DialogPopup>
+    </DialogRoot>
+    <DialogRoot>
+      <DialogTrigger>Open animated</DialogTrigger>
+      <DialogPopup aria-label="Animated" class="animated">
+        <form method="dialog">
+          <button>Done</button>
+        </form>
+        <CloseCommand value="" label="Hide" />
+      </DialogPopup>
+    </DialogRoot>
+    <output data-testid="requests">{requests}</output>
+    <output data-testid="returned">{returned}</output>
+  </main>
+}

@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 import controlled from "./fixtures/controlled.rx";
+import nativeClose from "./fixtures/native-close.rx";
 
 const closed = (dialog: HTMLElement) => expect.poll(() => (dialog as HTMLDialogElement).open).toBe(false);
 
@@ -130,4 +131,79 @@ test("a non-modal dialog leaves the page usable and still closes on Escape", asy
   expect(document.documentElement.style.overflow).toBe("");
   await user.keyboard("{Escape}");
   await closed(dialog);
+});
+
+test("a controlled dialog refuses a close the browser would do itself: a dialog form or a close command", async () => {
+  const { getByRole, getByTestId, user } = mount(nativeClose);
+  await user.click(getByRole("button", { name: "Open locked" }));
+  const dialog = getByTestId("locked") as HTMLDialogElement;
+  for (const name of ["Save", "Keep", "Dismiss"]) {
+    // oxlint-disable-next-line no-await-in-loop -- each press acts on the dialog the one before left open
+    await user.click(getByRole("button", { name }));
+    // oxlint-disable-next-line no-await-in-loop
+    await frame();
+    expect(dialog.open).toBe(true);
+    expect(dialog.matches(":modal")).toBe(true);
+  }
+  // Opening, then one request for each press.
+  expect(getByTestId("requests").textContent).toBe("4");
+  expect(getByTestId("returned").textContent).toBe("");
+
+  // Once the owner agrees, the close goes ahead with the button's value as the dialog's return value.
+  await user.click(getByRole("button", { name: "Unlock" }));
+  await user.click(getByRole("button", { name: "Save" }));
+  await closed(dialog);
+  // The close event that carries it comes in a later task.
+  await expect.poll(() => getByTestId("returned").textContent).toBe("saved");
+  await user.click(getByRole("button", { name: "Open locked" }));
+  await user.click(getByRole("button", { name: "Dismiss" }));
+  await closed(dialog);
+  await expect.poll(() => getByTestId("returned").textContent).toBe("commanded");
+});
+
+test("a close by a dialog form or a close command runs the exit animation", async () => {
+  const { getByRole, user } = mount(nativeClose);
+  for (const name of ["Done", "Hide"]) {
+    // oxlint-disable-next-line no-await-in-loop -- one close after the other
+    await user.click(getByRole("button", { name: "Open animated" }));
+    const dialog = getByRole("dialog", { name: "Animated" }) as HTMLDialogElement;
+    // oxlint-disable-next-line no-await-in-loop
+    await user.click(getByRole("button", { name }));
+    // oxlint-disable-next-line no-await-in-loop
+    await expect.poll(() => dialog.hasAttribute("data-ending-style")).toBe(true);
+    expect(dialog.open).toBe(true);
+    // oxlint-disable-next-line no-await-in-loop
+    await closed(dialog);
+    expect(dialog.hasAttribute("data-ending-style")).toBe(false);
+  }
+});
+
+test("a close by script, which can't be stopped, is reported and undone if the owner refuses it", async () => {
+  const { getByRole, getByTestId, user } = mount(nativeClose);
+  await user.click(getByRole("button", { name: "Open locked" }));
+  const dialog = getByTestId("locked") as HTMLDialogElement;
+  dialog.close();
+  await expect.poll(() => dialog.open).toBe(true);
+  expect(dialog.matches(":modal")).toBe(true);
+  expect(getByTestId("requests").textContent).toBe("2");
+});
+
+test("a close by script that the owner accepts stays closed, and a close with no value leaves returnValue empty", async () => {
+  const { getByRole, user } = mount(nativeClose);
+  await user.click(getByRole("button", { name: "Open animated" }));
+  const dialog = getByRole("dialog", { name: "Animated" }) as HTMLDialogElement;
+  const opened: string[] = [];
+  dialog.addEventListener("toggle", (event) => opened.push((event as ToggleEvent).newState));
+  dialog.close();
+  await frame();
+  await frame();
+  expect(dialog.open).toBe(false);
+  expect(dialog.hasAttribute("data-ending-style")).toBe(false);
+  await expect.poll(() => opened).toEqual(["closed"]);
+
+  dialog.returnValue = "";
+  await user.click(getByRole("button", { name: "Open animated" }));
+  await user.click(getByRole("button", { name: "Done" }));
+  await closed(dialog);
+  expect(dialog.returnValue).toBe("");
 });

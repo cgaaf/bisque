@@ -1,6 +1,6 @@
 // Swipe to dismiss, for toasts and drawers. `../swipe.d.rx` declares how `.rx` may call it, through the
 // `../swipe.js` facade.
-import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
+import { createEffect, createMemo, createSignal, untrack, type Accessor } from "solid-js";
 
 type MaybeElement = HTMLElement | undefined;
 export type SwipeDirection = "up" | "down" | "left" | "right";
@@ -28,6 +28,17 @@ export type SwipeState = {
   /** The drag along the swipe direction as a fraction of the element's size: 0 to 1. */
   progress: number;
 };
+
+type Session = { enabled: boolean; id: number };
+type Gesture = {
+  session: number;
+  swiping: boolean;
+  direction: SwipeDirection | undefined;
+  x: number;
+  y: number;
+  progress: number;
+};
+const AT_REST: Omit<Gesture, "session"> = { swiping: false, direction: undefined, x: 0, y: 0, progress: 0 };
 
 // Presses on these never start a swipe, so a toast's buttons still click.
 const IGNORE = 'button,a,input,select,textarea,label,[role="button"],[data-swipe-ignore]';
@@ -73,22 +84,29 @@ export function createSwipe(
   options: Accessor<SwipeOptions>,
   onDismiss: (direction: SwipeDirection) => void,
 ): SwipeState {
-  const [swiping, setSwiping] = createSignal(false);
-  const [direction, setDirection] = createSignal<SwipeDirection | undefined>(undefined);
-  const [offset, setOffset] = createSignal({ x: 0, y: 0, progress: 0 });
-
-  const reset = () => {
-    setSwiping(false);
-    setDirection(undefined);
-    setOffset({ x: 0, y: 0, progress: 0 });
+  // Each time the swipe is enabled again starts a new session, and what an earlier session left (the offset of a
+  // swipe that dismissed, kept for the exit animation) reads as at rest. That is derived rather than reset by an
+  // effect: an effect writing the reset would land a flush after `enabled` changed, so everything reading both
+  // would run twice, the first time with the old offset (EFFECT_RELAY_TEAR).
+  const session = createMemo<Session>((before) => {
+    const enabled = options().enabled;
+    if (!before) return { enabled, id: 0 };
+    if (enabled === before.enabled) return before;
+    return { enabled, id: enabled ? before.id + 1 : before.id };
+  });
+  const [gesture, setGesture] = createSignal<Gesture>({ session: 0, ...AT_REST });
+  const visible = (): Omit<Gesture, "session"> => {
+    const state = gesture();
+    return state.session === session().id ? state : AT_REST;
   };
-
-  createEffect(
-    () => options().enabled,
-    (enabled, before) => {
-      if (enabled && before === false) reset();
-    },
-  );
+  const update = (change: Partial<Omit<Gesture, "session">>) => {
+    const id = untrack(session).id;
+    setGesture((state) => ({ ...(state.session === id ? state : AT_REST), ...change, session: id }));
+  };
+  const setSwiping = (swiping: boolean) => update({ swiping });
+  const setDirection = (direction: SwipeDirection | undefined) => update({ direction });
+  const setOffset = (offset: { x: number; y: number; progress: number }) => update(offset);
+  const reset = () => update(AT_REST);
 
   createEffect(
     () => (options().enabled ? element() : undefined),
@@ -233,19 +251,19 @@ export function createSwipe(
 
   return {
     get swiping() {
-      return swiping();
+      return visible().swiping;
     },
     get direction() {
-      return direction();
+      return visible().direction;
     },
     get x() {
-      return offset().x;
+      return visible().x;
     },
     get y() {
-      return offset().y;
+      return visible().y;
     },
     get progress() {
-      return offset().progress;
+      return visible().progress;
     },
   };
 }

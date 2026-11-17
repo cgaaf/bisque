@@ -74,9 +74,9 @@ export default component Page() {
 
     <h3 id="links">Tabs of your own</h3>
     <p>
-      To make a tab another element, such as a link, spread <code>tabsTab</code> on it. The root keeps a list of
-      its tabs, to find the first enabled one and to know whether a value names a tab, so register yours as{" "}
-      <code>TabsTab</code> does:
+      To make a tab another element, such as a link, spread <code>tabsTab</code> on it. It carries everything{" "}
+      <code>TabsTab</code> does, including telling the root about the tab, which the root uses to find the first
+      enabled tab and to know whether a value names one:
     </p>
     <Code file="tabs/link-tab.rx.txt" />
 

@@ -117,7 +117,10 @@ export fn tabsList(ref c: TabsContext): PartProps {
 
 export component TabsList(props: TabsListProps) {
   c = use tabs
-  _roving = createRovingFocus(c.list, { orientation: c.orientation, loop: props.loopFocus ?? true, typeahead: false, tabStop: false })
+  // Through an equation, so the options object is rebuilt when the orientation changes, not with every change
+  // of the context (the indicator's rect moves on each selection).
+  axis = c.orientation
+  _roving = createRovingFocus(c.list, { orientation: axis, loop: props.loopFocus ?? true, typeahead: false, tabStop: false })
   provide tabsListOptions = { activateOnFocus: props.activateOnFocus ?? false }
   { activateOnFocus, loopFocus, children, ...rest } = props
   own = tabsList(c)
@@ -131,7 +134,14 @@ export type TabsTabProps = {
   disabled?: boolean
 } & Omit<ButtonProps, "value" | "disabled">
 
+// Registers the tab with the root while it is mounted (the root keeps the list of tabs only to know the first
+// enabled one and whether the value names a tab), so a custom tab built on it needs nothing else.
 export fn tabsTab(ref c: TabsContext, ref l: TabsListContext, ref value: string, ref disabled: boolean): PartProps {
+  effect (value) {
+    c.upsertTab($0, disabled)
+    return () => { c.removeTab($0) }
+  }
+  effect (disabled) { c.upsertTab(value, $0) }
   isSelected = c.value == value
   action press() {
     if (!disabled) { c.select(value) }
@@ -161,12 +171,6 @@ export component TabsTab(props: TabsTabProps) {
   c = use tabs
   l = use tabsListOptions
   isDisabled = props.disabled ?? false
-  // The root keeps the list of tabs only to know the first enabled one and whether the value names a tab.
-  effect (props.value) {
-    c.upsertTab($0, isDisabled)
-    return () => { c.removeTab($0) }
-  }
-  effect (isDisabled) { c.upsertTab(props.value, $0) }
   { value, disabled, children, ...rest } = props
   own = tabsTab(c, l, value, isDisabled)
   merged = mergeProps(own, withoutHandlers(rest, isDisabled))

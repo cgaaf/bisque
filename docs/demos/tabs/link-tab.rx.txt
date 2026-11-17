@@ -3,11 +3,7 @@ import { TabsRoot, TabsList, TabsPanel, tabs, tabsListOptions, tabsTab } from ".
 component LinkTab(props: { value: string; href: string; children?: View }) {
   c = use tabs
   l = use tabsListOptions
-  // Tell the root about this tab, and forget it when it goes.
-  effect (props.value) {
-    c.upsertTab($0, false)
-    return () => { c.removeTab($0) }
-  }
+  // The props function carries the whole part: roles, keys, selection, and registering with the root.
   t = tabsTab(c, l, props.value, false)
   <a href={props.href} {...t} type={undefined}>{props.children}</a>
 }

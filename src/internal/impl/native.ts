@@ -40,13 +40,39 @@ const shown = (el: HTMLElement) => el.matches(":popover-open");
 
 export type DialogCloseReason = "escape-key" | "outside-press" | "close";
 
+/** What a native close by `button` gives the dialog's `returnValue`: its `value` attribute, when it has one. */
+function valueOf(button: Element | null | undefined): string | undefined {
+  if (!(button instanceof HTMLButtonElement || button instanceof HTMLInputElement)) return undefined;
+  return button.hasAttribute("value") ? button.value : undefined;
+}
+
+/** A `submit` that would close `dialog`: its form (or the submitter's `formmethod`) is `dialog`, and the dialog is
+ * the form's nearest. */
+function closesDialog(event: SubmitEvent, dialog: HTMLDialogElement): boolean {
+  const form = event.target;
+  if (!(form instanceof HTMLFormElement) || form.closest("dialog") !== dialog) return false;
+  const submitter = event.submitter;
+  const method =
+    submitter instanceof HTMLButtonElement || submitter instanceof HTMLInputElement
+      ? submitter.hasAttribute("formmethod")
+        ? submitter.formMethod
+        : form.method
+      : form.method;
+  return method === "dialog";
+}
+
 /**
  * Keeps a `<dialog>` in step with `open`: `showModal()` (or `show()` when not `modal`) to open, and `close()`
  * after its exit animation.
  *
- * The browser asks to close it in three ways, and each is reported through `onRequestClose` instead of being
- * allowed to happen, so a controlled dialog stays open until its owner agrees: Escape (the `cancel` event), a
- * press on the backdrop, and anything else that closed it (a `<form method="dialog">`, a `command` button).
+ * Every way the browser closes it by itself is stopped before it happens and reported through `onRequestClose`
+ * instead, so a controlled dialog stays open until its owner agrees, and a close that goes ahead runs the exit
+ * animation: Escape (the `cancel` event, also fired by `command="request-close"`), a press on the backdrop, the
+ * submit of a `<form method="dialog">` (or a `formmethod="dialog"` button), and a `command="close"` button (the
+ * `command` event). The submit and `command` events can be cancelled in all three engines; `beforetoggle` can't be
+ * when a dialog closes, in any of them. The button's value still becomes the dialog's `returnValue` when it
+ * closes. Only a script calling `close()` itself can't be stopped: that is reported after the fact, and the
+ * element is opened again if the owner keeps `open` true.
  */
 export function createNativeDialog(
   element: Accessor<HTMLDialogElement | undefined>,
@@ -54,12 +80,23 @@ export function createNativeDialog(
   modal: Accessor<boolean>,
   onRequestClose: (reason: DialogCloseReason) => void,
 ): void {
+  // The return value of a native close that was asked for, given to `close()` if the owner agrees. Kept until the
+  // request has been answered: past this task, a later close is not that one.
+  let result: string | undefined;
+  const requestClose = (value: string | undefined) => {
+    result = value;
+    setTimeout(() => {
+      result = undefined;
+    }, 0);
+    onRequestClose("close");
+  };
   const onCancel = (event: Event) => {
     event.preventDefault();
     onRequestClose("escape-key");
   };
-  const onClose = () => {
-    if (untrack(open)) onRequestClose("close");
+  const show = (el: HTMLDialogElement) => {
+    if (untrack(modal)) el.showModal();
+    else el.show();
   };
 
   createEffect(
@@ -91,17 +128,40 @@ export function createNativeDialog(
         event.preventDefault();
         onRequestClose("escape-key");
       };
+      // A consumer's handler that cancelled the submit (its own validation) keeps it from closing anyway.
+      const onSubmit = (event: SubmitEvent) => {
+        if (event.defaultPrevented || !el.open || !closesDialog(event, el)) return;
+        event.preventDefault();
+        requestClose(valueOf(event.submitter));
+      };
+      const onCommand = (event: Event & { command?: string; source?: Element | null }) => {
+        if (event.target !== el || event.defaultPrevented || event.command !== "close" || !el.open) return;
+        event.preventDefault();
+        requestClose(valueOf(event.source));
+      };
+      const onClose = () => {
+        if (!untrack(open)) return;
+        onRequestClose("close");
+        // The owner's answer has landed by the next microtask: if it kept the dialog open, open the element again.
+        queueMicrotask(() => {
+          if (el.isConnected && !el.open && untrack(open)) show(el);
+        });
+      };
       el.addEventListener("cancel", onCancel);
       el.addEventListener("close", onClose);
       el.addEventListener("pointerdown", onPointerDown);
       el.addEventListener("click", onClick);
       el.addEventListener("keydown", onKeyDown);
+      el.addEventListener("submit", onSubmit);
+      el.addEventListener("command", onCommand);
       return () => {
         el.removeEventListener("cancel", onCancel);
         el.removeEventListener("close", onClose);
         el.removeEventListener("pointerdown", onPointerDown);
         el.removeEventListener("click", onClick);
         el.removeEventListener("keydown", onKeyDown);
+        el.removeEventListener("submit", onSubmit);
+        el.removeEventListener("command", onCommand);
         if (el.open) el.close();
       };
     },
@@ -112,13 +172,14 @@ export function createNativeDialog(
     ([el, isOpen]) => {
       if (!el) return;
       if (isOpen) {
-        if (el.open) return;
-        if (untrack(modal)) el.showModal();
-        else el.show();
+        result = undefined;
+        if (!el.open) show(el);
         return;
       }
       if (!el.open) return;
-      return animateOut(el, () => el.close());
+      const value = result;
+      result = undefined;
+      return animateOut(el, () => el.close(value));
     },
   );
 }

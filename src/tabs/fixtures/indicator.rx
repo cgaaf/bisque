@@ -1,0 +1,16 @@
+import { TabsRoot, TabsList, TabsTab, TabsIndicator } from "../tabs.rx"
+
+// Tabs and an indicator, without panels: TabsPanel's presence is not what the indicator's tests are about.
+export default component Fixture() {
+  <main>
+    <TabsRoot data-testid="root">
+      <TabsList data-testid="list" style="display: flex; gap: 4px; position: relative">
+        <TabsTab value="overview">Overview</TabsTab>
+        <TabsTab value="projects" style="width: 120px">Projects</TabsTab>
+        <TabsTab value="billing" disabled>Billing</TabsTab>
+        <TabsTab value="account">Account</TabsTab>
+        <TabsIndicator data-testid="indicator" />
+      </TabsList>
+    </TabsRoot>
+  </main>
+}

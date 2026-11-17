@@ -1,0 +1,30 @@
+import { AlertDialogRoot, AlertDialogTrigger, AlertDialogPopup, AlertDialogTitle } from "../alert-dialog.rx"
+
+// A controlled alert dialog closed by the browser itself, through a `<form method="dialog">`. Its owner refuses
+// while `locked`; once unlocked, the close goes ahead and animates out.
+export default component Fixture() {
+  source open := false
+  source locked := true
+  source requests := 0
+  action change(next: boolean) {
+    requests := requests + 1
+    if (next || !locked) { open := next }
+  }
+  <style>
+    :global(dialog.animated) { transition: opacity 80ms }
+    :global(dialog.animated[data-ending-style]) { opacity: 0 }
+  </style>
+  <main>
+    <AlertDialogRoot open={open} onOpenChange={change}>
+      <AlertDialogTrigger>Delete</AlertDialogTrigger>
+      <AlertDialogPopup class="animated">
+        <AlertDialogTitle>Delete the file?</AlertDialogTitle>
+        <button onClick={() => { locked := false }}>Unlock</button>
+        <form method="dialog">
+          <button value="delete">Confirm</button>
+        </form>
+      </AlertDialogPopup>
+    </AlertDialogRoot>
+    <output data-testid="requests">{requests}</output>
+  </main>
+}

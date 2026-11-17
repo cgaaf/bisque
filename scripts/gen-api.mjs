@@ -5,6 +5,12 @@
 // What the source can't say (what a data attribute means, CSS variables set from TypeScript) comes from
 // docs/api-notes/<family>.json, which is merged over the generated record.
 //
+// The data attributes are followed through every function the part calls, exported or not (a call resolves to the
+// file's own function first). A prop's default is the literal of a top-level equation of the component body that
+// is nothing but `props.x ?? literal` (or `source s := peek(props.x ?? literal)`), else a destructuring default,
+// else "Default: …" at the end of its comment. A component that only renders another of the library's, passing a
+// prop on, gets that prop's missing default and description from it.
+//
 //   node scripts/gen-api.mjs            write the files
 //   node scripts/gen-api.mjs popover    write one family's (several names may be given)
 //   node scripts/gen-api.mjs --check    fail if a file is out of date
@@ -175,26 +181,36 @@ function propsOf(type, seen = new Set()) {
   return props;
 }
 
-/** Every `export component` / `export fn` in a file: name, signature and body. */
-function declarations(text, keyword) {
+/** Every `export component` (or every `fn`, exported or not) in a file: name, signature and body. */
+function declarations(text, keyword, file) {
   const found = new Map();
-  const pattern = new RegExp(`^export ${keyword} (\\w+)\\(`, "gm");
+  const pattern =
+    keyword === "fn" ? /^(export )?fn (\w+)\(/gm : new RegExp(`^(export )${keyword} (\\w+)\\(`, "gm");
   for (const match of text.matchAll(pattern)) {
     const rest = text.slice(match.index);
-    const end = rest.search(/\n}\n/);
-    const whole = rest.slice(0, end < 0 ? undefined : end + 2);
     // The parameter list ends at the `)` that closes the one opened after the name.
     let depth = 0;
     let close = 0;
-    for (let i = match[0].length - 1; i < whole.length; i++) {
-      if (whole[i] === "(") depth++;
-      else if (whole[i] === ")" && --depth === 0) {
+    for (let i = match[0].length - 1; i < rest.length; i++) {
+      if (rest[i] === "(") depth++;
+      else if (rest[i] === ")" && --depth === 0) {
         close = i;
         break;
       }
     }
-    found.set(match[1], {
-      name: match[1],
+    // A block body ends at the first `}` in the first column; `fn f(…): T => expression` is one line.
+    const lineEnd = rest.indexOf("\n", close);
+    const tail = rest.slice(close + 1, lineEnd < 0 ? undefined : lineEnd);
+    let end;
+    if (tail.trimEnd().endsWith("{")) {
+      const block = rest.search(/\n}\n/);
+      end = block < 0 ? rest.length : block + 2;
+    } else end = lineEnd < 0 ? rest.length : lineEnd;
+    const whole = rest.slice(0, end);
+    found.set(match[2], {
+      name: match[2],
+      file,
+      exported: Boolean(match[1]),
       index: match.index,
       params: whole.slice(match[0].length, close),
       body: whole.slice(close + 1),
@@ -203,24 +219,30 @@ function declarations(text, keyword) {
   return found;
 }
 
-const allFunctions = new Map();
+// Functions by file (a call resolves to its own file's function first), and the exported ones by name.
+const functionsByFile = new Map();
+const exportedFunctions = new Map();
 const allComponents = new Map();
-for (const text of [...sources.values(), shared]) {
-  for (const [name, fn] of declarations(text, "fn")) allFunctions.set(name, fn);
-  for (const [name, component] of declarations(text, "component")) allComponents.set(name, component);
+const files = [...sources, ["internal", shared]];
+for (const [file, text] of files) {
+  const own = declarations(text, "fn", file);
+  functionsByFile.set(file, own);
+  for (const [name, fn] of own) if (fn.exported) exportedFunctions.set(name, fn);
+  for (const [name, component] of declarations(text, "component", file)) allComponents.set(name, component);
 }
+const functionIn = (file, name) => functionsByFile.get(file)?.get(name) ?? exportedFunctions.get(name);
 
-/** The `data-*` keys a body writes, following calls to the library's props functions. */
-function dataAttributes(body, seen = new Set()) {
+/** The `data-*` keys a body (in `file`) writes, following calls to the library's functions. */
+function dataAttributes(body, file, seen = new Set()) {
   const names = new Set();
   for (const match of body.matchAll(/["\s](data-[a-z-]+)["=]/g)) {
     if (!match[1].startsWith("data-rs-ui") && match[1] !== "data-testid") names.add(match[1]);
   }
   for (const match of body.matchAll(/\b(\w+)\(/g)) {
-    const fn = allFunctions.get(match[1]);
-    if (fn && !seen.has(fn.name)) {
-      seen.add(fn.name);
-      for (const name of dataAttributes(fn.body, seen)) names.add(name);
+    const fn = functionIn(file, match[1]);
+    if (fn && !seen.has(fn)) {
+      seen.add(fn);
+      for (const name of dataAttributes(fn.body, fn.file, seen)) names.add(name);
     }
   }
   return names;
@@ -239,73 +261,160 @@ function elementOf(component, seen = new Set()) {
   return null;
 }
 
+const FALLBACK = /props\.(\w+) \?\? ("[^"]*"|-?\d[\d.]*|true|false)/g;
+
+/** The text of a component body's top-level equations: the body without its actions, functions and effects. */
+function equations(body) {
+  const kept = [];
+  let depth = 0;
+  let skipping = false;
+  for (const line of body.slice(body.indexOf("{") + 1).split("\n")) {
+    if (depth === 0) skipping = /^\s*(action|fn|effect)\b/.test(line);
+    if (!skipping) kept.push(line);
+    for (const char of line) {
+      if (char === "{") depth++;
+      else if (char === "}") depth--;
+    }
+  }
+  return kept.join("\n");
+}
+
+/** The names a component takes out of its props by destructuring, in its parameters or its body. */
+function destructured(component) {
+  const names = new Set();
+  const patterns = [];
+  if (component.params.trim().startsWith("{"))
+    patterns.push(braced(component.params, component.params.indexOf("{")));
+  for (const match of component.body.matchAll(/^\s*\{([^}]*)\} = props$/gm)) patterns.push(match[1]);
+  for (const pattern of patterns) {
+    for (const match of pattern.matchAll(/(?:^|,)\s*(\w+)/g)) names.add(match[1]);
+  }
+  return names;
+}
+
+/**
+ * The library component this one only renders, and which of its props it passes on as they are: by name
+ * (`x={x}`, `x={props.x}`), or through a spread when it doesn't take the prop out first.
+ */
+function wrappedBy(component) {
+  const first = /^\s*<([A-Za-z][\w]*)[\s>/]/m.exec(component.body.replace(/<style>[\s\S]*?<\/style>/g, ""));
+  const inner = first && allComponents.get(first[1]);
+  if (!inner) return null;
+  const open = component.body.indexOf(`<${first[1]}`);
+  const tag = component.body.slice(open, component.body.indexOf(">", open));
+  const spread = /\{\.\.\.\w+\}/.test(tag);
+  const taken = destructured(component);
+  const passes = (name) =>
+    new RegExp(String.raw`\s${name}=\{(?:props\.)?${name}\}`).test(tag) ||
+    (spread && !taken.has(name) && !new RegExp(String.raw`\s${name}=`).test(tag));
+  return { inner, passes };
+}
+
+const notesByFamily = new Map();
+function notesOf(family) {
+  if (!notesByFamily.has(family)) {
+    const file = join(notesDir, `${family}.json`);
+    notesByFamily.set(family, existsSync(file) ? JSON.parse(read(file)) : {});
+  }
+  return notesByFamily.get(family);
+}
+
+const describedParts = new Map();
+/** A component's record: element, description, props (children included) and data attributes. */
+function describePart(component, seen = new Set()) {
+  if (describedParts.has(component.name)) return describedParts.get(component.name);
+  const text = component.file === "internal" ? shared : sources.get(component.file);
+  const note = notesOf(component.file)[component.name] ?? {};
+  // `({ a = 1, b, ...rest }: Type)` or `(props: Type)`.
+  const isDestructured = component.params.trim().startsWith("{");
+  const pattern = isDestructured ? braced(component.params, component.params.indexOf("{")) : "";
+  const type = component.params
+    .slice(isDestructured ? pattern.length + 2 + component.params.indexOf("{") : 0)
+    .replace(/^[^:]*:/, "")
+    .trim();
+
+  const defaults = new Map();
+  for (const match of pattern.matchAll(/(\w+)\s*=\s*([^,]+)/g)) defaults.set(match[1], match[2].trim());
+  // Only from the equations: `props.x ?? 0` in an action is what one step falls back to, not the prop's default.
+  for (const match of equations(component.body).matchAll(FALLBACK)) {
+    if (!defaults.has(match[1])) defaults.set(match[1], match[2]);
+  }
+
+  seen.add(component.name);
+  const wrapper = wrappedBy(component);
+  const inner =
+    wrapper && !seen.has(wrapper.inner.name)
+      ? new Map(describePart(wrapper.inner, seen).props.map((prop) => [prop.name, prop]))
+      : new Map();
+
+  const props = propsOf(type).map((prop) => {
+    const stated = /\s*Default: ([^.]+(?:\.\d+)?)\.?\s*$/.exec(prop.description);
+    // "Default: false, so …": the value is what comes before the comma.
+    const fallback = stated?.[1].split(", so ")[0].replace(/^`|`$/g, "");
+    const own = prop.description.replace(/\s*Default: [^.]+(?:\.\d+)?\.?\s*$/, "").trim();
+    const passed = wrapper?.passes(prop.name) ? inner.get(prop.name) : undefined;
+    const noted = note.defaults && Object.hasOwn(note.defaults, prop.name);
+    return {
+      name: prop.name,
+      type: prop.type,
+      default: noted
+        ? note.defaults[prop.name]
+        : (defaults.get(prop.name) ?? fallback ?? passed?.default ?? null),
+      required: !prop.optional,
+      description: (note.props?.[prop.name] ?? (own || passed?.description || "")).trim(),
+    };
+  });
+
+  const wrapped = /<([A-Z]\w+)\s[^>]*\{\.\.\./.exec(component.body);
+  const attributes = dataAttributes(component.body, component.file);
+  const wrappedComponent = wrapped && allComponents.get(wrapped[1]);
+  if (wrappedComponent) {
+    for (const name of dataAttributes(wrappedComponent.body, wrappedComponent.file)) attributes.add(name);
+  }
+  // A note adds an attribute the source doesn't show, or (with null) removes one the part never sets.
+  for (const [name, meaning] of Object.entries(note.dataAttributes ?? {})) {
+    if (meaning === null) attributes.delete(name);
+    else attributes.add(name);
+  }
+
+  const own = /\bown = (\w+)\(/.exec(component.body);
+  const fn = own && functionIn(component.file, own[1]);
+  const description =
+    note.description ??
+    (commentAbove(text, component.index) ||
+      (fn?.exported && fn.file === component.file ? commentAbove(text, fn.index) : ""));
+
+  const part = {
+    name: component.name,
+    hidden: note.hidden === true,
+    element: note.element ?? elementOf(component),
+    description,
+    props,
+    dataAttributes: [...attributes].toSorted().map((name) => ({
+      name,
+      description: note.dataAttributes?.[name] ?? COMMON[name] ?? "",
+    })),
+    cssVariables: Object.entries(note.cssVariables ?? {}).map(([name, meaning]) => ({
+      name,
+      description: meaning,
+    })),
+  };
+  describedParts.set(component.name, part);
+  return part;
+}
+
 function describe(family) {
-  const text = sources.get(family);
-  const notesFile = join(notesDir, `${family}.json`);
-  const notes = existsSync(notesFile) ? JSON.parse(read(notesFile)) : {};
   const parts = [];
-
-  for (const component of declarations(text, "component").values()) {
-    const note = notes[component.name] ?? {};
-    // `({ a = 1, b, ...rest }: Type)` or `(props: Type)`.
-    const destructured = component.params.trim().startsWith("{");
-    const pattern = destructured ? braced(component.params, component.params.indexOf("{")) : "";
-    const type = component.params
-      .slice(destructured ? pattern.length + 2 + component.params.indexOf("{") : 0)
-      .replace(/^[^:]*:/, "")
-      .trim();
-
-    const defaults = new Map();
-    for (const match of pattern.matchAll(/(\w+)\s*=\s*([^,]+)/g)) defaults.set(match[1], match[2].trim());
-    for (const match of component.body.matchAll(/props\.(\w+) \?\? ("[^"]*"|-?\d[\d.]*|true|false)/g)) {
-      if (!defaults.has(match[1])) defaults.set(match[1], match[2]);
-    }
-
-    const props = propsOf(type).map((prop) => {
-      const stated = /\s*Default: ([^.]+(?:\.\d+)?)\.?\s*$/.exec(prop.description);
-      const fallback = stated?.[1].replace(/^`|`$/g, "");
-      return {
-        name: prop.name,
-        type: prop.type,
-        default: defaults.get(prop.name) ?? fallback ?? null,
-        required: !prop.optional,
-        description: (
-          note.props?.[prop.name] ?? prop.description.replace(/\s*Default: [^.]+(?:\.\d+)?\.?\s*$/, "")
-        ).trim(),
-      };
-    });
-
-    const wrapped = /<([A-Z]\w+)\s[^>]*\{\.\.\./.exec(component.body);
-    const attributes = dataAttributes(component.body);
-    if (wrapped && allComponents.has(wrapped[1])) {
-      for (const name of dataAttributes(allComponents.get(wrapped[1]).body)) attributes.add(name);
-    }
-    // A note adds an attribute the source doesn't show, or (with null) removes one the part never sets.
-    for (const [name, meaning] of Object.entries(note.dataAttributes ?? {})) {
-      if (meaning === null) attributes.delete(name);
-      else attributes.add(name);
-    }
-
-    const own = /\bown = (\w+)\(/.exec(component.body);
-    const fn = own && allFunctions.get(own[1]);
-    const description =
-      note.description ??
-      (commentAbove(text, component.index) ||
-        (fn && sources.get(family).includes(`export fn ${fn.name}(`) ? commentAbove(text, fn.index) : ""));
-
+  for (const component of declarations(sources.get(family), "component", family).values()) {
+    const part = describePart(component);
+    if (part.hidden) continue;
     parts.push({
-      name: component.name,
-      element: note.element ?? elementOf(component),
-      description,
-      props: props.filter((prop) => prop.name !== "children"),
-      dataAttributes: [...attributes].toSorted().map((name) => ({
-        name,
-        description: note.dataAttributes?.[name] ?? COMMON[name] ?? "",
-      })),
-      cssVariables: Object.entries(note.cssVariables ?? {}).map(([name, meaning]) => ({
-        name,
-        description: meaning,
-      })),
+      name: part.name,
+      element: part.element,
+      description: part.description,
+      props: part.props.filter((prop) => prop.name !== "children"),
+      dataAttributes: part.dataAttributes,
+      cssVariables: part.cssVariables,
     });
   }
   return { family, parts };
