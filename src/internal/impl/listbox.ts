@@ -4,7 +4,7 @@
 // The DOM is the registry, as in ./roving.ts: an option carries `data-rs-ui-item`, its value as `data-value`,
 // `data-label` when its label differs from its text, and `data-disabled` while it can't be chosen.
 
-import { createEffect, untrack, type Accessor } from "solid-js";
+import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
 
 type MaybeElement = HTMLElement | undefined;
 
@@ -126,6 +126,13 @@ export function clickItem(list: MaybeElement, id: string | undefined): void {
     ?.click();
 }
 
+/** The value of the item with `id` in `list`, or undefined when there is no such item (it was removed). */
+export function itemValueById(list: MaybeElement, id: string | undefined): string | undefined {
+  if (!list || id === undefined) return undefined;
+  const item = [...list.querySelectorAll<HTMLElement>(ITEM)].find((candidate) => candidate.id === id);
+  return item?.getAttribute("data-value") ?? undefined;
+}
+
 /** The id of the enabled item of `list` whose value is `value`: where the highlight starts on opening. */
 export function itemIdByValue(list: MaybeElement, value: string | undefined): string | undefined {
   if (!list || value === undefined) return undefined;
@@ -198,4 +205,89 @@ export function createOutsidePress(
       return () => document.removeEventListener("pointerdown", onPointerDown, true);
     },
   );
+}
+
+export type ItemLabel = { value: string; label: string };
+
+/**
+ * The label each value's item last showed, kept after the item is gone: a selected value goes on being named by its
+ * label when a filter or a new answer from a server removes its item. Returns the labels and `register`, which an
+ * item calls when it renders or its label changes. Nothing is unregistered, because nothing needs to be: a label
+ * only names a value.
+ *
+ * Plain signals rather than a list source in .rx: an item registers from an effect, and a list source's store
+ * proxies, written from there, are read untracked by Solid's dev tooling (`STRICT_READ_UNTRACKED`); and an item
+ * removed with its `for` row can't call an action from its cleanup (`ACTION_CALLED_IN_OWNED_SCOPE`).
+ */
+export function createLabels(): [Accessor<ItemLabel[]>, (value: string, label: string) => void] {
+  const [labels, setLabels] = createSignal<ItemLabel[]>([]);
+  // The updater form: items register in one flush, and a read of `labels` there gives the value from before it.
+  const register = (value: string, label: string) =>
+    setLabels((current) =>
+      current.some((entry) => entry.value === value && entry.label === label)
+        ? current
+        : [...current.filter((entry) => entry.value !== value), { value, label }],
+    );
+  return [labels, register];
+}
+
+/**
+ * Calls `onChange` with the number of items (`data-rs-ui-item`) inside `container`, once it is set and after every
+ * change to them: how a list knows it is empty, and that its items were replaced or changed value (a filter, a new
+ * answer from a server), without its items registering themselves. An item that isn't rendered isn't counted. An
+ * item whose element is kept with another `data-value` counts as a change too. (ReactiveScript's `for` keeps a
+ * row's element only for an equal row, so this is a guard, not a case seen in the fixtures.)
+ */
+export function createItemObserver(
+  container: Accessor<MaybeElement>,
+  onChange: (count: number) => void,
+): void {
+  createEffect(
+    () => container(),
+    (el) => {
+      if (!el) return;
+      let last: [Element, string | null][] = [];
+      const report = () => {
+        const items = [...el.querySelectorAll(ITEM)].map(
+          (item) => [item, item.getAttribute("data-value")] as [Element, string | null],
+        );
+        // A change elsewhere in the container (a status message) isn't a change of items.
+        const same =
+          items.length === last.length &&
+          items.every(([item, value], index) => item === last[index][0] && value === last[index][1]);
+        if (same) return;
+        last = items;
+        onChange(items.length);
+      };
+      report();
+      const observer = new MutationObserver(report);
+      observer.observe(el, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ["data-value"],
+      });
+      return () => observer.disconnect();
+    },
+  );
+}
+
+/**
+ * Keeps the text of `input` (a combobox's) equal to `value`, writing it only when `value` changes and differs from
+ * what the input shows. A `value` prop in the input's props would be written again whenever those props recompute,
+ * with whatever `value` is at that moment: a change that lands while the app's answer is still loading (the list,
+ * `loading`) recomputes them before the typed text has landed, and the user's keystroke is written over.
+ */
+export function createInputValue(input: Accessor<MaybeElement>, value: Accessor<string>): void {
+  createEffect(
+    () => [input(), value()] as const,
+    ([el, text]) => {
+      if (el instanceof HTMLInputElement && el.value !== text) el.value = text;
+    },
+  );
+}
+
+/** Whether `element` itself has focus (not something inside it). */
+export function hasFocus(element: MaybeElement): boolean {
+  return element !== undefined && element.ownerDocument.activeElement === element;
 }

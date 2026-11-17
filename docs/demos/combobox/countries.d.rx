@@ -1,0 +1,6 @@
+// How the "options from a server" demos may use ./countries.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./countries.d.ts.
+export type Country = { code: string; name: string }
+export fn dropNetwork(): void
+export pure fn searchCountries(query: string): Promise<Country[]>
+export pure fn loadCountries(): Promise<Country[]>

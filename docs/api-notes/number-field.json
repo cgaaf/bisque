@@ -33,6 +33,12 @@
       "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
       "data-filled": "Inside a FieldRoot: present when the field has a value.",
       "data-focused": "Inside a FieldRoot: present while the input has focus."
+    },
+    "defaults": {
+      "smallStep": "0.1",
+      "largeStep": "10",
+      "snapOnStep": "false",
+      "allowOutOfRange": "false"
     }
   },
   "NumberFieldGroup": {
@@ -66,7 +72,7 @@
     }
   },
   "NumberFieldIncrement": {
-    "description": "A button that increases the value by a step, and repeats while held. Named “Increase”, left out of the tab order, and disabled at `max`. A mouse press keeps focus in the input. Accepts `disabled` to disable it on its own.",
+    "description": "A button that increases the value by a step, and repeats while held. Named \u201cIncrease\u201d, left out of the tab order, and disabled at `max`. A mouse press keeps focus in the input. Accepts `disabled` to disable it on its own.",
     "dataAttributes": {
       "data-disabled": "Present when the button is disabled: by its own prop, by the number field, or because the value is at `max`.",
       "data-readonly": "Present when the number field is read-only.",
@@ -81,7 +87,7 @@
     }
   },
   "NumberFieldDecrement": {
-    "description": "A button that decreases the value by a step, and repeats while held. Named “Decrease”, left out of the tab order, and disabled at `min`. A mouse press keeps focus in the input. Accepts `disabled` to disable it on its own.",
+    "description": "A button that decreases the value by a step, and repeats while held. Named \u201cDecrease\u201d, left out of the tab order, and disabled at `min`. A mouse press keeps focus in the input. Accepts `disabled` to disable it on its own.",
     "dataAttributes": {
       "data-disabled": "Present when the button is disabled: by its own prop, by the number field, or because the value is at `min`.",
       "data-readonly": "Present when the number field is read-only.",

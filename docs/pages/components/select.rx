@@ -4,6 +4,7 @@ import { SelectHero } from "../../demos/select/hero.rx"
 import { SelectGrouped } from "../../demos/select/grouped.rx"
 import { SelectMultiple } from "../../demos/select/multiple.rx"
 import { SelectControlled } from "../../demos/select/controlled.rx"
+import { SelectServer } from "../../demos/select/server.rx"
 
 export default component Page() {
   <DocsPage title="Select" subtitle="A button that opens a list of options to choose a value from.">
@@ -108,6 +109,35 @@ export default component Page() {
       <code>SelectItem</code> does the same for one item.
     </p>
     <Demo source="select/controlled"><SelectControlled /></Demo>
+
+    <h3 id="server">Options from a server</h3>
+    <p>
+      Load the options in an equation and render the answer as the items. The demo loads them the first time the
+      select is opened: <code>onOpenChange</code> sets <code>wanted</code>, and{" "}
+      <code>{"countries = wanted ? await loadCountries() : null"}</code> asks once it is set. The root calls{" "}
+      <code>onOpenChange</code> in a change of its own, so the popup opens at once rather than waiting for the
+      request it starts. Setting <code>wanted</code> is held until the answer lands, so read the request's progress
+      with <code>pending? countries</code>, which is true as soon as it is asked, not from <code>wanted</code>.
+    </p>
+    <p>
+      Tell the root with <code>loading</code> while the answer is out. The popup is <code>aria-busy</code>, the
+      parts carry <code>data-loading</code>, and <code>SelectValue</code> shows nothing for a selected value whose
+      item hasn't arrived, rather than the raw value; pass <code>items</code> if its label is known sooner. Opened
+      from the keyboard before the items arrive, focus waits on the popup and moves to the selected item, or the
+      first, when they come.
+    </p>
+    <p>
+      Put an <code>errored</code> region around the items: a failed load shows in the popup, and a retry is{" "}
+      <code>refresh countries</code>. Press the button under the demo, then open
+      the select within two seconds: the load fails, and Retry asks again. Its server takes 700ms.
+    </p>
+    <p>
+      A controlled <code>value</code> that a loading question also reads (the cities of the chosen country) stays
+      on the old choice until that answer lands, as everything else that reads it does: the screen changes in one
+      frame. The popup still closes at once. To show the choice right away, pass{" "}
+      <code>{"value={latest country}"}</code>, the value it is moving to.
+    </p>
+    <Demo source="select/server"><SelectServer /></Demo>
 
     <h3 id="forms">In a form</h3>
     <p>

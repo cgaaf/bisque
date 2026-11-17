@@ -1,0 +1,131 @@
+.AutocompleteServer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  /* The popup is anchored to the input, so the clear button sits inside the input's box. */
+  .InputGroup {
+    position: relative;
+    width: 15rem;
+  }
+
+  .Input {
+    box-sizing: border-box;
+    width: 100%;
+    height: 2.5rem;
+    padding: 0 2.25rem 0 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+  }
+
+  .Input::placeholder {
+    color: light-dark(#8b8b96, #6f6f7b);
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .IconButton {
+    position: absolute;
+    inset: 0.5rem 0.5rem auto auto;
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .IconButton:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Popup {
+    box-sizing: border-box;
+    max-height: min(18rem, 50vh);
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    overflow-y: auto;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.25);
+  }
+
+  /* While a newer answer is on its way the previous options stay, dimmed: `data-loading` is the root's `loading`. */
+  .Popup[data-loading] .Item {
+    opacity: 0.55;
+  }
+
+  /* Status, Empty and the error are live regions or alerts that stay in the document; each takes room only while
+     it has something to say. */
+  .Status:not(:empty),
+  .Empty:not(:empty) {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.5rem 0.5rem 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    color: light-dark(#b42318, #ff9b8f);
+  }
+
+  .Retry {
+    padding: 0.25rem 0.625rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.25rem;
+    background: light-dark(#fff, #16161a);
+    color: light-dark(#1c1c21, #ededf0);
+    font: inherit;
+    font-size: 0.8125rem;
+  }
+
+  .Retry:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Item {
+    padding: 0.4375rem 0.75rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    cursor: default;
+    user-select: none;
+    transition: opacity 120ms;
+  }
+
+  /* Focus stays in the input: the highlighted option is the one the input's `aria-activedescendant` names. */
+  .Item[data-highlighted] {
+    background: light-dark(#ececf1, #2a2a31);
+  }
+
+  /* Not part of the component: makes the demo's requests fail for a moment, to show the error and Retry. */
+  .Toggle {
+    align-self: flex-start;
+    padding: 0.25rem 0.625rem;
+    border: 1px dashed light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.25rem;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    font: inherit;
+    font-size: 0.8125rem;
+  }
+
+  .Toggle:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+}

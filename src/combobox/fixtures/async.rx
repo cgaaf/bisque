@@ -1,0 +1,51 @@
+import { ComboboxRoot, ComboboxInput, ComboboxValue, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxEmpty, ComboboxStatus } from "../combobox.rx"
+import { search } from "./server.js"
+
+// Options from a server, written as an app would. The query is what was typed and `results` the answer to it: the
+// language asks again when the query changes and drops an answer to an older one. `-> null` is the first paint, so
+// `results == null` means "no answer yet", and `pending? results` that a newer answer is on its way.
+export default component Fixture() {
+  source query := ""
+  results = await search(query) -> null
+  source chosen := ""
+  searching = results == null || pending? results
+
+  // The second combobox controls its input with a source the loading question reads, highlights the first option
+  // as the user types, and names its values with the pending answer (`items`).
+  source text := ""
+  answer = await search(text) -> null
+  answering = answer == null || pending? answer
+  <form data-testid="form" style="padding: 40px 0 0 40px">
+    <ComboboxRoot name="fruit" loading={searching} onInputValueChange={(next) => { query := next }} onValueChange={(next) => { chosen := next ?? "" }}>
+      <ComboboxInput aria-label="Fruit" style="width: 200px" />
+      <ComboboxValue data-testid="value" />
+      <ComboboxPopup data-testid="popup" style="padding: 0; border: 0; max-height: 120px; overflow: auto">
+        {errored fallback(e) { <div data-testid="error">{e.message} <button type="button" onClick={() => { refresh results }}>Retry</button></div> } {
+          <ComboboxStatus data-testid="status">{searching ? "Loading…" : ""}</ComboboxStatus>
+          <ComboboxEmpty data-testid="empty">No fruit found</ComboboxEmpty>
+          <ComboboxList data-testid="list">
+            {for fruit in results ?? [] {
+              <ComboboxItem value={fruit.value} label={fruit.label}>{fruit.label}</ComboboxItem>
+            }}
+          </ComboboxList>
+        }}
+      </ComboboxPopup>
+    </ComboboxRoot>
+    <output data-testid="query">{latest query}</output>
+    <output data-testid="chosen">{chosen}</output>
+
+    <ComboboxRoot inputValue={text} onInputValueChange={(next) => { text := next }} autoHighlight items={answer ?? []} loading={answering}>
+      <ComboboxInput aria-label="Controlled fruit" style="width: 200px" />
+      <ComboboxValue data-testid="controlled-value" />
+      <ComboboxPopup data-testid="controlled-popup" style="padding: 0; border: 0; max-height: 120px; overflow: auto">
+        {errored fallback(e) { <div>{e.message}</div> } {
+          <ComboboxList>
+            {for fruit in answer ?? [] {
+              <ComboboxItem value={fruit.value} label={fruit.label}>{fruit.label}</ComboboxItem>
+            }}
+          </ComboboxList>
+        }}
+      </ComboboxPopup>
+    </ComboboxRoot>
+  </form>
+}

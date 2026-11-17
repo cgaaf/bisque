@@ -44,7 +44,8 @@
       "closeOnClick": "Whether following the link closes the menu. Default: false."
     },
     "dataAttributes": {
-      "data-highlighted": "Present while the item has the highlight."
+      "data-highlighted": "Present while the item has the highlight.",
+      "data-disabled": null
     }
   },
   "ContextMenuCheckboxItem": {

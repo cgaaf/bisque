@@ -25,8 +25,10 @@
       "readOnly": "Whether the value can't be changed. The popup doesn't open.",
       "required": "Whether a value is required for the form to submit.",
       "name": "The name the selected value is submitted under (combobox).",
-      "items": "The label of each value, when it must be known before the option has rendered."
-    }
+      "items": "The label of each value, when it must be known before the option has rendered.",
+      "loading": "Whether the options are being fetched. See `ComboboxRoot`."
+    },
+    "hidden": true
   },
   "ComboboxRoot": {
     "description": "Holds the selection, the input's text and the open state, and shares them with the parts inside it through the `combobox` context.",
@@ -37,13 +39,14 @@
       "defaultValues": "With `multiple`: the values selected at first, when `values` isn't controlled.",
       "onValuesChange": "With `multiple`: called with the new values when an option is toggled, a chip removed or the selection cleared.",
       "defaultInputValue": "The input's text at first, when `inputValue` isn't controlled.",
-      "onInputValueChange": "Called with the input's new text: what was typed, or the label shown after a choice.",
+      "onInputValueChange": "Called with the input's new text: what was typed, or the label shown after a choice. It is called in a change of its own, after the combobox has taken the text in, so a handler that starts a request (`query := text` read by `await search(query)`) doesn't hold the input, the popup or the highlight while the answer is out.",
       "open": "Whether the popup is open. Pass it with `onOpenChange` to control it.",
       "defaultOpen": "Whether the popup is open at first, when `open` isn't controlled.",
       "onOpenChange": "Called after the popup opened or closed, whatever closed it.",
       "disabled": "Whether the combobox is disabled. Also disabled inside a disabled `FieldRoot`.",
       "readOnly": "Whether the selection can't be changed. The popup doesn't open.",
-      "required": "Whether a value must be selected for the form to submit. Validated by an enclosing `FieldRoot`."
+      "required": "Whether a value must be selected for the form to submit. Validated by an enclosing `FieldRoot`.",
+      "loading": "Whether the options are being fetched: pass `pending? results` (and `results == null` before the first answer) for `results = await search(query)`. `ComboboxEmpty` stays empty, the list is `aria-busy`, and the popup and list carry `data-loading`."
     }
   },
   "ComboboxInput": {
@@ -92,14 +95,16 @@
       "alignOffset": "How far the popup is moved along the input's edge from its `align` position, in pixels."
     },
     "dataAttributes": {
-      "data-empty": "Present while no option matches what was typed.",
-      "data-side": "Which side of the input the popup is on: the one asked for, then the one the browser placed it on."
+      "data-empty": "Present while no option is rendered (none matches what was typed, or the answer had none).",
+      "data-side": "Which side of the input the popup is on: the one asked for, then the one the browser placed it on.",
+      "data-loading": "Present while the root's `loading` is true."
     }
   },
   "ComboboxList": {
     "description": "The listbox that holds the options. The input's `aria-controls` points at it.",
     "dataAttributes": {
-      "data-empty": "Present while no option matches what was typed."
+      "data-empty": "Present while no option is rendered (none matches what was typed, or the answer had none).",
+      "data-loading": "Present while the root's `loading` is true; the list is `aria-busy` then too."
     }
   },
   "ComboboxItem": {
@@ -131,7 +136,7 @@
     "description": "The heading of a group. The group's `aria-labelledby` points at it."
   },
   "ComboboxEmpty": {
-    "description": "A `role=\"status\"` element whose children show while no option matches. The element stays in the document, empty, while there are matches."
+    "description": "A `role=\"status\"` element whose children show while no option is rendered, except while the root is `loading`: \"no results\" isn't shown for an answer that hasn't come. The element stays in the document, empty, otherwise."
   },
   "ComboboxStatus": {
     "description": "A `role=\"status\"` element with `aria-live=\"polite\"`, for a message about the list, such as a result count."

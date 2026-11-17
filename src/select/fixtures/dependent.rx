@@ -1,0 +1,26 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectPopup, SelectItem } from "../select.rx"
+import { search } from "../../combobox/fixtures/server.js"
+
+// A controlled select whose value a loading question reads plainly (a dependent list), with `value` read directly
+// and through `latest`.
+export default component Fixture() {
+  source fruit: string | null := "apple"
+  related = await search(fruit ?? "") -> []
+  <div style="padding: 40px 0 0 40px">
+    <SelectRoot value={fruit} onValueChange={(next) => { fruit := next }}>
+      <SelectTrigger data-testid="plain"><SelectValue data-testid="trigger-plain-value" /></SelectTrigger>
+      <SelectPopup data-testid="plain-popup">
+        <SelectItem value="apple">Apple</SelectItem>
+        <SelectItem value="cherry">Cherry</SelectItem>
+      </SelectPopup>
+    </SelectRoot>
+    <SelectRoot value={latest fruit} onValueChange={(next) => { fruit := next }}>
+      <SelectTrigger data-testid="latest"><SelectValue data-testid="trigger-latest-value" /></SelectTrigger>
+      <SelectPopup data-testid="latest-popup">
+        <SelectItem value="apple">Apple</SelectItem>
+        <SelectItem value="cherry">Cherry</SelectItem>
+      </SelectPopup>
+    </SelectRoot>
+    <output data-testid="related">{related.length catch (e) => -1}</output>
+  </div>
+}

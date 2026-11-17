@@ -27,11 +27,14 @@ export type AutocompleteRootProps = {
   disabled?: boolean
   readOnly?: boolean
   required?: boolean
+  // Whether the suggestions are being fetched (`pending? results` for `results = await search(value)`):
+  // AutocompleteEmpty stays empty, the list is `aria-busy`, and the popup and list carry `data-loading`.
+  loading?: boolean
   children?: View
 }
 
 export component AutocompleteRoot(props: AutocompleteRootProps) {
-  <InputListRoot kind="autocomplete" mode={props.mode} inputValue={props.value} defaultInputValue={props.defaultValue ?? ""} onInputValueChange={props.onValueChange} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} filter={props.filter} autoHighlight={props.autoHighlight} loop={props.loop} openOnInputClick={props.openOnInputClick ?? false} disabled={props.disabled} readOnly={props.readOnly} required={props.required}>
+  <InputListRoot kind="autocomplete" mode={props.mode} inputValue={props.value} defaultInputValue={props.defaultValue ?? ""} onInputValueChange={props.onValueChange} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} filter={props.filter} autoHighlight={props.autoHighlight} loop={props.loop} openOnInputClick={props.openOnInputClick ?? false} disabled={props.disabled} readOnly={props.readOnly} required={props.required} loading={props.loading}>
     {props.children}
   </InputListRoot>
 }

@@ -1,6 +1,7 @@
 // How .rx may use ./listbox.js (implemented in ./impl/listbox.ts): option lists of select, combobox, autocomplete.
 // Items carry `data-rs-ui-item`, `data-value`, `data-label` (optional) and `data-disabled`; the DOM is the registry.
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./listbox.d.ts.
+export type ItemLabel = { value: string; label: string }
 export pure fn createTypeahead(): [(container: HTMLElement | undefined, key: string, current: string | undefined) => HTMLElement | undefined, () => void] instantiates
 export fn elementText(element: HTMLElement | undefined): string
 export fn itemValue(element: EventTarget | null | undefined): string | undefined
@@ -8,7 +9,12 @@ export fn adjacentItemId(list: HTMLElement | undefined, currentId: string | unde
 export fn scrollItemIntoView(list: HTMLElement | undefined, id: string | undefined): void
 export fn itemLabel(list: HTMLElement | undefined, id: string | undefined): string | undefined
 export fn clickItem(list: HTMLElement | undefined, id: string | undefined): void
+export fn itemValueById(list: HTMLElement | undefined, id: string | undefined): string | undefined
 export fn itemIdByValue(list: HTMLElement | undefined, value: string | undefined): string | undefined
 export pure fn matchesFilter(filter: ((label: string, query: string) => boolean) | undefined, label: string, query: string): boolean
 export pure fn createOnShow(ref popup: HTMLElement | undefined, onShown: () => void) instantiates
 export pure fn createOutsidePress(ref active: boolean, ref inside: (HTMLElement | undefined)[], onOutside: () => void) instantiates
+export pure fn createLabels(): [ref ItemLabel[], (value: string, label: string) => void]
+export pure fn createItemObserver(ref container: HTMLElement | undefined, onChange: (count: number) => void) instantiates
+export pure fn createInputValue(ref input: HTMLElement | undefined, ref value: string) instantiates
+export fn hasFocus(element: HTMLElement | undefined): boolean

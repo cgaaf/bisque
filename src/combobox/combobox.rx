@@ -9,7 +9,7 @@
 // Positioner part, and the options stay in the document while it is closed.
 import { mergeProps, withoutHandlers, createId, createRef } from "../internal/props.js"
 import { focusElement } from "../internal/dom.js"
-import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, elementText, matchesFilter, createOnShow, createOutsidePress } from "../internal/listbox.js"
+import { adjacentItemId, scrollItemIntoView, itemLabel, clickItem, itemIdByValue, itemValueById, elementText, matchesFilter, createOnShow, createOutsidePress, createLabels, createItemObserver, createInputValue } from "../internal/listbox.js"
 import { createPopoverState, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, InputProps, PartProps } from "../internal/types.rx"
@@ -39,8 +39,10 @@ export type ComboboxContext = PopoverState & {
   filter: ((label: string, query: string) => boolean) | undefined
   // The id of the highlighted option, the input's `aria-activedescendant`.
   activeId: string | undefined
-  // How many options pass the filter.
+  // How many options are rendered (pass the filter).
   visibleCount: number
+  // The app is fetching the options (the `loading` prop).
+  loading: boolean
   disabled: boolean
   readOnly: boolean
   required: boolean
@@ -64,9 +66,8 @@ export type ComboboxContext = PopoverState & {
   remove: (value: string) => void
   removeLast: () => void
   clear: () => void
-  addVisible: (count: number) => void
+  // An option names its value: the label is kept after the option is gone, for the selected value.
   registerLabel: (value: string, label: string) => void
-  unregisterLabel: (value: string) => void
 }
 
 export context combobox: ComboboxContext
@@ -97,6 +98,7 @@ export type InputListRootProps = {
   required?: boolean
   name?: string
   items?: ComboboxItemLabel[]
+  loading?: boolean
   children?: View
 }
 
@@ -111,20 +113,49 @@ export component InputListRoot(props: InputListRootProps) {
   source typed: string | undefined := peek(props.defaultInputValue)
   // Inline completion: the highlighted option's label, shown in the input until the user types again.
   source preview: string | undefined := undefined
+  // What was typed into a controlled input, shown until `inputValue` has caught up with it.
+  source echo: string | undefined := undefined
   source activeId: string | undefined := undefined
+  // The highlighted option's value: the highlight stays on it when its option is replaced (new options from a server).
+  source activeValue: string | undefined := undefined
+  // Whether the highlight was put on the first option by `autoHighlight`, not by the user.
+  source autoHighlighted: boolean := false
   source visibleCount := 0
-  source registered: ComboboxItemLabel[] := []
+  [registered, registerLabel] = createLabels()
   source input: HTMLElement | undefined := undefined
   source list: HTMLElement | undefined := undefined
   source chips: HTMLElement | undefined := undefined
   source button: HTMLElement | undefined := undefined
   source clearButton: HTMLElement | undefined := undefined
 
+  // The app's handlers are called in a change of their own (`onFlush`), never in the change that updates this
+  // component: a handler that writes something a loading question reads (`query := text` with
+  // `results = await search(query)`) holds its change until the answer lands, and the input, the popup and the
+  // highlight would be held with it.
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyValue(next: string | null) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyValues(next: string[]) {
+    if (props.onValuesChange) {
+      let report = props.onValuesChange
+      onFlush(() => { report(next) })
+    }
+  }
   // Every open or close, whoever made it: the highlight and inline preview start over.
   action opened(next: boolean) {
     activeId := undefined
+    activeValue := undefined
     preview := undefined
-    if (props.onOpenChange) { props.onOpenChange(next) }
+    notifyOpen(next)
   }
   state = createPopoverState(props.open, peek(props.defaultOpen ?? false), opened)
 
@@ -133,9 +164,13 @@ export component InputListRoot(props: InputListRootProps) {
   isMultiple = !isAutocomplete && (props.multiple ?? false)
   currentSingle = props.value != undefined ? props.value : single
   selected = isAutocomplete ? [] : isMultiple ? props.values ?? many : currentSingle == null ? [] : [currentSingle]
-  labels = [...(props.items ?? []), ...registered]
+  // `items` and `loading` are often read from an answer that can fail (`items={results}`): a failure there is the
+  // app's to show, in its `errored` region around the list, not a reason for the root to fail.
+  givenLabels = (props.items ?? []) catch (e) => []
+  isLoading = (props.loading ?? false) catch (e) => false
+  labels = [...givenLabels, ...registered]
   selectedLabel = !isAutocomplete && !isMultiple && currentSingle != null ? labelFor(labels, currentSingle) : ""
-  shownText = props.inputValue ?? typed ?? selectedLabel
+  shownText = echo ?? props.inputValue ?? typed ?? selectedLabel
   inputValue = preview ?? shownText
   filtering = mode == "list" || mode == "both"
   showsSelection = !isAutocomplete && !isMultiple && currentSingle != null && shownText == selectedLabel
@@ -147,9 +182,28 @@ export component InputListRoot(props: InputListRootProps) {
   loop = props.loop ?? true
   listId = createId("combobox-list")
   hiddenName = isAutocomplete ? undefined : props.name ?? f?.name
+  // Where the options are found: the popup, which stays while an app's `errored` or `loading` region replaces the
+  // list inside it; the list itself when there is no popup.
+  host = state.popup ?? list
 
+  action endEcho(text: string) {
+    // Tested through a local: narrowing `echo` itself would type the write below as `string` (rx-tsc).
+    let shown = echo
+    if (shown == text) { echo := undefined }
+  }
   action reportInput(text: string) {
-    if (props.onInputValueChange && text != shownText) { props.onInputValueChange(text) }
+    if (props.onInputValueChange && text != shownText) {
+      let report = props.onInputValueChange
+      // A controlled input goes on showing the text until the app's change for it has landed, whatever the app wrote
+      // (the text, something else, nothing): the app is told a change later, and its write may wait for a question
+      // that reads it. `echo` is cleared once that change settles, never in it: a write there would join its hold,
+      // and the next keystroke's `echo` with it. A newer keystroke's `echo` is left for its own change to clear.
+      if (props.inputValue != undefined) { echo := text }
+      onFlush(() => {
+        report(text)
+        onSettled(() => { endEcho(text) })
+      })
+    }
   }
   // Opens or closes, leaving the input's text alone.
   action writeOpen(next: boolean) { state.setOpen(next) }
@@ -188,35 +242,38 @@ export component InputListRoot(props: InputListRootProps) {
     preview := undefined
     typed := text
     activeId := undefined
+    activeValue := undefined
     reportInput(text)
     // Emptying a single combobox's input clears its selection, as in Base UI.
     if (text == "" && !isAutocomplete && !isMultiple && currentSingle != null) {
       single := null
-      if (props.onValueChange) { props.onValueChange(null) }
+      notifyValue(null)
     }
     writeOpen(true)
   }
   // Highlights an option. Inline completion (modes "inline" and "both") follows the keyboard, not the pointer.
   action activate(id: string | undefined, inline: boolean) {
     activeId := id
-    scrollItemIntoView(list, id)
-    preview := inline && (mode == "inline" || mode == "both") && id != undefined ? itemLabel(list, id) : undefined
+    activeValue := itemValueById(host, id)
+    autoHighlighted := false
+    scrollItemIntoView(host, id)
+    preview := inline && (mode == "inline" || mode == "both") && id != undefined ? itemLabel(host, id) : undefined
   }
   action highlight(id: string | undefined) { activate(id, false) }
   action move(direction: "next" | "previous") {
-    activate(adjacentItemId(list, activeId, direction, loop), true)
+    activate(adjacentItemId(host, activeId, direction, loop), true)
   }
   action openAt(direction: "next" | "previous") {
     if (isDisabled || isReadOnly) { return }
-    let current = itemIdByValue(list, selected.length > 0 ? selected[0] : undefined)
+    let current = itemIdByValue(host, selected.length > 0 ? selected[0] : undefined)
     writeOpen(true)
-    activate(current ?? adjacentItemId(list, undefined, direction, loop), true)
+    activate(current ?? adjacentItemId(host, undefined, direction, loop), true)
   }
   action enter(event: KeyboardEvent) {
     if (!isOpen) { return }
     if (activeId != undefined) {
       event.preventDefault()
-      clickItem(list, activeId)
+      clickItem(host, activeId)
     } else if (isAutocomplete) {
       writeOpen(false)
     }
@@ -231,13 +288,13 @@ export component InputListRoot(props: InputListRootProps) {
     } else if (isMultiple) {
       let next = selected.includes(value) ? selected.filter((other) => other != value) : [...selected, value]
       many := next
-      if (props.onValuesChange) { props.onValuesChange(next) }
+      notifyValues(next)
       typed := ""
       reportInput("")
     } else {
       if (currentSingle != value) {
         single := value
-        if (props.onValueChange) { props.onValueChange(value) }
+        notifyValue(value)
       }
       typed := undefined
       reportInput(label)
@@ -248,7 +305,7 @@ export component InputListRoot(props: InputListRootProps) {
     if (isDisabled || isReadOnly || !selected.includes(value)) { return }
     let next = selected.filter((other) => other != value)
     many := next
-    if (props.onValuesChange) { props.onValuesChange(next) }
+    notifyValues(next)
   }
   action removeLast() {
     if (selected.length > 0) { remove(selected[selected.length - 1]) }
@@ -257,31 +314,51 @@ export component InputListRoot(props: InputListRootProps) {
     if (isDisabled || isReadOnly) { return }
     preview := undefined
     activeId := undefined
+    activeValue := undefined
     if (isMultiple && selected.length > 0) {
       many := []
-      if (props.onValuesChange) { props.onValuesChange([]) }
+      notifyValues([])
     } else if (!isAutocomplete && !isMultiple && currentSingle != null) {
       single := null
-      if (props.onValueChange) { props.onValueChange(null) }
+      notifyValue(null)
     }
     typed := isAutocomplete || isMultiple ? "" : undefined
     reportInput("")
     focusElement(input)
   }
-  action addVisible(count: number) { visibleCount := n => n + count }
-  action registerLabel(value: string, label: string) {
-    registered := old => [...old.filter((entry) => entry.value != value), { value: value, label: label }]
+  action highlightFirst() {
+    highlight(adjacentItemId(host, undefined, "next", false))
+    autoHighlighted := true
   }
-  action unregisterLabel(value: string) {
-    registered := old => old.filter((entry) => entry.value != value)
+  // The options changed: a filter, or new options from a server. The highlighted option may be gone (or, as a guard,
+  // its element may now carry another value), so the highlight moves to the option with its value, or, when it was
+  // `autoHighlight`'s, to the new first option. Without either it goes: `aria-activedescendant` never
+  // names an option that isn't there, and Enter never chooses an option the user didn't highlight.
+  action itemsChanged(count: number) {
+    visibleCount := count
+    let first = (props.autoHighlight ?? false) && isOpen && query != "" ? adjacentItemId(host, undefined, "next", false) : undefined
+    // Tested through a local: narrowing `activeId` itself would type the write below as `string` (rx-tsc).
+    let current = activeId
+    if (autoHighlighted || (current == undefined && first != undefined)) {
+      activeId := first
+      activeValue := itemValueById(host, first)
+      autoHighlighted := first != undefined
+    } else if (current != undefined && itemValueById(host, current) != activeValue) {
+      let again = itemIdByValue(host, activeValue)
+      activeId := again
+      if (again == undefined) { activeValue := undefined }
+    }
   }
-  action highlightFirst() { highlight(adjacentItemId(list, undefined, "next", false)) }
   action setHiddenInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
   // A highlight set while the popup was hidden (ArrowDown on the closed input) is scrolled to once it shows.
-  action shown() { scrollItemIntoView(list, activeId) }
+  action shown() { scrollItemIntoView(host, activeId) }
 
   _outside = createOutsidePress(isOpen, [state.popup, input, chips, button, clearButton], dismiss)
   _scroll = createOnShow(state.popup, shown)
+  // The options are counted from the DOM: an option that doesn't match isn't rendered.
+  _items = createItemObserver(host, itemsChanged)
+  // The input's text is written by this, not by a `value` prop: see createInputValue.
+  _text = createInputValue(input, inputValue)
 
   // `autoHighlight`: once the options have been filtered for new input, the first one is highlighted.
   effect (query) { if ((props.autoHighlight ?? false) && peek(isOpen) && $0 != "") { highlightFirst() } }
@@ -304,6 +381,7 @@ export component InputListRoot(props: InputListRootProps) {
     filter: props.filter,
     activeId: activeId,
     visibleCount: visibleCount,
+    loading: isLoading,
     disabled: isDisabled,
     readOnly: isReadOnly,
     required: isRequired,
@@ -324,9 +402,7 @@ export component InputListRoot(props: InputListRootProps) {
     remove: remove,
     removeLast: removeLast,
     clear: clear,
-    addVisible: addVisible,
     registerLabel: registerLabel,
-    unregisterLabel: unregisterLabel,
   }
 
   {props.children}
@@ -373,11 +449,14 @@ export type ComboboxRootProps = {
   name?: string
   // The label of each value, when it must be known before the option has rendered.
   items?: ComboboxItemLabel[]
+  // Whether the options are being fetched (`pending? results` for `results = await search(query)`): ComboboxEmpty
+  // stays empty, the list is `aria-busy`, and the popup and list carry `data-loading`.
+  loading?: boolean
   children?: View
 }
 
 export component ComboboxRoot(props: ComboboxRootProps) {
-  <InputListRoot kind="combobox" value={props.value} defaultValue={props.defaultValue} onValueChange={props.onValueChange} multiple={props.multiple} values={props.values} defaultValues={props.defaultValues} onValuesChange={props.onValuesChange} inputValue={props.inputValue} defaultInputValue={props.defaultInputValue} onInputValueChange={props.onInputValueChange} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} filter={props.filter} autoHighlight={props.autoHighlight} loop={props.loop} openOnInputClick={props.openOnInputClick} disabled={props.disabled} readOnly={props.readOnly} required={props.required} name={props.name} items={props.items}>
+  <InputListRoot kind="combobox" value={props.value} defaultValue={props.defaultValue} onValueChange={props.onValueChange} multiple={props.multiple} values={props.values} defaultValues={props.defaultValues} onValuesChange={props.onValuesChange} inputValue={props.inputValue} defaultInputValue={props.defaultInputValue} onInputValueChange={props.onInputValueChange} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} filter={props.filter} autoHighlight={props.autoHighlight} loop={props.loop} openOnInputClick={props.openOnInputClick} disabled={props.disabled} readOnly={props.readOnly} required={props.required} name={props.name} items={props.items} loading={props.loading}>
     {props.children}
   </InputListRoot>
 }
@@ -392,6 +471,8 @@ fn comboboxState(ref c: ComboboxContext): PartProps {
   }
 }
 
+// Spread on an <input>. There is no `value` among these props: the root writes the input's text itself, to the
+// element the `ref` registers, and only when the text changes (createInputValue in ../internal/impl/listbox.ts).
 export fn comboboxInput(ref c: ComboboxContext): PartProps {
   action input(event: InputEvent & { currentTarget: HTMLInputElement }) { c.changeInput(event.currentTarget.value) }
   action click() { if (c.openOnInputClick && !c.open) { c.setOpen(true) } }
@@ -424,7 +505,6 @@ export fn comboboxInput(ref c: ComboboxContext): PartProps {
     "aria-controls": c.listId,
     "aria-activedescendant": c.open ? c.activeId : undefined,
     "aria-readonly": c.readOnly ? "true" : undefined,
-    value: c.inputValue,
     disabled: c.disabled ? true : undefined,
     readonly: c.readOnly ? true : undefined,
     ref: c.setInput,
@@ -537,6 +617,7 @@ export fn comboboxPopup(ref c: ComboboxContext, ref side: "top" | "bottom" | "le
     ...base,
     style: { ...base.style, "min-width": "anchor-size(width)" },
     "data-empty": c.visibleCount == 0 ? "" : undefined,
+    "data-loading": c.loading ? "" : undefined,
     onMouseDown: mouseDown,
   }
 }
@@ -553,7 +634,9 @@ export fn comboboxList(ref c: ComboboxContext): PartProps {
     id: c.listId,
     role: "listbox",
     "aria-multiselectable": c.multiple ? "true" : undefined,
+    "aria-busy": c.loading ? "true" : undefined,
     "data-empty": c.visibleCount == 0 ? "" : undefined,
+    "data-loading": c.loading ? "" : undefined,
     ref: c.setList,
   }
 }
@@ -568,7 +651,6 @@ export component ComboboxList({ children, ...rest }: DivProps) {
 export type ComboboxGroupContext = {
   labelId: string | undefined
   setLabelId: (id: string | undefined) => void
-  addVisible: (count: number) => void
 }
 
 export context comboboxGroup: ComboboxGroupContext | undefined = undefined
@@ -614,7 +696,6 @@ export fn comboboxItem(ref c: ComboboxContext, ref id: string, ref value: string
 // An option. It hides itself (it isn't rendered) while it doesn't match what was typed.
 export component ComboboxItem(props: ComboboxItemProps) {
   c = use combobox
-  g = use comboboxGroup
   source element: HTMLElement | undefined := undefined
   source text: string | undefined := undefined
   id = createId("combobox-item")
@@ -625,21 +706,9 @@ export component ComboboxItem(props: ComboboxItemProps) {
   action setText(next: string) { text := next }
 
   effect (element) { if ($0) { setText(elementText($0)) } }
-  effect (label) {
-    let value = peek(props.value)
-    c.registerLabel(value, $0)
-    return () => { c.unregisterLabel(value) }
-  }
-  effect (visible) {
-    if ($0) {
-      c.addVisible(1)
-      if (g) { g.addVisible(1) }
-      return () => {
-        c.addVisible(-1)
-        if (g) { g.addVisible(-1) }
-      }
-    }
-  }
+  // No cleanup: the label goes on naming the value after the option is gone, and an option removed with its `for`
+  // row can't call an action from a cleanup.
+  effect (label) { c.registerLabel(peek(props.value), $0) }
 
   provide comboboxItemState = { selected: c.selected.includes(props.value), highlighted: c.activeId == id, disabled: isDisabled }
 
@@ -664,32 +733,35 @@ export component ComboboxItemIndicator({ keepMounted = false, children, ...rest 
 // Groups options under a label. Hidden while none of its options match.
 export component ComboboxGroup(props: DivProps) {
   source labelId: string | undefined := undefined
+  source element: HTMLElement | undefined := undefined
   source count := 0
   action setLabelId(id: string | undefined) { labelId := id }
-  action addVisible(n: number) { count := old => old + n }
-  provide comboboxGroup = { labelId: labelId, setLabelId: setLabelId, addVisible: addVisible }
+  action writeElement(el: HTMLElement) { element := el }
+  action setCount(n: number) { count := n }
+  setElement = createRef(writeElement)
+  _items = createItemObserver(element, setCount)
+  provide comboboxGroup = { labelId: labelId, setLabelId: setLabelId }
   { children, ...rest } = props
-  merged = mergeProps({ role: "group", "aria-labelledby": labelId, hidden: count == 0 ? true : undefined }, rest)
+  merged = mergeProps({ role: "group", "aria-labelledby": labelId, hidden: count == 0 ? true : undefined, ref: setElement }, rest)
   <div {...merged}>{children}</div>
 }
 
 export component ComboboxGroupLabel({ children, ...rest }: DivProps) {
   group = use comboboxGroup
   id = createId("combobox-group-label")
-  effect () {
-    if (group) { group.setLabelId(id) }
-    return () => { if (group) { group.setLabelId(undefined) } }
-  }
+  // No cleanup: a label removed with a `for` row can't call an action from a cleanup, and its group goes with it.
+  effect () { if (group) { group.setLabelId(id) } }
   merged = mergeProps({ id: id }, rest)
   <div {...merged}>{children}</div>
 }
 
-// Its children show while no option matches. The element stays, so screen readers announce the change.
+// Its children show while no option matches, except while the options are `loading`: "no results" isn't shown
+// for an answer that hasn't come. The element stays, so screen readers announce the change.
 export component ComboboxEmpty({ children, ...rest }: DivProps) {
   c = use combobox
   merged = mergeProps({ role: "status", "aria-live": "polite", "aria-atomic": "true" }, rest)
   <div {...merged}>
-    {if c.visibleCount == 0 {
+    {if c.visibleCount == 0 && !c.loading {
       {children}
     }}
   </div>

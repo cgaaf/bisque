@@ -1,0 +1,37 @@
+import { AutocompleteRoot, AutocompleteInput, AutocompleteClear, AutocompletePopup, AutocompleteStatus, AutocompleteEmpty, AutocompleteList, AutocompleteItem } from "../../../src/autocomplete/autocomplete.rx"
+import { searchCountries, dropNetwork } from "../combobox/countries.js"
+
+export component AutocompleteServer() {
+  // The input's text is the value, and the question reads it: every keystroke asks again, and an answer to older
+  // text is dropped. `-> null`: no answer yet.
+  source text := ""
+  results = await searchCountries(text) -> null
+  searching = results == null || pending? results
+  <div class="AutocompleteServer">
+    <AutocompleteRoot value={text} onValueChange={(next) => { text := next }} loading={searching}>
+      <div class="InputGroup">
+        <AutocompleteInput class="Input" placeholder="Search countries" aria-label="Destination" />
+        <AutocompleteClear class="IconButton" aria-label="Clear">
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+        </AutocompleteClear>
+      </div>
+      <AutocompletePopup class="Popup" sideOffset={6}>
+        {errored fallback(e) {
+          <div class="Error" role="alert">
+            <span>{e.message}</span>
+            <button type="button" class="Retry" onClick={() => { refresh results }}>Retry</button>
+          </div>
+        } {
+          <AutocompleteStatus class="Status">{searching ? "Searching…" : ""}</AutocompleteStatus>
+          <AutocompleteEmpty class="Empty">No suggestions.</AutocompleteEmpty>
+          <AutocompleteList class="List">
+            {for country in results ?? [] {
+              <AutocompleteItem class="Item" value={country.code} label={country.name}>{country.name}</AutocompleteItem>
+            }}
+          </AutocompleteList>
+        }}
+      </AutocompletePopup>
+    </AutocompleteRoot>
+    <button type="button" class="Toggle" onClick={() => { dropNetwork() }}>Drop the network for 2 seconds</button>
+  </div>
+}

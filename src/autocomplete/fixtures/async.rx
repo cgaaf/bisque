@@ -1,0 +1,34 @@
+import { AutocompleteRoot, AutocompleteInput, AutocompletePopup, AutocompleteList, AutocompleteItem, AutocompleteEmpty, AutocompleteStatus } from "../autocomplete.rx"
+import { search } from "../../combobox/fixtures/server.js"
+
+// Suggestions from a server, written as an app would: the input's text is the value, and the question reads it.
+export default component Fixture() {
+  source text := ""
+  // A handler that writes something other than what was typed.
+  source loud := ""
+  results = await search(text) -> null
+  searching = results == null || pending? results
+  <form data-testid="form" style="padding: 40px 0 0 40px">
+    <AutocompleteRoot value={text} onValueChange={(next) => { text := next }} loading={searching}>
+      <AutocompleteInput aria-label="Fruit" name="fruit" style="width: 200px" />
+      <AutocompletePopup data-testid="popup" style="padding: 0; border: 0; max-height: 120px; overflow: auto">
+        {errored fallback(e) { <div data-testid="error">{e.message} <button type="button" onClick={() => { refresh results }}>Retry</button></div> } {
+          <AutocompleteStatus data-testid="status">{searching ? "Searching…" : ""}</AutocompleteStatus>
+          <AutocompleteEmpty data-testid="empty">No suggestions</AutocompleteEmpty>
+          <AutocompleteList data-testid="list">
+            {for fruit in results ?? [] {
+              <AutocompleteItem value={fruit.value} label={fruit.label}>{fruit.label}</AutocompleteItem>
+            }}
+          </AutocompleteList>
+        }}
+      </AutocompletePopup>
+    </AutocompleteRoot>
+    <output data-testid="text">{latest text}</output>
+    <button type="button" onClick={() => { text := "Lime" }}>Set Lime</button>
+
+    <AutocompleteRoot value={loud} onValueChange={(next) => { loud := next.toUpperCase() }}>
+      <AutocompleteInput aria-label="Loud" style="width: 200px" />
+      <AutocompletePopup><AutocompleteList><AutocompleteItem value="hello">hello</AutocompleteItem></AutocompleteList></AutocompletePopup>
+    </AutocompleteRoot>
+  </form>
+}

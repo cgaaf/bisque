@@ -37,7 +37,7 @@
         {
           "name": "min",
           "type": "number",
-          "default": "-1",
+          "default": null,
           "required": false,
           "description": "The smallest value. Steps stop at it, typed values are clamped to it, and Home goes to it. Without it there is no lower bound."
         },

@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { ComboboxHero } from "../../demos/combobox/hero.rx"
 import { ComboboxMultiple } from "../../demos/combobox/multiple.rx"
 import { ComboboxGrouped } from "../../demos/combobox/grouped.rx"
+import { ComboboxServer } from "../../demos/combobox/server.rx"
 
 export default component Page() {
   <DocsPage title="Combobox" subtitle="An input that filters a list of options to choose from.">
@@ -76,10 +77,48 @@ export default component Page() {
       With <code>autoHighlight</code> the first match is highlighted as you type, so <kbd>Enter</kbd> chooses it.
     </p>
     <p>
-      <code>ComboboxEmpty</code> shows its children while no option matches, and <code>ComboboxStatus</code> holds
+      <code>ComboboxEmpty</code> shows its children while no option matches (unless the root is <code>loading</code>),
+      and <code>ComboboxStatus</code> holds
       any other message about the list. Both are <code>role="status"</code> elements that stay in the document;
       style the empty one with <code>:not(:empty)</code> so it takes no room while there are matches. The popup
       and the list carry <code>data-empty</code> then too.
+    </p>
+
+    <h3 id="server">Options from a server</h3>
+    <p>
+      Ask the server in an equation and render its answer as the options: <code>{"results = await searchCountries(query) -> null"}</code>, with <code>onInputValueChange</code> writing <code>query</code>.
+      ReactiveScript asks again whenever <code>query</code> changes and drops an answer to an older query when it
+      lands, so answers that arrive out of order need no request ids or guards. <code>{"-> null"}</code> is what
+      {" "}<code>results</code> is before the first answer.
+    </p>
+    <p>
+      While a newer answer is on its way, the previous options stay up, narrowed by what was typed, and the combobox
+      stays live: the root calls your handlers in a change of their own, so a request your handler starts never holds
+      the input, the popup or the highlight while it is out. Tell the root it is loading with <code>loading</code>:
+      {" "}<code>ComboboxEmpty</code> then stays silent, so "no results" never shows before an answer, the list is
+      {" "}<code>aria-busy</code>, and the popup and list carry <code>data-loading</code>, which the demo uses to dim
+      the old options.
+    </p>
+    <p>
+      Put an <code>errored</code> region around <code>ComboboxEmpty</code> and <code>ComboboxList</code> inside the
+      popup. A failed request shows there, the popup stays open and usable, and a retry is <code>refresh
+      results</code>; typing something else asks again, and its answer replaces the error. Press the button under the
+      demo to drop its network for two seconds: searches in that time fail, and Retry asks
+      again. Its server takes 700ms per answer.
+    </p>
+    <Demo source="combobox/server"><ComboboxServer /></Demo>
+    <p>
+      When new options replace the old ones, the highlight stays on the option with the same value, or goes if the
+      answer doesn't have it, so <kbd>Enter</kbd> never chooses an option you didn't highlight. With{" "}
+      <code>autoHighlight</code> it moves to the new first option. A chosen value keeps its label after its option
+      is gone from the list. The options are still filtered by what was typed; if your server matches another way
+      (fuzzy, or on fields that aren't the label), pass <code>{"filter={() => true}"}</code> so the combobox shows
+      everything it returned.
+    </p>
+    <p>
+      After a choice the input shows the option's label, and <code>onInputValueChange</code> reports it like typed
+      text, so a search by the input's text asks for that label: opened again, the demo lists only the chosen
+      country until you type.
     </p>
 
     <h3 id="controlled">Controlling it</h3>

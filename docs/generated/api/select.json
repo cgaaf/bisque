@@ -110,6 +110,13 @@
           "default": null,
           "required": false,
           "description": "The label of each value, as `{ value, label }` pairs: what SelectValue shows for a value whose item hasn't rendered yet, or whose text differs from what the trigger should say."
+        },
+        {
+          "name": "loading",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether the options are being fetched: pass `pending? fruits` (and `fruits == null` before the first answer) for `fruits = await loadFruits()`. The popup is `aria-busy`, the parts carry `data-loading`, and `SelectValue` shows nothing for a value whose label isn't known yet, rather than the raw value. Opened before the options arrive, focus waits on the popup and moves to the selected (or first) item when they do."
         }
       ],
       "dataAttributes": [],
@@ -140,6 +147,10 @@
         {
           "name": "data-invalid",
           "description": "Present when the field is invalid."
+        },
+        {
+          "name": "data-loading",
+          "description": "Present while the root's `loading` is true."
         },
         {
           "name": "data-placeholder",
@@ -187,6 +198,10 @@
           "description": "Present when the select is disabled."
         },
         {
+          "name": "data-loading",
+          "description": "Present while the root's `loading` is true."
+        },
+        {
           "name": "data-placeholder",
           "description": "Present while no value is selected, so the placeholder can be styled."
         },
@@ -214,6 +229,10 @@
         {
           "name": "data-disabled",
           "description": "Present when the select is disabled."
+        },
+        {
+          "name": "data-loading",
+          "description": "Present while the root's `loading` is true."
         },
         {
           "name": "data-placeholder",
@@ -269,6 +288,10 @@
         }
       ],
       "dataAttributes": [
+        {
+          "name": "data-loading",
+          "description": "Present while the root's `loading` is true; the popup is `aria-busy` then too."
+        },
         {
           "name": "data-side",
           "description": "Which side of the trigger the popup is on: the one asked for until it opens, then the one the browser placed it on."

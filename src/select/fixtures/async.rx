@@ -1,0 +1,40 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectPopup, SelectItem, SelectItemText } from "../select.rx"
+import { loadAll } from "../../combobox/fixtures/server.js"
+
+// Selects whose options come from a server, written as an app would.
+export default component Fixture() {
+  // Loads once, when the page opens, with a value already chosen: its label isn't known until the options arrive.
+  fruits = await loadAll() -> null
+  fruitsLoading = fruits == null || pending? fruits
+  source chosen := ""
+
+  // Loads when it is first opened: `onOpenChange` sets what the question reads.
+  source wanted: boolean := false
+  later = wanted ? await loadAll() -> null : []
+  laterLoading = later == null || pending? later
+  <form data-testid="form" style="padding: 40px 0 0 40px">
+    <SelectRoot name="fruit" defaultValue="cherry" loading={fruitsLoading} onValueChange={(next) => { chosen := next ?? "" }}>
+      <SelectTrigger data-testid="trigger" style="width: 160px"><SelectValue data-testid="value" placeholder="Pick a fruit" /></SelectTrigger>
+      <SelectPopup data-testid="popup" style="padding: 0; border: 0; max-height: 120px; overflow: auto">
+        {errored fallback(e) { <div data-testid="error">{e.message} <button type="button" onClick={() => { refresh fruits }}>Retry</button></div> } {
+          {if fruitsLoading { <div data-testid="loading">Loading…</div> }}
+          {for fruit in fruits ?? [] {
+            <SelectItem value={fruit.value}><SelectItemText>{fruit.label}</SelectItemText></SelectItem>
+          }}
+        }}
+      </SelectPopup>
+    </SelectRoot>
+    <output data-testid="chosen">{chosen}</output>
+
+    <SelectRoot loading={laterLoading} onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <SelectTrigger data-testid="later-trigger" style="width: 160px"><SelectValue data-testid="later-value" placeholder="Later" /></SelectTrigger>
+      <SelectPopup data-testid="later-popup" style="padding: 0; border: 0; max-height: 120px; overflow: auto">
+        {errored fallback(e) { <div>{e.message}</div> } {
+          {for fruit in later ?? [] {
+            <SelectItem value={fruit.value}>{fruit.label}</SelectItem>
+          }}
+        }}
+      </SelectPopup>
+    </SelectRoot>
+  </form>
+}

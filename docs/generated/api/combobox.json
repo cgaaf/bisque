@@ -2,183 +2,6 @@
   "family": "combobox",
   "parts": [
     {
-      "name": "InputListRoot",
-      "element": null,
-      "description": "The root that `ComboboxRoot` and `AutocompleteRoot` render. It is exported for those two families; use one of them instead of rendering it directly.",
-      "props": [
-        {
-          "name": "kind",
-          "type": "\"combobox\" | \"autocomplete\"",
-          "default": null,
-          "required": true,
-          "description": "`\"combobox\"` (the value is a chosen option) or `\"autocomplete\"` (the value is the input's text)."
-        },
-        {
-          "name": "mode",
-          "type": "AutocompleteMode",
-          "default": "\"list\"",
-          "required": false,
-          "description": "How the input completes what is typed. Only an autocomplete reads it; a combobox always filters (`\"list\"`)."
-        },
-        {
-          "name": "value",
-          "type": "string | null",
-          "default": null,
-          "required": false,
-          "description": "The selected value, `null` for none (combobox)."
-        },
-        {
-          "name": "defaultValue",
-          "type": "string | null",
-          "default": null,
-          "required": false,
-          "description": "The value selected at first, when `value` isn't controlled (combobox)."
-        },
-        {
-          "name": "onValueChange",
-          "type": "(value: string | null) => void",
-          "default": null,
-          "required": false,
-          "description": "Called with the new value when an option is chosen or the selection cleared (combobox)."
-        },
-        {
-          "name": "multiple",
-          "type": "boolean",
-          "default": "false",
-          "required": false,
-          "description": "Whether any number of values may be selected (combobox)."
-        },
-        {
-          "name": "values",
-          "type": "string[]",
-          "default": null,
-          "required": false,
-          "description": "The selected values, with `multiple`."
-        },
-        {
-          "name": "defaultValues",
-          "type": "string[]",
-          "default": null,
-          "required": false,
-          "description": "The values selected at first, with `multiple`, when `values` isn't controlled."
-        },
-        {
-          "name": "onValuesChange",
-          "type": "(values: string[]) => void",
-          "default": null,
-          "required": false,
-          "description": "Called with the new values, with `multiple`."
-        },
-        {
-          "name": "inputValue",
-          "type": "string",
-          "default": null,
-          "required": false,
-          "description": "The input's text."
-        },
-        {
-          "name": "defaultInputValue",
-          "type": "string",
-          "default": null,
-          "required": false,
-          "description": "The input's text at first, when `inputValue` isn't controlled."
-        },
-        {
-          "name": "onInputValueChange",
-          "type": "(value: string) => void",
-          "default": null,
-          "required": false,
-          "description": "Called with the input's new text."
-        },
-        {
-          "name": "open",
-          "type": "boolean",
-          "default": null,
-          "required": false,
-          "description": "Whether the popup is open. Pass it with `onOpenChange` to control it."
-        },
-        {
-          "name": "defaultOpen",
-          "type": "boolean",
-          "default": "false",
-          "required": false,
-          "description": "Whether the popup is open at first, when `open` isn't controlled."
-        },
-        {
-          "name": "onOpenChange",
-          "type": "(open: boolean) => void",
-          "default": null,
-          "required": false,
-          "description": "Called after the popup opened or closed."
-        },
-        {
-          "name": "filter",
-          "type": "(label: string, query: string) => boolean",
-          "default": null,
-          "required": false,
-          "description": "Whether an option labelled `label` matches the query. Default: case- and accent-insensitive \"contains\"."
-        },
-        {
-          "name": "autoHighlight",
-          "type": "boolean",
-          "default": "false",
-          "required": false,
-          "description": "Whether the first matching option is highlighted as the user types."
-        },
-        {
-          "name": "loop",
-          "type": "boolean",
-          "default": "true",
-          "required": false,
-          "description": "Whether the arrow keys go from the last option back to the input, and on to the first."
-        },
-        {
-          "name": "openOnInputClick",
-          "type": "boolean",
-          "default": "true",
-          "required": false,
-          "description": "Whether a click in the input opens the popup."
-        },
-        {
-          "name": "disabled",
-          "type": "boolean",
-          "default": "false",
-          "required": false,
-          "description": "Whether the input and its buttons are disabled."
-        },
-        {
-          "name": "readOnly",
-          "type": "boolean",
-          "default": "false",
-          "required": false,
-          "description": "Whether the value can't be changed. The popup doesn't open."
-        },
-        {
-          "name": "required",
-          "type": "boolean",
-          "default": "false",
-          "required": false,
-          "description": "Whether a value is required for the form to submit."
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "default": null,
-          "required": false,
-          "description": "The name the selected value is submitted under (combobox)."
-        },
-        {
-          "name": "items",
-          "type": "ComboboxItemLabel[]",
-          "default": null,
-          "required": false,
-          "description": "The label of each value, when it must be known before the option has rendered."
-        }
-      ],
-      "dataAttributes": [],
-      "cssVariables": []
-    },
-    {
       "name": "ComboboxRoot",
       "element": null,
       "description": "Holds the selection, the input's text and the open state, and shares them with the parts inside it through the `combobox` context.",
@@ -207,7 +30,7 @@
         {
           "name": "multiple",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Any number of values may be selected; they are then `values`, `defaultValues` and `onValuesChange`."
         },
@@ -251,7 +74,7 @@
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": "Called with the input's new text: what was typed, or the label shown after a choice."
+          "description": "Called with the input's new text: what was typed, or the label shown after a choice. It is called in a change of its own, after the combobox has taken the text in, so a handler that starts a request (`query := text` read by `await search(query)`) doesn't hold the input, the popup or the highlight while the answer is out."
         },
         {
           "name": "open",
@@ -263,7 +86,7 @@
         {
           "name": "defaultOpen",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether the popup is open at first, when `open` isn't controlled."
         },
@@ -305,21 +128,21 @@
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether the combobox is disabled. Also disabled inside a disabled `FieldRoot`."
         },
         {
           "name": "readOnly",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether the selection can't be changed. The popup doesn't open."
         },
         {
           "name": "required",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether a value must be selected for the form to submit. Validated by an enclosing `FieldRoot`."
         },
@@ -336,6 +159,13 @@
           "default": null,
           "required": false,
           "description": "The label of each value, when it must be known before the option has rendered."
+        },
+        {
+          "name": "loading",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether the options are being fetched: pass `pending? results` (and `results == null` before the first answer) for `results = await search(query)`. `ComboboxEmpty` stays empty, the list is `aria-busy`, and the popup and list carry `data-loading`."
         }
       ],
       "dataAttributes": [],
@@ -522,7 +352,11 @@
       "dataAttributes": [
         {
           "name": "data-empty",
-          "description": "Present while no option matches what was typed."
+          "description": "Present while no option is rendered (none matches what was typed, or the answer had none)."
+        },
+        {
+          "name": "data-loading",
+          "description": "Present while the root's `loading` is true."
         },
         {
           "name": "data-side",
@@ -539,7 +373,11 @@
       "dataAttributes": [
         {
           "name": "data-empty",
-          "description": "Present while no option matches what was typed."
+          "description": "Present while no option is rendered (none matches what was typed, or the answer had none)."
+        },
+        {
+          "name": "data-loading",
+          "description": "Present while the root's `loading` is true; the list is `aria-busy` then too."
         }
       ],
       "cssVariables": []
@@ -635,7 +473,7 @@
     {
       "name": "ComboboxEmpty",
       "element": "div",
-      "description": "A `role=\"status\"` element whose children show while no option matches. The element stays in the document, empty, while there are matches.",
+      "description": "A `role=\"status\"` element whose children show while no option is rendered, except while the root is `loading`: \"no results\" isn't shown for an answer that hasn't come. The element stays in the document, empty, otherwise.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []

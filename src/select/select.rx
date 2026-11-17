@@ -5,7 +5,7 @@
 // is no Portal, Positioner, Backdrop or Arrow part, and the items stay in the document while it is closed.
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
 import { createRovingFocus, focusElement, focusListItem, clickElement } from "../internal/dom.js"
-import { createTypeahead, elementText, itemValue, createOnShow } from "../internal/listbox.js"
+import { createTypeahead, elementText, itemValue, createOnShow, createLabels, createItemObserver, hasFocus } from "../internal/listbox.js"
 import { createPopoverState, popoverTriggerProps, popoverPopupProps, popoverArrowProps, PopoverState } from "../internal/popover.rx"
 import { field, fieldControlProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, PartProps } from "../internal/types.rx"
@@ -25,6 +25,8 @@ export type SelectContext = PopoverState & {
   disabled: boolean
   readOnly: boolean
   required: boolean
+  // The app is fetching the options (the `loading` prop).
+  loading: boolean
   // Where focus goes when the popup opens (`current-item` is the selected item, else the first).
   openFocus: SelectOpenFocus
   setOpenFocus: (focus: SelectOpenFocus) => void
@@ -39,8 +41,8 @@ export type SelectContext = PopoverState & {
   // Focus for an enclosing Field: in while on the trigger or in the popup, out once it leaves both.
   fieldFocus: () => void
   fieldBlur: (next: Node | null) => void
+  // An item names its value: the label is kept after the item is gone, for the selected value.
   registerLabel: (value: string, label: string) => void
-  unregisterLabel: (value: string) => void
 }
 
 export context select: SelectContext
@@ -69,16 +71,21 @@ export type SelectRootProps = {
   name?: string
   // The label of each value, when it must be known before its item has rendered, or differs from the item's text.
   items?: SelectItemLabel[]
+  // Whether the options are being fetched (`pending? fruits` for `fruits = await loadFruits()`): the popup is
+  // `aria-busy`, the parts carry `data-loading`, and SelectValue shows nothing for a value it can't name yet.
+  loading?: boolean
   children?: View
 }
 
-fn labelFor(labels: SelectItemLabel[], value: string): string => labels.find((entry) => entry.value == value)?.label ?? value
+// What SelectValue shows for a value: its label; while the options are loading, nothing for a value it can't name
+// yet, rather than the raw value.
+fn nameFor(labels: SelectItemLabel[], value: string, loading: boolean): string => labels.find((entry) => entry.value == value)?.label ?? (loading ? "" : value)
 
 export component SelectRoot(props: SelectRootProps) {
   f = use field
   source single: string | null := peek(props.defaultValue ?? null)
   source many: string[] := peek([...(props.defaultValues ?? [])])
-  source registered: SelectItemLabel[] := []
+  [registered, registerLabel] = createLabels()
   source openFocus: SelectOpenFocus := "container"
   isMultiple = props.multiple ?? false
   currentSingle = props.value != undefined ? props.value : single
@@ -86,8 +93,32 @@ export component SelectRoot(props: SelectRootProps) {
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
-  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
-  labels = [...(props.items ?? []), ...registered]
+  // The app's handlers are called in a change of their own (`onFlush`), never in the change that updates the select:
+  // a handler that writes something a loading question reads would hold the select's own state with it.
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyValue(next: string | null) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyValues(next: string[]) {
+    if (props.onValuesChange) {
+      let report = props.onValuesChange
+      onFlush(() => { report(next) })
+    }
+  }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
+  // `items` and `loading` are often read from an answer that can fail: a failure there is the app's to show, in its
+  // `errored` region around the items, not a reason for the root to fail.
+  givenLabels = (props.items ?? []) catch (e) => []
+  isLoading = (props.loading ?? false) catch (e) => false
+  labels = [...givenLabels, ...registered]
   inputName = props.name ?? f?.name
   [match, resetMatch] = createTypeahead()
 
@@ -110,12 +141,12 @@ export component SelectRoot(props: SelectRootProps) {
     if (isMultiple) {
       let next = selected.includes(value) ? selected.filter((other) => other != value) : [...selected, value]
       many := next
-      if (props.onValuesChange) { props.onValuesChange(next) }
+      notifyValues(next)
       return
     }
     if (currentSingle != value) {
       single := value
-      if (props.onValueChange) { props.onValueChange(value) }
+      notifyValue(value)
     }
     // Focus leaves the popup before it closes, so it lands on the trigger in every engine.
     focusElement(state.trigger)
@@ -135,16 +166,16 @@ export component SelectRoot(props: SelectRootProps) {
     let inside = (state.popup != undefined && state.popup.contains(next)) || (state.trigger != undefined && state.trigger.contains(next))
     if (f && !inside) { f.setFocused(false) }
   }
-  action registerLabel(value: string, label: string) {
-    registered := old => [...old.filter((entry) => entry.value != value), { value: value, label: label }]
-  }
-  action unregisterLabel(value: string) {
-    registered := old => old.filter((entry) => entry.value != value)
-  }
   action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
 
   // Focus moves in once the popup is shown: an item can't take focus while it is hidden.
   _focusOnShow = createOnShow(state.popup, focusOpened)
+  // Opened before its options arrived (they come from a server): focus waited on the popup itself, and moves to the
+  // item it was meant for once they are there.
+  action itemsArrived(count: number) {
+    if (state.open && count > 0 && openFocus != "container" && hasFocus(state.popup)) { focusOpened() }
+  }
+  _items = createItemObserver(state.popup, itemsArrived)
 
   effect (selected) { if (f) { f.setValue(isMultiple ? $0 : $0.length > 0 ? $0[0] : null) } }
 
@@ -156,6 +187,7 @@ export component SelectRoot(props: SelectRootProps) {
     disabled: isDisabled,
     readOnly: isReadOnly,
     required: isRequired,
+    loading: isLoading,
     openFocus: openFocus,
     setOpenFocus: setOpenFocus,
     openWith: openWith,
@@ -167,7 +199,6 @@ export component SelectRoot(props: SelectRootProps) {
     fieldFocus: fieldFocus,
     fieldBlur: fieldBlur,
     registerLabel: registerLabel,
-    unregisterLabel: unregisterLabel,
   }
 
   {props.children}
@@ -188,6 +219,7 @@ fn selectState(ref c: SelectContext): PartProps {
     "data-disabled": c.disabled ? "" : undefined,
     "data-readonly": c.readOnly ? "" : undefined,
     "data-required": c.required ? "" : undefined,
+    "data-loading": c.loading ? "" : undefined,
     "data-placeholder": c.selected.length == 0 ? "" : undefined,
   }
 }
@@ -254,7 +286,8 @@ export type SelectValueProps = {
 // The selected item's label (labels joined by ", " when `multiple`), or the placeholder.
 export component SelectValue({ placeholder, children, ...rest }: SelectValueProps) {
   c = use select
-  text = c.selected.length == 0 ? placeholder ?? "" : c.selected.map((value) => labelFor(c.labels, value)).join(", ")
+  names = c.selected.map((value) => nameFor(c.labels, value, c.loading)).filter((name) => name != "")
+  text = c.selected.length == 0 ? placeholder ?? "" : names.join(", ")
   state = selectState(c)
   merged = mergeProps(state, rest)
   <span {...merged}>{text}</span>
@@ -304,6 +337,8 @@ export fn selectPopup(ref c: SelectContext, ref side: "top" | "bottom" | "left" 
     tabindex: "-1",
     "aria-multiselectable": c.multiple ? "true" : undefined,
     "aria-readonly": c.readOnly ? "true" : undefined,
+    "aria-busy": c.loading ? "true" : undefined,
+    "data-loading": c.loading ? "" : undefined,
     onKeyDown: keyDown,
     onFocusOut: focusOut,
   }
@@ -380,13 +415,11 @@ export component SelectItem(props: SelectItemProps) {
   action setElement(el: HTMLElement) { element := el }
   action setText(el: HTMLElement) { textElement := el }
 
-  // Register the value's label once the item (and its text) are in the document.
+  // Register the value's label once the item (and its text) are in the document. No cleanup: the label goes on
+  // naming the value after the item is gone, and an item removed with its `for` row can't call an action from a
+  // cleanup.
   effect (element) {
-    if ($0) {
-      let value = peek(props.value)
-      c.registerLabel(value, peek(props.label) ?? elementText(peek(textElement) ?? $0))
-      return () => { c.unregisterLabel(value) }
-    }
+    if ($0) { c.registerLabel(peek(props.value), peek(props.label) ?? elementText(peek(textElement) ?? $0)) }
   }
 
   provide selectItemState = { selected: isSelected, disabled: isDisabled, highlighted: highlighted, setText: setText }
@@ -434,10 +467,8 @@ export component SelectGroup(props: DivProps) {
 export component SelectGroupLabel({ children, ...rest }: DivProps) {
   group = use selectGroup
   id = createId("select-group-label")
-  effect () {
-    group.setLabelId(id)
-    return () => { group.setLabelId(undefined) }
-  }
+  // No cleanup: a label removed with a `for` row can't call an action from a cleanup, and its group goes with it.
+  effect () { group.setLabelId(id) }
   merged = mergeProps({ id: id }, rest)
   <div {...merged}>{children}</div>
 }

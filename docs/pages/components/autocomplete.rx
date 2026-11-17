@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { AutocompleteHero } from "../../demos/autocomplete/hero.rx"
 import { AutocompleteInline } from "../../demos/autocomplete/inline.rx"
 import { AutocompleteResultCount } from "../../demos/autocomplete/result-count.rx"
+import { AutocompleteServer } from "../../demos/autocomplete/server.rx"
 
 export default component Page() {
   <DocsPage title="Autocomplete" subtitle="A text input that suggests what to type.">
@@ -76,13 +77,33 @@ export default component Page() {
 
     <h3 id="status">Empty state and status</h3>
     <p>
-      <code>AutocompleteEmpty</code> shows its children while no suggestion matches; <kbd>Enter</kbd> then closes
+      <code>AutocompleteEmpty</code> shows its children while no suggestion matches (unless the root is{" "}
+      <code>loading</code>); <kbd>Enter</kbd> then closes
       the list and keeps the text. <code>AutocompleteStatus</code> is for any other message about the list. Both
       are <code>role="status"</code> elements with <code>aria-live="polite"</code> that stay in the document. The
       parts share Combobox's context, so a component of your own can read it: this one counts the suggestions that
       pass the filter, and highlights the first with <code>autoHighlight</code>.
     </p>
     <Demo source="autocomplete/result-count"><AutocompleteResultCount /></Demo>
+
+    <h3 id="server">Suggestions from a server</h3>
+    <p>
+      Hold the text in a source and ask the server with it: <code>value</code> and <code>onValueChange</code> write
+      {" "}<code>text</code>, and <code>{"results = await searchCountries(text) -> null"}</code> asks again on every
+      keystroke. An answer to older text is dropped when it lands, so answers that arrive out of order need no
+      guards. The root calls <code>onValueChange</code> in a change of its own and shows what was typed until{" "}
+      <code>value</code> catches up, so the input, the popup and the highlight never wait for the server.
+    </p>
+    <p>
+      While a newer answer is on its way the previous suggestions stay up, narrowed by what was typed. Pass{" "}
+      <code>loading</code>: <code>AutocompleteEmpty</code> stays silent, so "no suggestions" never shows before an
+      answer, the list is <code>aria-busy</code>, and the popup and list carry <code>data-loading</code>. Put an{" "}
+      <code>errored</code> region around <code>AutocompleteEmpty</code> and <code>AutocompleteList</code>: a
+      failed request shows in the popup, a retry is <code>refresh results</code>, and typing asks again. Press the
+      button under the demo to drop its network for two seconds: searches in that time fail, and Retry asks
+      again. Its server takes 700ms.
+    </p>
+    <Demo source="autocomplete/server"><AutocompleteServer /></Demo>
 
     <h3 id="filtering">Filtering</h3>
     <p>

@@ -16,7 +16,7 @@
         {
           "name": "defaultOpen",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether the menu is open at first, when it isn't controlled. Default: false."
         },
@@ -105,14 +105,14 @@
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "A disabled item can't be chosen, and the arrow keys skip it. Default: false."
         },
         {
           "name": "closeOnClick",
           "type": "boolean",
-          "default": null,
+          "default": "true",
           "required": false,
           "description": "Whether choosing the item closes the menu and every menu it is nested in. Default: true."
         }
@@ -137,7 +137,7 @@
         {
           "name": "closeOnClick",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether following the link closes the menu. Default: false."
         }
@@ -165,7 +165,7 @@
         {
           "name": "defaultChecked",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether the item is checked at first, when it isn't controlled. Default: false."
         },
@@ -179,14 +179,14 @@
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "A disabled item can't be chosen, and the arrow keys skip it. Default: false."
         },
         {
           "name": "closeOnClick",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether choosing the item closes the menu. Default: false."
         }
@@ -256,14 +256,14 @@
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "A disabled item can't be chosen, and the arrow keys skip it. Default: false."
         },
         {
           "name": "closeOnClick",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether choosing the item closes the menu. Default: false."
         }
@@ -327,7 +327,7 @@
         {
           "name": "defaultOpen",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "Whether the submenu is open at first, when it isn't controlled. Default: false."
         },
@@ -341,7 +341,7 @@
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "A disabled submenu doesn't open. Default: false."
         }
@@ -357,28 +357,28 @@
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
           "description": "A disabled trigger doesn't open its submenu. Default: false."
         },
         {
           "name": "openOnHover",
           "type": "boolean",
-          "default": null,
+          "default": "true",
           "required": false,
           "description": "Whether resting the pointer on the trigger opens the submenu. Default: true."
         },
         {
           "name": "delay",
           "type": "number",
-          "default": null,
+          "default": "100",
           "required": false,
           "description": "How long the pointer rests on the trigger before the submenu opens, in milliseconds. Default: 100."
         },
         {
           "name": "closeDelay",
           "type": "number",
-          "default": null,
+          "default": "0",
           "required": false,
           "description": "How long after the pointer leaves, other than towards the submenu, before it closes, in milliseconds. Default: 0."
         }

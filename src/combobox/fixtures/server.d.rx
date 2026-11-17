@@ -1,0 +1,4 @@
+// How the async fixtures call ./server.js. One declaration per line: scripts/gen-dts.mjs writes ./server.d.ts.
+export type Fruit = { value: string; label: string; query: string }
+export pure fn search(query: string): Promise<Fruit[]>
+export pure fn loadAll(): Promise<Fruit[]>

@@ -11,7 +11,8 @@
       "onOpenChange": "Called after the popup opened or closed, whatever closed it.",
       "disabled": "Whether the autocomplete is disabled. Also disabled inside a disabled `FieldRoot`.",
       "readOnly": "Whether the text can't be changed. The popup doesn't open.",
-      "required": "Whether the input must have text for the form to submit. Validated by an enclosing `FieldRoot`."
+      "required": "Whether the input must have text for the form to submit. Validated by an enclosing `FieldRoot`.",
+      "loading": "Whether the suggestions are being fetched: pass `pending? results` (and `results == null` before the first answer) for `results = await search(value)`. `AutocompleteEmpty` stays empty, the list is `aria-busy`, and the popup and list carry `data-loading`."
     }
   },
   "AutocompleteInput": {
@@ -67,13 +68,15 @@
     },
     "dataAttributes": {
       "data-empty": "Present while no suggestion matches what was typed.",
-      "data-side": "Which side of the input the popup is on: the one asked for, then the one the browser placed it on."
+      "data-side": "Which side of the input the popup is on: the one asked for, then the one the browser placed it on.",
+      "data-loading": "Present while the root's `loading` is true."
     }
   },
   "AutocompleteList": {
     "description": "The listbox that holds the suggestions. The input's `aria-controls` points at it.",
     "dataAttributes": {
-      "data-empty": "Present while no suggestion matches what was typed."
+      "data-empty": "Present while no suggestion matches what was typed.",
+      "data-loading": "Present while the root's `loading` is true; the list is `aria-busy` then too."
     }
   },
   "AutocompleteItem": {
@@ -97,7 +100,7 @@
     "description": "The heading of a group. The group's `aria-labelledby` points at it."
   },
   "AutocompleteEmpty": {
-    "description": "A `role=\"status\"` element whose children show while no suggestion matches. The element stays in the document, empty, while there are matches."
+    "description": "A `role=\"status\"` element whose children show while no suggestion is rendered, except while the root is `loading`. The element stays in the document, empty, otherwise."
   },
   "AutocompleteStatus": {
     "description": "A `role=\"status\"` element with `aria-live=\"polite\"`, for a message about the list, such as a result count."

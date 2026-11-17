@@ -99,11 +99,40 @@ What was observed, with the Form's submit as the case:
   (`UNCAUGHT_ACTION_FAILURE`). Calling an action returns a promise of what its body returns, so JavaScript can
   wait for it.
 
+- **Calling a consumer's callback prop inside a handler's run puts the callback's writes in that instant.** If
+  the callback writes something a loading question reads (`query := text` with `results = await search(query)`),
+  the component's own writes are held with it: a combobox's filter, highlight and open state froze until the
+  answer came. Call every consumer callback in its own instant: `onFlush(() => { props.onOpenChange(next) })`.
+- **A component source written inside that `onFlush` change joins its hold**, and so does the next handler's
+  write to it. Clear such a source from `onSettled(() => …)` registered inside the `onFlush` callback.
+- **Only a plain read holds a change; a `pending? x` probe does not.**
+- **`pending? x` at a component's root on a value with no first answer defers the whole mount**
+  (`ASYNC_OUTSIDE_LOADING_BOUNDARY`, at run time only). `x = await f() -> v` gives a first value; `pending? x`
+  is then false during the first load, so "not answered yet" is `x == null` with `-> null`.
+- **A failing value read through a prop with no `errored` region above halts the whole reactive system**
+  (`REACTIVITY_HALTED`); the compiler doesn't warn. A component guards the props an app is likely to compute
+  from a request: `isLoading = (props.loading ?? false) catch (e) => false`.
+- **No actions in an effect's cleanup.** When a new answer removes `for` rows, the cleanup runs in an owned scope
+  and the action throws (`ACTION_CALLED_IN_OWNED_SCOPE`) into the app's `errored` boundary. Keep such
+  registries in TypeScript (`createLabels`), or read the DOM (`createItemObserver`).
+- **A spread's `value` is re-applied whenever the props object recomputes**, with whatever is bound then, which
+  can write old text over a keystroke (`UNCOMMITTED_INPUT_OVERWRITTEN`). Drive an input's value from a
+  primitive that writes only on change (`createInputValue`).
+- **A `for` over a new answer keeps a row's element only when the new row is equal in content.**
+- Several `setX([...untrack(x), item])` calls from TypeScript in one flush lose all but the last: use the
+  updater form.
+- `loading` is a keyword and can't name an equation. `${error}` on a caught error renders `{}`: read
+  `error.message` in TypeScript. An inline arrow's parameter can't be type-annotated: use a named action.
+
 So work that takes time goes in a TypeScript primitive that holds plain signals: it starts the consumer's
 handler in a microtask, sets `pending`, and writes the result when the promise settles. `createSubmission`
 (`src/internal/impl/field.ts`) is the model. The consumer's handler may be an action; its hold is its own. Test
 the three real cases with a fixture whose server takes time: a second request while one is out, input that
 changes while one is out, and a request that fails.
+
+Solid's attribution engine finds a further class of bug (`EFFECT_RELAY_TEAR`, `STRICT_READ_UNTRACKED`,
+`SILENT_HOLD`). The docs dev server loads it; Vitest doesn't, so those show on a docs page and not in a test.
+`node scripts/shoot-docs.mjs` prints them.
 
 ## The type projection
 

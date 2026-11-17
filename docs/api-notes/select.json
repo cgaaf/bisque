@@ -16,7 +16,8 @@
       "readOnly": "Whether the popup can be opened and browsed while nothing in it can be selected.",
       "required": "Whether a value must be selected for the form to be valid.",
       "name": "The name the value is submitted under. With `multiple`, each selected value is submitted as its own entry. Inside a named FieldRoot, the field's name is used.",
-      "items": "The label of each value, as `{ value, label }` pairs: what SelectValue shows for a value whose item hasn't rendered yet, or whose text differs from what the trigger should say."
+      "items": "The label of each value, as `{ value, label }` pairs: what SelectValue shows for a value whose item hasn't rendered yet, or whose text differs from what the trigger should say.",
+      "loading": "Whether the options are being fetched: pass `pending? fruits` (and `fruits == null` before the first answer) for `fruits = await loadFruits()`. The popup is `aria-busy`, the parts carry `data-loading`, and `SelectValue` shows nothing for a value whose label isn't known yet, rather than the raw value. Opened before the options arrive, focus waits on the popup and moves to the selected (or first) item when they do."
     }
   },
   "SelectTrigger": {
@@ -26,7 +27,8 @@
       "data-disabled": "Present when the select is disabled.",
       "data-readonly": "Present when the select is read-only.",
       "data-required": "Present when the select is required.",
-      "data-placeholder": "Present while no value is selected."
+      "data-placeholder": "Present while no value is selected.",
+      "data-loading": "Present while the root's `loading` is true."
     }
   },
   "SelectValue": {
@@ -39,7 +41,8 @@
       "data-disabled": "Present when the select is disabled.",
       "data-readonly": "Present when the select is read-only.",
       "data-required": "Present when the select is required.",
-      "data-placeholder": "Present while no value is selected, so the placeholder can be styled."
+      "data-placeholder": "Present while no value is selected, so the placeholder can be styled.",
+      "data-loading": "Present while the root's `loading` is true."
     }
   },
   "SelectIcon": {
@@ -49,7 +52,8 @@
       "data-disabled": "Present when the select is disabled.",
       "data-readonly": "Present when the select is read-only.",
       "data-required": "Present when the select is required.",
-      "data-placeholder": "Present while no value is selected."
+      "data-placeholder": "Present while no value is selected.",
+      "data-loading": "Present while the root's `loading` is true."
     }
   },
   "SelectPopup": {
@@ -61,7 +65,8 @@
       "alignOffset": "How far the popup is moved along the trigger's edge from its `align` position, in pixels."
     },
     "dataAttributes": {
-      "data-side": "Which side of the trigger the popup is on: the one asked for until it opens, then the one the browser placed it on."
+      "data-side": "Which side of the trigger the popup is on: the one asked for until it opens, then the one the browser placed it on.",
+      "data-loading": "Present while the root's `loading` is true; the popup is `aria-busy` then too."
     }
   },
   "SelectItem": {

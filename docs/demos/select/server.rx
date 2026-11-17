@@ -1,0 +1,38 @@
+import { SelectRoot, SelectTrigger, SelectValue, SelectIcon, SelectPopup, SelectItem, SelectItemText, SelectItemIndicator } from "../../../src/select/select.rx"
+import { loadCountries, dropNetwork } from "../combobox/countries.js"
+
+export component SelectServer() {
+  // Asked once the select is first opened: `onOpenChange` sets what the question reads.
+  source wanted: boolean := false
+  countries = wanted ? await loadCountries() : null
+  // `pending?` reads ahead: true as soon as the question is asked. A plain read of `wanted` would wait for the
+  // answer, since setting it is held until then.
+  busy = pending? countries
+  <div class="SelectServer">
+    <SelectRoot loading={busy} onOpenChange={(open) => { if (open) { wanted := true } }}>
+      <SelectTrigger class="Trigger" aria-label="Country">
+        <SelectValue class="Value" placeholder="Choose a country" />
+        <SelectIcon class="Icon">
+          <svg width="10" height="14" viewBox="0 0 10 14" fill="none"><path d="M1.5 5 5 1.5 8.5 5M1.5 9 5 12.5 8.5 9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </SelectIcon>
+      </SelectTrigger>
+      <SelectPopup class="Popup" sideOffset={6}>
+        {if busy { <div class="Status">Loading…</div> }}
+        {errored fallback(e) {
+          <div class="Error" role="alert">
+            <span>{e.message}</span>
+            <button type="button" class="Retry" onClick={() => { refresh countries }}>Retry</button>
+          </div>
+        } {
+          {for country in countries ?? [] {
+            <SelectItem class="Item" value={country.code}>
+              <SelectItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></SelectItemIndicator>
+              <SelectItemText class="ItemText">{country.name}</SelectItemText>
+            </SelectItem>
+          }}
+        }}
+      </SelectPopup>
+    </SelectRoot>
+    <button type="button" class="Toggle" onClick={() => { dropNetwork() }}>Drop the network for 2 seconds</button>
+  </div>
+}

@@ -50,7 +50,8 @@
       "closeOnClick": "Whether following the link closes the menu. Off by default, since the page usually changes anyway."
     },
     "dataAttributes": {
-      "data-highlighted": "Present while the item has the highlight."
+      "data-highlighted": "Present while the item has the highlight.",
+      "data-disabled": null
     }
   },
   "MenuCheckboxItem": {

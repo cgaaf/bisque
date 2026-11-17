@@ -1,0 +1,30 @@
+import { ComboboxRoot, ComboboxInput, ComboboxPopup, ComboboxList, ComboboxItem, ComboboxEmpty } from "../combobox.rx"
+import { search } from "./server.js"
+
+// A combobox that asks the server only once it is opened (`onOpenChange`), and whose choice starts a slow lookup of
+// its own (`onValueChange` writes what a loading question reads).
+export default component Fixture() {
+  source wanted: boolean := false
+  source query := ""
+  results = wanted ? await search(query) -> null : []
+  searching = results == null || pending? results
+  source picked := ""
+  details = picked == "" ? [] : await search(picked) -> []
+  <div style="padding: 40px 0 0 40px">
+    <ComboboxRoot loading={searching} onOpenChange={(open) => { if (open) { wanted := true } }} onInputValueChange={(next) => { query := next }} onValueChange={(next) => { picked := next ?? "" }}>
+      <ComboboxInput aria-label="Fruit" style="width: 200px" />
+      <ComboboxPopup data-testid="popup" style="padding: 0; border: 0; max-height: 120px; overflow: auto">
+        {errored fallback(e) { <div>{e.message}</div> } {
+          <ComboboxEmpty data-testid="empty">No fruit found</ComboboxEmpty>
+          <ComboboxList>
+            {for fruit in results ?? [] {
+              <ComboboxItem value={fruit.value} label={fruit.label}>{fruit.label}</ComboboxItem>
+            }}
+          </ComboboxList>
+        }}
+      </ComboboxPopup>
+    </ComboboxRoot>
+    <output data-testid="looking">{pending? details ? "looking up" : ""}</output>
+    <output data-testid="details">{details.map((d) => d.label).join(",") catch (e) => "failed"}</output>
+  </div>
+}
