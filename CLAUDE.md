@@ -5,6 +5,15 @@ Headless, unstyled, accessible components written in ReactiveScript (`.rx`), whi
 ReactiveScript is 0.3 and experimental: when the compiler and a doc disagree, the compiler wins, and the docs to
 trust are the ones installed with it.
 
+## Platform first
+
+If the latest shipped Chrome, Firefox and Safari all do something natively, the library uses that and adds no
+JavaScript for it: `<dialog>`, `popover`, CSS anchor positioning, `<details>`, `@starting-style`, invoker
+commands, native inputs. A component may shrink to a few attributes; that is the intended result. `pnpm baseline`
+answers whether a feature qualifies, from the Baseline project's data. Check before adding a DOM primitive, and
+before assuming a newer feature is usable. `.claude/skills/rs-ui-components/references/platform.md` has what
+qualifies today and how each family uses it.
+
 ## Where the language is documented
 
 Read these before writing `.rx`; they ship with the installed compiler, so they match its version:

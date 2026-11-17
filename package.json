@@ -29,12 +29,14 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build:demo",
     "gen:dts": "node scripts/gen-dts.mjs",
     "rx-check": "node scripts/rx-check.mjs",
-    "build:demo": "vite build --outDir node_modules/.cache/demo --emptyOutDir --logLevel warn"
+    "build:demo": "vite build --outDir node_modules/.cache/demo --emptyOutDir --logLevel warn",
+    "baseline": "node scripts/baseline.mjs"
   },
   "dependencies": {
     "@floating-ui/dom": "1.8.0"
   },
   "devDependencies": {
+    "@mdn/browser-compat-data": "8.1.9",
     "@reactivescript/compiler": "0.3.1",
     "@reactivescript/language-server": "0.3.1",
     "@reactivescript/runtime": "0.3.1",
@@ -50,7 +52,8 @@
     "solid-js": "2.0.0-rc.22",
     "tsrs": "0.25.0-ts7.1.0-beta",
     "vite": "8.3.8",
-    "vitest": "5.1.0"
+    "vitest": "5.1.0",
+    "web-features": "3.46.0"
   },
   "peerDependencies": {
     "@reactivescript/runtime": "^0.3.1",
