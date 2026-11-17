@@ -162,22 +162,59 @@ export function createKeptFocus(container: Accessor<MaybeElement>, active: Acces
 }
 
 let scrollLocks = 0;
-let overflowBeforeLock = "";
+// The root's inline styles before the first lock, put back when the last one goes.
+let restoreLock: (() => void) | undefined;
 
-/** While `active`, stops the page behind a modal from scrolling. Several locks may be held at once. */
+/** Locks the page's scroll without letting it widen where the scrollbar was; returns how to undo it. */
+function lockRoot(): () => void {
+  const root = document.documentElement;
+  const { overflow, scrollbarGutter, paddingLeft, paddingRight } = root.style;
+  const restore = () => {
+    Object.assign(root.style, { overflow, scrollbarGutter, paddingLeft, paddingRight });
+  };
+  const computed = getComputedStyle(root);
+  const width = root.clientWidth;
+  const scrollbar = window.innerWidth - width;
+  // A scrollbar on the left (right-to-left pages, in some engines) shows in the root's clientLeft.
+  const onLeft = root.clientLeft > parseFloat(computed.borderLeftWidth);
+  const gutter = scrollbar > 0 && computed.scrollbarGutter === "auto";
+  if (gutter) root.style.scrollbarGutter = "stable";
+  root.style.overflow = "hidden";
+  if (!gutter) return restore;
+  // WebKit drops the gutter of a root whose overflow is hidden (seen with styled scrollbars). Then pad the
+  // root by what it widened instead, on the scrollbar's side.
+  if (root.clientWidth === width) return restore;
+  root.style.scrollbarGutter = scrollbarGutter;
+  const grown = root.clientWidth - width;
+  if (grown > 0) {
+    const side = onLeft ? "paddingLeft" : "paddingRight";
+    root.style[side] = `${parseFloat(computed[side]) + grown}px`;
+  }
+  return restore;
+}
+
+/**
+ * While `active`, stops the page behind a modal from scrolling. Several locks may be held at once.
+ *
+ * `overflow: hidden` on the root takes its scrollbar away, and where scrollbars take space (Windows, Linux, macOS
+ * with "always show scrollbars") the page would widen by that much and its content shift sideways. While locked
+ * the root keeps that space with `scrollbar-gutter: stable`, or padding where the engine drops the gutter. Only
+ * when it had a scrollbar taking space: a gutter on a page without one would shift it the other way. A gutter the
+ * app set itself is left alone.
+ */
 export function createScrollLock(active: Accessor<boolean>): void {
   createEffect(
     () => active(),
     (isActive) => {
       if (!isActive) return;
-      if (scrollLocks === 0) {
-        overflowBeforeLock = document.documentElement.style.overflow;
-        document.documentElement.style.overflow = "hidden";
-      }
+      if (scrollLocks === 0) restoreLock = lockRoot();
       scrollLocks += 1;
       return () => {
         scrollLocks -= 1;
-        if (scrollLocks === 0) document.documentElement.style.overflow = overflowBeforeLock;
+        if (scrollLocks === 0) {
+          restoreLock?.();
+          restoreLock = undefined;
+        }
       };
     },
   );

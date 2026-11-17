@@ -94,6 +94,40 @@ test("locks page scroll while a modal dialog is open", async () => {
   expect(document.documentElement.style.overflow).toBe("");
 });
 
+test("locking scroll keeps the scrollbar's space, so the page doesn't shift", async () => {
+  const root = document.documentElement;
+  const tall = document.body.appendChild(document.createElement("div"));
+  tall.style.height = "300vh";
+  // Headless browsers draw overlay scrollbars, which take no space. A styled one does, in Chromium and WebKit.
+  const style = document.head.appendChild(document.createElement("style"));
+  style.textContent = "::-webkit-scrollbar { width: 15px; background: #eee }";
+  try {
+    const { getByRole, user } = mount(basic);
+    const button = getByRole("button", { name: "Open dialog" });
+    const width = document.body.getBoundingClientRect().width;
+    const left = button.getBoundingClientRect().left;
+    await user.click(button);
+    expect(root.style.overflow).toBe("hidden");
+    expect(document.body.getBoundingClientRect().width).toBe(width);
+    expect(button.getBoundingClientRect().left).toBe(left);
+    await user.keyboard("{Escape}");
+    await closed(getByRole("dialog", { hidden: true }));
+    expect(root.getAttribute("style") ?? "").toBe("");
+    expect(document.body.getBoundingClientRect().width).toBe(width);
+  } finally {
+    tall.remove();
+    style.remove();
+  }
+});
+
+test("a page without a scrollbar gets no gutter while locked", async () => {
+  const { getByRole, user } = mount(basic);
+  await user.click(getByRole("button", { name: "Open dialog" }));
+  expect(document.documentElement.style.scrollbarGutter).toBe("");
+  await user.keyboard("{Escape}");
+  await closed(getByRole("dialog", { hidden: true }));
+});
+
 test("a controlled dialog stays open until its owner agrees to close it", async () => {
   const { getByRole, getByTestId, user } = mount(controlled);
   await user.click(getByRole("button", { name: "Open locked" }));

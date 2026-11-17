@@ -27,7 +27,7 @@ export default component Page() {
     <p>
       The library adds the open state (which may be controlled), closing on a press outside the dialog, the ARIA
       relationships between trigger, popup, title and description, locking the page's scroll while a modal dialog
-      is open, and the exit animation: the dialog stays open with <code>data-ending-style</code> until its
+      is open (keeping the scrollbar's space, so the page doesn't shift sideways), and the exit animation: the dialog stays open with <code>data-ending-style</code> until its
       transitions finish, because no engine but Chrome can animate a top-layer element out yet.
     </p>
     <div class="note">
