@@ -1,0 +1,118 @@
+{
+  "family": "preview-card",
+  "parts": [
+    {
+      "name": "PreviewCardRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "PreviewCardTrigger",
+      "element": "a",
+      "description": "Spread on the link the card previews. It opens the card on hover and keyboard focus, after the delay.",
+      "props": [
+        {
+          "name": "delay",
+          "type": "number",
+          "default": "600",
+          "required": false,
+          "description": "How long the pointer rests on the link (or focus stays on it) before the card opens, in ms."
+        },
+        {
+          "name": "closeDelay",
+          "type": "number",
+          "default": "300",
+          "required": false,
+          "description": "How long after the pointer leaves the link and the card before it closes, in ms."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "PreviewCardPopup",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "side",
+          "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
+          "default": "\"bottom\"",
+          "required": false,
+          "description": "Which side of the link it sits on; the browser flips it when it doesn't fit."
+        },
+        {
+          "name": "align",
+          "type": "\"start\" | \"center\" | \"end\"",
+          "default": "\"center\"",
+          "required": false,
+          "description": "Which edge of the link it lines up with."
+        },
+        {
+          "name": "sideOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "Gap between link and card, in pixels."
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "PreviewCardArrow",
+      "element": "div",
+      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverArrow, PopoverTitle, PopoverDescription, PopoverClose } from "./rs-ui/popover/popover.rx"
+
+<PopoverRoot>
+  <PopoverTrigger />
+  <PopoverPopup>
+    <PopoverArrow />
+    <PopoverTitle />
+    <PopoverDescription />
+    <PopoverClose />
+  </PopoverPopup>
+</PopoverRoot>

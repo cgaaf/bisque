@@ -1,0 +1,357 @@
+{
+  "family": "autocomplete",
+  "parts": [
+    {
+      "name": "AutocompleteRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": "The input's text."
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "default": "\"\"",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "mode",
+          "type": "AutocompleteMode",
+          "default": null,
+          "required": false,
+          "description": "\"list\" (default) filters the suggestions by what was typed; \"inline\" shows the highlighted suggestion in the input; \"both\" does both; \"none\" neither (the suggestions are static)."
+        },
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "filter",
+          "type": "(label: string, query: string) => boolean",
+          "default": "case- and accent-insensitive \"contains\"",
+          "required": false,
+          "description": "Whether a suggestion labelled `label` matches what was typed."
+        },
+        {
+          "name": "autoHighlight",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Highlight the first matching suggestion as the user types."
+        },
+        {
+          "name": "loop",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether the arrow keys go from the last suggestion back to the input, and on to the first."
+        },
+        {
+          "name": "openOnInputClick",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether a click in the input opens the list."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "readOnly",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteInput",
+      "element": "input",
+      "description": "The text input; give it a `name` to submit its text with a <form>.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-dirty",
+          "description": "Present once the field's value has changed."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-filled",
+          "description": "Present when the field has a value."
+        },
+        {
+          "name": "data-focused",
+          "description": "Present while the field has focus."
+        },
+        {
+          "name": "data-invalid",
+          "description": "Present when the field is invalid."
+        },
+        {
+          "name": "data-touched",
+          "description": "Present once the field has been focused and left."
+        },
+        {
+          "name": "data-valid",
+          "description": "Present when the field is valid."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteTrigger",
+      "element": "button",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteClear",
+      "element": "button",
+      "description": "",
+      "props": [
+        {
+          "name": "keepMounted",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteValue",
+      "element": "span",
+      "description": "",
+      "props": [
+        {
+          "name": "placeholder",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-placeholder",
+          "description": "Present when no value is selected."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompletePopup",
+      "element": "div",
+      "description": "Anchored to the input, on `side` and aligned to its `align` edge (default \"bottom\", \"start\"), at least as wide as it. It stays in the document while closed.",
+      "props": [
+        {
+          "name": "side",
+          "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "align",
+          "type": "\"start\" | \"center\" | \"end\"",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "sideOffset",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-empty",
+          "description": ""
+        },
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteList",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-empty",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteItem",
+      "element": "div",
+      "description": "A suggestion. Choosing it fills the input with its label: `label`, else its text. (Props pass through whole and `children` is read in the markup: destructuring it here would build the children before ComboboxItem provides its context.)",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-highlighted",
+          "description": "Present on the item that has the highlight."
+        },
+        {
+          "name": "data-label",
+          "description": ""
+        },
+        {
+          "name": "data-selected",
+          "description": "Present when selected."
+        },
+        {
+          "name": "data-value",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteGroup",
+      "element": "div",
+      "description": "Props pass through whole, as for AutocompleteItem: ComboboxGroup provides a context its children read.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteGroupLabel",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteEmpty",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteStatus",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteSeparator",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AutocompleteArrow",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

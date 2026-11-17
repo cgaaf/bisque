@@ -1,0 +1,219 @@
+{
+  "family": "navigation-menu",
+  "parts": [
+    {
+      "name": "NavigationMenuRoot",
+      "element": "nav",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string | null",
+          "default": null,
+          "required": false,
+          "description": "The open item's value; `null` for closed. Leave it out to let the menu keep its own."
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string | null) => void",
+          "default": null,
+          "required": false,
+          "description": "Called once per change, including when the browser closed the content (Escape, a press outside)."
+        },
+        {
+          "name": "orientation",
+          "type": "NavigationMenuOrientation",
+          "default": "\"horizontal\"",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "delay",
+          "type": "number",
+          "default": "50",
+          "required": false,
+          "description": "How long the pointer rests on a trigger before its content opens, in ms."
+        },
+        {
+          "name": "closeDelay",
+          "type": "number",
+          "default": "50",
+          "required": false,
+          "description": "How long after the pointer leaves before the content closes, in ms."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuList",
+      "element": "ul",
+      "description": "",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuItem",
+      "element": "li",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": "a generated id",
+          "required": false,
+          "description": "Identifies the item; the root's `value` names the open one."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuTrigger",
+      "element": "button",
+      "description": "Opens its item's content: on hover after the root's delay (at once while another item is open), on click, and with ArrowDown (ArrowRight in a vertical menu), which also moves focus into it. Spread it on a <button>: its `popovertarget` keeps a press on it from counting as a press outside the content, and its click is prevented so the browser doesn't toggle the content itself.",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-focusable",
+          "description": ""
+        },
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuIcon",
+      "element": "span",
+      "description": "Shows whether its item is open (a chevron, say), with `data-popup-open`. Hidden from assistive technology.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuContent",
+      "element": "div",
+      "description": "The item's panel: declare it after the item's trigger. `data-activation-direction` says where the previously open item was (\"left\" or \"right\"; \"up\" or \"down\" when vertical) while it is open.",
+      "props": [
+        {
+          "name": "side",
+          "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
+          "default": "\"bottom\"",
+          "required": false,
+          "description": "Which side of the trigger it sits on; the browser flips it when it doesn't fit."
+        },
+        {
+          "name": "align",
+          "type": "\"start\" | \"center\" | \"end\"",
+          "default": "\"center\"",
+          "required": false,
+          "description": "Which edge of the trigger it lines up with."
+        },
+        {
+          "name": "sideOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "Gap between trigger and content, in pixels."
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-activation-direction",
+          "description": "The direction of the newly active item relative to the previous one."
+        },
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuLink",
+      "element": "a",
+      "description": "",
+      "props": [
+        {
+          "name": "active",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether the link is the current page: `aria-current=\"page\"` and `data-active`."
+        },
+        {
+          "name": "closeOnClick",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether following the link closes the content."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-active",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NavigationMenuArrow",
+      "element": "div",
+      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

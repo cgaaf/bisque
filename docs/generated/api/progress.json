@@ -1,0 +1,88 @@
+{
+  "family": "progress",
+  "parts": [
+    {
+      "name": "ProgressRoot",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "number | null",
+          "default": null,
+          "required": true,
+          "description": "null (or a value that isn't finite) is indeterminate: work is happening, but how much is unknown."
+        },
+        {
+          "name": "min",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "max",
+          "type": "number",
+          "default": "100",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "format",
+          "type": "Intl.NumberFormatOptions",
+          "default": "a percentage of the range",
+          "required": false,
+          "description": "How the value is shown and announced."
+        },
+        {
+          "name": "locale",
+          "type": "string | string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "getAriaValueText",
+          "type": "(formattedValue: string, value: number | null) => string",
+          "default": null,
+          "required": false,
+          "description": "The accessible text of the value, from the formatted value and the raw one."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ProgressTrack",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ProgressIndicator",
+      "element": "div",
+      "description": "Its width is the share of the range done; it has none while indeterminate.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ProgressValue",
+      "element": "span",
+      "description": "The formatted value, hidden from assistive technology (the root announces it). Empty while indeterminate. For other text, put `progressValue(c)` on an element of your own and show what you like from the context.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ProgressLabel",
+      "element": "span",
+      "description": "Names the progress bar: the root's `aria-labelledby` points here.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

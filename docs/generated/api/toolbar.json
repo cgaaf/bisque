@@ -1,0 +1,162 @@
+{
+  "family": "toolbar",
+  "parts": [
+    {
+      "name": "ToolbarRoot",
+      "element": "div",
+      "description": "One Tab stop: the arrow keys along `orientation` move between items, and the item last focused is where Tab comes back to.",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Disables every item. Buttons and inputs stay focusable unless they set `focusableWhenDisabled={false}`."
+        },
+        {
+          "name": "orientation",
+          "type": "ToolbarOrientation",
+          "default": "\"horizontal\"",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "loopFocus",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether the arrow keys wrap around at the ends."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToolbarButton",
+      "element": "button",
+      "description": "",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-focusable",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToolbarLink",
+      "element": "a",
+      "description": "A link can't be disabled; it is an item like the others.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ToolbarInput",
+      "element": "input",
+      "description": "In the input the arrow keys move the caret; they move to the next item only from the end of the text (or the start, going back). Home and End stay with the input.",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-focusable",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToolbarGroup",
+      "element": "div",
+      "description": "Groups items for assistive technology; `disabled` disables the items in it.",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToolbarSeparator",
+      "element": "div",
+      "description": "A separator across the toolbar: vertical in a horizontal toolbar, unless `orientation` says otherwise.",
+      "props": [
+        {
+          "name": "orientation",
+          "type": "SeparatorOrientation",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

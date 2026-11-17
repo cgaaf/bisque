@@ -1,0 +1,15 @@
+// How the docs' .rx may use ./site.js (implemented in ./impl/). One declaration per line: scripts/gen-dts.mjs
+// turns this file into ./site.d.ts.
+export pure fn highlight(code: string, lang: string): string
+export pure fn prose(text: string): string
+export pure fn sourceOf(path: string): ref string
+export pure fn highlightedSourceOf(path: string): ref string
+export pure fn apiOf(family: string): ref any
+export pure fn navigation(): any
+export pure fn pagePath(): string
+export pure fn href(path: string): string
+export pure fn neighbours(): any
+export pure fn headings(): ref any
+export fn setTitle(title: string): void
+export fn toggleTheme(): void
+export fn copyText(text: string): void

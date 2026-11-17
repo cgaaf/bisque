@@ -1,0 +1,17 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle, PopoverClose } from "../../../src/popover/popover.rx"
+
+export component PopoverControlled() {
+  source open := false
+  <div class="PopoverControlled">
+    <PopoverRoot open={open} onOpenChange={(next) => { open := next }}>
+      <PopoverTrigger class="Button">Filters</PopoverTrigger>
+      <PopoverPopup class="Popup" align="start" sideOffset={8}>
+        <PopoverTitle class="Title">Filters</PopoverTitle>
+        <label class="Row"><input type="checkbox" /> In stock only</label>
+        <PopoverClose class="Button">Apply</PopoverClose>
+      </PopoverPopup>
+    </PopoverRoot>
+    <button class="Button" type="button" onClick={() => { open := true }}>Open from here</button>
+    <output class="State">{open ? "open" : "closed"}</output>
+  </div>
+}

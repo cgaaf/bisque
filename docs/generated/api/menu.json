@@ -1,0 +1,378 @@
+{
+  "family": "menu",
+  "parts": [
+    {
+      "name": "MenuRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": "Called after the browser or a part opened or closed it. A press outside and Escape can't be refused: a controlled menu that keeps `open` true is shown again."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "A disabled menu doesn't open."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuTrigger",
+      "element": "button",
+      "description": "Spread on a <button>. `popovertarget` is there so the browser doesn't count a press on the trigger as a press outside the open menu; the click itself is the menu's (it is prevented, so the browser doesn't toggle), which lets a menubar keep a menu open that hovering opened.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuPopup",
+      "element": "div",
+      "description": "The menu: a `popover=\"auto\"` element placed against its trigger. A submenu's popup is declared inside the parent's popup, which is what makes the browser treat it as nested.",
+      "props": [
+        {
+          "name": "side",
+          "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
+          "default": "\"bottom\"; \"right\" for a submenu and in a vertical menubar",
+          "required": false,
+          "description": "Which side of the trigger it sits on; the browser flips it when it doesn't fit."
+        },
+        {
+          "name": "align",
+          "type": "\"start\" | \"center\" | \"end\"",
+          "default": "\"start\"",
+          "required": false,
+          "description": "Which edge of the trigger it lines up with."
+        },
+        {
+          "name": "sideOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "Gap between trigger and popup, in pixels."
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuItem",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "closeOnClick",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether choosing the item closes the menu (and every menu it is nested in)."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuLinkItem",
+      "element": "a",
+      "description": "A menu item that is a link: Enter follows it.",
+      "props": [
+        {
+          "name": "closeOnClick",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether following the link closes the menu."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuCheckboxItem",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "checked",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultChecked",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onCheckedChange",
+          "type": "(checked: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "closeOnClick",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-checked",
+          "description": "Present when checked."
+        },
+        {
+          "name": "data-unchecked",
+          "description": "Present when not checked."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuRadioGroup",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuRadioItem",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "closeOnClick",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-checked",
+          "description": "Present when checked."
+        },
+        {
+          "name": "data-unchecked",
+          "description": "Present when not checked."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuGroup",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuGroupLabel",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuSeparator",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuSubmenuRoot",
+      "element": null,
+      "description": "A menu inside a menu: holds a MenuSubmenuTrigger (an item of the parent) and the submenu's own MenuPopup, declared inside the parent's MenuPopup. The parts beneath it read it as `menu`, like a top-level menu.",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuSubmenuTrigger",
+      "element": "button",
+      "description": "An item of the parent menu that opens the submenu: on hover (the pointer may cross other items on its way to the submenu without closing it), on click, and on ArrowRight, Enter and Space, which also move focus into it. Spread it on a <button>: like MenuTrigger, its `popovertarget` keeps a press on it from closing the submenu (a press on any other part of the parent menu does close it), and the click itself is prevented.",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "openOnHover",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether resting the pointer on the trigger opens the submenu."
+        },
+        {
+          "name": "delay",
+          "type": "number",
+          "default": "100",
+          "required": false,
+          "description": "How long the pointer rests on the trigger before the submenu opens, in ms."
+        },
+        {
+          "name": "closeDelay",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "How long after the pointer leaves (and not towards the submenu) before it closes, in ms."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "MenuArrow",
+      "element": "div",
+      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

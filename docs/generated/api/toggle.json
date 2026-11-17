@@ -1,0 +1,58 @@
+{
+  "family": "toggle",
+  "parts": [
+    {
+      "name": "Toggle",
+      "element": "button",
+      "description": "A two-state button. In a toggle group the group owns the pressed state, and the toggle is one of its items; in a toolbar it is one of the toolbar's items.",
+      "props": [
+        {
+          "name": "pressed",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultPressed",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onPressedChange",
+          "type": "(pressed: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-pressed",
+          "description": "Present when pressed."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "family": "tabs",
+  "parts": [
+    {
+      "name": "TabsRoot",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultValue",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "orientation",
+          "type": "TabsOrientation",
+          "default": "\"horizontal\"",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-activation-direction",
+          "description": "The direction of the newly active item relative to the previous one."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "TabsList",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "activateOnFocus",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Select a tab as soon as the arrow keys focus it (automatic activation)."
+        },
+        {
+          "name": "loopFocus",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether the arrow keys wrap around at the ends."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-activation-direction",
+          "description": "The direction of the newly active item relative to the previous one."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "TabsTab",
+      "element": "button",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "A disabled tab stays in the DOM and is announced, but can't be selected and is skipped by the arrow keys."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-activation-direction",
+          "description": "The direction of the newly active item relative to the previous one."
+        },
+        {
+          "name": "data-active",
+          "description": ""
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "TabsPanel",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "keepMounted",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Keep the panel in the DOM (hidden) while its tab isn't selected."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-activation-direction",
+          "description": "The direction of the newly active item relative to the previous one."
+        },
+        {
+          "name": "data-ending-style",
+          "description": "Present while the part animates out."
+        },
+        {
+          "name": "data-hidden",
+          "description": ""
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        },
+        {
+          "name": "data-starting-style",
+          "description": "Present while the part animates in."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "TabsIndicator",
+      "element": "span",
+      "description": "Follows the selected tab. Its position and size are CSS variables relative to the list: `--active-tab-left`, `--active-tab-right`, `--active-tab-top`, `--active-tab-bottom`, `--active-tab-width`, `--active-tab-height`. Hidden until the selected tab has a size. Place it inside TabsList.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-activation-direction",
+          "description": "The direction of the newly active item relative to the previous one."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,129 @@
+{
+  "family": "checkbox",
+  "parts": [
+    {
+      "name": "CheckboxRoot",
+      "element": "input",
+      "description": "",
+      "props": [
+        {
+          "name": "checked",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultChecked",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onCheckedChange",
+          "type": "(checked: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "indeterminate",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Neither checked nor unchecked: a parent box whose children are mixed. A press clears it and toggles the box, as the browser does; a controlled `indeterminate` that stays true is set again."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "readOnly",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Focusable and announced, but a press doesn't change it (`readonly` has no effect on a native checkbox)."
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": "With a name (or inside a named FieldRoot), the box submits `value` (default \"on\") with its form while checked."
+        },
+        {
+          "name": "value",
+          "type": "string",
+          "default": "\"\"",
+          "required": false,
+          "description": "Inside a CheckboxGroup, also the value the group's list holds while the box is checked."
+        },
+        {
+          "name": "parent",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Inside a CheckboxGroup with `allValues`: the box that checks or clears them all, mixed while some are checked."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-dirty",
+          "description": "Present once the field's value has changed."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-filled",
+          "description": "Present when the field has a value."
+        },
+        {
+          "name": "data-focused",
+          "description": "Present while the field has focus."
+        },
+        {
+          "name": "data-invalid",
+          "description": "Present when the field is invalid."
+        },
+        {
+          "name": "data-parent",
+          "description": ""
+        },
+        {
+          "name": "data-readonly",
+          "description": "Present when the field is read-only."
+        },
+        {
+          "name": "data-touched",
+          "description": "Present once the field has been focused and left."
+        },
+        {
+          "name": "data-valid",
+          "description": "Present when the field is valid."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "CheckboxIndicator",
+      "element": "span",
+      "description": "A mark beside the box, always in the document: place it in CheckboxRoot, where it is the box's next sibling, and show it with `input:checked + *` and `input:indeterminate + *`. Hidden from assistive technology, which hears the box's own state.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+.PopoverOpenOnHover {
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .Button[data-popup-open] {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Popup {
+    width: 15rem;
+    padding: 0.875rem 1rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.25);
+  }
+
+  .Title {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .Description {
+    margin: 0.25rem 0 0;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

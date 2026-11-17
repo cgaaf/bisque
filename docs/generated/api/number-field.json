@@ -1,0 +1,266 @@
+{
+  "family": "number-field",
+  "parts": [
+    {
+      "name": "NumberFieldRoot",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "number | null",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultValue",
+          "type": "number | null",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: number | null, details: NumberFieldChangeDetails) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueCommitted",
+          "type": "(value: number | null, details: NumberFieldChangeDetails) => void",
+          "default": null,
+          "required": false,
+          "description": "When a change is final: on blur after typing, on each key, wheel turn and stepper click, and on release after holding a stepper or scrubbing."
+        },
+        {
+          "name": "min",
+          "type": "number",
+          "default": "-1",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "max",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "step",
+          "type": "number",
+          "default": "1",
+          "required": false,
+          "description": "Arrow keys and the steppers. Default 1."
+        },
+        {
+          "name": "smallStep",
+          "type": "number",
+          "default": "0.1",
+          "required": false,
+          "description": "With Alt. Default 0.1."
+        },
+        {
+          "name": "largeStep",
+          "type": "number",
+          "default": "10",
+          "required": false,
+          "description": "With Shift. Default 10."
+        },
+        {
+          "name": "snapOnStep",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Snap a step to a multiple of the step from `min` (or 0)."
+        },
+        {
+          "name": "allowOutOfRange",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Let typed values outside [min, max] stand (steps still clamp); the field is then invalid, natively."
+        },
+        {
+          "name": "allowWheelScrub",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Turn the wheel over the focused input to step."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "readOnly",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": "With a name (or inside a named FieldRoot), a hidden number input submits the value with the form."
+        },
+        {
+          "name": "form",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "format",
+          "type": "Intl.NumberFormatOptions",
+          "default": null,
+          "required": false,
+          "description": "How the value is shown, and how typed text is read."
+        },
+        {
+          "name": "locale",
+          "type": "string | string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "NumberFieldGroup",
+      "element": "div",
+      "description": "Groups the input and the steppers.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "NumberFieldInput",
+      "element": "input",
+      "description": "The text input. Arrow Up/Down step (Shift: large step, Alt: small step), Home/End go to min/max when set, the wheel steps while focused (with `allowWheelScrub`), and blur parses, clamps and formats what was typed.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-dirty",
+          "description": "Present once the field's value has changed."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-filled",
+          "description": "Present when the field has a value."
+        },
+        {
+          "name": "data-focused",
+          "description": "Present while the field has focus."
+        },
+        {
+          "name": "data-invalid",
+          "description": "Present when the field is invalid."
+        },
+        {
+          "name": "data-touched",
+          "description": "Present once the field has been focused and left."
+        },
+        {
+          "name": "data-valid",
+          "description": "Present when the field is valid."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NumberFieldIncrement",
+      "element": "button",
+      "description": "A stepper button: click to step once, hold to repeat. Disabled at its bound. Not in the tab order (the input steps with the arrow keys), but not hidden from touch screen readers.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NumberFieldDecrement",
+      "element": "button",
+      "description": "A stepper button: click to step once, hold to repeat. Disabled at its bound. Not in the tab order (the input steps with the arrow keys), but not hidden from touch screen readers.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NumberFieldScrubArea",
+      "element": "span",
+      "description": "Press and drag to change the value: right (or up, vertically) increases it. The pointer is locked while scrubbing; NumberFieldScrubAreaCursor is the cursor shown instead.",
+      "props": [
+        {
+          "name": "direction",
+          "type": "\"horizontal\" | \"vertical\"",
+          "default": "\"horizontal\"",
+          "required": false,
+          "description": "The axis the pointer moves along to scrub. Default \"horizontal\"."
+        },
+        {
+          "name": "pixelSensitivity",
+          "type": "number",
+          "default": "2",
+          "required": false,
+          "description": "Px of movement per step. Default 2."
+        },
+        {
+          "name": "teleportDistance",
+          "type": "number",
+          "default": "the viewport's edges",
+          "required": false,
+          "description": "How far, in px, the virtual cursor may go from the area before it wraps to the other side."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-direction",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "NumberFieldScrubAreaCursor",
+      "element": "span",
+      "description": "The cursor shown while scrubbing with a mouse (the real one is locked and hidden), rendered into the body and positioned where the virtual pointer is. Give it a size and an icon.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-direction",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

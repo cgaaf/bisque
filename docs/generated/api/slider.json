@@ -1,0 +1,221 @@
+{
+  "family": "slider",
+  "parts": [
+    {
+      "name": "SliderRoot",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "number | number[]",
+          "default": null,
+          "required": false,
+          "description": "A number for one thumb, an array for a range with a thumb per entry."
+        },
+        {
+          "name": "defaultValue",
+          "type": "number | number[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: number | number[], details: SliderChangeDetails) => void",
+          "default": null,
+          "required": false,
+          "description": "Every change, while dragging too. `value` is a number or an array, as `value`/`defaultValue` is."
+        },
+        {
+          "name": "onValueCommitted",
+          "type": "(value: number | number[], details: SliderCommitDetails) => void",
+          "default": null,
+          "required": false,
+          "description": "When a change is final: on pointer release, and on each key press."
+        },
+        {
+          "name": "min",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "Default 0 and 100."
+        },
+        {
+          "name": "max",
+          "type": "number",
+          "default": "100",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "step",
+          "type": "number",
+          "default": "1",
+          "required": false,
+          "description": "The values are multiples of `step` from `min`. Default 1."
+        },
+        {
+          "name": "largeStep",
+          "type": "number",
+          "default": "10",
+          "required": false,
+          "description": "Page Up/Down and Shift+arrow. Default 10."
+        },
+        {
+          "name": "minStepsBetweenValues",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "How many steps apart a range's thumbs must stay. Default 0."
+        },
+        {
+          "name": "orientation",
+          "type": "SliderOrientation",
+          "default": "\"horizontal\"",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": "With a name (or inside a named FieldRoot), each thumb's range input submits its value with the form."
+        },
+        {
+          "name": "form",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "format",
+          "type": "Intl.NumberFormatOptions",
+          "default": null,
+          "required": false,
+          "description": "How SliderValue shows the values and the thumbs announce them."
+        },
+        {
+          "name": "locale",
+          "type": "string | string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SliderControl",
+      "element": "div",
+      "description": "The area that takes pointer presses: a press moves the nearest thumb there, then dragging moves it. Thumbs must be inside it.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SliderTrack",
+      "element": "div",
+      "description": "The rail the thumbs move along: they and the indicator are positioned within it (`position: relative`).",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SliderIndicator",
+      "element": "div",
+      "description": "The filled part of the track: from the start to the value, or between a range's first and last thumbs.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SliderValue",
+      "element": "output",
+      "description": "The values, formatted (a range's joined with \" – \"), as an <output> for the thumbs' inputs. Not announced while it changes (`aria-live=\"off\"`): the focused thumb announces its own value.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SliderThumb",
+      "element": "div",
+      "description": "The thumb is a positioned <div> around a visually hidden <input type=\"range\">, which is what takes focus, carries the slider ARIA and submits the value. `index` picks the thumb's value.",
+      "props": [
+        {
+          "name": "index",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "Which value this thumb shows: 0 for a single-value slider, its position in the array for a range."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "getAriaLabel",
+          "type": "(index: number) => string",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "getAriaValueText",
+          "type": "(formattedValue: string, value: number, index: number) => string",
+          "default": "the formatted value with a `format`; for a two-thumb range, \"<value> start range\" and \"<value> end range\"",
+          "required": false,
+          "description": "The input's announced value, from the formatted value, the value and the thumb's index."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-dirty",
+          "description": "Present once the field's value has changed."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-filled",
+          "description": "Present when the field has a value."
+        },
+        {
+          "name": "data-focused",
+          "description": "Present while the field has focus."
+        },
+        {
+          "name": "data-index",
+          "description": "The part's index among its siblings."
+        },
+        {
+          "name": "data-invalid",
+          "description": "Present when the field is invalid."
+        },
+        {
+          "name": "data-touched",
+          "description": "Present once the field has been focused and left."
+        },
+        {
+          "name": "data-valid",
+          "description": "Present when the field is valid."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

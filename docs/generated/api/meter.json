@@ -1,0 +1,88 @@
+{
+  "family": "meter",
+  "parts": [
+    {
+      "name": "MeterRoot",
+      "element": "div",
+      "description": "A measurement within a known range (disk usage, battery level), not the progress of a task.",
+      "props": [
+        {
+          "name": "value",
+          "type": "number",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "min",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "max",
+          "type": "number",
+          "default": "100",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "format",
+          "type": "Intl.NumberFormatOptions",
+          "default": "a percentage of the range",
+          "required": false,
+          "description": "How the value is shown and announced."
+        },
+        {
+          "name": "locale",
+          "type": "string | string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "getAriaValueText",
+          "type": "(formattedValue: string, value: number) => string",
+          "default": null,
+          "required": false,
+          "description": "The accessible text of the value, from the formatted value and the raw one."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MeterTrack",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MeterIndicator",
+      "element": "div",
+      "description": "Its width is the value's share of the range.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MeterValue",
+      "element": "span",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "MeterLabel",
+      "element": "span",
+      "description": "Names the meter: the root's `aria-labelledby` points here.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "family": "tooltip",
+  "parts": [
+    {
+      "name": "TooltipProvider",
+      "element": null,
+      "description": "Groups tooltips: once one has opened, moving to another opens it without the delay, and closes the first.",
+      "props": [
+        {
+          "name": "delay",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "How long the pointer rests on a trigger before its tooltip opens, in ms. A trigger's own `delay` wins."
+        },
+        {
+          "name": "closeDelay",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "How long after the pointer leaves before a tooltip closes, in ms. A trigger's own `closeDelay` wins."
+        },
+        {
+          "name": "timeout",
+          "type": "number",
+          "default": "400",
+          "required": false,
+          "description": "After a tooltip closes, another opens at once if hovered within this many ms."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "TooltipRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "A disabled tooltip doesn't open, and closes if it was open."
+        },
+        {
+          "name": "disableHoverablePopup",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether the tooltip closes as soon as the pointer leaves the trigger, instead of letting it move onto the popup."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "TooltipTrigger",
+      "element": "button",
+      "description": "Opens the tooltip on hover (after the delay) and on keyboard focus; closes it on leave, blur and press. It has no `popovertarget`: a press must not open a tooltip. Spread on any focusable element.",
+      "props": [
+        {
+          "name": "delay",
+          "type": "number",
+          "default": "the provider's, else 600",
+          "required": false,
+          "description": "How long the pointer rests on the trigger before the tooltip opens, in ms."
+        },
+        {
+          "name": "closeDelay",
+          "type": "number",
+          "default": "the provider's, else 0",
+          "required": false,
+          "description": "How long after the pointer leaves before it closes, in ms."
+        },
+        {
+          "name": "closeOnClick",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether pressing the trigger closes the tooltip."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "TooltipPopup",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "side",
+          "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
+          "default": "\"top\"",
+          "required": false,
+          "description": "Which side of the trigger it sits on; the browser flips it when it doesn't fit."
+        },
+        {
+          "name": "align",
+          "type": "\"start\" | \"center\" | \"end\"",
+          "default": "\"center\"",
+          "required": false,
+          "description": "Which edge of the trigger it lines up with."
+        },
+        {
+          "name": "sideOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "Gap between trigger and popup, in pixels."
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "TooltipArrow",
+      "element": "div",
+      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

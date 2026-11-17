@@ -31,7 +31,10 @@
     "rx-check": "node scripts/rx-check.mjs",
     "build:demo": "vite build --outDir node_modules/.cache/demo --emptyOutDir --logLevel warn",
     "baseline": "node scripts/baseline.mjs",
-    "test:browser": "vitest run --config vitest.browser.config.ts"
+    "test:browser": "vitest run --config vitest.browser.config.ts",
+    "docs": "vite --config vite.docs.config.ts",
+    "build:docs": "vite build --config vite.docs.config.ts --logLevel warn",
+    "gen:api": "node scripts/gen-api.mjs"
   },
   "devDependencies": {
     "@mdn/browser-compat-data": "8.1.9",

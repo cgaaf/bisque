@@ -1,0 +1,13 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle, PopoverDescription } from "../../../src/popover/popover.rx"
+
+export component PopoverOpenOnHover() {
+  <div class="PopoverOpenOnHover">
+    <PopoverRoot>
+      <PopoverTrigger class="Button" openOnHover delay={200}>Shipping</PopoverTrigger>
+      <PopoverPopup class="Popup" sideOffset={8}>
+        <PopoverTitle class="Title">Free over $50</PopoverTitle>
+        <PopoverDescription class="Description">Orders leave the warehouse within two working days.</PopoverDescription>
+      </PopoverPopup>
+    </PopoverRoot>
+  </div>
+}

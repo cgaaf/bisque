@@ -1,0 +1,68 @@
+{
+  "family": "collapsible",
+  "parts": [
+    {
+      "name": "CollapsibleRoot",
+      "element": "details",
+      "description": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "The trigger does nothing while disabled. Find-in-page still opens it: the browser's behaviour wins."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "CollapsibleTrigger",
+      "element": "summary",
+      "description": "Spread on a <summary> that is the first child of the root's <details>: the toggling, focusability and the expanded state come from that element, and it works on no other. A press asks the root instead of toggling, so a controlled `open` decides and the close can animate.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "CollapsiblePanel",
+      "element": "div",
+      "description": "The content after the summary. Its size is written to `--collapsible-panel-height` and `--collapsible-panel-width`: px while it opens and closes, `auto` once open. Animate `height` from 0 with both `details:not([open]) > .panel` and `@starting-style` (Chrome needs the second, Safari the first), and to 0 under `[data-ending-style]`.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

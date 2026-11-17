@@ -1,0 +1,18 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverArrow, PopoverTitle, PopoverDescription } from "../../../src/popover/popover.rx"
+
+export component PopoverHero() {
+  <div class="PopoverHero">
+    <PopoverRoot>
+      <PopoverTrigger class="IconButton" aria-label="Notifications">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M8 1.5a4 4 0 0 0-4 4v2.6L2.8 10.5h10.4L12 8.1V5.5a4 4 0 0 0-4-4ZM6.5 12.5a1.5 1.5 0 0 0 3 0" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round" />
+        </svg>
+      </PopoverTrigger>
+      <PopoverPopup class="Popup" sideOffset={10}>
+        <PopoverArrow class="Arrow" />
+        <PopoverTitle class="Title">Notifications</PopoverTitle>
+        <PopoverDescription class="Description">You are all caught up. Good job!</PopoverDescription>
+      </PopoverPopup>
+    </PopoverRoot>
+  </div>
+}

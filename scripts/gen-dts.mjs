@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Writes the `.d.ts` beside every `.d.rx` under src/.
+// Writes the `.d.ts` beside every `.d.rx` under src/ and docs/.
 //
 // A `.d.rx` tells the ReactiveScript compiler how .rx may call a JS module. TypeScript (rx-tsc, the editor) needs
 // the same module's types as .rx sees them: a `ref` parameter takes a plain value, a `ref` result is read without
@@ -30,7 +30,7 @@ function convert(source, file) {
 }
 
 let stale = 0;
-for (const file of globSync("src/**/*.d.rx")) {
+for (const file of globSync("{src,docs}/**/*.d.rx")) {
   const target = file.replace(/\.d\.rx$/, ".d.ts");
   const text = convert(readFileSync(file, "utf8"), file);
   if (existsSync(target) && readFileSync(target, "utf8") === text) continue;

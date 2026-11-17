@@ -1,0 +1,108 @@
+{
+  "family": "dialog",
+  "parts": [
+    {
+      "name": "DialogRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "modal",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "A modal dialog makes the rest of the page inert and locks its scroll."
+        },
+        {
+          "name": "dismissible",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether Escape and a press outside close it."
+        },
+        {
+          "name": "disablePointerDismissal",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether a press outside is ignored (Escape still closes it)."
+        },
+        {
+          "name": "role",
+          "type": "\"dialog\" | \"alertdialog\"",
+          "default": "\"dialog\"",
+          "required": false,
+          "description": "The popup's role. AlertDialogRoot sets \"alertdialog\"."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DialogTrigger",
+      "element": "button",
+      "description": "",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "DialogPopup",
+      "element": "dialog",
+      "description": "Spread on a <dialog>. A <dialog> already has the dialog role; only \"alertdialog\" is written.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DialogTitle",
+      "element": "h2",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DialogDescription",
+      "element": "p",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DialogClose",
+      "element": "button",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,343 @@
+{
+  "family": "select",
+  "parts": [
+    {
+      "name": "SelectRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string | null",
+          "default": null,
+          "required": false,
+          "description": "Single selection: the selected value, null for none."
+        },
+        {
+          "name": "defaultValue",
+          "type": "string | null",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string | null) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "multiple",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Any number of values may be selected; they are then `values`, `defaultValues` and `onValuesChange`."
+        },
+        {
+          "name": "values",
+          "type": "string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultValues",
+          "type": "string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValuesChange",
+          "type": "(values: string[]) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": "Called after the browser or a part opened or closed it. A press outside and Escape can't be refused: a controlled select that keeps `open` true is shown again."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "readOnly",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "The popup can be opened and browsed, but nothing can be selected."
+        },
+        {
+          "name": "required",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": "With a name (or inside a named FieldRoot) the select submits its value with a <form>; with `multiple`, one entry per selected value."
+        },
+        {
+          "name": "items",
+          "type": "SelectItemLabel[]",
+          "default": null,
+          "required": false,
+          "description": "The label of each value, when it must be known before its item has rendered, or differs from the item's text."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectTrigger",
+      "element": "button",
+      "description": "Spread on a <button>: `popovertarget` makes the browser open and close the popup on a click, Enter and Space, and anchor the popup to it. The arrow keys open it through the select, and typing on the closed trigger selects.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-dirty",
+          "description": "Present once the field's value has changed."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-filled",
+          "description": "Present when the field has a value."
+        },
+        {
+          "name": "data-focused",
+          "description": "Present while the field has focus."
+        },
+        {
+          "name": "data-invalid",
+          "description": "Present when the field is invalid."
+        },
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        },
+        {
+          "name": "data-touched",
+          "description": "Present once the field has been focused and left."
+        },
+        {
+          "name": "data-valid",
+          "description": "Present when the field is valid."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectValue",
+      "element": "span",
+      "description": "The selected item's label (labels joined by \", \" when `multiple`), or the placeholder.",
+      "props": [
+        {
+          "name": "placeholder",
+          "type": "string",
+          "default": null,
+          "required": false,
+          "description": "Shown while nothing is selected (the value then carries `data-placeholder`)."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectIcon",
+      "element": "span",
+      "description": "A decoration beside the value (a chevron), hidden from assistive technology.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectPopup",
+      "element": "div",
+      "description": "The items stay in the document while it is closed: they name the selected value and answer typeahead on the closed trigger.",
+      "props": [
+        {
+          "name": "side",
+          "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
+          "default": "\"bottom\"",
+          "required": false,
+          "description": "Which side of the trigger it sits on; the browser flips it when it doesn't fit."
+        },
+        {
+          "name": "align",
+          "type": "\"start\" | \"center\" | \"end\"",
+          "default": "\"start\"",
+          "required": false,
+          "description": "Which edge of the trigger it lines up with."
+        },
+        {
+          "name": "sideOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "Gap between trigger and popup, in pixels."
+        },
+        {
+          "name": "alignOffset",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectItem",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "label",
+          "type": "string",
+          "default": "SelectItemText's text, else the item's",
+          "required": false,
+          "description": "The text that names the value, in SelectValue and for typeahead."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-highlighted",
+          "description": "Present on the item that has the highlight."
+        },
+        {
+          "name": "data-label",
+          "description": ""
+        },
+        {
+          "name": "data-selected",
+          "description": "Present when selected."
+        },
+        {
+          "name": "data-value",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectItemText",
+      "element": "span",
+      "description": "The item's text: what SelectValue shows for it, when the item holds more than its label (an indicator).",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectItemIndicator",
+      "element": "span",
+      "description": "Shown while its item is selected, unless `keepMounted`.",
+      "props": [
+        {
+          "name": "keepMounted",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-selected",
+          "description": "Present when selected."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectGroup",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectGroupLabel",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectSeparator",
+      "element": "div",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "SelectArrow",
+      "element": "div",
+      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-side",
+          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

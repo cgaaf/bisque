@@ -1,0 +1,108 @@
+{
+  "family": "scroll-area",
+  "parts": [
+    {
+      "name": "ScrollAreaRoot",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "overflowEdgeThreshold",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "How far from an edge, in px, the content must be scrolled before `data-overflow-*-start`/`-end` appear."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-scrolling",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ScrollAreaViewport",
+      "element": "div",
+      "description": "The element that scrolls. Its native scrollbars are hidden (`scrollbar-width: none`); it is focusable while it overflows, so the keyboard can scroll it. The distance to each edge is a CSS variable: `--scroll-area-overflow-x-start`, `-x-end`, `-y-start`, `-y-end`.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-scrolling",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ScrollAreaContent",
+      "element": "div",
+      "description": "Wraps the content inside the viewport, at least as wide as the content (`min-width: fit-content`), so horizontal overflow is measured.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ScrollAreaScrollbar",
+      "element": "div",
+      "description": "Pressing the track scrolls so the thumb centres on the pointer; the wheel over it scrolls the viewport. Its thumb's size is `--scroll-area-thumb-height` (vertical) or `--scroll-area-thumb-width` (horizontal).",
+      "props": [
+        {
+          "name": "orientation",
+          "type": "ScrollAreaOrientation",
+          "default": "\"vertical\"",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "keepMounted",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Keep the scrollbar in the DOM while there is nothing to scroll on its axis."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-hovering",
+          "description": ""
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        },
+        {
+          "name": "data-scrolling",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ScrollAreaThumb",
+      "element": "div",
+      "description": "Sized and moved along its scrollbar from the viewport's scroll position; drag it to scroll.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        },
+        {
+          "name": "data-scrolling",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ScrollAreaCorner",
+      "element": "div",
+      "description": "Fills the gap where the two scrollbars meet. Rendered only while both are. Sized from the scrollbars' thickness, also exposed on the root as `--scroll-area-corner-width` and `--scroll-area-corner-height`.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "PopoverRoot": {
+    "description": "Holds the popover's open state and shares it with the parts inside it.",
+    "props": {
+      "open": "Whether the popover is open. Pass it with `onOpenChange` to control the popover.",
+      "defaultOpen": "Whether the popover is open at first, when it isn't controlled."
+    }
+  },
+  "PopoverTrigger": {
+    "description": "The button that opens and closes the popover. The browser's `popovertarget` does both on a press."
+  },
+  "PopoverPopup": {
+    "description": "The popup: an element with `popover=\"auto\"`, placed against the trigger with CSS anchor positioning. Style it with `:popover-open`, `::backdrop` and `@starting-style`.",
+    "props": {
+      "alignOffset": "How far the popup is moved along the trigger's edge from its `align` position, in pixels."
+    }
+  },
+  "PopoverTitle": {
+    "description": "A heading that names the popup. The popup's `aria-labelledby` points at it."
+  },
+  "PopoverDescription": {
+    "description": "A paragraph that describes the popup. The popup's `aria-describedby` points at it."
+  },
+  "PopoverClose": {
+    "description": "A button that closes the popover."
+  },
+  "PopoverArrow": {
+    "description": "An element placed on the popup's edge that faces the trigger, centred on the trigger. It follows the popup when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
+    "dataAttributes": {
+      "data-side": "Which side of the trigger the popup is on. Absent while the popup is closed."
+    }
+  }
+}

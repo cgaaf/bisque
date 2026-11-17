@@ -1,0 +1,141 @@
+{
+  "family": "drawer",
+  "parts": [
+    {
+      "name": "DrawerRoot",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "open",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultOpen",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "swipeDirection",
+          "type": "DrawerSwipeDirection",
+          "default": "\"down\"",
+          "required": false,
+          "description": "Where a swipe dismisses it: the edge it slides out through."
+        },
+        {
+          "name": "swipeThreshold",
+          "type": "number",
+          "default": "0",
+          "required": false,
+          "description": "How far a swipe must travel to dismiss, in px. Default: half the popup's size along the direction. A fast flick (0.5 px/ms) dismisses whatever the distance."
+        },
+        {
+          "name": "modal",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": "As DialogRoot: modal by default, closed by Escape and a press outside."
+        },
+        {
+          "name": "dismissible",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "disablePointerDismissal",
+          "type": "boolean",
+          "default": null,
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DrawerTrigger",
+      "element": "button",
+      "description": "",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-popup-open",
+          "description": "Present on the trigger while its popup is open."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "DrawerPopup",
+      "element": "dialog",
+      "description": "Spread on a <dialog>: Dialog's popup, plus `data-swipe-direction`, `data-swiping`, `data-swipe-dismiss` and the `--drawer-swipe-movement-x`/`-y` and `--drawer-swipe-progress` variables (which its ::backdrop inherits). A stylesheet translates it by the movement; below the threshold the movement returns to 0 and it snaps back. It closes after its exit animation, under `[data-ending-style]`, from wherever it was let go.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-swipe-direction",
+          "description": "The direction it can be swiped away in."
+        },
+        {
+          "name": "data-swipe-dismiss",
+          "description": ""
+        },
+        {
+          "name": "data-swiping",
+          "description": "Present while the part is being dragged."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "DrawerContent",
+      "element": "div",
+      "description": "Holds the drawer's content. A mouse press inside it selects text instead of starting a swipe.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-drawer-content",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "DrawerTitle",
+      "element": "h2",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DrawerDescription",
+      "element": "p",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "DrawerClose",
+      "element": "button",
+      "description": "",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

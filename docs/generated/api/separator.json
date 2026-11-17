@@ -1,0 +1,21 @@
+{
+  "family": "separator",
+  "parts": [
+    {
+      "name": "Separator",
+      "element": "hr",
+      "description": "",
+      "props": [
+        {
+          "name": "orientation",
+          "type": "SeparatorOrientation",
+          "default": "\"horizontal\"",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

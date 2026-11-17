@@ -1,0 +1,118 @@
+{
+  "family": "accordion",
+  "parts": [
+    {
+      "name": "AccordionRoot",
+      "element": "div",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "defaultValue",
+          "type": "string[]",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "onValueChange",
+          "type": "(value: string[]) => void",
+          "default": null,
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "multiple",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Whether several items can be open at once."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "orientation",
+          "type": "AccordionOrientation",
+          "default": "\"vertical\"",
+          "required": false,
+          "description": "Which arrow keys move between triggers: Up/Down when vertical, Left/Right when horizontal."
+        },
+        {
+          "name": "loopFocus",
+          "type": "boolean",
+          "default": "true",
+          "required": false,
+          "description": "Whether the arrow keys wrap around at the ends."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        },
+        {
+          "name": "data-orientation",
+          "description": "The orientation: `horizontal` or `vertical`."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "AccordionItem",
+      "element": "details",
+      "description": "",
+      "props": [
+        {
+          "name": "value",
+          "type": "string",
+          "default": "a generated id",
+          "required": false,
+          "description": "Identifies the item in the root's `value`."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": "Its trigger does nothing while disabled. Find-in-page still opens it: the browser's behaviour wins."
+        },
+        {
+          "name": "onOpenChange",
+          "type": "(open: boolean) => void",
+          "default": null,
+          "required": false,
+          "description": "Called before the root's `onValueChange` when the item is opened or closed."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AccordionTrigger",
+      "element": "summary",
+      "description": "Spread on a <summary> that is the first child of the item's <details>: the toggling, focusability and the expanded state come from that element, and it works on no other. A press asks the root instead of toggling, so a controlled `value` decides and the close can animate. The arrow keys, Home and End move between triggers.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "AccordionPanel",
+      "element": "div",
+      "description": "A region labelled by its trigger. Its size is written to `--accordion-panel-height` and `--accordion-panel-width`: px while it opens and closes, `auto` once open. Animate `height` from 0 with both `details:not([open]) > .panel` and `@starting-style` (Chrome needs the second, Safari the first), and to 0 under `[data-ending-style]`.",
+      "props": [],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

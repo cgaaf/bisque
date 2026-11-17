@@ -1,0 +1,8 @@
+import { DocsPage } from "../shell.rx"
+import { href } from "../lib/site.js"
+
+export default component Page() {
+  <DocsPage title="Page not found" subtitle="Nothing is published at this address.">
+    <p><a href={href("")}>Go to the start page</a>, or pick a page from the navigation.</p>
+  </DocsPage>
+}

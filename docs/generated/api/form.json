@@ -1,0 +1,42 @@
+{
+  "family": "form",
+  "parts": [
+    {
+      "name": "Form",
+      "element": "form",
+      "description": "A native <form> that validates its Fields on submit, focuses the first invalid one, and shows errors passed in.",
+      "props": [
+        {
+          "name": "validationMode",
+          "type": "FormValidationMode",
+          "default": "\"onSubmit\"",
+          "required": false,
+          "description": "When fields validate, unless a FieldRoot says otherwise."
+        },
+        {
+          "name": "errors",
+          "type": "FormErrors",
+          "default": null,
+          "required": false,
+          "description": "Errors to show on fields, keyed by field name. An entry is hidden once its field's value changes, until `errors` changes. Changes are seen by content (an .rx object source keeps its identity when written), so reset it (to {}) when a submit starts: the same errors coming back for the next submit are then a change, and show again."
+        },
+        {
+          "name": "onFormSubmit",
+          "type": "(values: FormValues) => void",
+          "default": null,
+          "required": false,
+          "description": "Called on a valid submit with the values of the named fields; the native submission is then prevented."
+        },
+        {
+          "name": "onSubmit",
+          "type": "(event: SubmitEvent) => void",
+          "default": null,
+          "required": false,
+          "description": "Called on a valid submit, before `onFormSubmit`."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    }
+  ]
+}

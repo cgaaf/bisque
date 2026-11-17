@@ -278,8 +278,13 @@ export function createPlacement(
           measure(popup, against);
         });
       };
-      // The popup may not be shown yet (the effect that shows it can run after this one): `toggle` covers that.
-      measure(popup, against);
+      // Measured after this flush, not in it: a write here would make every reader of `open` run twice. It is
+      // still before the first paint. The popup may not be shown yet (the effect that shows it can run after
+      // this one): the frame and `toggle` cover that.
+      let live = true;
+      queueMicrotask(() => {
+        if (live) measure(popup, against);
+      });
       schedule();
       const sizes = new ResizeObserver(schedule);
       sizes.observe(popup);
@@ -293,12 +298,13 @@ export function createPlacement(
         popup.removeEventListener("toggle", schedule);
         document.removeEventListener("scroll", schedule, { capture: true });
         window.removeEventListener("resize", schedule);
-        setPlacement(undefined);
+        live = false;
       };
     },
   );
 
-  return placement;
+  // The last measurement is kept across a close, so a popup that reopens starts from where it was.
+  return () => (open() ? placement() : undefined);
 }
 
 /**

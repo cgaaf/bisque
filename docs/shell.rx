@@ -1,0 +1,220 @@
+// The docs site's page frame and the pieces every page is built from. A page is a program under ./pages whose
+// default component wraps its content in <DocsPage>. The site's own chrome uses the library: Dialog for the
+// navigation on a small screen, Tabs for a demo's source files.
+import { highlight, prose, sourceOf, highlightedSourceOf, apiOf, navigation, neighbours, headings, href, setTitle, toggleTheme, copyText } from "./lib/site.js"
+import { TabsRoot, TabsList, TabsTab, TabsPanel } from "../src/tabs/tabs.rx"
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "../src/dialog/dialog.rx"
+
+component NavList() {
+  groups = navigation()
+  <nav class="nav" aria-label="Documentation">
+    {for group in groups {
+      <section class="nav-group">
+        <h2 class="nav-heading">{group.title}</h2>
+        <ul>
+          {for item in group.items {
+            <li><a class="nav-link" href={item.href} aria-current={item.current ? "page" : undefined}>{item.title}</a></li>
+          }}
+        </ul>
+      </section>
+    }}
+  </nav>
+}
+
+export type DocsPageProps = {
+  title: string
+  // One sentence under the title.
+  subtitle?: string
+  children?: View
+}
+
+export component DocsPage(props: DocsPageProps) {
+  toc = headings()
+  near = neighbours()
+  effect () { setTitle(peek(props.title)) }
+
+  <div class="site">
+    <header class="site-header">
+      <DialogRoot>
+        <DialogTrigger class="icon-button menu-button" aria-label="Open navigation">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4h13M1.5 8h13M1.5 12h13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+        </DialogTrigger>
+        <DialogPopup class="nav-drawer">
+          <div class="nav-drawer-bar">
+            <DialogTitle class="nav-drawer-title">rs-ui</DialogTitle>
+            <DialogClose class="icon-button" aria-label="Close navigation">
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M3 3l10 10M13 3L3 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+            </DialogClose>
+          </div>
+          <NavList />
+        </DialogPopup>
+      </DialogRoot>
+      <a class="logo" href={href("")}>rs-ui</a>
+      <span class="logo-note">Headless components for ReactiveScript</span>
+      <button class="icon-button theme-button" type="button" aria-label="Switch between light and dark" onClick={() => { toggleTheme() }}>
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" /></svg>
+      </button>
+    </header>
+
+    <aside class="sidebar"><NavList /></aside>
+
+    <main class="content">
+      <article>
+        <h1>{props.title}</h1>
+        {if props.subtitle { <p class="subtitle">{props.subtitle}</p> }}
+        {props.children}
+      </article>
+      <footer class="page-footer">
+        {if near.previous {
+          <a class="page-link" href={near.previous.href}><span>Previous</span>{near.previous.title}</a>
+        } else {
+          <span />
+        }}
+        {if near.next {
+          <a class="page-link page-link-next" href={near.next.href}><span>Next</span>{near.next.title}</a>
+        }}
+      </footer>
+    </main>
+
+    <aside class="toc">
+      {if toc.length > 1 {
+        <nav aria-label="On this page">
+          <h2 class="nav-heading">On this page</h2>
+          <ul>
+            {for entry in toc {
+              <li><a class="toc-link" data-level={entry.level} href={"#" + entry.id}>{entry.text}</a></li>
+            }}
+          </ul>
+        </nav>
+      }}
+    </aside>
+  </div>
+}
+
+export type DemoProps = {
+  // The demo's files under docs/demos, without the extension: "popover/hero" shows hero.rx and hero.css.
+  source: string
+  children?: View
+}
+
+// A live demo above the source that produced it.
+export component Demo(props: DemoProps) {
+  path = peek(props.source)
+  name = path.split("/").pop()
+  rx = highlightedSourceOf(peek(path + ".rx"))
+  css = highlightedSourceOf(peek(path + ".css"))
+  rawRx = sourceOf(peek(path + ".rx"))
+  rawCss = sourceOf(peek(path + ".css"))
+  source tab: string := "rx"
+  source copied := false
+  action choose(value: string) {
+    tab := value
+    copied := false
+  }
+  action copy() {
+    copyText(tab == "css" ? rawCss : rawRx)
+    copied := true
+  }
+
+  <figure class="demo">
+    <div class="demo-preview">{props.children}</div>
+    <TabsRoot class="demo-source" value={tab} onValueChange={choose}>
+      <div class="demo-bar">
+        <TabsList class="demo-tabs" aria-label="Source files">
+          <TabsTab class="demo-tab" value="rx">{name}.rx</TabsTab>
+          <TabsTab class="demo-tab" value="css">{name}.css</TabsTab>
+        </TabsList>
+        <button class="copy-button" type="button" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+      </div>
+      <TabsPanel class="demo-panel" value="rx"><pre class="code"><code innerHTML={rx} /></pre></TabsPanel>
+      <TabsPanel class="demo-panel" value="css"><pre class="code"><code innerHTML={css} /></pre></TabsPanel>
+    </TabsRoot>
+  </figure>
+}
+
+export type CodeProps = {
+  // A snippet under docs/demos to show, with its extension: "popover/anatomy.rx.txt".
+  file: string
+}
+
+// A highlighted snippet that isn't run: an anatomy listing, a stylesheet fragment.
+export component Code(props: CodeProps) {
+  html = highlightedSourceOf(peek(props.file))
+  <pre class="code code-block"><code innerHTML={html} /></pre>
+}
+
+export type InlineCodeProps = { code: string; lang?: string }
+
+// A short snippet written in the page itself.
+export component Snippet(props: InlineCodeProps) {
+  html = highlight(props.code, props.lang ?? "rx")
+  <pre class="code code-block"><code innerHTML={html} /></pre>
+}
+
+export type ApiReferenceProps = {
+  // The family's folder name under src: "popover".
+  family: string
+}
+
+// The family's parts, from docs/generated/api: each part's element, props and data attributes.
+export component ApiReference(props: ApiReferenceProps) {
+  api = apiOf(peek(props.family))
+  <div class="api">
+    {for part in api.parts {
+      <section class="api-part">
+        <h3 id={part.name}>{part.name}</h3>
+        {if part.description { <p innerHTML={prose(part.description)} /> }}
+        <p class="api-element">
+          {if part.element {
+            <span>Renders a <code>{"<" + part.element + ">"}</code> element and passes its other props on to it.</span>
+          } else {
+            <span>Renders no element of its own.</span>
+          }}
+        </p>
+        {if part.props.length > 0 {
+          <div class="table-scroll">
+            <table class="api-table">
+              <thead><tr><th>Prop</th><th>Type</th><th>Default</th></tr></thead>
+              <tbody>
+                {for prop in part.props {
+                  <tr>
+                    <td>
+                      <code class="api-name">{prop.name}</code>{if prop.required { <span class="api-required">required</span> }}
+                      {if prop.description { <p class="api-description" innerHTML={prose(prop.description)} /> }}
+                    </td>
+                    <td><code class="api-type">{prop.type}</code></td>
+                    <td>{if prop.default { <code>{prop.default}</code> } else { <span class="api-none">—</span> }}</td>
+                  </tr>
+                }}
+              </tbody>
+            </table>
+          </div>
+        }}
+        {if part.dataAttributes.length > 0 {
+          <div class="table-scroll">
+            <table class="api-table">
+              <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
+              <tbody>
+                {for attribute in part.dataAttributes {
+                  <tr><td><code class="api-name">{attribute.name}</code></td><td innerHTML={prose(attribute.description)} /></tr>
+                }}
+              </tbody>
+            </table>
+          </div>
+        }}
+        {if part.cssVariables.length > 0 {
+          <div class="table-scroll">
+            <table class="api-table">
+              <thead><tr><th>CSS variable</th><th>Description</th></tr></thead>
+              <tbody>
+                {for variable in part.cssVariables {
+                  <tr><td><code class="api-name">{variable.name}</code></td><td innerHTML={prose(variable.description)} /></tr>
+                }}
+              </tbody>
+            </table>
+          </div>
+        }}
+      </section>
+    }}
+  </div>
+}

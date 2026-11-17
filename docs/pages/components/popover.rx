@@ -1,0 +1,77 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { PopoverHero } from "../../demos/popover/hero.rx"
+import { PopoverOpenOnHover } from "../../demos/popover/open-on-hover.rx"
+import { PopoverControlled } from "../../demos/popover/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Popover" subtitle="An accessible popup anchored to a button.">
+    <Demo source="popover/hero"><PopoverHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="popover/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The popup is an element with the native <code>popover</code> attribute, and the trigger is a button with{" "}
+      <code>popovertarget</code>. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the popup is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>Closing on <kbd>Escape</kbd> and on a press outside the popup.</li>
+      <li>Focus order: the popup follows its trigger when tabbing, wherever it is in the document.</li>
+      <li>Placement against the trigger with CSS anchor positioning, flipped to the other side when it doesn't fit.</li>
+    </ul>
+    <p>
+      The library adds the open state (which may be controlled), the ARIA relationships between trigger, popup,
+      title and description, opening on hover, and <code>data-side</code> with the arrow's position, which the
+      browser doesn't report.
+    </p>
+    <div class="note">
+      <p>
+        The popup stays in the document while it is closed, so there is no Portal part and no{" "}
+        <code>keepMounted</code> prop. There is no Positioner or Backdrop part either: the popup is the positioned
+        element, and <code>::backdrop</code> styles what is behind it.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="opening-on-hover">Opening on hover</h3>
+    <p>
+      With <code>openOnHover</code> the trigger also opens the popover when the pointer rests on it, after{" "}
+      <code>delay</code> milliseconds. Leaving the trigger and the popup closes it again. A press while hover has
+      it open keeps it open.
+    </p>
+    <Demo source="popover/open-on-hover"><PopoverOpenOnHover /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to hold the state yourself, for instance to open the
+      popover from somewhere other than its trigger. The browser's light dismiss can't be refused: it is reported
+      through <code>onOpenChange</code> after it happened, and a popover whose <code>open</code> stays true is
+      shown again.
+    </p>
+    <Demo source="popover/controlled"><PopoverControlled /></Demo>
+
+    <h3 id="placement">Placement and the arrow</h3>
+    <p>
+      <code>side</code>, <code>align</code>, <code>sideOffset</code> and <code>alignOffset</code> on the popup
+      become CSS anchor positioning declarations in its inline style, so a stylesheet can replace any of them.
+      When the popup doesn't fit on its side the browser flips it, and the popup's <code>data-side</code> changes
+      to the side it ended up on. <code>PopoverArrow</code> is placed on the popup's edge that faces the trigger,
+      centred on the trigger; give it a shape and turn it per <code>data-side</code>, as the first demo does.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the popup in with <code>@starting-style</code> under <code>:popover-open</code>. A press outside
+      closes a popover at once, so animating it out is left to CSS: transition <code>display</code> and{" "}
+      <code>overlay</code> with <code>allow-discrete</code>, which takes effect in the engines that support it and
+      is ignored in the others.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="popover" />
+  </DocsPage>
+}

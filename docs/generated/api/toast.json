@@ -1,0 +1,172 @@
+{
+  "family": "toast",
+  "parts": [
+    {
+      "name": "ToastProvider",
+      "element": null,
+      "description": "",
+      "props": [
+        {
+          "name": "timeout",
+          "type": "number",
+          "default": "5000",
+          "required": false,
+          "description": "Default time before a toast closes by itself, in ms; 0 never."
+        },
+        {
+          "name": "limit",
+          "type": "number",
+          "default": "3",
+          "required": false,
+          "description": "How many toasts show at once. Older ones stay in the list as `limited` (inert, `data-limited`)."
+        },
+        {
+          "name": "toastManager",
+          "type": "ToastManager",
+          "default": "one of the provider's own",
+          "required": false,
+          "description": "A manager app code can reach from outside the tree. Read once."
+        }
+      ],
+      "dataAttributes": [],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastViewport",
+      "element": "div",
+      "description": "The live region the toasts are rendered in, spread on the element that holds them. It is a `popover=\"manual\"` shown while mounted: the top layer, with no portal. Being a popover it gets the browser's popover styles (centred, bordered), so give it a position, and `pointer-events: none` where it is empty if it covers the page. Hovering it or moving keyboard focus into it expands the stack and stops the timers. F6 moves focus to it while there are toasts; F6 again goes back. `--toast-frontmost-height` is the newest toast's height.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-expanded",
+          "description": "Present while expanded."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastRoot",
+      "element": "div",
+      "description": "One toast. It closes after its timeout, on Escape while focus is in it, and when swiped past the threshold. While dragged it carries `data-swiping` and `--toast-swipe-movement-x`/`-y`; `--toast-index`, `--toast-offset-y` and `--toast-height` place it in the stack. Animate it in with `@starting-style`; while it closes it has `data-ending-style`, and it leaves the list when its animations have finished.",
+      "props": [
+        {
+          "name": "toast",
+          "type": "ToastObject",
+          "default": null,
+          "required": true,
+          "description": ""
+        },
+        {
+          "name": "swipeDirection",
+          "type": "SwipeDirection | SwipeDirection[]",
+          "default": "[\"down\", \"right\"]",
+          "required": false,
+          "description": "Where a swipe dismisses it. `[]` turns swiping off."
+        },
+        {
+          "name": "swipeThreshold",
+          "type": "number",
+          "default": "40",
+          "required": false,
+          "description": "How far a swipe must travel to dismiss, in px."
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-ending-style",
+          "description": "Present while the part animates out."
+        },
+        {
+          "name": "data-expanded",
+          "description": "Present while expanded."
+        },
+        {
+          "name": "data-limited",
+          "description": ""
+        },
+        {
+          "name": "data-swipe-direction",
+          "description": "The direction it can be swiped away in."
+        },
+        {
+          "name": "data-swiping",
+          "description": "Present while the part is being dragged."
+        },
+        {
+          "name": "data-type",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastContent",
+      "element": "div",
+      "description": "Holds a toast's text and buttons. `data-behind` is on every toast but the frontmost.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-behind",
+          "description": ""
+        },
+        {
+          "name": "data-expanded",
+          "description": "Present while expanded."
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastTitle",
+      "element": "h2",
+      "description": "The toast's title: its children, or else the `title` it was added with. Renders nothing when it has neither.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-type",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastDescription",
+      "element": "p",
+      "description": "The toast's description: its children, or else the `description` it was added with.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-type",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastAction",
+      "element": "button",
+      "description": "A button for the toast's action. Takes the toast's `actionProps` (their `children` as its label) and its own; renders nothing without a label.",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-type",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    },
+    {
+      "name": "ToastClose",
+      "element": "button",
+      "description": "",
+      "props": [],
+      "dataAttributes": [
+        {
+          "name": "data-type",
+          "description": ""
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

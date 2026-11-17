@@ -1,0 +1,33 @@
+{
+  "family": "button",
+  "parts": [
+    {
+      "name": "Button",
+      "element": "button",
+      "description": "Button behaviour for the element that plays one. The consumer's activation handlers must be dropped while it is disabled: `mergeProps(button(o), gateButtonHandlers(rest, disabled))`.",
+      "props": [
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        },
+        {
+          "name": "focusableWhenDisabled",
+          "type": "boolean",
+          "default": "false",
+          "required": false,
+          "description": ""
+        }
+      ],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the part is disabled."
+        }
+      ],
+      "cssVariables": []
+    }
+  ]
+}

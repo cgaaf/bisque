@@ -14,7 +14,7 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client"]
   },
-  "include": ["src/**/*.rx", "demo/**/*.rx"],
+  "include": ["src/**/*.rx", "demo/**/*.rx", "docs/**/*.rx"],
   // A `.d.rx` declares a JS module to the ReactiveScript compiler. It is not a TypeScript source: with one in the
   // program, rx-tsc stops with "languageId not found".
   "exclude": ["**/*.d.rx"]

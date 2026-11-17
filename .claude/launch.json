@@ -6,6 +6,12 @@
       "runtimeExecutable": "pnpm",
       "runtimeArgs": ["exec", "vite", "--port", "5179", "--strictPort"],
       "port": 5179
+    },
+    {
+      "name": "rs-ui-docs",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["exec", "vite", "--config", "vite.docs.config.ts", "--port", "5180", "--strictPort"],
+      "port": 5180
     }
   ]
 }
