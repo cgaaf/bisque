@@ -1,0 +1,34 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuLink, NavigationMenuPortal, NavigationMenuPositioner, NavigationMenuPopup, NavigationMenuViewport, NavigationMenuArrow } from "../src/navigation-menu/navigation-menu.rx"
+
+export component NavigationMenuDemo() {
+  <NavigationMenuRoot class="navigation-menu">
+    <NavigationMenuList class="navigation-list">
+      <NavigationMenuItem value="overview">
+        <NavigationMenuTrigger>Overview <NavigationMenuIcon>▾</NavigationMenuIcon></NavigationMenuTrigger>
+        <NavigationMenuContent class="navigation-content">
+          <NavigationMenuLink href="#quick-start">Quick start</NavigationMenuLink>
+          <NavigationMenuLink href="#accessibility">Accessibility</NavigationMenuLink>
+          <NavigationMenuLink href="#releases">Releases</NavigationMenuLink>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+      <NavigationMenuItem value="handbook">
+        <NavigationMenuTrigger>Handbook <NavigationMenuIcon>▾</NavigationMenuIcon></NavigationMenuTrigger>
+        <NavigationMenuContent class="navigation-content">
+          <NavigationMenuLink href="#styling">Styling</NavigationMenuLink>
+          <NavigationMenuLink href="#animation">Animation</NavigationMenuLink>
+        </NavigationMenuContent>
+      </NavigationMenuItem>
+      <NavigationMenuItem>
+        <NavigationMenuLink href="#navigation-menu" active>GitHub</NavigationMenuLink>
+      </NavigationMenuItem>
+    </NavigationMenuList>
+    <NavigationMenuPortal>
+      <NavigationMenuPositioner sideOffset={8}>
+        <NavigationMenuPopup class="popup">
+          <NavigationMenuArrow class="arrow" />
+          <NavigationMenuViewport />
+        </NavigationMenuPopup>
+      </NavigationMenuPositioner>
+    </NavigationMenuPortal>
+  </NavigationMenuRoot>
+}

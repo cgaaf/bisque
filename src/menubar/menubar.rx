@@ -1,0 +1,55 @@
+// A bar of menus (File, Edit, View…). Each menu in it is a MenuRoot with its MenuTrigger and popup parts, from
+// ../menu/menu.rx: inside a MenubarRoot they become one composite. The triggers are one Tab stop moved through
+// with the arrow keys, at most one menu is open, ArrowLeft and ArrowRight in an open menu move to the
+// neighbouring one, and while one is open, hovering another trigger opens that one instead.
+import { menubar } from "../menu/menu.rx"
+import { mergeProps } from "../internal/props.js"
+import { createCompositeFocus } from "../internal/composite-focus.js"
+import { DivProps } from "../internal/types.rx"
+
+export type MenubarRootProps = {
+  orientation?: "horizontal" | "vertical"
+  // Whether the arrow keys wrap around at the ends. Default: true.
+  loopFocus?: boolean
+  // Disables every menu in the bar. Default: false.
+  disabled?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+export component MenubarRoot(props: MenubarRootProps) {
+  source element: HTMLElement | undefined := undefined
+  source openMenu: string | undefined := undefined
+  source openFocus: "none" | "container" | "first-item" | "last-item" := "container"
+  action setElement(el: HTMLElement) { element := el }
+  action setOpenMenu(id: string | undefined, focus: "none" | "container" | "first-item" | "last-item") {
+    openFocus := focus
+    openMenu := id
+  }
+  dir = props.orientation ?? "horizontal"
+  loop = props.loopFocus ?? true
+  isDisabled = props.disabled ?? false
+  _focus = createCompositeFocus(element, { orientation: dir, loop: loop, homeEnd: true })
+
+  provide menubar = {
+    present: true,
+    orientation: dir,
+    disabled: isDisabled,
+    loop: loop,
+    openMenu: openMenu,
+    openFocus: openFocus,
+    element: element,
+    setOpenMenu: setOpenMenu,
+  }
+
+  { orientation, loopFocus, disabled, children, ...rest } = props
+  own = {
+    role: "menubar",
+    "aria-orientation": dir,
+    "data-orientation": dir,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-has-submenu-open": openMenu != undefined ? "" : undefined,
+    ref: setElement,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}

@@ -1,0 +1,417 @@
+// Site navigation: a list of links and of triggers that each open a panel of content in one shared popup. The
+// popup's viewport shows the active item's content and resizes between items through CSS variables.
+//
+// A Content part is declared inside its Item, but shows in the Viewport: it hands its children to the root, and
+// the Viewport renders them. They are created where they are declared, so they read the Item's context.
+import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
+import { createFloating, createPresence } from "../internal/dom.js"
+import { createHoverIntent, createArrow, createPopupFocus } from "../internal/overlay.js"
+import { containsFocus } from "../internal/menu.js"
+import { createCompositeFocus } from "../internal/composite-focus.js"
+import { activationDirection, containsTarget, createViewportSize } from "../internal/navigation-menu.js"
+import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { DivProps, ButtonProps, AnchorProps, NavProps, ListProps, ListItemProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type NavigationMenuOrientation = "horizontal" | "vertical"
+export type NavigationMenuOpenReason = "hover" | "click" | "keyboard"
+export type NavigationMenuDirection = "left" | "right" | "up" | "down" | undefined
+
+// A Content's registration with the root: its item's value, its children, and the consumer's props for its element.
+export type NavigationMenuContentEntry = {
+  value: string
+  view: View
+  props: PartProps
+}
+
+export type NavigationMenuContext = PopupState & {
+  // The value of the item whose content is shown; undefined while closed.
+  value: string | undefined
+  orientation: NavigationMenuOrientation
+  openReason: NavigationMenuOpenReason
+  activationDirection: NavigationMenuDirection
+  delay: number
+  closeDelay: number
+  popupId: string
+  viewport: HTMLElement | undefined
+  contents: NavigationMenuContentEntry[]
+  setValue: (value: string | undefined, reason: NavigationMenuOpenReason, trigger: HTMLElement | undefined) => void
+  // Moves keyboard focus into the open content (Tab or ArrowDown on its trigger).
+  enterContent: () => void
+  setViewport: (element: HTMLElement) => void
+  register: (entry: NavigationMenuContentEntry) => void
+  unregister: (entry: NavigationMenuContentEntry) => void
+}
+
+export context navigationMenu: NavigationMenuContext
+
+export type NavigationMenuRootProps = {
+  // The open item's value; `null` for closed. Leave it out to let the menu keep its own.
+  value?: string | null
+  defaultValue?: string
+  onValueChange?: (value: string | null) => void
+  orientation?: NavigationMenuOrientation
+  // How long the pointer rests on a trigger before its content opens, in ms. Default: 50.
+  delay?: number
+  // How long after the pointer leaves before the popup closes, in ms. Default: 50.
+  closeDelay?: number
+  children?: View
+} & Omit<NavProps, "children">
+
+export component NavigationMenuRoot(props: NavigationMenuRootProps) {
+  source uncontrolled: string | undefined := peek(props.defaultValue)
+  source openReason: NavigationMenuOpenReason := "click"
+  source focusInside := false
+  source direction: NavigationMenuDirection := undefined
+  source viewport: HTMLElement | undefined := undefined
+  source contents: NavigationMenuContentEntry[] := []
+  current = props.value == null ? undefined : (props.value ?? uncontrolled)
+  dir = props.orientation ?? "horizontal"
+  popupId = createId("navigation-menu-popup")
+
+  action dismissed(next: boolean) {
+    if (!next) { setValue(undefined, openReason, undefined) }
+  }
+  state = createPopupState(current != undefined, peek(current != undefined), true, dismissed)
+
+  action setValue(next: string | undefined, reason: NavigationMenuOpenReason, trigger: HTMLElement | undefined) {
+    if (next == undefined) {
+      focusInside := false
+      direction := undefined
+    } else {
+      if (current != undefined && next != current) {
+        direction := activationDirection(state.trigger, trigger, dir)
+      }
+      if (next != current) { focusInside := reason == "keyboard" }
+      openReason := reason
+      if (trigger) { state.setTrigger(trigger) }
+    }
+    if (next == current) { return }
+    uncontrolled := next
+    if (props.onValueChange) { props.onValueChange(next ?? null) }
+  }
+  action enterContent() { focusInside := true }
+  action focusOut() {
+    if (containsFocus(state.trigger)) {
+      focusInside := false
+    } else {
+      setValue(undefined, openReason, undefined)
+    }
+  }
+  action setViewport(element: HTMLElement) { viewport := element }
+  action register(entry: NavigationMenuContentEntry) { contents := list => [...list, entry] }
+  action unregister(entry: NavigationMenuContentEntry) { contents := list => list.filter(e => e != entry) }
+
+  _focus = createPopupFocus(state.open && focusInside, state.popup, state.trigger, false, focusOut)
+  _size = createViewportSize(state.mounted, state.popup, state.positioner, viewport)
+
+  provide navigationMenu = {
+    ...state,
+    value: current,
+    orientation: dir,
+    openReason: openReason,
+    activationDirection: direction,
+    delay: props.delay ?? 50,
+    closeDelay: props.closeDelay ?? 50,
+    popupId: popupId,
+    viewport: viewport,
+    contents: contents,
+    setValue: setValue,
+    enterContent: enterContent,
+    setViewport: setViewport,
+    register: register,
+    unregister: unregister,
+  }
+
+  { value, defaultValue, onValueChange, orientation, delay, closeDelay, children, ...rest } = props
+  merged = mergeProps({ "aria-orientation": dir, "data-orientation": dir }, rest)
+  <nav {...merged}>{children}</nav>
+}
+
+// The list of items. One Tab stop: the arrow keys along the orientation move between its triggers and links.
+type ElementRef = (element: HTMLElement) => void
+
+export fn navigationMenuList(ref nav: NavigationMenuContext, ref setElement: ElementRef): PartProps {
+  { "data-orientation": nav.orientation, ref: setElement }
+}
+
+export component NavigationMenuList({ children, ...rest }: ListProps) {
+  nav = use navigationMenu
+  source element: HTMLElement | undefined := undefined
+  action setElement(el: HTMLElement) { element := el }
+  _focus = createCompositeFocus(element, { orientation: nav.orientation, loop: false, homeEnd: true })
+  own = navigationMenuList(nav, setElement)
+  merged = mergeProps(own, rest)
+  <ul {...merged}>{children}</ul>
+}
+
+export type NavigationMenuItemContext = {
+  value: string
+}
+
+export context navigationMenuItem: NavigationMenuItemContext
+
+export type NavigationMenuItemProps = {
+  // Identifies the item; the root's `value` names the open one. Default: a generated id.
+  value?: string
+  children?: View
+} & Omit<ListItemProps, "children" | "value">
+
+export component NavigationMenuItem(props: NavigationMenuItemProps) {
+  generated = createId("navigation-menu-item")
+  provide navigationMenuItem = { value: props.value ?? generated }
+  { value, children, ...rest } = props
+  <li {...rest}>{children}</li>
+}
+
+export type NavigationMenuTriggerProps = {
+  disabled?: boolean
+} & ButtonProps
+
+// Opens its item's content: on hover after the root's delay (at once while another item is open), on click, and
+// with ArrowDown (ArrowRight in a vertical menu), which also moves focus into it. Tab from an open trigger goes into
+// its content.
+export fn navigationMenuTrigger(ref nav: NavigationMenuContext, ref item: NavigationMenuItemContext, ref disabled: boolean): PartProps {
+  source element: HTMLElement | undefined := undefined
+  action setElement(el: HTMLElement) { element := el }
+  active = nav.value == item.value
+  // An item opened by the `value` prop rather than by its trigger still anchors on that trigger.
+  effect (active, element) {
+    if ($0 && $1) { nav.setTrigger($1) }
+  }
+  action hoverChange(next: boolean, reason: "hover" | "focus" | "press" | "group") {
+    if (next) {
+      nav.setValue(item.value, "hover", element)
+    } else if (nav.value == item.value) {
+      nav.setValue(undefined, "hover", undefined)
+    }
+  }
+  // Once a click has opened it (or made a hover-open stick), leaving with the pointer no longer closes it.
+  _hover = createHoverIntent(!disabled && !(active && nav.openReason == "click"), active, element, nav.popup, {
+    openDelay: nav.open ? 0 : nav.delay,
+    closeDelay: nav.closeDelay,
+    hoverablePopup: true,
+    focus: false,
+    focusDelay: 0,
+    closeOnPress: false,
+    group: undefined,
+  }, hoverChange)
+  action press() {
+    if (disabled) { return }
+    if (active && nav.openReason == "hover") {
+      nav.setValue(item.value, "click", element)
+    } else if (active) {
+      nav.setValue(undefined, "click", undefined)
+    } else {
+      nav.setValue(item.value, "click", element)
+    }
+  }
+  action keyDown(event: KeyboardEvent) {
+    if (disabled) { return }
+    let openKey = nav.orientation == "vertical" ? "ArrowRight" : "ArrowDown"
+    if (event.key == openKey) {
+      event.preventDefault()
+      nav.setValue(item.value, "keyboard", element)
+      nav.enterContent()
+    } else if (event.key == "Tab" && !event.shiftKey && active) {
+      event.preventDefault()
+      nav.enterContent()
+    }
+  }
+  action blur(event: FocusEvent) {
+    // Focus leaving for somewhere that is neither the popup nor this trigger closes it.
+    if (active && event.relatedTarget != null && !containsTarget([nav.popup, element], event.relatedTarget)) {
+      nav.setValue(undefined, nav.openReason, undefined)
+    }
+  }
+  {
+    type: "button",
+    "aria-expanded": active ? "true" : "false",
+    "aria-controls": active ? nav.popupId : undefined,
+    "data-popup-open": active ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    "aria-disabled": disabled ? "true" : undefined,
+    "data-focusable": "",
+    "data-rs-ui-item": "",
+    ref: setElement,
+    onClick: press,
+    onKeyDown: keyDown,
+    onBlur: blur,
+  }
+}
+
+export component NavigationMenuTrigger({ disabled = false, children, ...rest }: NavigationMenuTriggerProps) {
+  nav = use navigationMenu
+  item = use navigationMenuItem
+  own = navigationMenuTrigger(nav, item, disabled)
+  merged = mergeProps(own, withoutHandlers(rest, disabled))
+  <button {...merged}>{children}</button>
+}
+
+// Shows whether its item is open (a chevron, say), with `data-popup-open`. Hidden from assistive technology.
+export component NavigationMenuIcon({ children, ...rest }: SpanProps) {
+  nav = use navigationMenu
+  item = use navigationMenuItem
+  merged = mergeProps({ "aria-hidden": "true", "data-popup-open": nav.value == item.value ? "" : undefined }, rest)
+  <span {...merged}>{children}</span>
+}
+
+// Whether a part is inside some Content: a Link there is not one of the list's arrow-key stops.
+export type NavigationMenuContentContext = {
+  inside: boolean
+}
+
+export context navigationMenuContent: NavigationMenuContentContext = { inside: false }
+
+// The item's panel. It renders nothing where it is declared: the Viewport shows it while its item is open, in a
+// <div> with `data-open`/`data-closed`, `data-activation-direction` (where the previous item was) and the
+// starting and ending style attributes.
+export component NavigationMenuContent(props: DivProps) {
+  nav = use navigationMenu
+  item = use navigationMenuItem
+  provide navigationMenuContent = { inside: true }
+  { children, ...rest } = props
+  effect () {
+    let entry = { value: peek(item.value), view: children, props: rest }
+    nav.register(entry)
+    return () => { nav.unregister(entry) }
+  }
+}
+
+// Renders its children at the end of <body> while the popup is mounted.
+export component NavigationMenuPortal(props: { keepMounted?: boolean; children?: View }) {
+  nav = use navigationMenu
+  {if nav.mounted || (props.keepMounted ?? false) {
+    portal { {props.children} }
+  }}
+}
+
+export component NavigationMenuBackdrop({ children, ...rest }: DivProps) {
+  nav = use navigationMenu
+  state = popupStateAttributes(nav)
+  merged = mergeProps({ role: "presentation", ...state }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Where the positioner put the popup, for the popup and the arrow inside it.
+export type NavigationMenuPositionerContext = {
+  side: "top" | "bottom" | "left" | "right"
+  align: "start" | "center" | "end"
+  arrowUncentered: boolean
+  setArrow: (element: HTMLElement) => void
+}
+
+export context navigationMenuPositioner: NavigationMenuPositionerContext
+
+export type NavigationMenuPositionerProps = {
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
+  sideOffset?: number
+  alignOffset?: number
+  collisionPadding?: number
+} & DivProps
+
+// Positions the popup against the open item's trigger. Carries `data-side` and `data-align`, and
+// `--positioner-width`/`--positioner-height`: the shown content's size.
+export component NavigationMenuPositioner(props: NavigationMenuPositionerProps) {
+  nav = use navigationMenu
+  source arrow: HTMLElement | undefined := undefined
+  action setArrow(element: HTMLElement) { arrow := element }
+  [usedSide, usedAlign] = createFloating(nav.mounted, nav.trigger, nav.positioner, {
+    side: props.side ?? "bottom",
+    align: props.align ?? "center",
+    sideOffset: props.sideOffset ?? 0,
+    alignOffset: props.alignOffset ?? 0,
+    collisionPadding: props.collisionPadding ?? 5,
+  })
+  arrowUncentered = createArrow(nav.mounted, nav.trigger, nav.positioner, arrow, usedSide)
+  provide navigationMenuPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
+  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
+  state = popupStateAttributes(nav)
+  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: nav.setPositioner, ...state }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The popup. Carries `--popup-width` and `--popup-height`: the shown content's size, to transition between items.
+export component NavigationMenuPopup({ children, ...rest }: NavProps) {
+  nav = use navigationMenu
+  p = use navigationMenuPositioner
+  state = popupStateAttributes(nav)
+  merged = mergeProps({ id: nav.popupId, tabindex: "-1", "data-side": p.side, "data-align": p.align, ref: nav.setPopup, ...state }, rest)
+  <nav {...merged}>{children}</nav>
+}
+
+// Where the open item's content shows. While the popup moves from one item to another, the old content stays
+// (with `data-ending-style`) until its exit animation ends, beside the new one.
+export component NavigationMenuViewport(props: DivProps) {
+  nav = use navigationMenu
+  merged = mergeProps({ ref: nav.setViewport }, props)
+  <div {...merged}>
+    {for entry in nav.contents {
+      <ViewportContent entry={entry} />
+    }}
+  </div>
+}
+
+component ViewportContent(props: { entry: NavigationMenuContentEntry }) {
+  nav = use navigationMenu
+  source element: HTMLElement | undefined := undefined
+  action setElement(el: HTMLElement) { element := el }
+  active = nav.value == props.entry.value
+  [mounted, status] = createPresence(active, element)
+  own = {
+    "data-rs-ui-navigation-content": "",
+    "data-open": active ? "" : undefined,
+    "data-closed": active ? undefined : "",
+    "data-activation-direction": nav.activationDirection,
+    "data-starting-style": status == "starting" ? "" : undefined,
+    "data-ending-style": status == "ending" ? "" : undefined,
+    ref: setElement,
+  }
+  merged = mergeProps(own, props.entry.props)
+  {if mounted {
+    <div {...merged}>{props.entry.view}</div>
+  }}
+}
+
+// Points at the open item's trigger. Place it on the popup's edge with CSS, by `data-side`.
+export component NavigationMenuArrow({ children, ...rest }: DivProps) {
+  nav = use navigationMenu
+  p = use navigationMenuPositioner
+  state = popupStateAttributes(nav)
+  merged = mergeProps({
+    "aria-hidden": "true",
+    "data-side": p.side,
+    "data-align": p.align,
+    "data-uncentered": p.arrowUncentered ? "" : undefined,
+    ref: p.setArrow,
+    ...state,
+  }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type NavigationMenuLinkProps = {
+  // Whether the link is the current page: `aria-current="page"` and `data-active`. Default: false.
+  active?: boolean
+  // Whether following the link closes the popup. Default: false.
+  closeOnClick?: boolean
+} & AnchorProps
+
+export fn navigationMenuLink(ref nav: NavigationMenuContext, ref content: NavigationMenuContentContext, ref active: boolean, ref closeOnClick: boolean): PartProps {
+  action click() {
+    if (closeOnClick) { nav.setValue(undefined, "click", undefined) }
+  }
+  {
+    "aria-current": active ? "page" : undefined,
+    "data-active": active ? "" : undefined,
+    "data-rs-ui-item": content.inside ? undefined : "",
+    onClick: click,
+  }
+}
+
+export component NavigationMenuLink({ active = false, closeOnClick = false, children, ...rest }: NavigationMenuLinkProps) {
+  nav = use navigationMenu
+  content = use navigationMenuContent
+  own = navigationMenuLink(nav, content, active, closeOnClick)
+  merged = mergeProps(own, rest)
+  <a {...merged}>{children}</a>
+}

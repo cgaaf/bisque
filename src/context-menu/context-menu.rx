@@ -1,0 +1,139 @@
+// A menu that opens at the pointer: right-click (or the keyboard's context-menu key, Shift+F10, or a long press
+// on touch) inside the trigger area. It is Menu underneath: every part below reads the `menu` context from
+// ../menu/menu.rx, so a custom part imports `menu` and the `menu*` props functions from there.
+import { MenuRoot, MenuPortal, MenuBackdrop, MenuPositioner, MenuPopup, MenuArrow, MenuItem, MenuLinkItem, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuGroup, MenuGroupLabel, MenuSeparator, MenuSubmenuRoot, MenuSubmenuTrigger, MenuContext, menu } from "../menu/menu.rx"
+import { mergeProps } from "../internal/props.js"
+import { createLongPress, elementCorner } from "../internal/menu.js"
+import { DivProps, AnchorProps, PartProps } from "../internal/types.rx"
+
+export type ContextMenuRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // A disabled context menu doesn't open, and the browser's own menu shows instead. Default: false.
+  disabled?: boolean
+  children?: View
+}
+
+export component ContextMenuRoot(props: ContextMenuRootProps) {
+  <MenuRoot open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} disabled={props.disabled}>
+    {props.children}
+  </MenuRoot>
+}
+
+type ElementRef = (element: HTMLElement) => void
+
+export fn contextMenuTrigger(ref c: MenuContext, ref setElement: ElementRef): PartProps {
+  action contextMenu(event: MouseEvent) {
+    if (c.disabled) { return }
+    // The browser's own menu would cover ours.
+    event.preventDefault()
+    c.openAt({ x: event.clientX, y: event.clientY }, "container")
+  }
+  action keyDown(event: KeyboardEvent & { target: HTMLElement }) {
+    if (c.disabled || event.defaultPrevented) { return }
+    if (event.key == "ContextMenu" || (event.shiftKey && event.key == "F10")) {
+      event.preventDefault()
+      let corner = elementCorner(event.target)
+      c.openAt({ x: corner.x, y: corner.y }, "first-item")
+    }
+  }
+  {
+    "data-popup-open": c.open ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    ref: setElement,
+    onContextMenu: contextMenu,
+    onKeyDown: keyDown,
+  }
+}
+
+// The area that opens the menu. It isn't focusable itself: the keyboard key works from whatever has focus in it.
+export component ContextMenuTrigger({ children, ...rest }: DivProps) {
+  c = use menu
+  source element: HTMLElement | undefined := undefined
+  action setElement(el: HTMLElement) { element := el }
+  // A finger resting still for half a second opens it, at the finger, with a little room around the point.
+  action longPress(x: number, y: number) { c.openAt({ x: x, y: y, width: 10, height: 10 }, "container") }
+  _longPress = createLongPress(!c.disabled, element, 500, longPress)
+  own = contextMenuTrigger(c, setElement)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component ContextMenuPortal(props: { keepMounted?: boolean; children?: View }) {
+  <MenuPortal keepMounted={props.keepMounted}>{props.children}</MenuPortal>
+}
+
+export component ContextMenuBackdrop({ children, ...rest }: DivProps) {
+  <MenuBackdrop {...rest}>{children}</MenuBackdrop>
+}
+
+export type ContextMenuPositionerProps = {
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
+  sideOffset?: number
+  alignOffset?: number
+  collisionPadding?: number
+} & DivProps
+
+// Positions the popup at the point the menu opened at: below it and starting there, by default.
+export component ContextMenuPositioner(props: ContextMenuPositionerProps) {
+  // `children` stays unread here: MenuPositioner provides what the popup inside reads.
+  { side, align, sideOffset, alignOffset, collisionPadding, ...rest } = props
+  <MenuPositioner {...rest} side={side ?? "bottom"} align={align ?? "start"} sideOffset={sideOffset} alignOffset={alignOffset} collisionPadding={collisionPadding}>
+    {props.children}
+  </MenuPositioner>
+}
+
+export component ContextMenuPopup({ children, ...rest }: DivProps) {
+  <MenuPopup {...rest}>{children}</MenuPopup>
+}
+
+export component ContextMenuArrow({ children, ...rest }: DivProps) {
+  <MenuArrow {...rest}>{children}</MenuArrow>
+}
+
+export component ContextMenuItem({ disabled, closeOnClick, children, ...rest }: { disabled?: boolean; closeOnClick?: boolean } & DivProps) {
+  <MenuItem disabled={disabled} closeOnClick={closeOnClick} {...rest}>{children}</MenuItem>
+}
+
+export component ContextMenuLinkItem({ closeOnClick, children, ...rest }: { closeOnClick?: boolean } & AnchorProps) {
+  <MenuLinkItem closeOnClick={closeOnClick} {...rest}>{children}</MenuLinkItem>
+}
+
+export component ContextMenuCheckboxItem({ checked, defaultChecked, onCheckedChange, disabled, closeOnClick, children, ...rest }: { checked?: boolean; defaultChecked?: boolean; onCheckedChange?: (checked: boolean) => void; disabled?: boolean; closeOnClick?: boolean } & DivProps) {
+  <MenuCheckboxItem checked={checked} defaultChecked={defaultChecked} onCheckedChange={onCheckedChange} disabled={disabled} closeOnClick={closeOnClick} {...rest}>{children}</MenuCheckboxItem>
+}
+
+export component ContextMenuRadioGroup(props: { value?: string; defaultValue?: string; onValueChange?: (value: string) => void } & DivProps) {
+  // `children` stays unread here: MenuRadioGroup provides what the radio items inside read.
+  { value, defaultValue, onValueChange, ...rest } = props
+  <MenuRadioGroup {...rest} value={value} defaultValue={defaultValue} onValueChange={onValueChange}>{props.children}</MenuRadioGroup>
+}
+
+export component ContextMenuRadioItem({ value, disabled, closeOnClick, children, ...rest }: { value: string; disabled?: boolean; closeOnClick?: boolean } & DivProps) {
+  <MenuRadioItem value={value} disabled={disabled} closeOnClick={closeOnClick} {...rest}>{children}</MenuRadioItem>
+}
+
+export component ContextMenuGroup(props: DivProps) {
+  // `children` stays unread here: MenuGroup provides what the group label inside reads.
+  <MenuGroup {...props}>{props.children}</MenuGroup>
+}
+
+export component ContextMenuGroupLabel({ children, ...rest }: DivProps) {
+  <MenuGroupLabel {...rest}>{children}</MenuGroupLabel>
+}
+
+export component ContextMenuSeparator(props: DivProps) {
+  <MenuSeparator {...props} />
+}
+
+export component ContextMenuSubmenuRoot(props: { open?: boolean; defaultOpen?: boolean; onOpenChange?: (open: boolean) => void; closeParentOnEsc?: boolean; disabled?: boolean; children?: View }) {
+  <MenuSubmenuRoot open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} closeParentOnEsc={props.closeParentOnEsc} disabled={props.disabled}>
+    {props.children}
+  </MenuSubmenuRoot>
+}
+
+export component ContextMenuSubmenuTrigger({ disabled, openOnHover, delay, closeDelay, children, ...rest }: { disabled?: boolean; openOnHover?: boolean; delay?: number; closeDelay?: number } & DivProps) {
+  <MenuSubmenuTrigger disabled={disabled} openOnHover={openOnHover} delay={delay} closeDelay={closeDelay} {...rest}>{children}</MenuSubmenuTrigger>
+}

@@ -1,69 +1,197 @@
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
-import { createFocusScope, createFloating, createRovingFocus, focusElement, clickElement } from "../internal/dom.js"
+import { createFloating, createRovingFocus, createDismiss, focusElement, clickElement, focusListItem } from "../internal/dom.js"
+import { createHoverIntent, createArrow } from "../internal/overlay.js"
+import { createMenuFocus, adjacentItem } from "../internal/menu.js"
 import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
-import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
+import { DivProps, ButtonProps, AnchorProps, PartProps } from "../internal/types.rx"
+
+// Where focus goes when a menu opens: its popup, its first or last item, or nowhere (a submenu opened by hover).
+export type MenuOpenFocus = "none" | "container" | "first-item" | "last-item"
+
+// A point in viewport coordinates to open at instead of the trigger (a context menu opens at the pointer).
+export type MenuAnchorPoint = { x: number; y: number; width?: number; height?: number }
 
 export type MenuContext = PopupState & {
   popupId: string
-  // Where focus goes when the popup opens: the first or last item after a key press, else the popup itself.
-  openFocus: "container" | "first-item" | "last-item"
-  openWith: (focus: "container" | "first-item" | "last-item") => void
+  // Shared by a menu and its submenus: their popups carry it as `data-rs-ui-menu-tree`.
+  treeId: string
+  openFocus: MenuOpenFocus
+  openWith: (focus: MenuOpenFocus) => void
+  // Opens at a point rather than against the trigger (ContextMenuTrigger).
+  openAt: (point: MenuAnchorPoint, focus: MenuOpenFocus) => void
+  anchorPoint: MenuAnchorPoint | undefined
+  disabled: boolean
+  // Closes this menu and every menu above it: choosing an item, Tab, a press outside.
+  closeTree: () => void
+  isSubmenu: boolean
+  // Whether the menu this one opened from is open (always true for a top-level menu).
+  parentOpen: boolean
+  // This menu's popup and its parents': a press in any of them is not a press outside.
+  popups: (HTMLElement | undefined)[]
+  // In a menubar: opens the menu `direction` triggers along from this tree's top-level trigger.
+  moveInMenubar: (direction: number) => void
 }
 
 export context menu: MenuContext
+
+// What a Menubar shares with the menus in it. `present` is false outside one.
+export type MenubarContext = {
+  present: boolean
+  orientation: "horizontal" | "vertical"
+  disabled: boolean
+  loop: boolean
+  // The popup id of the menu that is open, if one is.
+  openMenu: string | undefined
+  openFocus: MenuOpenFocus
+  element: HTMLElement | undefined
+  setOpenMenu: (id: string | undefined, focus: MenuOpenFocus) => void
+}
+
+export context menubar: MenubarContext = {
+  present: false,
+  orientation: "horizontal",
+  disabled: false,
+  loop: true,
+  openMenu: undefined,
+  openFocus: "container",
+  element: undefined,
+  setOpenMenu: (id, focus) => undefined,
+}
 
 export type MenuRootProps = {
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
+  // A disabled menu doesn't open. Default: false.
+  disabled?: boolean
   children?: View
 }
 
 export component MenuRoot(props: MenuRootProps) {
-  source openFocus: "container" | "first-item" | "last-item" := "container"
-  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
+  bar = use menubar
+  source localFocus: MenuOpenFocus := "container"
+  source anchorPoint: MenuAnchorPoint | undefined := undefined
   popupId = createId("menu")
+  inBar = bar.present
+  isDisabled = (props.disabled ?? false) || bar.disabled
 
-  action openWith(focus: "container" | "first-item" | "last-item") {
-    openFocus := focus
-    state.setOpen(true)
+  action changed(next: boolean) {
+    if (inBar) {
+      if (next) { bar.setOpenMenu(popupId, localFocus) } else if (bar.openMenu == popupId) { bar.setOpenMenu(undefined, "container") }
+    }
+    if (props.onOpenChange) { props.onOpenChange(next) }
   }
 
-  _scope = createFocusScope(state.open, state.popup, false, openFocus)
+  state = createPopupState(inBar ? bar.openMenu == popupId : props.open, peek(props.defaultOpen ?? false), true, changed)
+  openFocus = inBar ? bar.openFocus : localFocus
 
-  provide menu = { ...state, popupId: popupId, openFocus: openFocus, openWith: openWith }
+  action openWith(focus: MenuOpenFocus) {
+    if (isDisabled) { return }
+    if (inBar) {
+      if (bar.openMenu == popupId) { return }
+      bar.setOpenMenu(popupId, focus)
+      if (props.onOpenChange) { props.onOpenChange(true) }
+      return
+    }
+    localFocus := focus
+    state.setOpen(true)
+  }
+  action openAt(point: MenuAnchorPoint, focus: MenuOpenFocus) {
+    if (isDisabled) { return }
+    anchorPoint := point
+    localFocus := focus
+    state.setOpen(true)
+  }
+  action closeTree() { state.setOpen(false) }
+  action moveInMenubar(direction: number) {
+    if (!inBar) { return }
+    let next = adjacentItem(bar.element, state.trigger, direction, bar.loop)
+    if (!next) { return }
+    let id = next.getAttribute("data-rs-ui-menu-id")
+    if (id) {
+      bar.setOpenMenu(id, "first-item")
+    } else {
+      state.setOpen(false)
+      focusElement(next)
+    }
+  }
+
+  _focus = createMenuFocus(state.open, state.popup, openFocus, state.trigger, true, peek(popupId))
+
+  provide menu = {
+    ...state,
+    popupId: popupId,
+    treeId: popupId,
+    openFocus: openFocus,
+    openWith: openWith,
+    openAt: openAt,
+    anchorPoint: anchorPoint,
+    disabled: isDisabled,
+    closeTree: closeTree,
+    isSubmenu: false,
+    parentOpen: true,
+    popups: [state.popup],
+    moveInMenubar: moveInMenubar,
+  }
 
   {props.children}
 }
 
-export fn menuTrigger(ref c: MenuContext): PartProps {
+export fn menuTrigger(ref c: MenuContext, ref bar: MenubarContext): PartProps {
+  vertical = bar.orientation == "vertical"
+  // Set while the pointer that opened the menu by hovering is still on the trigger: its click keeps it open.
+  source hoverOpened: boolean := false
   action press() {
-    if (c.open) { c.setOpen(false) } else { c.openWith("container") }
+    // Read into a local: narrowing `hoverOpened` itself would narrow the type rx-tsc gives its write.
+    let stick = hoverOpened
+    if (c.open && stick) {
+      hoverOpened := false
+    } else if (c.open) {
+      c.setOpen(false)
+    } else {
+      c.openWith("container")
+    }
   }
   action keyDown(event: KeyboardEvent) {
-    if (event.key == "ArrowDown" || event.key == "Enter" || event.key == " ") {
+    if (event.key == "Enter" || event.key == " " || (vertical && bar.present ? event.key == "ArrowRight" : event.key == "ArrowDown")) {
       event.preventDefault()
       c.openWith("first-item")
-    } else if (event.key == "ArrowUp") {
+    } else if (event.key == "ArrowUp" && !(bar.present && vertical)) {
       event.preventDefault()
       c.openWith("last-item")
     }
   }
+  // In a menubar with a menu open, moving the pointer onto another trigger opens its menu instead.
+  action pointerEnter(event: PointerEvent) {
+    if (bar.present && !c.disabled && event.pointerType != "touch" && bar.openMenu != undefined && bar.openMenu != c.popupId) {
+      hoverOpened := true
+      c.openWith("container")
+    }
+  }
+  action pointerLeave() { hoverOpened := false }
   {
     type: "button",
+    role: bar.present ? "menuitem" : undefined,
+    disabled: c.disabled ? true : undefined,
     "aria-haspopup": "menu",
     "aria-expanded": c.open ? "true" : "false",
     "aria-controls": c.mounted ? c.popupId : undefined,
     "data-popup-open": c.open ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    "data-rs-ui-item": bar.present ? "" : undefined,
+    "data-rs-ui-menu-id": bar.present ? c.popupId : undefined,
     ref: c.setTrigger,
     onClick: press,
     onKeyDown: keyDown,
+    onPointerEnter: pointerEnter,
+    onPointerLeave: pointerLeave,
   }
 }
 
 export component MenuTrigger({ children, ...rest }: ButtonProps) {
   c = use menu
-  own = menuTrigger(c)
+  bar = use menubar
+  own = menuTrigger(c, bar)
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }
@@ -76,38 +204,108 @@ export component MenuPortal(props: { keepMounted?: boolean; children?: View }) {
   }}
 }
 
+export component MenuBackdrop({ children, ...rest }: DivProps) {
+  c = use menu
+  state = popupStateAttributes(c)
+  merged = mergeProps({ role: "presentation", ...state }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Where the positioner put the popup, for the popup and the arrow inside it.
+export type MenuPositionerContext = {
+  side: "top" | "bottom" | "left" | "right"
+  align: "start" | "center" | "end"
+  arrowUncentered: boolean
+  setArrow: (element: HTMLElement) => void
+}
+
+export context menuPositioner: MenuPositionerContext
+
 export type MenuPositionerProps = {
+  // Default: "bottom"; "right" for a submenu, and in a vertical menubar.
   side?: "top" | "bottom" | "left" | "right"
   align?: "start" | "center" | "end"
   sideOffset?: number
   alignOffset?: number
   collisionPadding?: number
+  // What to position against instead of the trigger: an element, or a point in viewport coordinates.
+  anchor?: HTMLElement | MenuAnchorPoint
 } & DivProps
 
 // Positions the popup against the trigger. Carries `data-side` and `data-align`: where it ended up.
-export component MenuPositioner({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, collisionPadding = 5, children, ...rest }: MenuPositionerProps) {
+export component MenuPositioner(props: MenuPositionerProps) {
   c = use menu
-  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
-    side: side,
-    align: align,
-    sideOffset: sideOffset,
-    alignOffset: alignOffset,
-    collisionPadding: collisionPadding,
+  bar = use menubar
+  source arrow: HTMLElement | undefined := undefined
+  action setArrow(element: HTMLElement) { arrow := element }
+  sideways = c.isSubmenu || (bar.present && bar.orientation == "vertical")
+  [usedSide, usedAlign] = createFloating(c.mounted, props.anchor ?? c.anchorPoint ?? c.trigger, c.positioner, {
+    side: props.side ?? (sideways ? "right" : "bottom"),
+    align: props.align ?? "start",
+    sideOffset: props.sideOffset ?? 0,
+    alignOffset: props.alignOffset ?? 0,
+    collisionPadding: props.collisionPadding ?? 5,
   })
+  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
+  provide menuPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
+  { side, align, sideOffset, alignOffset, collisionPadding, anchor, children, ...rest } = props
   state = popupStateAttributes(c)
   merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
   <div {...merged}>{children}</div>
 }
 
-export component MenuPopup({ children, ...rest }: DivProps) {
-  c = use menu
+export fn menuPopup(ref c: MenuContext, ref bar: MenubarContext): PartProps {
   _roving = createRovingFocus(c.popup, { orientation: "vertical", loop: true, typeahead: true, tabStop: false })
   state = popupStateAttributes(c)
-  action keyDown(event: KeyboardEvent) {
-    // Tab leaves the menu, so it closes: focus returns to the trigger and moves on from there.
-    if (event.key == "Tab") { c.setOpen(false) }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement; target: Node }) {
+    // A submenu's popup is portalled, but its key events still bubble here through the portal: leave them.
+    if (event.defaultPrevented || !event.currentTarget.contains(event.target)) { return }
+    if (event.key == "Tab") {
+      // Tab leaves the menu, so the whole tree closes.
+      c.closeTree()
+    } else if (event.key == "ArrowLeft" && c.isSubmenu) {
+      event.preventDefault()
+      c.setOpen(false)
+    } else if (bar.present && bar.orientation == "horizontal" && (event.key == "ArrowLeft" || event.key == "ArrowRight")) {
+      event.preventDefault()
+      c.moveInMenubar(event.key == "ArrowRight" ? 1 : -1)
+    }
   }
-  merged = mergeProps({ id: c.popupId, role: "menu", tabindex: "-1", "aria-orientation": "vertical", ref: c.setPopup, onKeyDown: keyDown, ...state }, rest)
+  {
+    id: c.popupId,
+    role: "menu",
+    tabindex: "-1",
+    "aria-orientation": "vertical",
+    "data-rs-ui-menu-tree": c.treeId,
+    ref: c.setPopup,
+    onKeyDown: keyDown,
+    ...state,
+  }
+}
+
+export component MenuPopup({ children, ...rest }: DivProps) {
+  c = use menu
+  bar = use menubar
+  p = use menuPositioner
+  own = menuPopup(c, bar)
+  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
+// by `data-side`. It has nothing to point at in a context menu.
+export component MenuArrow({ children, ...rest }: DivProps) {
+  c = use menu
+  p = use menuPositioner
+  state = popupStateAttributes(c)
+  merged = mergeProps({
+    "aria-hidden": "true",
+    "data-side": p.side,
+    "data-align": p.align,
+    "data-uncentered": p.arrowUncentered ? "" : undefined,
+    ref: p.setArrow,
+    ...state,
+  }, rest)
   <div {...merged}>{children}</div>
 }
 
@@ -141,14 +339,14 @@ fn itemBase(ref disabled: boolean): PartProps {
 
 export type MenuItemProps = {
   disabled?: boolean
-  // Whether choosing the item closes the menu. Default: true.
+  // Whether choosing the item closes the menu (and every menu it is nested in). Default: true.
   closeOnClick?: boolean
 } & DivProps
 
 export fn menuItem(ref c: MenuContext, ref disabled: boolean, ref closeOnClick: boolean): PartProps {
   base = itemBase(disabled)
   action click() {
-    if (!disabled && closeOnClick) { c.setOpen(false) }
+    if (!disabled && closeOnClick) { c.closeTree() }
   }
   { role: "menuitem", ...base, onClick: click }
 }
@@ -158,6 +356,27 @@ export component MenuItem({ disabled = false, closeOnClick = true, children, ...
   own = menuItem(c, disabled, closeOnClick)
   merged = mergeProps(own, withoutHandlers(rest, disabled))
   <div {...merged}>{children}</div>
+}
+
+export type MenuLinkItemProps = {
+  // Whether following the link closes the menu. Default: false (the page usually changes anyway).
+  closeOnClick?: boolean
+} & AnchorProps
+
+// A menu item that is a link: Enter follows it.
+export fn menuLinkItem(ref c: MenuContext, ref closeOnClick: boolean): PartProps {
+  base = itemBase(false)
+  action click() {
+    if (closeOnClick) { c.closeTree() }
+  }
+  { role: "menuitem", ...base, onClick: click }
+}
+
+export component MenuLinkItem({ closeOnClick = false, children, ...rest }: MenuLinkItemProps) {
+  c = use menu
+  own = menuLinkItem(c, closeOnClick)
+  merged = mergeProps(own, rest)
+  <a {...merged}>{children}</a>
 }
 
 export type MenuCheckboxItemProps = {
@@ -180,7 +399,7 @@ export component MenuCheckboxItem(props: MenuCheckboxItemProps) {
     let next = !isChecked
     uncontrolled := next
     if (props.onCheckedChange) { props.onCheckedChange(next) }
-    if (props.closeOnClick ?? false) { c.setOpen(false) }
+    if (props.closeOnClick ?? false) { c.closeTree() }
   }
   { checked, defaultChecked, onCheckedChange, disabled, closeOnClick, children, ...rest } = props
   own = {
@@ -235,7 +454,7 @@ export component MenuRadioItem({ value, disabled = false, closeOnClick = false, 
   action click() {
     if (disabled) { return }
     group.select(value)
-    if (closeOnClick) { c.setOpen(false) }
+    if (closeOnClick) { c.closeTree() }
   }
   own = {
     role: "menuitemradio",
@@ -279,4 +498,140 @@ export component MenuGroupLabel({ children, ...rest }: DivProps) {
 export component MenuSeparator(props: DivProps) {
   merged = mergeProps({ role: "separator", "aria-orientation": "horizontal" }, props)
   <div {...merged} />
+}
+
+export type MenuSubmenuRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // Whether Escape closes every menu in the tree (true) or only this submenu, returning focus to its trigger.
+  // Default: true. Base UI's default is false.
+  closeParentOnEsc?: boolean
+  disabled?: boolean
+  children?: View
+}
+
+// A menu inside a menu: holds a MenuSubmenuTrigger (an item of the parent) and the submenu's own Portal,
+// Positioner and Popup. The parts beneath it read it as `menu`, like a top-level menu.
+export component MenuSubmenuRoot(props: MenuSubmenuRootProps) {
+  // Read here and passed down: in a component that provides `menu`, `use menu` sees its own provision.
+  parent = use menu
+  <SubmenuProvider parent={parent} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} closeParentOnEsc={props.closeParentOnEsc} disabled={props.disabled}>
+    {props.children}
+  </SubmenuProvider>
+}
+
+component SubmenuProvider(props: MenuSubmenuRootProps & { parent: MenuContext }) {
+  parent = props.parent
+  source openFocus: MenuOpenFocus := "none"
+  state = createPopupState(props.open, peek(props.defaultOpen ?? false), false, props.onOpenChange)
+  popupId = createId("menu")
+  isDisabled = (props.disabled ?? false) || parent.disabled
+  popups = [...parent.popups, state.popup]
+
+  action openWith(focus: MenuOpenFocus) {
+    if (isDisabled) { return }
+    openFocus := focus
+    state.setOpen(true)
+  }
+  action openAt(point: MenuAnchorPoint, focus: MenuOpenFocus) { openWith(focus) }
+  action closeTree() {
+    state.setOpen(false)
+    parent.closeTree()
+  }
+  // Escape and a press outside are this submenu's to handle while it is the top layer.
+  action dismiss(reason: "escape-key" | "outside-press") {
+    if (reason == "escape-key" && !(props.closeParentOnEsc ?? true)) {
+      state.setOpen(false)
+    } else {
+      closeTree()
+    }
+  }
+
+  _dismiss = createDismiss(state.open, [...popups, state.trigger], dismiss)
+  _focus = createMenuFocus(state.open, state.popup, openFocus, state.trigger, parent.open, peek(parent.treeId))
+
+  // However the parent closed, the submenu closes with it.
+  effect (parent.open) {
+    if (!$0) { state.setOpen(false) }
+  }
+
+  provide menu = {
+    ...state,
+    popupId: popupId,
+    treeId: parent.treeId,
+    openFocus: openFocus,
+    openWith: openWith,
+    openAt: openAt,
+    anchorPoint: undefined,
+    disabled: isDisabled,
+    closeTree: closeTree,
+    isSubmenu: true,
+    parentOpen: parent.open,
+    popups: popups,
+    moveInMenubar: parent.moveInMenubar,
+  }
+
+  {props.children}
+}
+
+export type MenuSubmenuTriggerProps = {
+  disabled?: boolean
+  // Whether resting the pointer on the trigger opens the submenu. Default: true.
+  openOnHover?: boolean
+  // How long the pointer rests on the trigger before the submenu opens, in ms. Default: 100.
+  delay?: number
+  // How long after the pointer leaves (and not towards the submenu) before it closes, in ms. Default: 0.
+  closeDelay?: number
+} & DivProps
+
+// An item of the parent menu that opens the submenu: on hover (the pointer may cross other items on its way to the
+// submenu without closing it), on click, and on ArrowRight, Enter and Space, which also move focus into it.
+export fn menuSubmenuTrigger(ref c: MenuContext, ref disabled: boolean, ref openOnHover: boolean, ref delay: number, ref closeDelay: number): PartProps {
+  base = itemBase(disabled)
+  action hoverChange(next: boolean, reason: "hover" | "focus" | "press" | "group") {
+    if (next) { c.openWith("none") } else { c.setOpen(false) }
+  }
+  _hover = createHoverIntent(openOnHover && !disabled, c.open, c.trigger, c.popup, {
+    openDelay: delay,
+    closeDelay: closeDelay,
+    hoverablePopup: true,
+    focus: false,
+    focusDelay: 0,
+    closeOnPress: false,
+    group: undefined,
+  }, hoverChange)
+  action keyDown(event: KeyboardEvent) {
+    if (disabled) { return }
+    if (event.key == "ArrowRight" || event.key == "Enter" || event.key == " ") {
+      event.preventDefault()
+      if (c.open) { focusListItem(c.popup, "first") } else { c.openWith("first-item") }
+    } else if (c.open && (event.key == "ArrowDown" || event.key == "ArrowUp" || event.key == "Home" || event.key == "End")) {
+      // The highlight moved to another item of the parent menu.
+      c.setOpen(false)
+    }
+  }
+  action click() {
+    if (disabled) { return }
+    if (!c.open) { c.openWith("none") } else if (!openOnHover) { c.setOpen(false) }
+  }
+  {
+    role: "menuitem",
+    ...base,
+    "aria-haspopup": "menu",
+    "aria-expanded": c.open ? "true" : "false",
+    "aria-controls": c.mounted ? c.popupId : undefined,
+    "data-popup-open": c.open ? "" : undefined,
+    ref: c.setTrigger,
+    onClick: click,
+    onKeyDown: keyDown,
+  }
+}
+
+export component MenuSubmenuTrigger({ disabled = false, openOnHover = true, delay = 100, closeDelay = 0, children, ...rest }: MenuSubmenuTriggerProps) {
+  c = use menu
+  isDisabled = disabled || c.disabled
+  own = menuSubmenuTrigger(c, isDisabled, openOnHover, delay, closeDelay)
+  merged = mergeProps(own, withoutHandlers(rest, isDisabled))
+  <div {...merged}>{children}</div>
 }

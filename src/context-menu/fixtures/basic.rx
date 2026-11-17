@@ -1,0 +1,52 @@
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPortal, ContextMenuPositioner, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../context-menu.rx"
+
+export default component Fixture() {
+  source chosen := "none"
+  source changes := 0
+  source zoom := "100"
+  <main>
+    <ContextMenuRoot onOpenChange={() => { changes := changes + 1 }}>
+      <ContextMenuTrigger data-testid="area">
+        Right-click here <button>Focus me</button>
+      </ContextMenuTrigger>
+      <ContextMenuPortal>
+        <ContextMenuPositioner data-testid="positioner">
+          <ContextMenuPopup>
+            <ContextMenuItem onClick={() => { chosen := "copy" }}>Copy</ContextMenuItem>
+            <ContextMenuItem onClick={() => { chosen := "paste" }}>Paste</ContextMenuItem>
+            <ContextMenuSeparator />
+            <ContextMenuGroup>
+              <ContextMenuGroupLabel>Zoom</ContextMenuGroupLabel>
+              <ContextMenuRadioGroup value={zoom} onValueChange={(next) => { zoom := next }}>
+                <ContextMenuRadioItem value="100">Actual size</ContextMenuRadioItem>
+              </ContextMenuRadioGroup>
+            </ContextMenuGroup>
+            <ContextMenuSubmenuRoot>
+              <ContextMenuSubmenuTrigger>More</ContextMenuSubmenuTrigger>
+              <ContextMenuPortal>
+                <ContextMenuPositioner>
+                  <ContextMenuPopup data-testid="sub-popup">
+                    <ContextMenuItem onClick={() => { chosen := "inspect" }}>Inspect</ContextMenuItem>
+                  </ContextMenuPopup>
+                </ContextMenuPositioner>
+              </ContextMenuPortal>
+            </ContextMenuSubmenuRoot>
+          </ContextMenuPopup>
+        </ContextMenuPositioner>
+      </ContextMenuPortal>
+    </ContextMenuRoot>
+    <ContextMenuRoot disabled>
+      <ContextMenuTrigger data-testid="disabled-area">Disabled</ContextMenuTrigger>
+      <ContextMenuPortal>
+        <ContextMenuPositioner>
+          <ContextMenuPopup data-testid="disabled-popup">
+            <ContextMenuItem>Nothing</ContextMenuItem>
+          </ContextMenuPopup>
+        </ContextMenuPositioner>
+      </ContextMenuPortal>
+    </ContextMenuRoot>
+    <output data-testid="chosen">{chosen}</output>
+    <output data-testid="changes">{changes}</output>
+    <div data-testid="outside">outside</div>
+  </main>
+}

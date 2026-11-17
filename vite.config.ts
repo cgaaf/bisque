@@ -10,6 +10,8 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.ts"],
+    // Those need a real browser: vitest.browser.config.ts runs them.
+    exclude: ["**/*.browser.test.ts", "**/node_modules/**"],
     setupFiles: ["src/test/setup.ts"],
     // An `.rx` entry is compiled together with every `.rx` module it imports, but Vitest caches it by its own
     // content. With the cache on, editing only a dependency fails with "imported as an .rx dependency, but no

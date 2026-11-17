@@ -1,0 +1,65 @@
+import { MenubarRoot } from "../menubar.rx"
+import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "../../menu/menu.rx"
+
+export default component Fixture() {
+  source chosen := "none"
+  <main>
+    <button>Before</button>
+    <MenubarRoot data-testid="bar">
+      <MenuRoot>
+        <MenuTrigger>File</MenuTrigger>
+        <MenuPortal>
+          <MenuPositioner data-testid="file-positioner">
+            <MenuPopup data-testid="file-popup">
+              <MenuItem onClick={() => { chosen := "new" }}>New</MenuItem>
+              <MenuSubmenuRoot>
+                <MenuSubmenuTrigger>Recent</MenuSubmenuTrigger>
+                <MenuPortal>
+                  <MenuPositioner>
+                    <MenuPopup data-testid="recent-popup">
+                      <MenuItem onClick={() => { chosen := "a.txt" }}>a.txt</MenuItem>
+                    </MenuPopup>
+                  </MenuPositioner>
+                </MenuPortal>
+              </MenuSubmenuRoot>
+            </MenuPopup>
+          </MenuPositioner>
+        </MenuPortal>
+      </MenuRoot>
+      <MenuRoot>
+        <MenuTrigger>Edit</MenuTrigger>
+        <MenuPortal>
+          <MenuPositioner>
+            <MenuPopup data-testid="edit-popup">
+              <MenuItem onClick={() => { chosen := "undo" }}>Undo</MenuItem>
+              <MenuItem onClick={() => { chosen := "redo" }}>Redo</MenuItem>
+            </MenuPopup>
+          </MenuPositioner>
+        </MenuPortal>
+      </MenuRoot>
+      <MenuRoot disabled>
+        <MenuTrigger>Help</MenuTrigger>
+        <MenuPortal>
+          <MenuPositioner>
+            <MenuPopup data-testid="help-popup">
+              <MenuItem>About</MenuItem>
+            </MenuPopup>
+          </MenuPositioner>
+        </MenuPortal>
+      </MenuRoot>
+      <MenuRoot>
+        <MenuTrigger>View</MenuTrigger>
+        <MenuPortal>
+          <MenuPositioner>
+            <MenuPopup data-testid="view-popup">
+              <MenuItem onClick={() => { chosen := "zoom" }}>Zoom</MenuItem>
+            </MenuPopup>
+          </MenuPositioner>
+        </MenuPortal>
+      </MenuRoot>
+    </MenubarRoot>
+    <button>After</button>
+    <output data-testid="chosen">{chosen}</output>
+    <div data-testid="outside">outside</div>
+  </main>
+}

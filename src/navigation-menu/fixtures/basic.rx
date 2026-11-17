@@ -1,0 +1,48 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuLink, NavigationMenuPortal, NavigationMenuPositioner, NavigationMenuPopup, NavigationMenuViewport, NavigationMenuArrow, NavigationMenuBackdrop } from "../navigation-menu.rx"
+
+component Counter() {
+  source count := 0
+  <button onClick={() => { count := count + 1 }}>Clicked {count}</button>
+}
+
+export default component Fixture() {
+  source changes := 0
+  source last := "none"
+  <main>
+    <button>Before</button>
+    <NavigationMenuRoot data-testid="root" onValueChange={(v) => { changes := changes + 1; last := v ?? "null" }}>
+      <NavigationMenuList data-testid="list">
+        <NavigationMenuItem value="overview">
+          <NavigationMenuTrigger>Overview <NavigationMenuIcon data-testid="icon">v</NavigationMenuIcon></NavigationMenuTrigger>
+          <NavigationMenuContent data-testid="overview-content" class="content">
+            <NavigationMenuLink href="#quick">Quick start</NavigationMenuLink>
+            <NavigationMenuLink href="#a11y" closeOnClick>Accessibility</NavigationMenuLink>
+            <Counter />
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem value="handbook">
+          <NavigationMenuTrigger>Handbook</NavigationMenuTrigger>
+          <NavigationMenuContent data-testid="handbook-content">
+            <NavigationMenuLink href="#styling">Styling</NavigationMenuLink>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuLink href="#home" active>Home</NavigationMenuLink>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+      <NavigationMenuPortal>
+        <NavigationMenuBackdrop data-testid="backdrop" />
+        <NavigationMenuPositioner data-testid="positioner" sideOffset={8}>
+          <NavigationMenuPopup data-testid="popup">
+            <NavigationMenuArrow data-testid="arrow" />
+            <NavigationMenuViewport data-testid="viewport" />
+          </NavigationMenuPopup>
+        </NavigationMenuPositioner>
+      </NavigationMenuPortal>
+    </NavigationMenuRoot>
+    <button>After</button>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="last">{last}</output>
+    <div data-testid="outside">outside</div>
+  </main>
+}

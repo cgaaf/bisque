@@ -1,0 +1,45 @@
+import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuLinkItem, MenuCheckboxItem, MenuArrow, MenuSubmenuRoot, MenuSubmenuTrigger } from "../menu.rx"
+
+export default component Fixture() {
+  source chosen := "none"
+  source wrap := false
+  <main>
+    <MenuRoot>
+      <MenuTrigger>File</MenuTrigger>
+      <MenuPortal>
+        <MenuPositioner data-testid="positioner">
+          <MenuPopup data-testid="root-popup">
+            <MenuArrow data-testid="arrow" />
+            <MenuItem onClick={() => { chosen := "new" }}>New</MenuItem>
+            <MenuSubmenuRoot>
+              <MenuSubmenuTrigger>Share</MenuSubmenuTrigger>
+              <MenuPortal>
+                <MenuPositioner data-testid="sub-positioner">
+                  <MenuPopup data-testid="sub-popup">
+                    <MenuItem onClick={() => { chosen := "email" }}>Email</MenuItem>
+                    <MenuCheckboxItem checked={wrap} onCheckedChange={(next) => { wrap := next }}>Notify</MenuCheckboxItem>
+                    <MenuLinkItem href="#docs">Docs</MenuLinkItem>
+                  </MenuPopup>
+                </MenuPositioner>
+              </MenuPortal>
+            </MenuSubmenuRoot>
+            <MenuSubmenuRoot closeParentOnEsc={false}>
+              <MenuSubmenuTrigger>Export</MenuSubmenuTrigger>
+              <MenuPortal>
+                <MenuPositioner>
+                  <MenuPopup data-testid="export-popup">
+                    <MenuItem onClick={() => { chosen := "pdf" }}>PDF</MenuItem>
+                  </MenuPopup>
+                </MenuPositioner>
+              </MenuPortal>
+            </MenuSubmenuRoot>
+            <MenuItem onClick={() => { chosen := "print" }}>Print</MenuItem>
+          </MenuPopup>
+        </MenuPositioner>
+      </MenuPortal>
+    </MenuRoot>
+    <output data-testid="chosen">{chosen}</output>
+    <output data-testid="wrap">{wrap ? "on" : "off"}</output>
+    <div data-testid="outside">outside</div>
+  </main>
+}

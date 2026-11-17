@@ -1,8 +1,20 @@
 // Anchored positioning for popups, on @floating-ui/dom.
-import { autoUpdate, computePosition, flip, offset, shift, size, type Placement } from "@floating-ui/dom";
+import {
+  autoUpdate,
+  computePosition,
+  flip,
+  offset,
+  shift,
+  size,
+  type Placement,
+  type ReferenceElement,
+} from "@floating-ui/dom";
 import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
 
 type MaybeElement = HTMLElement | undefined;
+/** A point (or a box) in viewport coordinates to position against instead of an element: a context menu's cursor. */
+export type AnchorPoint = { x: number; y: number; width?: number; height?: number };
+export type Anchor = HTMLElement | AnchorPoint | undefined;
 export type Side = "top" | "bottom" | "left" | "right";
 export type Align = "start" | "center" | "end";
 
@@ -21,6 +33,7 @@ const OPPOSITE: Record<Side, Side> = { top: "bottom", bottom: "top", left: "righ
 
 /**
  * While `active`, keeps `floating` positioned against `anchor`, flipping and shifting to stay in the viewport.
+ * `anchor` is an element, or a point in viewport coordinates (a box when it has a width and height).
  *
  * It styles `floating` directly (`position`, `left`, `top`) and sets CSS variables a stylesheet can use:
  * `--anchor-width`, `--anchor-height`, `--available-width`, `--available-height`, `--transform-origin`.
@@ -28,7 +41,7 @@ const OPPOSITE: Record<Side, Side> = { top: "bottom", bottom: "top", left: "righ
  */
 export function createFloating(
   active: Accessor<boolean>,
-  anchor: Accessor<MaybeElement>,
+  anchor: Accessor<Anchor>,
   floating: Accessor<MaybeElement>,
   options: Accessor<FloatingOptions>,
 ): [Accessor<Side>, Accessor<Align>] {
@@ -39,8 +52,9 @@ export function createFloating(
     () => (active() ? ([anchor(), floating(), options()] as const) : undefined),
     (input) => {
       if (!input) return;
-      const [reference, el, wanted] = input;
-      if (!reference || !el) return;
+      const [target, el, wanted] = input;
+      if (!target || !el) return;
+      const reference = toReference(target);
       el.style.position = "absolute";
       el.style.left = "0";
       el.style.top = "0";
@@ -77,4 +91,12 @@ export function createFloating(
   );
 
   return [side, align];
+}
+
+/** An element as it is; a point as floating-ui's virtual element, so it can be positioned against. */
+function toReference(anchor: HTMLElement | AnchorPoint): ReferenceElement {
+  if (anchor instanceof Element) return anchor;
+  const { x, y, width = 0, height = 0 } = anchor;
+  const rect = { x, y, width, height, left: x, top: y, right: x + width, bottom: y + height };
+  return { getBoundingClientRect: () => ({ ...rect, toJSON: () => rect }) as DOMRect };
 }

@@ -1,0 +1,6 @@
+// How .rx may use ./navigation-menu.js (implemented in ./impl/navigation-menu.ts): the navigation menu's popup.
+// A `ref` parameter is passed live; the others are read once. Bind every call.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./navigation-menu.d.ts.
+export fn activationDirection(from: HTMLElement | undefined, to: HTMLElement | undefined, orientation: "horizontal" | "vertical"): "left" | "right" | "up" | "down" | undefined
+export fn containsTarget(elements: (HTMLElement | undefined)[], target: EventTarget | null): boolean
+export pure fn createViewportSize(ref active: boolean, ref popup: HTMLElement | undefined, ref positioner: HTMLElement | undefined, ref viewport: HTMLElement | undefined) instantiates
