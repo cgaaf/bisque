@@ -1,6 +1,7 @@
 // Thin drivers for the browser's own widgets. The browser does the work (top layer, focus, Escape, placement);
 // these only keep a native element in step with a component's `open` state and report what the user did to it.
 import { createEffect, createSignal, untrack, type Accessor } from "solid-js";
+import { lockScroll } from "./dom.ts";
 
 function nextFrame(callback: () => void): () => void {
   const id = requestAnimationFrame(callback);
@@ -73,6 +74,10 @@ function closesDialog(event: SubmitEvent, dialog: HTMLDialogElement): boolean {
  * when a dialog closes, in any of them. The button's value still becomes the dialog's `returnValue` when it
  * closes. Only a script calling `close()` itself can't be stopped: that is reported after the fact, and the
  * element is opened again if the owner keeps `open` true.
+ *
+ * A modal dialog locks the page's scroll for as long as the element is open, which includes its exit animation.
+ * Releasing it when `open` turns false would bring the page's scrollbar back while the dialog is still on screen,
+ * and the dialog, centred in the viewport, would jump sideways by half the scrollbar's width as it leaves.
  */
 export function createNativeDialog(
   element: Accessor<HTMLDialogElement | undefined>,
@@ -94,9 +99,17 @@ export function createNativeDialog(
     event.preventDefault();
     onRequestClose("escape-key");
   };
+  // The scroll lock this dialog holds, while it is open as a modal (exit animation included).
+  let unlock: (() => void) | undefined;
+  const release = () => {
+    unlock?.();
+    unlock = undefined;
+  };
   const show = (el: HTMLDialogElement) => {
-    if (untrack(modal)) el.showModal();
-    else el.show();
+    if (untrack(modal)) {
+      unlock ??= lockScroll();
+      el.showModal();
+    } else el.show();
   };
 
   createEffect(
@@ -166,6 +179,7 @@ export function createNativeDialog(
         el.removeEventListener("submit", onSubmit);
         el.removeEventListener("command", onCommand);
         if (el.open) el.close();
+        release();
       };
     },
   );
@@ -179,10 +193,18 @@ export function createNativeDialog(
         if (!el.open) show(el);
         return;
       }
-      if (!el.open) return;
+      // Closed already, by a script calling `close()`.
+      if (!el.open) {
+        release();
+        return;
+      }
       const value = result;
       result = undefined;
-      return animateOut(el, () => el.close(value));
+      // Reopened during the exit, the element never closed, and the lock is still held.
+      return animateOut(el, () => {
+        el.close(value);
+        release();
+      });
     },
   );
 }

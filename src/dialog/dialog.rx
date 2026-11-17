@@ -3,7 +3,7 @@
 // exit animation. There is no Portal and no Backdrop part: the popup is the <dialog>, styled with `[open]`,
 // `::backdrop`, `@starting-style` and `[data-ending-style]`.
 import { mergeProps, createId, createRef } from "../internal/props.js"
-import { createScrollLock, createKeptFocus } from "../internal/dom.js"
+import { createKeptFocus } from "../internal/dom.js"
 import { createNativeDialog } from "../internal/native.js"
 import { ButtonProps, DialogElementProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
@@ -68,8 +68,8 @@ export component DialogRoot(props: DialogRootProps) {
   action setTitleId(id: string | undefined) { titleId := id }
   action setDescriptionId(id: string | undefined) { descriptionId := id }
 
+  // A modal dialog also locks the page's scroll, until it has animated out.
   _dialog = createNativeDialog(popup, isOpen, isModal, requestClose)
-  _lock = createScrollLock(isOpen && isModal)
   // Content that loads or fails inside the open dialog replaces what had focus: focus stays in the dialog.
   _focus = createKeptFocus(popup, isOpen)
 

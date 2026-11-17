@@ -7,7 +7,6 @@ type Conforms<Actual extends Declared, Declared> = Actual;
 export type Checked = [
   Conforms<Implementation["createPresence"], (present: Accessor<boolean>, element: Accessor<HTMLElement | undefined>) => [Accessor<boolean>, Accessor<"starting" | "ending" | undefined>]>,
   Conforms<Implementation["createKeptFocus"], (container: Accessor<HTMLElement | undefined>, active: Accessor<boolean>) => void>,
-  Conforms<Implementation["createScrollLock"], (active: Accessor<boolean>) => void>,
   Conforms<Implementation["createRovingFocus"], (container: Accessor<HTMLElement | undefined>, options: Accessor<{ orientation: "horizontal" | "vertical" | "both"; loop: boolean; typeahead: boolean; tabStop: boolean }>) => void>,
   Conforms<Implementation["focusElement"], (element: HTMLElement | undefined) => void>,
   Conforms<Implementation["clickElement"], (element: HTMLElement | undefined) => void>,

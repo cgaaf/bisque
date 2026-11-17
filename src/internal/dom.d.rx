@@ -1,9 +1,8 @@
 // How .rx may use ./dom.js (implemented in ./impl/dom.ts and ./impl/roving.ts).
-// A `ref` parameter is passed live; the others are read once. Bind every call: `_lock = createScrollLock(…)`.
+// A `ref` parameter is passed live; the others are read once. Bind every call: `_focus = createKeptFocus(…)`.
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./dom.d.ts.
 export pure fn createPresence(ref present: boolean, ref element: HTMLElement | undefined): [ref boolean, ref "starting" | "ending" | undefined]
 export pure fn createKeptFocus(ref container: HTMLElement | undefined, ref active: boolean) instantiates
-export pure fn createScrollLock(ref active: boolean) instantiates
 export pure fn createRovingFocus(ref container: HTMLElement | undefined, ref options: { orientation: "horizontal" | "vertical" | "both"; loop: boolean; typeahead: boolean; tabStop: boolean }) instantiates
 export fn focusElement(element: HTMLElement | undefined): void
 export fn clickElement(element: HTMLElement | undefined): void

@@ -120,6 +120,46 @@ test("locking scroll keeps the scrollbar's space, so the page doesn't shift", as
   }
 });
 
+test("the page stays locked while the dialog animates out, so the dialog doesn't jump sideways", async () => {
+  const root = document.documentElement;
+  const tall = document.body.appendChild(document.createElement("div"));
+  tall.style.height = "300vh";
+  const style = document.head.appendChild(document.createElement("style"));
+  style.textContent = "::-webkit-scrollbar { width: 15px; background: #eee }";
+  try {
+    const { getByRole, user } = mount(basic);
+    await user.click(getByRole("button", { name: "Open dialog" }));
+    const dialog = getByRole("dialog") as HTMLDialogElement;
+    const width = root.clientWidth;
+    await user.keyboard("{Escape}");
+    await expect.poll(() => dialog.hasAttribute("data-ending-style")).toBe(true);
+    // The scrollbar coming back now would re-centre the leaving dialog.
+    expect(root.style.overflow).toBe("hidden");
+    expect(root.clientWidth).toBe(width);
+    await closed(dialog);
+    expect(root.getAttribute("style") ?? "").toBe("");
+  } finally {
+    tall.remove();
+    style.remove();
+  }
+});
+
+test("reopened while it animates out, the dialog keeps its lock, and gives it up when it closes", async () => {
+  const { getByRole, user } = mount(basic);
+  const trigger = getByRole("button", { name: "Open dialog" });
+  await user.click(trigger);
+  const dialog = getByRole("dialog") as HTMLDialogElement;
+  await user.keyboard("{Escape}");
+  await expect.poll(() => dialog.hasAttribute("data-ending-style")).toBe(true);
+  trigger.click();
+  await expect.poll(() => dialog.hasAttribute("data-ending-style")).toBe(false);
+  expect(dialog.open).toBe(true);
+  expect(document.documentElement.style.overflow).toBe("hidden");
+  await user.keyboard("{Escape}");
+  await closed(dialog);
+  expect(document.documentElement.style.overflow).toBe("");
+});
+
 test("a page without a scrollbar gets no gutter while locked", async () => {
   const { getByRole, user } = mount(basic);
   await user.click(getByRole("button", { name: "Open dialog" }));

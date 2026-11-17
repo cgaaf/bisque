@@ -194,7 +194,8 @@ function lockRoot(): () => void {
 }
 
 /**
- * While `active`, stops the page behind a modal from scrolling. Several locks may be held at once.
+ * Stops the page behind a modal from scrolling until the returned function is called (once; later calls do
+ * nothing). Several locks may be held at once: the page scrolls again when the last one goes.
  *
  * `overflow: hidden` on the root takes its scrollbar away, and where scrollbars take space (Windows, Linux, macOS
  * with "always show scrollbars") the page would widen by that much and its content shift sideways. While locked
@@ -202,20 +203,17 @@ function lockRoot(): () => void {
  * when it had a scrollbar taking space: a gutter on a page without one would shift it the other way. A gutter the
  * app set itself is left alone.
  */
-export function createScrollLock(active: Accessor<boolean>): void {
-  createEffect(
-    () => active(),
-    (isActive) => {
-      if (!isActive) return;
-      if (scrollLocks === 0) restoreLock = lockRoot();
-      scrollLocks += 1;
-      return () => {
-        scrollLocks -= 1;
-        if (scrollLocks === 0) {
-          restoreLock?.();
-          restoreLock = undefined;
-        }
-      };
-    },
-  );
+export function lockScroll(): () => void {
+  if (scrollLocks === 0) restoreLock = lockRoot();
+  scrollLocks += 1;
+  let held = true;
+  return () => {
+    if (!held) return;
+    held = false;
+    scrollLocks -= 1;
+    if (scrollLocks === 0) {
+      restoreLock?.();
+      restoreLock = undefined;
+    }
+  };
 }
