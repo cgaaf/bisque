@@ -44,6 +44,13 @@ don't mention. The `solid-2.0` skills (linked from `solid-js` by pnpm) cover the
 - Solid's dev warnings in test output (`[STRICT_READ_UNTRACKED]` and the like) are bugs in `src/internal/impl`,
   not noise.
 
+## Docs site
+
+`docs/` is the documentation site, written in `.rx` with the library's own parts: a page per family
+(`docs/pages`), demos with their CSS (`docs/demos`), and an API reference that `pnpm gen:api` generates from the
+components' source plus `docs/api-notes`. A change to a part's props, parts or data attributes goes with its
+page; `.claude/skills/rs-ui-components/references/docs.md` says how a page is written and checked.
+
 ## Commands
 
 `pnpm check` runs everything (format, lint, both type checks, tests, demo build). While working on one component:
