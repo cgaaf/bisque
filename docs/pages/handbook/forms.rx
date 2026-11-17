@@ -1,0 +1,49 @@
+import { DocsPage, Code } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+
+export default component Page() {
+  <DocsPage title="Forms" subtitle="The controls are native inputs, so forms work as HTML forms do. Field and Form add labelling, validation and error display.">
+    <h2 id="native">Controls submit by themselves</h2>
+    <p>
+      Checkbox, Switch, Radio and Input render the browser's own inputs. Give one a <code>name</code> and it is
+      part of its form's submission, its constraints (<code>required</code>, <code>pattern</code>,{" "}
+      <code>min</code>) are enforced by the browser, and <code>:user-invalid</code> styles it after the person
+      has interacted with it. Nothing from this library is needed for that.
+    </p>
+    <Code file="handbook/native-form.rx.txt" />
+    <p>
+      Controls that have no native counterpart with the same behaviour, such as Select, Slider and Number Field,
+      carry a <code>name</code> too and submit their value with the form.
+    </p>
+
+    <h2 id="field">Field</h2>
+    <p>
+      <a href={href("components/field")}>Field</a> groups a control with its label, description and error
+      message and connects them: the label names the control, the description and the error describe it. It
+      tracks whether the control has been touched, changed or filled, and validates it: first the native
+      constraints, then your <code>validate</code> function.
+    </p>
+    <Code file="handbook/field.rx.txt" />
+
+    <h2 id="form">Form</h2>
+    <p>
+      <a href={href("components/form")}>Form</a> is a <code>{"<form>"}</code> that validates its fields when it
+      is submitted and moves focus to the first invalid one. On a valid submit it calls{" "}
+      <code>onFormSubmit</code> with the named fields' values. Errors that come back from a server go in its{" "}
+      <code>errors</code> prop, keyed by field name; each is shown on its field until that field's value changes.
+    </p>
+    <p>
+      Fields validate on submit by default, and on every change after the first attempt.{" "}
+      <code>validationMode</code> on the form or on a single field changes that to <code>"onBlur"</code> or{" "}
+      <code>"onChange"</code>.
+    </p>
+
+    <h2 id="groups">Groups</h2>
+    <p>
+      <a href={href("components/fieldset")}>Fieldset</a> is a native <code>{"<fieldset>"}</code> with its{" "}
+      <code>{"<legend>"}</code>, for a set of related controls such as a
+      {" "}<a href={href("components/radio")}>radio group</a> or a{" "}
+      <a href={href("components/checkbox-group")}>checkbox group</a>.
+    </p>
+  </DocsPage>
+}

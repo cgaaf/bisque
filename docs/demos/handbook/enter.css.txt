@@ -1,0 +1,13 @@
+.Popup {
+  opacity: 1;
+  scale: 1;
+  transition: opacity 150ms, scale 150ms;
+}
+
+/* What it animates in from, each time it is shown. */
+@starting-style {
+  .Popup:popover-open {
+    opacity: 0;
+    scale: 0.95;
+  }
+}

@@ -1,0 +1,13 @@
+/* State the browser holds has a selector of its own. */
+.Dialog[open] { … }                 /* <dialog>, <details> */
+.Popup:popover-open { … }           /* anything with the popover attribute */
+.Checkbox:checked { … }             /* native inputs */
+.Input:user-invalid { … }
+.Dialog::backdrop { … }
+.Panel::details-content { … }
+
+/* State only the library knows is a data attribute. */
+.Item[data-highlighted] { … }
+.Popup[data-side="top"] { … }
+.Trigger[data-popup-open] { … }
+.Dialog[data-ending-style] { … }

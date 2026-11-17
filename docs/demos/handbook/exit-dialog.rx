@@ -1,0 +1,14 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../../../src/dialog/dialog.rx"
+
+export component HandbookExitDialog() {
+  <div class="HandbookExitDialog">
+    <DialogRoot>
+      <DialogTrigger class="Button">Open dialog</DialogTrigger>
+      <DialogPopup class="Dialog">
+        <DialogTitle class="Title">Animated both ways</DialogTitle>
+        <DialogDescription class="Description">Close it with the button, Escape or a press outside.</DialogDescription>
+        <DialogClose class="Button">Close</DialogClose>
+      </DialogPopup>
+    </DialogRoot>
+  </div>
+}

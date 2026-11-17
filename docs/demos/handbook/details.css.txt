@@ -1,0 +1,22 @@
+.Panel {
+  height: var(--collapsible-panel-height);
+  overflow: hidden;
+  transition: height 200ms ease;
+}
+
+/* Closing: the library keeps the <details> open until this has run. */
+.Panel[data-ending-style] {
+  height: 0;
+}
+
+/* Opening, for Chrome and Firefox. */
+@starting-style {
+  details[open] > .Panel {
+    height: 0;
+  }
+}
+
+/* Opening, for Safari and Firefox: a transition from the closed state. */
+details:not([open]) > .Panel {
+  height: 0;
+}

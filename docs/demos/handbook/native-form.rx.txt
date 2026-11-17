@@ -1,0 +1,6 @@
+// These are the browser's own controls, so a plain <form> submits them by name.
+<form action="/preferences" method="post">
+  <label><CheckboxRoot name="newsletter" /> Send me the newsletter</label>
+  <label><SwitchRoot name="dark" /> Dark theme</label>
+  <button type="submit">Save</button>
+</form>

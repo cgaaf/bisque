@@ -1,0 +1,58 @@
+import { DocsPage, Demo, Code } from "../../shell.rx"
+import { HandbookExitDialog } from "../../demos/handbook/exit-dialog.rx"
+
+export default component Page() {
+  <DocsPage title="Animation" subtitle="Parts animate with CSS transitions and animations. How a part leaves depends on what the browser lets it do.">
+    <h2 id="in">Animating in</h2>
+    <p>
+      Use <code>@starting-style</code>. It gives the values a transition starts from when an element is first
+      displayed, which is exactly when a dialog or popover opens. No attribute or script is involved.
+    </p>
+    <Code file="handbook/enter.css.txt" />
+
+    <h2 id="out-dialog">Animating a dialog out</h2>
+    <p>
+      A closing <code>{"<dialog>"}</code> leaves the top layer at once in most browsers, before a transition
+      could run. Every way of closing a dialog can be held back, though, so Dialog, Alert Dialog and Drawer close
+      late: the popup gets <code>data-ending-style</code>, its transitions and animations run, and only then is
+      it closed. Style the end state under that attribute.
+    </p>
+    <Demo source="handbook/exit-dialog"><HandbookExitDialog /></Demo>
+
+    <h2 id="out-popover">Animating a popover out</h2>
+    <p>
+      A popover can't be closed late. A press outside closes it immediately, and the browser offers no way to
+      delay that. Its exit is therefore left to CSS: transition <code>display</code> and <code>overlay</code>{" "}
+      with <code>allow-discrete</code>. Chrome animates the popup out; Firefox and Safari ignore those
+      declarations and close it at once. Nothing breaks in either case.
+    </p>
+    <Code file="handbook/popover-exit.css.txt" />
+
+    <h2 id="disclosure">Collapsible and Accordion</h2>
+    <p>
+      A <code>{"<details>"}</code> hides its content the moment it closes, so these panels also close late and
+      carry <code>data-ending-style</code> while they do. The panel's measured size is in{" "}
+      <code>--collapsible-panel-height</code> (and <code>-width</code>), since no browser but Chrome can
+      transition to an automatic height.
+    </p>
+    <p>
+      Opening needs two rules, because the engines disagree: Chrome animates a disclosure open only through{" "}
+      <code>@starting-style</code>, Safari only through a transition from a rule for the closed state, and
+      Firefox through either.
+    </p>
+    <Code file="handbook/details.css.txt" />
+    <div class="note">
+      <p>
+        An accordion item that closes because another one opened closes at once: the browser closes it, as part
+        of its one-open-per-<code>name</code> rule, and that can't be held back.
+      </p>
+    </div>
+
+    <h2 id="reduced-motion">Reduced motion</h2>
+    <p>
+      The library waits for whatever animations exist and continues immediately when there are none, so
+      switching them off is all it takes:
+    </p>
+    <Code file="handbook/reduced-motion.css.txt" />
+  </DocsPage>
+}

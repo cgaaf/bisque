@@ -1,0 +1,24 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle, PopoverContext, popover, popoverClose } from "../../../src/popover/popover.rx"
+import { mergeProps } from "../../../src/internal/props.js"
+import { AnchorProps } from "../../../src/internal/types.rx"
+
+// A close part that renders a link instead of PopoverClose's <button>: the part's props function gives the
+// behaviour, and the element is yours.
+component CloseLink({ children, ...rest }: AnchorProps) {
+  c = use popover
+  own = popoverClose(c)
+  merged = mergeProps(own, rest)
+  <a {...merged} role="button" tabindex="0">{children}</a>
+}
+
+export component HandbookCustomPart() {
+  <div class="HandbookCustomPart">
+    <PopoverRoot>
+      <PopoverTrigger class="Button">Cookies</PopoverTrigger>
+      <PopoverPopup class="Popup" sideOffset={8}>
+        <PopoverTitle class="Title">We use two cookies</PopoverTitle>
+        <CloseLink class="Link">Fine, close this</CloseLink>
+      </PopoverPopup>
+    </PopoverRoot>
+  </div>
+}

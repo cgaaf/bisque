@@ -1,0 +1,55 @@
+import { DocsPage, Code } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+
+export default component Page() {
+  <DocsPage title="Quick start" subtitle="Add the components to a ReactiveScript app and render the first one.">
+    <h2 id="install">Install</h2>
+    <p>
+      rs-ui needs ReactiveScript and Solid 2 and nothing else: it has no runtime dependencies of its own. Install
+      it, then copy the components into your app:
+    </p>
+    <Code file="overview/install.sh.txt" />
+    <p>
+      The copy step is there because ReactiveScript 0.3 resolves an <code>.rx</code> import only by relative
+      path, so a component can't yet be imported from <code>node_modules</code>. <code>rs-ui copy</code> writes
+      the library's source into a folder of your app (<code>src/rs-ui</code> unless you name another). Run it
+      again after upgrading the package; it replaces only a folder it wrote.
+    </p>
+    <p>
+      The copy contains <code>.d.rx</code> files, which declare the library's TypeScript helpers to the
+      ReactiveScript compiler. They aren't TypeScript, so keep them out of the program <code>rx-tsc</code> checks:
+    </p>
+    <Code file="overview/tsconfig.json.txt" />
+
+    <h2 id="first-component">Render a component</h2>
+    <p>
+      Each family is one file, and its parts are named exports: <code>DialogRoot</code>,{" "}
+      <code>DialogTrigger</code>, <code>DialogPopup</code>. Import the parts you use and nest them.
+    </p>
+    <Code file="overview/first.rx.txt" />
+    <p>
+      That is a working modal dialog: the trigger opens it, focus moves into it and back, <kbd>Escape</kbd> and
+      a press outside close it, and the page behind it is inert. It has no styles of its own.
+    </p>
+
+    <h2 id="style-it">Style it</h2>
+    <p>
+      Every part renders one element and passes <code>class</code>, <code>style</code> and any other attribute
+      on to it. Style the element as you would any other, using the selectors the platform already has for its
+      state:
+    </p>
+    <Code file="overview/first.css.txt" />
+    <p>
+      <a href={href("handbook/styling")}>Styling</a> has the selectors and data attributes to use, and{" "}
+      <a href={href("handbook/animation")}>Animation</a> covers animating a part in and out.
+    </p>
+
+    <h2 id="browsers">Browsers</h2>
+    <p>
+      The components rely on features that the current releases of Chrome, Firefox and Safari all ship, such as
+      the <code>popover</code> attribute and CSS anchor positioning. They don't include fallbacks for older
+      browsers. <a href={href("overview/platform-first")}>Platform first</a> explains the rule and lists the
+      features.
+    </p>
+  </DocsPage>
+}

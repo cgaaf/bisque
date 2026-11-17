@@ -128,7 +128,8 @@ export function sourceOf(path: string): Accessor<string> {
 /** The same, highlighted as HTML. A `.txt` snippet is highlighted as the language its name ends with before it. */
 export function highlightedSourceOf(path: string): Accessor<string> {
   const load = rawSources[`../../demos/${path}`];
-  const lang = path.replace(/\.txt$/, "").endsWith(".css") ? "css" : "rx";
+  const name = path.replace(/\.txt$/, "");
+  const lang = name.endsWith(".css") ? "css" : name.endsWith(".rx") ? "rx" : "text";
   return lazy("", load && (() => load().then((text) => highlight(text.trimEnd(), lang))));
 }
 

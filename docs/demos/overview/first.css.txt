@@ -1,0 +1,18 @@
+/* The popup is a native <dialog>: style the element, its open state and its backdrop. */
+.Dialog {
+  border: 1px solid #d4d4dc;
+  border-radius: 0.5rem;
+  padding: 1.5rem;
+}
+
+.Dialog::backdrop {
+  background: rgb(0 0 0 / 0.4);
+}
+
+/* Animate in from here. */
+@starting-style {
+  .Dialog[open] {
+    opacity: 0;
+    translate: 0 0.5rem;
+  }
+}

@@ -1,0 +1,97 @@
+import { DocsPage, Code } from "../../shell.rx"
+
+export default component Page() {
+  <DocsPage title="Platform first" subtitle="If the browser already does it, the library doesn't.">
+    <p>
+      Headless component libraries have long rebuilt things the platform lacked: a layer above the page, focus
+      containment, dismissal on a press outside, positioning a popup against its trigger. Browsers now do all of
+      these. rs-ui is written on the assumption that they do.
+    </p>
+
+    <h2 id="the-rule">The rule</h2>
+    <p>
+      A feature that the latest released Chrome, Firefox and Safari all ship is used natively, with no JavaScript
+      standing in for it. A feature that one of them lacks is done by the library until that changes. The data
+      comes from the Baseline project, and the repository has a command that reports it:
+    </p>
+    <Code file="overview/baseline.sh.txt" />
+
+    <h2 id="native">What the browser does</h2>
+    <div class="table-scroll">
+      <table class="api-table">
+        <thead><tr><th>Need</th><th>Native feature</th><th>Used by</th></tr></thead>
+        <tbody>
+          <tr><td>A modal layer with focus containment, Escape and a backdrop</td><td><code>{"<dialog>"}</code> with <code>showModal()</code>, <code>::backdrop</code></td><td>Dialog, Alert Dialog, Drawer</td></tr>
+          <tr><td>A layer above the page that closes on Escape and a press outside</td><td>The <code>popover</code> attribute</td><td>Popover, Menu, Select, Tooltip and the other popups</td></tr>
+          <tr><td>Placing a popup against its trigger and flipping it at the viewport's edge</td><td>CSS anchor positioning</td><td>Every anchored popup</td></tr>
+          <tr><td>A button that opens its popup</td><td><code>popovertarget</code></td><td>Popover, Menu, Select, Navigation Menu</td></tr>
+          <tr><td>Disclosure, and groups where one item is open at a time</td><td><code>{"<details>"}</code>, <code>{"<details name>"}</code></td><td>Collapsible, Accordion</td></tr>
+          <tr><td>Checked, indeterminate and invalid state</td><td>Native inputs, <code>:checked</code>, <code>:user-invalid</code></td><td>Checkbox, Switch, Radio, Input, Field</td></tr>
+          <tr><td>Arrow keys within a radio group</td><td>Radios that share a <code>name</code></td><td>Radio</td></tr>
+          <tr><td>Animating an element in</td><td><code>@starting-style</code></td><td>Your stylesheet</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="not-yet">What the library still does</h2>
+    <p>These wait on a feature that isn't in all three browsers yet. Each is expected to shrink over time.</p>
+    <ul>
+      <li>
+        <strong>Hover-triggered popups.</strong> Interest invokers are in Chrome only, so Tooltip and Preview
+        Card open on the library's own hover intent and close themselves.
+      </li>
+      <li>
+        <strong>Animating a layer out.</strong> Only Chrome can keep a closing top-layer element on screen. A
+        dialog is therefore closed after its exit animation; a popover, which the browser closes at once on a
+        press outside, animates out only where the engine can.
+      </li>
+      <li>
+        <strong>Moving focus with the arrow keys.</strong> <code>focusgroup</code> is in Chrome only, so Menu,
+        Tabs, Toolbar and Toggle Group manage it.
+      </li>
+      <li>
+        <strong>A select with a styleable popup.</strong> Customizable <code>{"<select>"}</code> isn't in
+        Firefox, so Select is a listbox in a popover.
+      </li>
+      <li>
+        <strong>Animating to an automatic height.</strong> <code>interpolate-size</code> is in Chrome only, so
+        a collapsible panel's size is measured and given to your CSS as a variable.
+      </li>
+      <li>
+        <strong>Knowing which side a popup was flipped to.</strong> Nothing reports it, so the library reads it
+        back from the layout to set <code>data-side</code> and place the arrow.
+      </li>
+    </ul>
+    <p>
+      Some things are the library's for good: ARIA roles and relationships the elements don't imply, typeahead,
+      lists driven by <code>aria-activedescendant</code>, sliders with several thumbs, number parsing, toast
+      queues and timers, and the wiring between a field's label, description and error.
+    </p>
+
+    <h2 id="consequences">What this changes for you</h2>
+    <ul>
+      <li>
+        <strong>Fewer parts.</strong> There is no Portal, Positioner or Backdrop part. The popup is the element
+        that is positioned, it is drawn in the top layer wherever it is in the document, and{" "}
+        <code>::backdrop</code> is its backdrop.
+      </li>
+      <li>
+        <strong>Content stays in the document.</strong> A closed dialog or popover is not displayed; it isn't
+        removed. There is no <code>keepMounted</code> prop.
+      </li>
+      <li>
+        <strong>Native selectors for state.</strong> <code>[open]</code>, <code>:popover-open</code> and{" "}
+        <code>:checked</code> replace most <code>data-*</code> attributes. A data attribute exists only where
+        the platform has no selector.
+      </li>
+      <li>
+        <strong>The browser holds the state.</strong> A popover closes itself on a press outside. The component
+        follows it and tells you through <code>onOpenChange</code>; some of these changes can't be refused.
+      </li>
+      <li>
+        <strong>Less JavaScript.</strong> Placement, layering and dismissal run in the browser's own code, not
+        in scripts on the main thread.
+      </li>
+    </ul>
+  </DocsPage>
+}

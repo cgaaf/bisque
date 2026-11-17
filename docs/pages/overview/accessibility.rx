@@ -1,0 +1,65 @@
+import { DocsPage } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+
+export default component Page() {
+  <DocsPage title="Accessibility" subtitle="What the components take care of, what is left to you, and how it is checked.">
+    <h2 id="native-elements">Native elements first</h2>
+    <p>
+      Where an HTML element already has the right behaviour, a part renders that element: a dialog is a{" "}
+      <code>{"<dialog>"}</code>, a checkbox is an <code>{"<input type=\"checkbox\">"}</code>, a disclosure is a{" "}
+      <code>{"<details>"}</code>, a separator is an <code>{"<hr>"}</code>. Their roles, states and keyboard
+      behaviour are the browser's, and they work with the browser's own features: form submission, validation
+      messages, find-in-page opening a disclosure.
+    </p>
+
+    <h2 id="what-the-library-adds">What the library adds</h2>
+    <ul>
+      <li>
+        <strong>Roles and relationships</strong> that elements don't imply: <code>role="menu"</code> and its
+        items, <code>aria-labelledby</code> from a popup to its title, <code>aria-describedby</code> from a
+        control to its description and error.
+      </li>
+      <li>
+        <strong>Keyboard interaction</strong> for composite widgets, following the WAI-ARIA Authoring Practices:
+        arrow keys, <kbd>Home</kbd> and <kbd>End</kbd> in menus, tabs, toolbars and listboxes, and typeahead in
+        menus and selects.
+      </li>
+      <li>
+        <strong>Focus</strong> where the platform leaves it: into a menu's first item when it opens from the
+        keyboard, and back to the trigger when a popup closes with focus inside it.
+      </li>
+    </ul>
+
+    <h2 id="your-part">What is left to you</h2>
+    <ul>
+      <li>
+        <strong>Names.</strong> Give a control a visible label, or an <code>aria-label</code> when it has only an
+        icon. Use the Title and Description parts of dialogs and popovers; they are what names the popup.
+      </li>
+      <li>
+        <strong>Visible focus and contrast.</strong> The components are unstyled, so a focus indicator
+        (<code>:focus-visible</code>) and sufficient contrast are in your stylesheet.
+      </li>
+      <li>
+        <strong>Motion.</strong> Honour <code>prefers-reduced-motion</code> in the transitions you add. See{" "}
+        <a href={href("handbook/animation")}>Animation</a>.
+      </li>
+      <li>
+        <strong>Target size.</strong> Make interactive parts large enough to press.
+      </li>
+    </ul>
+
+    <h2 id="testing">How it is checked</h2>
+    <p>
+      Every component's tests run in Chromium, Firefox and WebKit with real keyboard and pointer input, and
+      assert roles, ARIA attributes, focus movement and keyboard behaviour in each engine.
+    </p>
+    <div class="note">
+      <p>
+        The components have not yet been audited with screen readers. Automated tests can show that the right
+        attributes are present; they can't show how assistive technology presents them. Test your own interface
+        with the assistive technology your users rely on.
+      </p>
+    </div>
+  </DocsPage>
+}

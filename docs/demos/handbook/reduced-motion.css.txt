@@ -1,0 +1,6 @@
+@media (prefers-reduced-motion: reduce) {
+  .Dialog,
+  .Dialog::backdrop {
+    transition: none;
+  }
+}

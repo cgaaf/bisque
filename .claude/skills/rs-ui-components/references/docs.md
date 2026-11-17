@@ -98,3 +98,6 @@ node scripts/shoot-docs.mjs components/popover --out <scratch>/popover.png   # n
 bug to fix or report, not noise) and saves a screenshot to read. `--click`, `--hover`, `--press`, `--at`,
 `--dark`, `--mobile` and `--full` are described at the top of the script. The dev server is
 `pnpm exec vite --config vite.docs.config.ts --port <port> --strictPort`; pass the same `--port` to the script.
+
+The dev server doesn't pick up an `.rx` file created after it started: the page then fails with "expected a
+component function but got undefined". Restart the server after adding a demo or a page.

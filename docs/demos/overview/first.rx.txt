@@ -1,0 +1,12 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "./rs-ui/dialog/dialog.rx"
+
+export component DeleteProject() {
+  <DialogRoot>
+    <DialogTrigger class="Button">Delete project</DialogTrigger>
+    <DialogPopup class="Dialog">
+      <DialogTitle>Delete this project?</DialogTitle>
+      <DialogDescription>Its files are removed for everyone.</DialogDescription>
+      <DialogClose class="Button">Cancel</DialogClose>
+    </DialogPopup>
+  </DialogRoot>
+}

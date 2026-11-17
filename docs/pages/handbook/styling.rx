@@ -1,0 +1,56 @@
+import { DocsPage, Code } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+
+export default component Page() {
+  <DocsPage title="Styling" subtitle="The components have no styles. Each part renders one element, and that element is yours to style.">
+    <h2 id="classes">Give parts a class</h2>
+    <p>
+      A part passes <code>class</code>, <code>style</code>, <code>id</code>, <code>data-*</code> and every other
+      attribute on to the element it renders. Put a class on the part and write CSS for it in a stylesheet. The
+      demos in these docs all do that, and show the stylesheet beside the markup.
+    </p>
+
+    <h2 id="scoped-styles">Scoped styles and parts</h2>
+    <p>
+      A ReactiveScript view's <code>{"<style>"}</code> is scoped to the elements that view writes. The element a
+      part renders belongs to the part, so a scoped rule doesn't reach it. Use an ordinary stylesheet, or mark
+      the selector <code>:global()</code>:
+    </p>
+    <Code file="handbook/global.rx.txt" />
+
+    <h2 id="state">Styling state</h2>
+    <p>
+      State that the browser holds has a selector already, and that is the one to use. State that only the
+      library knows is exposed as a <code>data-*</code> attribute. Each component's API reference lists its
+      attributes.
+    </p>
+    <Code file="handbook/state.css.txt" />
+
+    <h2 id="native-defaults">The browser's defaults</h2>
+    <p>
+      Native elements come with styles. A <code>{"<dialog>"}</code> and a popover have a border, padding, a
+      background and <code>overflow: auto</code>; a checkbox has the platform's look until you set{" "}
+      <code>appearance: none</code>; a <code>{"<summary>"}</code> has a disclosure marker. Reset what you want
+      to replace.
+    </p>
+
+    <h2 id="placement">Placement is CSS too</h2>
+    <p>
+      An anchored popup's <code>side</code>, <code>align</code> and offsets become CSS anchor positioning
+      declarations in its inline style: <code>position-area</code>, <code>position-try-fallbacks</code> and a
+      margin. A stylesheet or your own <code>style</code> can override any of them, and can use the rest of
+      anchor positioning, such as <code>anchor-size()</code> to match the trigger's width.
+    </p>
+
+    <h2 id="merging">Classes, styles and handlers are merged</h2>
+    <p>
+      What you pass to a part is combined with what the part sets itself. Classes are joined. Inline styles are
+      merged, with yours winning, whether you write an object or a string. An event handler of yours runs before
+      the part's own.
+    </p>
+    <Code file="handbook/style-prop.rx.txt" />
+    <p>
+      Next: <a href={href("handbook/animation")}>animating parts in and out</a>.
+    </p>
+  </DocsPage>
+}

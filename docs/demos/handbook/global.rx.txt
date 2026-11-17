@@ -1,0 +1,16 @@
+export component Settings() {
+  <style>
+    /* Scoped to this view's own elements: reaches the <section>, not the popup. */
+    section { padding: 1rem }
+
+    /* Unscoped: reaches the <div> that PopoverPopup renders. */
+    :global(.SettingsPopup) { border-radius: 0.5rem }
+    :global(.SettingsPopup):popover-open { opacity: 1 }
+  </style>
+  <section>
+    <PopoverRoot>
+      <PopoverTrigger>Settings</PopoverTrigger>
+      <PopoverPopup class="SettingsPopup">…</PopoverPopup>
+    </PopoverRoot>
+  </section>
+}

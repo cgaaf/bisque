@@ -1,0 +1,50 @@
+import { DocsPage, Demo } from "../../shell.rx"
+import { HandbookCustomPart } from "../../demos/handbook/custom-part.rx"
+
+export default component Page() {
+  <DocsPage title="Composition" subtitle="Parts are small components that share a context. When a part's element isn't the one you want, use its behaviour on your own.">
+    <h2 id="parts">Parts and their context</h2>
+    <p>
+      A family's Root holds its state and provides it as a context; the other parts read it. That is why parts
+      can be nested freely inside the Root, with your own markup between them, and why a part used outside its
+      Root fails with a message that names the missing context.
+    </p>
+
+    <h2 id="props-functions">A part on your own element</h2>
+    <p>
+      Every part that has behaviour is two exports: the component, and a function that returns the props the
+      component spreads on its element. <code>PopoverClose</code> is a <code>{"<button>"}</code> with the result
+      of <code>popoverClose(c)</code> on it. To render something else, call the function yourself and spread
+      the result where you like.
+    </p>
+    <p>
+      The function takes the family's context as its first argument. Read it in your component with{" "}
+      <code>use</code> and pass it in; combine its props with the ones you were given using{" "}
+      <code>mergeProps</code>, so that handlers, classes and styles from both sides are kept.
+    </p>
+    <Demo source="handbook/custom-part"><HandbookCustomPart /></Demo>
+    <div class="note">
+      <p>
+        A props function gives you the behaviour, not the element's built-in semantics. The link above needs{" "}
+        <code>role="button"</code> and <code>tabindex</code> to act like the button it replaces. A few functions
+        only work on a particular element, because the platform feature they use does:{" "}
+        <code>popovertarget</code> needs a <code>{"<button>"}</code>, and a disclosure's trigger must be the{" "}
+        <code>{"<summary>"}</code> of its <code>{"<details>"}</code>. Each part's reference says which element
+        it renders.
+      </p>
+    </div>
+
+    <h2 id="wrapping">Wrapping a part</h2>
+    <p>
+      To give a part your defaults, write a component that renders it and passes the rest of its props on.
+      Render <code>children</code> explicitly: a self-closing part with a spread passes none.
+    </p>
+
+    <h2 id="controlled">Controlled and uncontrolled</h2>
+    <p>
+      Every stateful Root works both ways. Leave its state to it and set only the starting value
+      (<code>defaultOpen</code>, <code>defaultValue</code>), or pass the value and its change handler
+      (<code>open</code> with <code>onOpenChange</code>) and hold it in a <code>source</code> of your own.
+    </p>
+  </DocsPage>
+}

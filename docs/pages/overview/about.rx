@@ -1,0 +1,53 @@
+import { DocsPage } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+
+export default component Page() {
+  <DocsPage title="About" subtitle="What rs-ui is, how it relates to Base UI, and where it stands.">
+    <h2 id="what-it-is">What it is</h2>
+    <p>
+      rs-ui is a library of unstyled, accessible components written in{" "}
+      <a href="https://reactivescript.dev/">ReactiveScript</a>, the language from the Solid team that compiles
+      to Solid 2. It gives you behaviour and accessibility; the markup's appearance is entirely yours.
+    </p>
+    <p>
+      <a href="https://base-ui.com/">Base UI</a> is its model: the same component families, the same ARIA and
+      keyboard behaviour, and the same idea of composing a component from parts. It differs where the platform
+      or the language makes something simpler.
+    </p>
+
+    <h2 id="differences">How it differs from Base UI</h2>
+    <ul>
+      <li>
+        <strong>It is built on native features</strong> wherever all current browsers have them, so several
+        parts don't exist: Portal, Positioner, Backdrop, and Accordion's Header.{" "}
+        <a href={href("overview/platform-first")}>Platform first</a> has the reasoning.
+      </li>
+      <li>
+        <strong>Parts have flat names.</strong> <code>DialogRoot</code> and <code>DialogPopup</code>, not{" "}
+        <code>Dialog.Root</code> and <code>Dialog.Popup</code>.
+      </li>
+      <li>
+        <strong>There is no <code>render</code> prop.</strong> Each part's behaviour is also exported as a
+        function that returns its props, which you spread on an element of your own. See{" "}
+        <a href={href("handbook/composition")}>Composition</a>.
+      </li>
+      <li>
+        <strong>Style hooks are native selectors</strong> such as <code>[open]</code> and{" "}
+        <code>:popover-open</code> where they exist, and <code>data-*</code> attributes only where they don't.
+      </li>
+      <li>
+        <strong>Some features are left out</strong> for now. Each component's page says what, where it matters:
+        detached triggers, snap points on Drawer, and exit animations for popovers in browsers that can't keep a
+        closing layer on screen are the main ones.
+      </li>
+    </ul>
+
+    <h2 id="status">Status</h2>
+    <p>
+      rs-ui is experimental, as ReactiveScript itself is (version 0.3). Expect its API to change. Server
+      rendering has not been tested. It is distributed as source that you copy into your app, because the
+      language can't yet import <code>.rx</code> from a package.
+    </p>
+    <p>It supports the current releases of Chrome, Firefox and Safari, and is released under the MIT licence.</p>
+  </DocsPage>
+}

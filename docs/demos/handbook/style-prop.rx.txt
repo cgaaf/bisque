@@ -1,0 +1,6 @@
+// A part's own inline style and yours are merged; yours win.
+<PopoverPopup style={{ "position-try-fallbacks": "flip-block" }} />
+<PopoverPopup style="position-try-fallbacks: flip-block" />
+
+// So are classes, and event handlers: yours runs first.
+<DialogClose class="Button" onClick={() => { saved := true }}>Save</DialogClose>
