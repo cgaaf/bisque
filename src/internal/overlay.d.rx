@@ -1,9 +1,7 @@
 // How .rx may use ./overlay.js (implemented in ./impl/overlay.ts): hover intent, the tooltip delay group,
-// dismissal for a manual popover, the arrow, and a popover's focus. A `ref` parameter is passed live; the others are read once. Bind every call.
+// and dismissal for a manual popover. A `ref` parameter is passed live; the others are read once. Bind every call.
 // `group` is a HoverGroup from createHoverGroup; .rx types it with a local alias of ./impl/overlay.ts's HoverGroup.
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./overlay.d.ts.
 export pure fn createHoverGroup(ref timeout: number): any
 export pure fn createHoverIntent(ref enabled: boolean, ref open: boolean, ref trigger: HTMLElement | undefined, ref popup: HTMLElement | undefined, ref options: { openDelay: number; closeDelay: number; hoverablePopup: boolean; focus: boolean; focusDelay: number; closeOnPress: boolean; group: any; stickOnPress?: boolean }, onOpenChange: (open: boolean, reason: "hover" | "focus" | "press" | "group") => void) instantiates
 export pure fn createManualDismiss(ref active: boolean, ref trigger: HTMLElement | undefined, ref popup: HTMLElement | undefined, onDismiss: (reason: "escape-key" | "outside-press") => void) instantiates
-export pure fn createArrow(ref active: boolean, ref anchor: HTMLElement | undefined, ref floating: HTMLElement | undefined, ref arrow: HTMLElement | undefined, ref side: "top" | "bottom" | "left" | "right"): ref boolean
-export pure fn createPopupFocus(ref active: boolean, ref popup: HTMLElement | undefined, ref trigger: HTMLElement | undefined, ref trap: boolean, onFocusOut: () => void) instantiates

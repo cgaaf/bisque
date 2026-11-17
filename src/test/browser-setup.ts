@@ -21,5 +21,6 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  // oxlint-disable-next-line vitest/no-standalone-expect -- the hook runs inside each test, which is the point
   expect(reported, "Solid diagnostics reported during this test").toEqual([]);
 });

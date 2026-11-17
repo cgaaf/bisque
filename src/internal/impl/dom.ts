@@ -2,7 +2,6 @@
 // Each `create*` is a Solid primitive: called once by a component, it owns its effects and cleans them up with
 // the component. `../dom.d.rx` declares how `.rx` may call them, through the `../dom.js` facade.
 import { createEffect, createMemo, createSignal, untrack, type Accessor } from "solid-js";
-import { focusListItem } from "./roving.ts";
 
 type MaybeElement = HTMLElement | undefined;
 
@@ -91,107 +90,6 @@ export function createPresence(
   );
 
   return [mounted, status];
-}
-
-export type InitialFocus = "auto" | "container" | "first-item" | "last-item" | "current-item";
-
-/**
- * While `active`, keeps keyboard focus inside `container`: moves focus in when it activates, wraps Tab at both
- * ends when `trap` is true, and puts focus back where it was when it deactivates.
- *
- * `initialFocus` says where focus goes first: `"auto"` is the `[autofocus]` element, else the first tabbable
- * one, else the container; the `-item` values pick an item of a list (see ./roving.ts).
- */
-export function createFocusScope(
-  active: Accessor<boolean>,
-  container: Accessor<MaybeElement>,
-  trap: Accessor<boolean>,
-  initialFocus: Accessor<InitialFocus>,
-): void {
-  createEffect(
-    () => (active() ? container() : undefined),
-    (el) => {
-      if (!el) return;
-      const previous = document.activeElement as HTMLElement | null;
-      if (!el.contains(document.activeElement)) {
-        const initial = untrack(initialFocus);
-        if (initial === "container") el.focus();
-        else if (initial === "auto") {
-          (el.querySelector<HTMLElement>("[autofocus]") ?? tabbables(el)[0] ?? el).focus();
-        } else
-          focusListItem(
-            el,
-            initial === "last-item" ? "last" : initial === "current-item" ? "current" : "first",
-          );
-      }
-      const onKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== "Tab" || !trap()) return;
-        const items = tabbables(el);
-        if (items.length === 0) {
-          event.preventDefault();
-          return;
-        }
-        const first = items[0];
-        const last = items[items.length - 1];
-        const current = document.activeElement;
-        if (event.shiftKey && (current === first || current === el)) {
-          event.preventDefault();
-          last.focus();
-        } else if (!event.shiftKey && current === last) {
-          event.preventDefault();
-          first.focus();
-        }
-      };
-      el.addEventListener("keydown", onKeyDown);
-      return () => {
-        el.removeEventListener("keydown", onKeyDown);
-        if (previous?.isConnected) previous.focus();
-      };
-    },
-  );
-}
-
-export type DismissReason = "escape-key" | "outside-press";
-
-// Open layers, innermost last: Escape and an outside press dismiss only the top one.
-const layers: object[] = [];
-
-/**
- * While `active`, calls `onDismiss` when Escape is pressed or a pointer goes down outside every element in
- * `inside` (the popup and whatever opened it). Nested layers dismiss innermost first.
- */
-export function createDismiss(
-  active: Accessor<boolean>,
-  inside: Accessor<MaybeElement[]>,
-  onDismiss: (reason: DismissReason) => void,
-): void {
-  createEffect(
-    () => active(),
-    (isActive) => {
-      if (!isActive) return;
-      const layer = {};
-      layers.push(layer);
-      const isTop = () => layers[layers.length - 1] === layer;
-      const onKeyDown = (event: KeyboardEvent) => {
-        if (event.key !== "Escape" || event.defaultPrevented || !isTop()) return;
-        event.preventDefault();
-        onDismiss("escape-key");
-      };
-      const onPointerDown = (event: PointerEvent) => {
-        if (!isTop()) return;
-        const target = event.target as Node | null;
-        if (!target || inside().some((el) => el?.contains(target))) return;
-        onDismiss("outside-press");
-      };
-      document.addEventListener("keydown", onKeyDown);
-      document.addEventListener("pointerdown", onPointerDown, true);
-      return () => {
-        layers.splice(layers.indexOf(layer), 1);
-        document.removeEventListener("keydown", onKeyDown);
-        document.removeEventListener("pointerdown", onPointerDown, true);
-      };
-    },
-  );
 }
 
 let scrollLocks = 0;

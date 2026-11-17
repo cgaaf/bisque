@@ -36,6 +36,4 @@ cpSync(source, destination, { recursive: true, filter: (file) => !skipped(file) 
 const families = readdirSync(destination).filter((name) => name !== "internal");
 console.log(`Copied ${families.length} component families to ${target}.`);
 console.log(`Import them by relative path, e.g. import { DialogRoot } from "./rs-ui/dialog/dialog.rx"`);
-console.log(
-  `The app needs @floating-ui/dom installed, and "exclude": ["**/*.d.rx"] in the tsconfig rx-tsc reads.`,
-);
+console.log(`The app needs "exclude": ["**/*.d.rx"] in the tsconfig rx-tsc reads.`);
