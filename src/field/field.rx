@@ -1,5 +1,5 @@
-import { mergeProps, createId } from "../internal/props.js"
-import { createFieldValidation, formErrorsFor, sameValue, isFilled, isEmptyView } from "../internal/field.js"
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createFieldValidation, createFormReset, setInputValue, formErrorsFor, sameValue, isFilled, isEmptyView } from "../internal/field.js"
 import { form, FormValidationMode, FormValues } from "../form/form.rx"
 import { fieldset } from "../fieldset/fieldset.rx"
 import { DivProps, LabelProps, InputProps, ParagraphProps, PartProps } from "../internal/types.rx"
@@ -29,7 +29,9 @@ export type FieldState = {
 //   - `setValue(v)` from an effect on its value: the first call is the initial value, later ones are changes;
 //   - `setInput(el)` as the `ref` of the native input whose constraints count: the control itself where it is a
 //     native input (Input, Checkbox, Switch, a radio of a RadioGroup), else a hidden input that mirrors its value;
-//   - `name` and `disabled` for that input and itself.
+//   - `name` and `disabled` for that input and itself;
+//   - `reset(v)` after a form reset, with the value the control now has (its default, or a controlled value): the
+//     field takes it without counting it as a change, and returns to untouched and unvalidated.
 // The rest is for the field's own parts.
 //
 // What the browser already does is left to it: a FieldLabel is a native `<label for>`, and the native input's
@@ -53,6 +55,7 @@ export type FieldContext = {
   validity: FieldValidityData
   initialValue: unknown
   setValue: (value: unknown) => void
+  reset: (value: unknown) => void
   setInput: (element: HTMLInputElement) => void
   setControl: (element: HTMLElement) => void
   setFocused: (focused: boolean) => void
@@ -70,8 +73,8 @@ export type FieldRootProps = {
   disabled?: boolean
   // Custom validation, run after the native constraints pass.
   validate?: (value: unknown, formValues: FormValues) => ValidateResult
-  // When the field validates: after a submit attempt (then on every change), on blur, or on every change.
-  // Default: the Form's, else "onSubmit".
+  // When the field validates: after a submit attempt (then on every change), on blur, or on every change. The
+  // browser checking the input (a native submit) always validates it. Default: the Form's, else "onBlur".
   validationMode?: FormValidationMode
   // Marks the field invalid, as an external library decides.
   invalid?: boolean
@@ -112,7 +115,8 @@ export component FieldRoot(props: FieldRootProps) {
   controlId = createId("field-control")
 
   isDisabled = (set?.disabled ?? false) || (props.disabled ?? false)
-  mode = props.validationMode ?? formCtx?.validationMode ?? "onSubmit"
+  // Outside a Form nothing submits the field through the library, so "onSubmit" would never run `validate`.
+  mode = props.validationMode ?? formCtx?.validationMode ?? "onBlur"
   // An error the form's handler came back with shows until the field changes, like any other. It is also about
   // the value that was sent, so it never shows on a field that was edited while the request was out.
   answered = props.name != undefined && formCtx != undefined && formCtx.answer.id != retiredAnswer && sameValue(value, formCtx.answer.values[props.name]) ? formErrorsFor(formCtx.answer.errors, props.name) : []
@@ -163,6 +167,15 @@ export component FieldRoot(props: FieldRootProps) {
     let onChange = mode == "onChange" || (mode == "onSubmit" && (formCtx?.submitted ?? false))
     run(next, onChange ? "commit" : "revalidate", !sameValue(next, initial))
   }
+  // A form reset is not a user change: the field takes the control's value as it now is, without validating it,
+  // and forgets that it was touched, changed or validated. A server's error for it is retired.
+  action reset(next: unknown) {
+    value := next
+    touchedState := false
+    run(next, "reset", false)
+    if (formCtx) { retiredAnswer := formCtx.answer.id }
+    if (formCtx && props.name != undefined) { formCtx.clearError(props.name) }
+  }
   action setFocused(next: boolean) {
     focused := next
     if (next) { return }
@@ -186,6 +199,7 @@ export component FieldRoot(props: FieldRootProps) {
     validity: validity,
     initialValue: initial,
     setValue: setValue,
+    reset: reset,
     setInput: setInput,
     setControl: setControl,
     setFocused: setFocused,
@@ -333,22 +347,44 @@ export type FieldControlProps = {
 } & Omit<InputProps, "value">
 
 // A text input's behaviour, inside a field or not: value (controlled or not), reported to the field, which also
-// validates the input's native constraints.
+// validates the input's native constraints. The first value is the input's `defaultValue` (its `value` attribute),
+// which is what a form reset puts back.
 export fn fieldControl(ref f: FieldContext | undefined, ref controlled: string | undefined, initial: string, ref onValueChange: ((value: string) => void) | undefined, ref disabled: boolean): PartProps {
   source uncontrolled := initial
+  source element: HTMLInputElement | undefined := undefined
   current = controlled ?? uncontrolled
+  firstValue = peek(current)
   isDisabled = disabled || (f?.disabled ?? false)
   effect (current) { if (f) { f.setValue($0) } }
+  _reset = createFormReset(element, reset)
   action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
     let next = event.currentTarget.value
     uncontrolled := next
     if (onValueChange) { onValueChange(next) }
   }
-  action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+  // The browser has put the input back to its `defaultValue`. Uncontrolled, that is the new value, reported once
+  // if it changed; controlled, the owner's value is written back over it.
+  action reset() {
+    if (controlled == undefined) {
+      if (initial != uncontrolled) {
+        uncontrolled := initial
+        if (onValueChange) { onValueChange(initial) }
+      }
+    } else {
+      setInputValue(element, controlled)
+    }
+    if (f) { f.reset(controlled ?? initial) }
+  }
+  action writeElement(input: HTMLInputElement) {
+    element := input
+    if (f) { f.setInput(input) }
+  }
+  setInput = createRef(writeElement)
   base = fieldInputProps(f)
   own = {
     name: f?.name,
     value: current,
+    defaultValue: firstValue,
     disabled: isDisabled ? true : undefined,
     onInput: input,
     ref: setInput,

@@ -3,8 +3,8 @@
     "description": "A native `<input>`; any `type` works and every attribute is passed through. Inside a FieldRoot it is the field's control: labelled and described by the field's parts, named and disabled with it, and validated by it.",
     "props": {
       "value": "The input's value. Pass it with `onValueChange` to control the input.",
-      "defaultValue": "The value at first, when the input isn't controlled.",
-      "onValueChange": "Called with the new value on every input."
+      "defaultValue": "The value at first, when the input isn't controlled. The first value is also the input's `value` attribute: what a form reset puts back.",
+      "onValueChange": "Called with the new value on every input, and once when a form reset changes an uncontrolled input."
     },
     "dataAttributes": {
       "data-invalid": "Inside a FieldRoot: present when the field is invalid.",

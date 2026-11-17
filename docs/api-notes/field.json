@@ -5,7 +5,7 @@
       "name": "The field\u2019s name: the key of its value in a Form\u2019s values and of its entry in a Form\u2019s `errors`. The control takes it as its `name` when it has none.",
       "disabled": "Disables the field and its control. A disabled field isn\u2019t validated.",
       "validate": "Custom validation, run after the control\u2019s native constraints pass. Receives the value and the values of the form\u2019s named fields; returns a message or a list of messages when invalid, and `null`, `\"\"` or nothing when valid.",
-      "validationMode": "When the field validates: `\"onSubmit\"` (when its Form is submitted, then on every change), `\"onBlur\"` or `\"onChange\"`. Outside a Form, an `\"onSubmit\"` field is never validated.",
+      "validationMode": "When the field validates: `\"onSubmit\"` (when its Form is submitted, then on every change), `\"onBlur\"` or `\"onChange\"`. Whatever the mode, the browser checking the input (a native submit, its `invalid` event) validates it.",
       "invalid": "Marks the field invalid whatever its value, for a decision made elsewhere.",
       "dirty": "Controls the dirty state, instead of comparing the value with the first one.",
       "touched": "Controls the touched state, instead of tracking focus."
@@ -66,8 +66,8 @@
     "description": "A native `<input>` that is the field\u2019s control. The same as Input; any `type` works.",
     "props": {
       "value": "The input\u2019s value. Pass it with `onValueChange` to control the input.",
-      "defaultValue": "The value at first, when the input isn\u2019t controlled.",
-      "onValueChange": "Called with the new value on every input."
+      "defaultValue": "The value at first, when the input isn\u2019t controlled. The first value is also the input\u2019s `value` attribute: what a form reset puts back.",
+      "onValueChange": "Called with the new value on every input, and once when a form reset changes an uncontrolled input."
     },
     "dataAttributes": {
       "data-invalid": "Present when the field is invalid: it failed validation, has `invalid` set, or has an error from its Form.",

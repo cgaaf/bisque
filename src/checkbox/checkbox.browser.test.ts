@@ -111,14 +111,57 @@ test("disabled boxes are natively disabled; read-only boxes don't change", async
   expect(fixed.checked).toBe(false);
 });
 
-test("a form reset leaves the box showing its state", async () => {
+test("a form reset returns an uncontrolled box to its default and reports it once", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const news = box(getByRole, "News");
+  await user.click(news);
+  expect(news.checked).toBe(false);
+  expect(getByTestId("news-changes").textContent).toBe("off");
+  await user.click(getByRole("button", { name: "Reset" }));
+  await expect.poll(() => getByTestId("news-changes").textContent).toBe("off,on");
+  expect(news.checked).toBe(true);
+  await frame();
+  expect(getByTestId("news-changes").textContent).toBe("off,on");
+  // A reset that changes nothing reports nothing.
+  await user.click(getByRole("button", { name: "Reset" }));
+  await frame();
+  await frame();
+  expect(getByTestId("news-changes").textContent).toBe("off,on");
+});
+
+test("the default is the box's checked attribute, which the browser's own reset restores", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const news = box(getByRole, "News");
+  expect(news.defaultChecked).toBe(true);
+  expect(news.hasAttribute("checked")).toBe(true);
+  await user.click(news);
+  // Synchronous: no script has run yet, so this is the browser's reset alone.
+  (getByTestId("form") as HTMLFormElement).reset();
+  expect(news.checked).toBe(true);
+});
+
+test("a form reset keeps a controlled box at its owner's state", async () => {
   const { getByRole, getByTestId, user } = mount(basic);
   const terms = box(getByRole, "Accept terms");
   await user.click(terms);
   await user.click(getByRole("button", { name: "Reset" }));
+  await expect.poll(() => terms.checked).toBe(true);
   await frame();
   expect(terms.checked).toBe(true);
   expect(getByTestId("agreed").textContent).toBe("yes");
+});
+
+test("a cancelled form reset changes nothing", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const form = getByTestId("form");
+  form.addEventListener("reset", (event) => event.preventDefault());
+  const news = box(getByRole, "News");
+  await user.click(news);
+  await user.click(getByRole("button", { name: "Reset" }));
+  await frame();
+  await frame();
+  expect(news.checked).toBe(false);
+  expect(getByTestId("news-changes").textContent).toBe("off");
 });
 
 test("inside a field: labelled, described, named and validated by it", async () => {

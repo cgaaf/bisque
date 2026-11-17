@@ -76,8 +76,13 @@ export default component Page() {
     <p>
       Give the box a <code>name</code> and it submits <code>value</code> with its form while checked, as a native
       checkbox does. Inside a <a href="../field/">Field</a> it takes the field's name, label, description and
-      validation; the <a href="../form/">Form</a> page shows a required box in a form. A form reset doesn't change
-      the box: it keeps showing its state, controlled or not.
+      validation; the <a href="../form/">Form</a> page shows a required box in a form.
+    </p>
+    <p>
+      A form reset is the browser's: it puts the box back to its <code>checked</code> attribute, which is{" "}
+      <code>defaultChecked</code>. An uncontrolled box takes that as its state and calls{" "}
+      <code>onCheckedChange</code> once if it changed; a controlled box is set back to the state its owner holds.
+      A box in a <a href="../checkbox-group/">checkbox group</a> follows the group, which resets as a whole.
     </p>
 
     <h3 id="custom-indicator">A custom indicator</h3>

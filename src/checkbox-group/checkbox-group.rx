@@ -1,4 +1,5 @@
-import { mergeProps } from "../internal/props.js"
+import { mergeProps, createRef } from "../internal/props.js"
+import { createFormReset, sameValue } from "../internal/field.js"
 import { field, fieldGroupProps } from "../field/field.rx"
 import { DivProps } from "../internal/types.rx"
 
@@ -9,6 +10,8 @@ export type CheckboxGroupContext = {
   // Every value a box in the group can have: what the parent box checks.
   allValues: string[]
   disabled: boolean
+  // Counts form resets, so every box is set back to the group's value after one.
+  revision: number
   setChecked: (value: string, checked: boolean) => void
   // What pressing the parent box does: mixed, then all, then none, then the mixed selection again.
   pressParent: () => void
@@ -36,10 +39,16 @@ export component CheckboxGroup(props: CheckboxGroupProps) {
   // The selection the parent box returns to after all and none, and where it is in that cycle.
   source saved: string[] := peek([...(props.value ?? props.defaultValue ?? [])])
   source status: "mixed" | "on" | "off" := "mixed"
+  source revision := 0
+  source element: HTMLElement | undefined := undefined
+  // What a form reset puts back. Each box's `defaultChecked` is whether this list holds its value.
+  initialValue = peek([...current])
   all = props.allValues ?? []
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
 
   effect (current) { if (f) { f.setValue($0) } }
+  // The group answers a reset for all its boxes, so it is reported once.
+  _reset = createFormReset(element, reset)
 
   action commit(next: string[]) {
     uncontrolled := next
@@ -51,6 +60,21 @@ export component CheckboxGroup(props: CheckboxGroupProps) {
     saved := next
     status := "mixed"
   }
+  // The browser has put every box back to `defaultChecked`. Uncontrolled, the default is the new value, reported
+  // once if it changed; controlled, the owner's value is written back over the boxes.
+  action reset() {
+    revision := revision + 1
+    let next = props.value ?? [...initialValue]
+    saved := [...next]
+    status := "mixed"
+    if (props.value == undefined && !sameValue(next, uncontrolled)) {
+      uncontrolled := next
+      if (props.onValueChange) { props.onValueChange(next) }
+    }
+    if (f) { f.reset(next) }
+  }
+  action writeElement(div: HTMLElement) { element := div }
+  setElement = createRef(writeElement)
   action pressParent() {
     if (saved.length == 0 || saved.length == all.length) {
       commit(current.length == all.length ? [] : [...all])
@@ -70,11 +94,11 @@ export component CheckboxGroup(props: CheckboxGroupProps) {
     }
   }
 
-  provide checkboxGroup = { value: current, allValues: all, disabled: isDisabled, setChecked: setChecked, pressParent: pressParent }
+  provide checkboxGroup = { value: current, allValues: all, disabled: isDisabled, revision: revision, setChecked: setChecked, pressParent: pressParent }
 
   { value, defaultValue, onValueChange, allValues, disabled, children, ...rest } = props
   group = fieldGroupProps(f)
-  own = mergeProps(group, { role: "group", "data-disabled": isDisabled ? "" : undefined })
+  own = mergeProps(group, { role: "group", "data-disabled": isDisabled ? "" : undefined, ref: setElement })
   merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

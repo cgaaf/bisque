@@ -3,7 +3,7 @@ import { Input } from "../../../src/input/input.rx"
 
 export component FieldHero() {
   <div class="FieldHero">
-    <FieldRoot class="Field" name="email" validationMode="onBlur">
+    <FieldRoot class="Field" name="email">
       <FieldLabel class="Label">Email</FieldLabel>
       <Input class="Input" type="email" required placeholder="you@example.com" />
       <FieldDescription class="Description">We send the receipt here.</FieldDescription>

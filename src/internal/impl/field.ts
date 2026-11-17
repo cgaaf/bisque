@@ -280,13 +280,20 @@ function messages(result: ValidateResult): string[] {
  * - `"revalidate"` retires the field's error, whatever it was, unless the input is still missing its value; it
  *   doesn't look for new errors, which wait for the next commit. It is what a change does when the field doesn't
  *   validate on change.
+ * - `"reset"` returns the field to unvalidated, as it was before the user did anything: what a form reset does.
  *
- * While `form` is a registry, the field is in it, so a submit validates it.
+ * While `form` is a registry, the field is in it, so a submit validates it. The input's `invalid` event (the
+ * browser checked it: a native submit, `reportValidity()`) commits, so a field in a plain `<form>` shows its error
+ * while the browser blocks the submit. With no registry, Enter in the input also commits first, so a `validate`
+ * message is installed on the input before the browser's implicit submission checks it.
  */
 export function createFieldValidation(
   form: Accessor<FormRegistry | undefined>,
   options: Accessor<FieldValidationOptions>,
-): [Accessor<FieldValidity>, (value: unknown, how: "commit" | "revalidate", markDirty: boolean) => void] {
+): [
+  Accessor<FieldValidity>,
+  (value: unknown, how: "commit" | "revalidate" | "reset", markDirty: boolean) => void,
+] {
   const [validity, setValidity] = createSignal<FieldValidity>(UNVALIDATED);
   // What was last published, for a submit: the signal only shows a write once it is flushed.
   let published = UNVALIDATED;
@@ -316,7 +323,14 @@ export function createFieldValidation(
     return state;
   };
 
-  const run = (value: unknown, how: "commit" | "revalidate", markDirty: boolean): void => {
+  const run = (value: unknown, how: "commit" | "revalidate" | "reset", markDirty: boolean): void => {
+    if (how === "reset") {
+      markedDirty = false;
+      clearInstalled();
+      published = { ...UNVALIDATED, value };
+      setValidity(published);
+      return;
+    }
     if (markDirty) markedDirty = true;
     const { input, validate } = current();
     if (how === "revalidate") {
@@ -367,6 +381,29 @@ export function createFieldValidation(
     },
   );
 
+  // The browser checked the input and found it invalid: a submit attempt, so a missing value counts.
+  const invalid = () => {
+    if (!current().disabled) run(current().value, "commit", true);
+  };
+  createEffect(
+    () => options().input,
+    (input) => {
+      if (!input) return;
+      // Implicit submission is Enter's default action, so it comes after this listener.
+      const keydown = (event: KeyboardEvent) => {
+        if (event.key !== "Enter" || untrack(form) || current().disabled) return;
+        if (input.type === "checkbox" || input.type === "radio") return;
+        run(current().value, "commit", false);
+      };
+      input.addEventListener("invalid", invalid);
+      input.addEventListener("keydown", keydown);
+      return () => {
+        input.removeEventListener("invalid", invalid);
+        input.removeEventListener("keydown", keydown);
+      };
+    },
+  );
+
   return [validity, run];
 }
 
@@ -379,8 +416,9 @@ export function isEmptyView(view: unknown): boolean {
  * Keeps a native checkbox or radio showing the component's state. The browser toggles `checked` (and clears
  * `indeterminate`) itself on a click, before any handler runs, and an owner of a controlled value may refuse the
  * change; Solid writes a property only when its value changes, so both are written again after every change
- * (`revision`). `indeterminate` is a property with no attribute, so it can only be set this way. A form reset puts
- * the element back to its `checked` attribute without an event: the component's state is written back after it.
+ * (`revision`). `indeterminate` is a property with no attribute, so it can only be set this way. What a form reset
+ * restores is the element's `defaultChecked`, which the component passes as a prop; after a reset the component
+ * decides what the box shows (`createFormReset`) and counts a revision.
  */
 export function createCheckedInput(
   element: Accessor<HTMLInputElement | undefined>,
@@ -388,27 +426,43 @@ export function createCheckedInput(
   indeterminate: Accessor<boolean>,
   revision: Accessor<number>,
 ): void {
-  const apply = (input: HTMLInputElement) => {
-    input.checked = untrack(checked);
-    input.indeterminate = untrack(indeterminate);
-  };
   createEffect(
     () => [element(), checked(), indeterminate(), revision()] as const,
-    ([input]) => {
-      if (input) apply(input);
+    ([input, isChecked, isIndeterminate]) => {
+      if (!input) return;
+      input.checked = isChecked;
+      input.indeterminate = isIndeterminate;
     },
   );
+}
+
+/** The form a control or a part inside one belongs to: the input's own `form` (which follows a `form` attribute). */
+function formOf(element: Element): HTMLFormElement | null {
+  if (element instanceof HTMLFormElement) return element;
+  if (element instanceof HTMLInputElement) return element.form;
+  return element.closest("form");
+}
+
+/**
+ * Calls `onReset` once the form `element` belongs to has been reset, and not for a reset that was cancelled. The
+ * `reset` event fires before the browser puts the controls back to their defaults (`defaultChecked`, the `value`
+ * attribute), and a microtask queued from it still runs first, so this waits for a task: by then the browser's
+ * reset is done, and the component makes its state agree with it (uncontrolled) or writes its value back over it
+ * (controlled). One listener per owner of a value: a radio group or a checkbox group listens, its inputs don't, so
+ * a reset is reported once.
+ */
+export function createFormReset(element: Accessor<Element | undefined>, onReset: () => void): void {
   createEffect(
     () => element(),
-    (input) => {
-      const form = input?.form;
-      if (!input || !form) return;
-      // The reset event fires before the form resets its controls, and a microtask queued from it still runs
-      // first (the listener returns to an empty stack): wait for a task.
+    (target) => {
+      const form = target ? formOf(target) : null;
+      if (!form) return;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      const reset = () => {
+      const reset = (event: Event) => {
         clearTimeout(timer);
-        timer = setTimeout(() => apply(input), 0);
+        timer = setTimeout(() => {
+          if (!event.defaultPrevented) onReset();
+        }, 0);
       };
       form.addEventListener("reset", reset);
       return () => {
@@ -417,4 +471,12 @@ export function createCheckedInput(
       };
     },
   );
+}
+
+/**
+ * Writes a controlled text input's value back after a form reset put its default there. Solid writes `value` only
+ * when the bound value changes, and the owner's value didn't.
+ */
+export function setInputValue(input: HTMLInputElement | undefined, value: string): void {
+  if (input && input.value !== value) input.value = value;
 }

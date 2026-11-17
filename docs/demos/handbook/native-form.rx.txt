@@ -1,6 +1,8 @@
-// These are the browser's own controls, so a plain <form> submits them by name.
+// These are the browser's own controls, so a plain <form> submits them by name, and a reset button puts them
+// back to their defaults.
 <form action="/preferences" method="post">
-  <label><CheckboxRoot name="newsletter" /> Send me the newsletter</label>
+  <label><CheckboxRoot name="newsletter" defaultChecked /> Send me the newsletter</label>
   <label><SwitchRoot name="dark" /> Dark theme</label>
   <button type="submit">Save</button>
+  <button type="reset">Undo changes</button>
 </form>

@@ -92,3 +92,34 @@ test("inside a field: labelled, described and validated by it", async () => {
 
   expect(control(getByRole, "Locked").disabled).toBe(true);
 });
+
+test("a form reset returns an uncontrolled switch to its default, reported once, and keeps a controlled one", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const bluetooth = control(getByRole, "Bluetooth");
+  const wifi = control(getByRole, "Wi-Fi");
+  expect(bluetooth.defaultChecked).toBe(true);
+  await user.click(bluetooth);
+  await user.click(wifi);
+  // The browser's reset alone already restores the default.
+  (getByTestId("form") as HTMLFormElement).reset();
+  expect(bluetooth.checked).toBe(true);
+  await expect.poll(() => getByTestId("bluetooth-changes").textContent).toBe("off,on");
+  await expect.poll(() => wifi.checked).toBe(true);
+  await frame();
+  expect(getByTestId("wifi").textContent).toBe("on");
+  expect(getByTestId("bluetooth-changes").textContent).toBe("off,on");
+});
+
+test("a form reset returns a switch's field to untouched", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const consent = control(getByRole, "Share usage data");
+  await user.click(consent);
+  consent.focus();
+  await user.tab();
+  const root = getByTestId("consent-root");
+  expect(root.hasAttribute("data-touched")).toBe(true);
+  consent.form!.reset();
+  await expect.poll(() => root.hasAttribute("data-touched")).toBe(false);
+  expect(consent.checked).toBe(false);
+  expect(root.hasAttribute("data-dirty")).toBe(false);
+});

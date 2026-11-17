@@ -31,6 +31,11 @@ export default component Page() {
       receives the new value on every input, not only when the input loses focus. Without <code>value</code>, the
       input starts at <code>defaultValue</code> and keeps its own.
     </p>
+    <p>
+      The first value is also the input's <code>value</code> attribute, what the browser puts back when the form is
+      reset. An uncontrolled input then takes it as its value and calls <code>onValueChange</code> once if it
+      changed; a controlled input is set back to its owner's value.
+    </p>
     <Demo source="input/controlled"><InputControlled /></Demo>
 
     <h3 id="field">With a label and validation</h3>

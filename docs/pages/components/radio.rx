@@ -73,6 +73,12 @@ export default component Page() {
       then submits the value under that generated name, so give the group a <code>name</code> when the submission
       matters.
     </p>
+    <p>
+      The radio holding the group's <code>defaultValue</code> carries the <code>checked</code> attribute, which is
+      what the browser checks again when the form is reset. An uncontrolled group then takes its default as its
+      value and calls <code>onValueChange</code> once if it changed (a group with no default is cleared without a
+      call, as <code>onValueChange</code> receives a value). A controlled group is set back to its owner's value.
+    </p>
 
     <h3 id="disabled-read-only">Disabled and read-only</h3>
     <p>

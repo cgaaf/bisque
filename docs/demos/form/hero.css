@@ -43,6 +43,17 @@
     outline-color: light-dark(#c4314b, #ff8a9a);
   }
 
+  .Description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* The error takes the description's place. */
+  .Field[data-invalid] .Description {
+    display: none;
+  }
+
   .Error {
     font-size: 0.8125rem;
     color: light-dark(#c4314b, #ff8a9a);
@@ -117,9 +128,68 @@
     outline-offset: 2px;
   }
 
-  .Sent {
+  /* The form is [data-submitting] (and aria-busy) while onFormSubmit is out, and ignores another submit. */
+  .Submit .Busy {
+    display: none;
+  }
+
+  .Form[data-submitting] .Submit {
+    cursor: progress;
+    opacity: 0.7;
+  }
+
+  .Form[data-submitting] .Submit .Idle {
+    display: none;
+  }
+
+  .Form[data-submitting] .Submit .Busy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .Form[data-submitting] .Submit .Busy::before {
+    content: "";
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: FormHero-spin 0.8s linear infinite;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .Form[data-submitting] .Submit .Busy::before {
+      animation-duration: 2.4s;
+    }
+  }
+
+  .Failure,
+  .Created {
     margin: 0;
-    font-size: 0.8125rem;
-    color: light-dark(#63636e, #9a9aa6);
+    padding: 0.625rem 0.75rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+  }
+
+  .Failure {
+    background: light-dark(#fdecef, #3a1820);
+    color: light-dark(#a3223b, #ffb3bf);
+  }
+
+  .Created {
+    background: light-dark(#e6f6ee, #0f2e22);
+    color: light-dark(#0a6a47, #8fe0bb);
+  }
+
+  .Failure[hidden],
+  .Created[hidden] {
+    display: none;
+  }
+}
+
+@keyframes FormHero-spin {
+  to {
+    rotate: 1turn;
   }
 }

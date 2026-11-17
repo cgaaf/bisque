@@ -5,17 +5,20 @@ import { Form } from "../../form/form.rx"
 
 export default component Fixture() {
   source last := ""
+  source changes := 0
   source colors: string[] := ["red"]
   source submitted := ""
   <div>
     <form data-testid="form">
-      <CheckboxGroup aria-label="Toppings" data-testid="toppings" allValues={["cheese", "ham", "olives"]} defaultValue={["cheese"]} onValueChange={(next) => { last := next.join(",") }}>
+      <CheckboxGroup aria-label="Toppings" data-testid="toppings" allValues={["cheese", "ham", "olives"]} defaultValue={["cheese"]} onValueChange={(next) => { last := next.join(","); changes := changes + 1 }}>
         <label><CheckboxRoot parent />All toppings</label>
         <label><CheckboxRoot name="toppings" value="cheese" />Cheese</label>
         <label><CheckboxRoot name="toppings" value="ham" />Ham</label>
         <label><CheckboxRoot name="toppings" value="olives" />Olives</label>
       </CheckboxGroup>
       <output data-testid="last">{last}</output>
+      <output data-testid="changes">{changes}</output>
+      <button type="reset">Reset</button>
     </form>
     <Form onFormSubmit={(values) => { submitted := `${values.colors}` }}>
       <FieldRoot name="colors" data-testid="colors-root">
@@ -32,6 +35,7 @@ export default component Fixture() {
         </CheckboxGroup>
       </FieldRoot>
       <button type="submit">Submit</button>
+      <button type="reset">Reset colors</button>
     </Form>
     <output data-testid="submitted">{submitted}</output>
   </div>

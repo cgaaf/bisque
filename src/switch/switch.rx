@@ -6,7 +6,7 @@
 // An <input> can't have children, so SwitchRoot renders its children right after the input: SwitchThumb is the
 // input's next sibling, styled from it (`input:checked + span`), or the input draws its own thumb (`::before`).
 import { mergeProps, createRef } from "../internal/props.js"
-import { createCheckedInput } from "../internal/field.js"
+import { createCheckedInput, createFormReset } from "../internal/field.js"
 import { field, fieldInputProps } from "../field/field.rx"
 import { InputProps, SpanProps } from "../internal/types.rx"
 
@@ -51,8 +51,12 @@ export component SwitchRoot(props: SwitchRootProps) {
     required: props.required ?? false,
   }
 
+  // The input's `defaultChecked`: what a form reset puts back, which for an uncontrolled switch is its default.
+  initialChecked = peek(isChecked)
+
   effect (isChecked) { if (f) { f.setValue($0) } }
   _input = createCheckedInput(element, isChecked, false, revision)
+  _reset = createFormReset(element, reset)
 
   // The browser has already toggled the input: report that, and let the state decide what it shows.
   action change(event: Event & { currentTarget: HTMLInputElement }) {
@@ -60,6 +64,17 @@ export component SwitchRoot(props: SwitchRootProps) {
     revision := revision + 1
     uncontrolled := next
     if (props.onCheckedChange) { props.onCheckedChange(next) }
+  }
+  // The browser has put the input back to `defaultChecked`. Uncontrolled, that is the new state, reported once if
+  // it changed; controlled, the owner's state is written back over it.
+  action reset() {
+    revision := revision + 1
+    let next = props.checked ?? initialChecked
+    if (props.checked == undefined && next != uncontrolled) {
+      uncontrolled := next
+      if (props.onCheckedChange) { props.onCheckedChange(next) }
+    }
+    if (f) { f.reset(next) }
   }
   // Cancelling the click is what keeps a native checkbox unchanged: the browser restores it and fires no change.
   action click(event: MouseEvent) { if (self.readOnly) { event.preventDefault() } }
@@ -78,6 +93,7 @@ export component SwitchRoot(props: SwitchRootProps) {
     role: "switch",
     name: name ?? f?.name,
     value: value,
+    defaultChecked: initialChecked,
     disabled: self.disabled ? true : undefined,
     required: self.required ? true : undefined,
     "aria-readonly": self.readOnly ? "true" : undefined,

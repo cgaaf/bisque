@@ -1,0 +1,19 @@
+import { Form } from "../form.rx"
+import { FieldRoot, FieldLabel, FieldControl, FieldError } from "../../field/field.rx"
+import { register, messageOf } from "./server.js"
+
+// A handler that returns the server's promise without catching it: a failure goes to `onFormError`.
+export default component Fixture() {
+  source failure := ""
+  <div>
+    <Form data-testid="form" onFormSubmit={(values) => register(values, 50)} onFormError={(error) => { failure := messageOf(error) }}>
+      <FieldRoot name="username" data-testid="username-root">
+        <FieldLabel>Username</FieldLabel>
+        <FieldControl required />
+        <FieldError data-testid="username-error" />
+      </FieldRoot>
+      <button type="submit">Submit</button>
+    </Form>
+    <output data-testid="failure">{failure}</output>
+  </div>
+}

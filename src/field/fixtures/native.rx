@@ -1,0 +1,23 @@
+import { FieldRoot, FieldLabel, FieldError } from "../field.rx"
+import { Input } from "../../input/input.rx"
+
+// Fields in a plain <form>, with no Form: the browser checks the constraints on submit.
+export default component Fixture() {
+  source submits := 0
+  <form data-testid="form" onSubmit={(event) => { event.preventDefault(); submits := submits + 1 }}>
+    <FieldRoot name="email" data-testid="email-root">
+      <FieldLabel>Email</FieldLabel>
+      <Input type="email" required />
+      <FieldError data-testid="email-error" />
+    </FieldRoot>
+    <FieldRoot name="username" data-testid="name-root" validate={(value) => value == "admin" ? "That name is taken" : null}>
+      <FieldLabel>Username</FieldLabel>
+      <Input />
+      <FieldError data-testid="name-error" />
+    </FieldRoot>
+    <input aria-label="Other" />
+    <button type="submit">Submit</button>
+    <button type="reset">Reset</button>
+    <output data-testid="submits">{submits}</output>
+  </form>
+}

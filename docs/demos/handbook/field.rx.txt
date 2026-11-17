@@ -1,8 +1,9 @@
 import { Form } from "./rs-ui/form/form.rx"
 import { FieldRoot, FieldLabel, FieldControl, FieldDescription, FieldError } from "./rs-ui/field/field.rx"
 
-<Form onFormSubmit={(values) => { subscribe(values.email) }}>
-  <FieldRoot name="email" validate={(value) => taken(value) ? "That address is already subscribed." : null}>
+// subscribe returns the request's promise: the form waits for it, and shows the errors it resolves to.
+<Form onFormSubmit={(values) => subscribe(values.email)}>
+  <FieldRoot name="email" validate={(value) => `${value}`.endsWith(".invalid") ? "Use a real address." : null}>
     <FieldLabel>Email</FieldLabel>
     <FieldControl type="email" required />
     <FieldDescription>We only write about your orders.</FieldDescription>

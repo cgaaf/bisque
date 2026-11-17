@@ -18,14 +18,14 @@
           "type": "string",
           "default": null,
           "required": false,
-          "description": "The value checked at first, when the group isn't controlled. Without one, no radio is checked."
+          "description": "The value checked at first, when the group isn't controlled. Without one, no radio is checked. The radio holding it carries the `checked` attribute, so a form reset checks it again."
         },
         {
           "name": "onValueChange",
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": "Called with the radio's value when the user checks another radio."
+          "description": "Called with the radio's value when the user checks another radio, and once when a form reset returns an uncontrolled group to its default (not when the reset clears a group that has none)."
         },
         {
           "name": "disabled",

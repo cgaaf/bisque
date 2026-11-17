@@ -1,0 +1,3 @@
+// How the Form demos may use ./server.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./server.d.ts.
+export fn createAccount(values: any): Promise<any>

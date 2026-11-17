@@ -8,7 +8,7 @@
 // An <input> can't have children, so RadioRoot renders its children right after the radio: RadioIndicator is the
 // radio's next sibling, styled from it (`input:checked + span`), or the radio draws its own mark (`::before`).
 import { mergeProps, createId, createRef } from "../internal/props.js"
-import { createCheckedInput } from "../internal/field.js"
+import { createCheckedInput, createFormReset } from "../internal/field.js"
 import { field, fieldGroupProps } from "../field/field.rx"
 import { DivProps, InputProps, SpanProps } from "../internal/types.rx"
 
@@ -20,6 +20,8 @@ export type RadioGroupContext = {
   disabled: boolean
   readOnly: boolean
   required: boolean
+  // The value the group started with: a radio holding it is `defaultChecked`, what a form reset restores.
+  initialValue: string | undefined
   // Counts the browser's changes, so every radio is set back to the state after each one (createCheckedInput).
   revision: number
   select: (value: string) => void
@@ -31,6 +33,7 @@ export context radioGroup: RadioGroupContext
 export type RadioGroupProps = {
   value?: string
   defaultValue?: string
+  // Called with the new value. Not called when a form reset clears a group that has no default.
   onValueChange?: (value: string) => void
   disabled?: boolean
   // The radios are focusable and the arrow keys move between them, but nothing is checked.
@@ -46,13 +49,18 @@ export component RadioGroup(props: RadioGroupProps) {
   f = use field
   source uncontrolled: string | undefined := peek(props.defaultValue)
   source revision := 0
+  // A radio of the group, for the form it is in: the group answers a reset for all its radios.
+  source anyRadio: HTMLInputElement | undefined := undefined
   current = props.value ?? uncontrolled
+  // The value a form reset puts back: each radio's `defaultChecked` is whether it holds this one.
+  initialValue = peek(current)
   isDisabled = (props.disabled ?? false) || (f?.disabled ?? false)
   isReadOnly = props.readOnly ?? false
   isRequired = props.required ?? false
   generatedName = createId("radio-group")
 
   effect (current) { if (f) { f.setValue($0) } }
+  _reset = createFormReset(anyRadio, reset)
 
   // The browser has already checked the radio: report that, and let the state decide what is checked.
   action select(value: string) {
@@ -61,7 +69,21 @@ export component RadioGroup(props: RadioGroupProps) {
     uncontrolled := value
     if (props.onValueChange) { props.onValueChange(value) }
   }
-  action setInput(element: HTMLInputElement) { if (f) { f.setInput(element) } }
+  // The browser has put every radio back to `defaultChecked`. Uncontrolled, the default is the new value, reported
+  // once if it changed; controlled, the owner's value is written back over it.
+  action reset() {
+    revision := revision + 1
+    let next = props.value ?? initialValue
+    if (props.value == undefined && next != uncontrolled) {
+      uncontrolled := next
+      if (props.onValueChange && next != undefined) { props.onValueChange(next) }
+    }
+    if (f) { f.reset(next) }
+  }
+  action setInput(element: HTMLInputElement) {
+    anyRadio := element
+    if (f) { f.setInput(element) }
+  }
 
   provide radioGroup = {
     value: current,
@@ -69,6 +91,7 @@ export component RadioGroup(props: RadioGroupProps) {
     disabled: isDisabled,
     readOnly: isReadOnly,
     required: isRequired,
+    initialValue: initialValue,
     revision: revision,
     select: select,
     setInput: setInput,
@@ -134,6 +157,7 @@ export component RadioRoot(props: RadioRootProps) {
     type: "radio",
     name: g.name,
     value: value,
+    defaultChecked: g.initialValue == value,
     disabled: self.disabled ? true : undefined,
     required: self.required ? true : undefined,
     "data-readonly": self.readOnly ? "" : undefined,

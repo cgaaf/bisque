@@ -1,9 +1,8 @@
 import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { FormHero } from "../../demos/form/hero.rx"
-import { FormServerErrors } from "../../demos/form/server-errors.rx"
 
 export default component Page() {
-  <DocsPage title="Form" subtitle="A native form that validates its fields on submit and shows errors from a server.">
+  <DocsPage title="Form" subtitle="A native form that validates its fields, waits for the server and shows the errors it returns.">
     <Demo source="form/hero"><FormHero /></Demo>
 
     <h2 id="anatomy">Anatomy</h2>
@@ -13,8 +12,9 @@ export default component Page() {
     <h2 id="platform">What the browser does</h2>
     <p>
       <code>Form</code> is a native <code>{"<form>"}</code>. Submitting it with a submit button or with{" "}
-      <kbd>Enter</kbd> in a field, and the native submission itself, are the browser's. Its controls' constraints
-      are checked by the browser's constraint validation, which the <a href="../field/">Fields</a> read.
+      <kbd>Enter</kbd> in a field, resetting it with a reset button, and the native submission itself are the
+      browser's. Its controls' constraints are checked by the browser's constraint validation, which the{" "}
+      <a href="../field/">Fields</a> read.
     </p>
     <p>
       The form carries <code>novalidate</code>, so the browser doesn't stop a submit with its own message bubbles.
@@ -29,9 +29,8 @@ export default component Page() {
       </li>
       <li>
         If all are valid, <code>onSubmit</code> is called with the event, then <code>onFormSubmit</code> with the
-        values of the named fields.
+        values of the named fields. The form waits for it, and shows on their fields the errors it comes back with.
       </li>
-      <li>Errors passed in <code>errors</code>, by field name, are shown on those fields.</li>
     </ul>
     <p>
       A browser still counts a submit attempt as interaction, so <code>:user-invalid</code> matches the invalid
@@ -53,29 +52,75 @@ export default component Page() {
       in both cases, and only for a valid submit.
     </p>
 
+    <h3 id="pending">Waiting for the server</h3>
+    <p>
+      <code>onFormSubmit</code> may take its time: return a promise, or write it as an action that{" "}
+      <code>await</code>s, as the hero does. Until it ends the form carries <code>data-submitting</code> and{" "}
+      <code>aria-busy="true"</code>, and a second submit is ignored, so one request can't race another. Style the
+      pending state from the form: the hero's button swaps its label with{" "}
+      <code>.Form[data-submitting] .Submit</code>. The fields stay live meanwhile; what someone types while the
+      request is out registers at once.
+    </p>
+    <p>
+      The fake server in the hero answers after a little over a second. It is a small JavaScript module,{" "}
+      <code>server.js</code>, declared to the demo by a one-line <code>server.d.rx</code>, as any library call is.
+    </p>
+
+    <h3 id="server-errors">Errors from the server</h3>
+    <p>
+      What <code>onFormSubmit</code> resolves to, if anything, is the errors the server found: an object of
+      messages (or lists of messages) keyed by field name. Each is shown by its field's <code>FieldError</code> and
+      makes the field invalid, and focus moves to the first field that has one. An error is hidden once its
+      field's value changes, and a field that still has one blocks the next submit. The same error coming back
+      from the next submit shows again.
+    </p>
+    <p>
+      An error is about the value that was sent. If someone edits a field while the request is out, the error the
+      server returns for that field is dropped, since the value it was about is gone.
+    </p>
+
+    <h3 id="failure">When the request fails</h3>
+    <p>
+      If <code>onFormSubmit</code> throws, or its promise rejects (the network dropped), the form stops submitting,
+      can be submitted again, and calls <code>onFormError</code> with the error. Without{" "}
+      <code>onFormError</code> the failure is reported to the page as an uncaught error is: the console,{" "}
+      <code>window.onerror</code>, your monitoring.
+    </p>
+    <p>
+      An action that <code>await</code>s must catch its own failures (the compiler insists), so the hero shows its
+      message from a <code>catch</code>. <code>onFormError</code> is for a handler that returns a promise it doesn't
+      catch:
+    </p>
+    <Code file="form/promise.rx.txt" />
+
+    <h3 id="errors-prop">Errors from elsewhere</h3>
+    <p>
+      <code>errors</code> shows errors that didn't come from a submit, such as a page the server rendered with
+      them. Each entry makes its field invalid and is hidden once the field's value changes, until{" "}
+      <code>errors</code> itself changes.
+    </p>
+
+    <h3 id="reset">Resetting</h3>
+    <p>
+      A reset button, or <code>form.reset()</code>, is the browser's: it puts every control back to its default.
+      The controls follow it. An uncontrolled one takes its default as its value and reports the change once; a
+      controlled one keeps the value its owner holds. Each Field returns to untouched and unvalidated, with its
+      errors cleared, those from the server included, and the form returns to before its first submit. A reset
+      isn't a change: it validates nothing.
+    </p>
+    <div class="note">
+      <p>
+        Select, Combobox, Autocomplete, Slider and Number Field don't take part in a reset yet, and neither does a Field around
+        one.
+      </p>
+    </div>
+
     <h3 id="validation-mode">When fields validate</h3>
     <p>
       <code>validationMode</code> sets the mode for every field inside: <code>"onSubmit"</code> (the default),{" "}
       <code>"onBlur"</code> or <code>"onChange"</code>. A field's own <code>validationMode</code> wins. Whatever the
       mode, a submit validates every field. The <a href="../field/">Field</a> page has the details.
     </p>
-
-    <h3 id="server-errors">Errors from a server</h3>
-    <p>
-      Pass <code>errors</code>, an object of messages keyed by field name, to show errors that only a server can
-      find. Each one makes its field invalid and is shown by its <code>FieldError</code>. When errors arrive after a
-      valid submit, focus moves to the first field that has one. An error is hidden once its field's value changes,
-      and a field that still has one blocks the next submit.
-    </p>
-    <Demo source="form/server-errors"><FormServerErrors /></Demo>
-    <div class="note">
-      <p>
-        <code>errors</code> is compared by content, not identity. Set it to <code>{"{}"}</code> when a submit
-        starts and to the reply when it comes back: the same error returned for the next submit is then a change,
-        and shows again. The demo answers at once, so it can't do that, and an error for a handle that was edited
-        and then typed back stays hidden.
-      </p>
-    </div>
 
     <h2 id="api-reference">API reference</h2>
     <ApiReference family="form" />

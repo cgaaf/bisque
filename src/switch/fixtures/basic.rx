@@ -6,6 +6,7 @@ export default component Fixture() {
   source wifi := false
   source submitted := ""
   source refusals := 0
+  source bluetoothChanges: string[] := []
   <div>
     <form data-testid="form">
       <label>
@@ -15,11 +16,13 @@ export default component Fixture() {
         Wi-Fi
       </label>
       <output data-testid="wifi">{wifi ? "on" : "off"}</output>
-      <SwitchRoot aria-label="Bluetooth" defaultChecked />
+      <SwitchRoot aria-label="Bluetooth" defaultChecked onCheckedChange={(next) => { bluetoothChanges := [...bluetoothChanges, next ? "on" : "off"] }} />
+      <output data-testid="bluetooth-changes">{bluetoothChanges.join(",")}</output>
       <SwitchRoot aria-label="Airplane" disabled />
       <SwitchRoot aria-label="Roaming" readOnly />
       <SwitchRoot aria-label="Pinned" checked onCheckedChange={() => { refusals := refusals + 1 }} />
       <output data-testid="refusals">{refusals}</output>
+      <button type="reset">Reset</button>
     </form>
     <Form onFormSubmit={(values) => { submitted := `consent=${values.consent}` }}>
       <FieldRoot name="consent" data-testid="consent-root">

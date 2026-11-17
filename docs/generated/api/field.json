@@ -30,9 +30,9 @@
         {
           "name": "validationMode",
           "type": "FormValidationMode",
-          "default": "the Form's, else \"onSubmit\"",
+          "default": "the Form's, else \"onBlur\"",
           "required": false,
-          "description": "When the field validates: `\"onSubmit\"` (when its Form is submitted, then on every change), `\"onBlur\"` or `\"onChange\"`. Outside a Form, an `\"onSubmit\"` field is never validated."
+          "description": "When the field validates: `\"onSubmit\"` (when its Form is submitted, then on every change), `\"onBlur\"` or `\"onChange\"`. Whatever the mode, the browser checking the input (a native submit, its `invalid` event) validates it."
         },
         {
           "name": "invalid",
@@ -232,14 +232,14 @@
           "type": "string",
           "default": null,
           "required": false,
-          "description": "The value at first, when the input isn’t controlled."
+          "description": "The value at first, when the input isn’t controlled. The first value is also the input’s `value` attribute: what a form reset puts back."
         },
         {
           "name": "onValueChange",
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new value on every input."
+          "description": "Called with the new value on every input, and once when a form reset changes an uncontrolled input."
         }
       ],
       "dataAttributes": [

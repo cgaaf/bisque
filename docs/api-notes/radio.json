@@ -3,8 +3,8 @@
     "description": "A `<div role=\"radiogroup\">` that holds which radio is checked and gives its radios a shared name. Inside a FieldRoot it is the field's control.",
     "props": {
       "value": "The value of the checked radio. Pass it with `onValueChange` to control the group.",
-      "defaultValue": "The value checked at first, when the group isn't controlled. Without one, no radio is checked.",
-      "onValueChange": "Called with the radio's value when the user checks another radio.",
+      "defaultValue": "The value checked at first, when the group isn't controlled. Without one, no radio is checked. The radio holding it carries the `checked` attribute, so a form reset checks it again.",
+      "onValueChange": "Called with the radio's value when the user checks another radio, and once when a form reset returns an uncontrolled group to its default (not when the reset clears a group that has none).",
       "disabled": "Disables every radio in the group natively.",
       "readOnly": "The radios stay focusable and the arrow keys move between them, but none can be checked. Sets `aria-readonly` and `data-readonly`.",
       "required": "Sets the native `required` attribute on each radio: one must be checked for the form, or the Field, to be valid. Also sets `aria-required` on the group.",

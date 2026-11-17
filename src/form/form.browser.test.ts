@@ -2,6 +2,7 @@ import { expect, test } from "vitest";
 import { mount } from "../test/browser.ts";
 import slow from "./fixtures/async.rx";
 import basic from "./fixtures/basic.rx";
+import failing from "./fixtures/failing.rx";
 
 const textbox = (getByRole: (role: string, options: { name: string }) => HTMLElement, name: string) =>
   getByRole("textbox", { name }) as HTMLInputElement;
@@ -208,4 +209,28 @@ test("fields stay live while a submit is out", async () => {
   expect(city.hasAttribute("data-filled")).toBe(true);
   expect(city.hasAttribute("data-dirty")).toBe(true);
   await expect.poll(() => getByTestId("saved").textContent).toBe("ada");
+});
+
+test("a handler's promise that rejects goes to onFormError, and one that resolves to errors shows them", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(failing);
+  const field = textbox(getByRole, "Username");
+  const form = getByTestId("form");
+  await user.type(field, "offline{Enter}");
+  expect(form.hasAttribute("data-submitting")).toBe(true);
+  await expect.poll(() => getByTestId("failure").textContent).toBe("Network down");
+  expect(form.hasAttribute("data-submitting")).toBe(false);
+  await user.clear(field);
+  await user.type(field, "taken{Enter}");
+  await expect.poll(() => queryByTestId("username-error")?.textContent).toBe("Already registered");
+});
+
+test("a form reset returns the form to before its first submit", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("email-root").hasAttribute("data-invalid")).toBe(true);
+  (getByTestId("form") as HTMLFormElement).reset();
+  await expect.poll(() => getByTestId("email-root").hasAttribute("data-invalid")).toBe(false);
+  // Fields in the default mode wait for a submit again before validating on change.
+  await user.type(textbox(getByRole, "Username"), "admin");
+  expect(getByTestId("username-root").hasAttribute("data-invalid")).toBe(false);
 });

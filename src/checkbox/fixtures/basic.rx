@@ -10,6 +10,7 @@ export default component Fixture() {
   source agreed := false
   source changes := 0
   source mixed := true
+  source newsChanges: string[] := []
   <form data-testid="form">
     <label>
       <CheckboxRoot name="terms" value="yes" checked={agreed} onCheckedChange={(next) => { agreed := next }}>
@@ -18,7 +19,8 @@ export default component Fixture() {
       Accept terms
     </label>
     <output data-testid="agreed">{agreed ? "yes" : "no"}</output>
-    <label><CheckboxRoot name="news" defaultChecked />News</label>
+    <label><CheckboxRoot name="news" defaultChecked onCheckedChange={(next) => { newsChanges := [...newsChanges, next ? "on" : "off"] }} />News</label>
+    <output data-testid="news-changes">{newsChanges.join(",")}</output>
     <label><CheckboxRoot checked={false} onCheckedChange={() => { changes := changes + 1 }} />Refused</label>
     <output data-testid="changes">{changes}</output>
     <label><CheckboxRoot indeterminate={mixed}><Mark /></CheckboxRoot>Select all</label>

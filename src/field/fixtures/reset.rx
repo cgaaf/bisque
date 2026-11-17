@@ -1,0 +1,46 @@
+import { FieldRoot, FieldLabel, FieldError } from "../field.rx"
+import { Form } from "../../form/form.rx"
+import { Input } from "../../input/input.rx"
+import { CheckboxRoot } from "../../checkbox/checkbox.rx"
+import { RadioGroup, RadioRoot } from "../../radio/radio.rx"
+
+// A Form with a reset button. Its handler refuses the handle "studio", the handle's default, as a server would.
+export default component Fixture() {
+  source sent := ""
+  <div>
+    <Form data-testid="form" onFormSubmit={(values) => {
+      if (values.handle == "studio") { return { handle: "That handle is taken" } }
+      sent := `${values.email}`
+    }}>
+      <FieldRoot name="email" data-testid="email-root">
+        <FieldLabel>Email</FieldLabel>
+        <Input type="email" required />
+        <FieldError data-testid="email-error" />
+      </FieldRoot>
+      <FieldRoot name="code" data-testid="code-root" validationMode="onChange" validate={(value) => `${value}`.length < 3 ? "Too short" : null}>
+        <FieldLabel>Code</FieldLabel>
+        <Input defaultValue="ab" />
+        <FieldError data-testid="code-error" />
+      </FieldRoot>
+      <FieldRoot name="handle" data-testid="handle-root">
+        <FieldLabel>Handle</FieldLabel>
+        <Input defaultValue="studio" />
+        <FieldError data-testid="handle-error" />
+      </FieldRoot>
+      <FieldRoot name="terms" data-testid="terms-root">
+        <label><CheckboxRoot required />Accept terms</label>
+        <FieldError data-testid="terms-error">Accept the terms</FieldError>
+      </FieldRoot>
+      <FieldRoot name="plan" data-testid="plan-root">
+        <FieldLabel>Plan</FieldLabel>
+        <RadioGroup defaultValue="free">
+          <label><RadioRoot value="free" />Free</label>
+          <label><RadioRoot value="pro" />Pro</label>
+        </RadioGroup>
+      </FieldRoot>
+      <button type="submit">Submit</button>
+      <button type="reset">Reset</button>
+    </Form>
+    <output data-testid="sent">{sent}</output>
+  </div>
+}

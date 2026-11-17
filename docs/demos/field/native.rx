@@ -1,0 +1,22 @@
+import { FieldRoot, FieldLabel, FieldError } from "../../../src/field/field.rx"
+import { Input } from "../../../src/input/input.rx"
+
+export component FieldNative() {
+  source handle := ""
+  source sent := ""
+  // A plain <form>, no Form: the browser checks the constraints when it is submitted.
+  <form class="FieldNative" onSubmit={(event) => {
+    event.preventDefault()
+    sent := handle
+  }}>
+    <FieldRoot class="Field" name="handle" validate={(value) => value == "studio" ? "That handle is taken" : null}>
+      <FieldLabel class="Label">Handle</FieldLabel>
+      <div class="Row">
+        <Input class="Input" required pattern="[a-z0-9]+" value={handle} onValueChange={(next) => { handle := next }} />
+        <button class="Submit" type="submit">Save</button>
+      </div>
+      <FieldError class="Error" />
+    </FieldRoot>
+    <p class="Sent" hidden={sent == ""}>Saved @{sent}</p>
+  </form>
+}

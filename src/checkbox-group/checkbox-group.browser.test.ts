@@ -84,3 +84,49 @@ test("inside a field: labelled by it, its value is the field's, disabled with it
   expect((getByRole("checkbox", { name: "Small" }) as Box).disabled).toBe(true);
   expect(getByRole("group", { name: "Sizes" }).hasAttribute("data-disabled")).toBe(true);
 });
+
+test("a form reset returns an uncontrolled group to its default with one change", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const box = (name: string) => getByRole("checkbox", { name }) as HTMLInputElement;
+  expect(box("Cheese").defaultChecked).toBe(true);
+  await user.click(box("Ham"));
+  await user.click(box("Olives"));
+  expect(getByTestId("changes").textContent).toBe("2");
+  (getByTestId("form") as HTMLFormElement).reset();
+  expect(box("Cheese").checked).toBe(true);
+  expect(box("Ham").checked).toBe(false);
+  await expect.poll(() => getByTestId("last").textContent).toBe("cheese");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(getByTestId("changes").textContent).toBe("3");
+  expect(state(box("All toppings"))).toBe("mixed");
+  // The parent box starts its cycle again from the default selection.
+  await user.click(box("All toppings"));
+  expect(getByTestId("last").textContent).toBe("cheese,ham,olives");
+  await user.click(box("All toppings"));
+  expect(getByTestId("last").textContent).toBe("");
+  await user.click(box("All toppings"));
+  expect(getByTestId("last").textContent).toBe("cheese");
+});
+
+test("a form reset keeps a controlled group at its owner's value", async () => {
+  const { getByRole, user } = mount(basic);
+  const box = (name: string) => getByRole("checkbox", { name }) as HTMLInputElement;
+  await user.click(box("Blue"));
+  expect(box("Blue").checked).toBe(true);
+  await user.click(getByRole("button", { name: "Reset colors" }));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(box("Red").checked).toBe(true);
+  expect(box("Blue").checked).toBe(true);
+});
+
+test("a form reset returns a group's field to untouched", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const blue = getByRole("checkbox", { name: "Blue" }) as HTMLInputElement;
+  await user.click(blue);
+  blue.focus();
+  await user.tab();
+  const root = getByTestId("colors-root");
+  expect(root.hasAttribute("data-touched")).toBe(true);
+  await user.click(getByRole("button", { name: "Reset colors" }));
+  await expect.poll(() => root.hasAttribute("data-touched")).toBe(false);
+});

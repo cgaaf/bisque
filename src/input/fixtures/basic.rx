@@ -3,10 +3,12 @@ import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field
 
 export default component Fixture() {
   source query := "initial"
+  source notesChanges: string[] := []
   <form data-testid="form">
     <Input aria-label="Search" name="q" value={query} onValueChange={(next) => { query := next }} />
     <output data-testid="query">{query}</output>
-    <Input aria-label="Notes" name="notes" defaultValue="draft" />
+    <Input aria-label="Notes" name="notes" defaultValue="draft" onValueChange={(next) => { notesChanges := [...notesChanges, next] }} />
+    <output data-testid="notes-changes">{notesChanges.join("|")}</output>
     <FieldRoot name="city" data-testid="city-root" validationMode="onChange">
       <FieldLabel>City</FieldLabel>
       <Input required />
@@ -17,5 +19,6 @@ export default component Fixture() {
       <FieldLabel>Country</FieldLabel>
       <Input />
     </FieldRoot>
+    <button type="reset">Reset</button>
   </form>
 }

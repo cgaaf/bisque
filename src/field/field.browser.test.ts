@@ -1,6 +1,8 @@
 import { expect, test } from "vitest";
 import { mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
+import native from "./fixtures/native.rx";
+import reset from "./fixtures/reset.rx";
 
 const textbox = (getByRole: (role: string, options: { name: string }) => HTMLElement, name: string) =>
   getByRole("textbox", { name }) as HTMLInputElement;
@@ -147,4 +149,138 @@ test("`invalid` marks the field invalid from the start", () => {
   expect(getByTestId("flagged-root").hasAttribute("data-invalid")).toBe(true);
   expect(textbox(getByRole, "Flagged").getAttribute("aria-invalid")).toBe("true");
   expect(getByTestId("flagged-error").textContent).toBe("Flagged by the server");
+});
+
+const STATE = ["data-invalid", "data-valid", "data-touched", "data-dirty"];
+const stateOf = (root: HTMLElement) => STATE.filter((name) => root.hasAttribute(name));
+const settle = () => new Promise((resolve) => setTimeout(resolve, 20));
+
+test("a form reset clears the errors a submit showed and returns the form to before its first submit", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(reset);
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("email-root").hasAttribute("data-invalid")).toBe(true);
+  expect(getByTestId("terms-error").textContent).toBe("Accept the terms");
+
+  await user.click(getByRole("button", { name: "Reset" }));
+  await settle();
+  expect(queryByTestId("email-error")).toBeNull();
+  expect(queryByTestId("terms-error")).toBeNull();
+  for (const name of ["email-root", "code-root", "terms-root", "plan-root"]) {
+    expect({ [name]: stateOf(getByTestId(name)) }).toEqual({ [name]: [] });
+  }
+  expect(textbox(getByRole, "Email").hasAttribute("aria-invalid")).toBe(false);
+
+  // Before a submit, an "onSubmit" field doesn't validate on change.
+  await user.type(textbox(getByRole, "Email"), "x");
+  expect(getByTestId("email-root").hasAttribute("data-invalid")).toBe(false);
+});
+
+test("a form reset is not a change: the restored value isn't validated and the field is untouched", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(reset);
+  const code = textbox(getByRole, "Code");
+  // "abc" passes; the default "ab" would not.
+  await user.type(code, "c");
+  await user.tab();
+  expect(stateOf(getByTestId("code-root"))).toEqual(["data-valid", "data-touched", "data-dirty"]);
+  await user.click(getByRole("checkbox", { name: "Accept terms" }));
+  await user.click(getByRole("radio", { name: "Pro" }));
+
+  await user.click(getByRole("button", { name: "Reset" }));
+  await settle();
+  expect(code.value).toBe("ab");
+  expect(queryByTestId("code-error")).toBeNull();
+  for (const name of ["code-root", "terms-root", "plan-root"]) {
+    expect({ [name]: stateOf(getByTestId(name)) }).toEqual({ [name]: [] });
+  }
+  expect((getByRole("radio", { name: "Free" }) as HTMLInputElement).checked).toBe(true);
+
+  // The next change validates as before.
+  await user.type(code, "{Backspace}");
+  expect(getByTestId("code-error").textContent).toBe("Too short");
+});
+
+test("a form reset retires an error the server returned, also for a value the reset leaves as it was", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(reset);
+  await user.type(textbox(getByRole, "Email"), "a@b.co");
+  await user.type(textbox(getByRole, "Code"), "c");
+  await user.click(getByRole("checkbox", { name: "Accept terms" }));
+  await user.click(getByRole("button", { name: "Submit" }));
+  await expect.poll(() => queryByTestId("handle-error")?.textContent).toBe("That handle is taken");
+  await user.click(getByRole("button", { name: "Reset" }));
+  await settle();
+  expect(textbox(getByRole, "Handle").value).toBe("studio");
+  expect(queryByTestId("handle-error")).toBeNull();
+  expect(getByTestId("handle-root").hasAttribute("data-invalid")).toBe(false);
+  expect(getByTestId("sent").textContent).toBe("");
+});
+
+test("outside a Form, the browser's check on a native submit shows the field's error", async () => {
+  const { getByRole, getByTestId, user } = mount(native);
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("submits").textContent).toBe("0");
+  const email = textbox(getByRole, "Email");
+  expect(getByTestId("email-root").hasAttribute("data-invalid")).toBe(true);
+  expect(getByTestId("email-error").textContent).toBe(email.validationMessage);
+  expect(email.getAttribute("aria-invalid")).toBe("true");
+});
+
+test("after a form reset, a required field that was emptied doesn't count as missing until changed again", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(native);
+  const email = textbox(getByRole, "Email");
+  await user.type(email, "a");
+  await user.clear(email);
+  await user.tab();
+  expect(getByTestId("email-error").textContent).toBe(email.validationMessage);
+  await user.click(getByRole("button", { name: "Reset" }));
+  await settle();
+  expect(queryByTestId("email-error")).toBeNull();
+  // Tabbing through it is not a change.
+  await user.click(email);
+  await user.tab();
+  expect(queryByTestId("email-error")).toBeNull();
+  expect(getByTestId("email-root").hasAttribute("data-invalid")).toBe(false);
+});
+
+test("outside a Form, a field validates on blur by default", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(native);
+  await user.type(textbox(getByRole, "Username"), "admin");
+  expect(queryByTestId("name-error")).toBeNull();
+  await user.tab();
+  expect(getByTestId("name-error").textContent).toBe("That name is taken");
+});
+
+test("outside a Form, a blurred field's `validate` message blocks a native submit", async () => {
+  const { getByRole, getByTestId, queryByTestId, user } = mount(native);
+  await user.type(textbox(getByRole, "Email"), "a@b.co");
+  const username = textbox(getByRole, "Username");
+  await user.type(username, "admin");
+  await user.click(getByRole("textbox", { name: "Other" }));
+  expect(username.validationMessage).toBe("That name is taken");
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("submits").textContent).toBe("0");
+  expect(getByTestId("name-error").textContent).toBe("That name is taken");
+
+  await user.type(username, "2");
+  expect(queryByTestId("name-error")).toBeNull();
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("submits").textContent).toBe("1");
+});
+
+test("outside a Form, a press on the submit button right after typing blocks the submit too", async () => {
+  const { getByRole, getByTestId, user } = mount(native);
+  await user.type(textbox(getByRole, "Email"), "a@b.co");
+  await user.type(textbox(getByRole, "Username"), "admin");
+  await user.click(getByRole("button", { name: "Submit" }));
+  expect(getByTestId("submits").textContent).toBe("0");
+  expect(getByTestId("name-error").textContent).toBe("That name is taken");
+});
+
+test("outside a Form, Enter in a field validates it before the browser submits", async () => {
+  const { getByRole, getByTestId, user } = mount(native);
+  await user.type(textbox(getByRole, "Email"), "a@b.co");
+  await user.type(textbox(getByRole, "Username"), "admin{Enter}");
+  expect(getByTestId("submits").textContent).toBe("0");
+  expect(getByTestId("name-error").textContent).toBe("That name is taken");
+  await user.keyboard("{ArrowRight}2{Enter}");
+  expect(getByTestId("submits").textContent).toBe("1");
 });

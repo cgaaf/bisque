@@ -1,23 +1,37 @@
 import { Form } from "../../../src/form/form.rx"
-import { FieldRoot, FieldLabel, FieldError } from "../../../src/field/field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../../src/field/field.rx"
 import { Input } from "../../../src/input/input.rx"
 import { CheckboxRoot, CheckboxIndicator } from "../../../src/checkbox/checkbox.rx"
+import { createAccount } from "./server.js"
 
 export component FormHero() {
-  source sent := ""
+  source created := ""
+  source failure := ""
   <div class="FormHero">
-    <Form class="Form" onFormSubmit={(values) => { sent := `${values.email}, ${values.username}, terms: ${values.terms}` }}>
+    <Form class="Form" onFormSubmit={(values) => {
+      // Shown at once: a write before the `await` would otherwise wait for the action to end.
+      onFlush(() => { failure := ""; created := "" })
+      try {
+        // Resolves to the errors the server found, keyed by field name, or to nothing.
+        let refused = await createAccount(values)
+        if (!refused) { created := `${values.username}` }
+        return refused
+      } catch (error) {
+        failure := error.message
+      }
+    }}>
       <FieldRoot class="Field" name="email">
         <FieldLabel class="Label">Email</FieldLabel>
         <Input class="Input" type="email" required />
         <FieldError class="Error" />
       </FieldRoot>
-      <FieldRoot class="Field" name="username" validate={(value, values) => value == values.email ? "Choose a name other than your email" : value == "admin" ? "That name is taken" : null}>
+      <FieldRoot class="Field" name="username" validate={(value) => `${value}`.includes(" ") ? "Use letters and digits, no spaces" : null}>
         <FieldLabel class="Label">Username</FieldLabel>
         <Input class="Input" required minlength={3} />
+        <FieldDescription class="Description">Try “studio”, or “offline” for a failed request.</FieldDescription>
         <FieldError class="Error" />
       </FieldRoot>
-      <FieldRoot class="Field CheckField" name="terms">
+      <FieldRoot class="Field" name="terms">
         <div class="Check">
           <CheckboxRoot class="Checkbox" required>
             <CheckboxIndicator class="Indicator">
@@ -30,8 +44,12 @@ export component FormHero() {
         </div>
         <FieldError class="Error">Accept the terms to create an account.</FieldError>
       </FieldRoot>
-      <button class="Submit" type="submit">Create account</button>
+      <button class="Submit" type="submit">
+        <span class="Idle">Create account</span>
+        <span class="Busy">Creating account…</span>
+      </button>
     </Form>
-    {if sent != "" { <p class="Sent">Submitted: {sent}</p> }}
+    <p class="Failure" role="alert" hidden={failure == ""}>{failure}</p>
+    <p class="Created" role="status" hidden={created == ""}>Account created for {created}.</p>
   </div>
 }

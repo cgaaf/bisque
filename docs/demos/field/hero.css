@@ -31,7 +31,7 @@
     outline-offset: -1px;
   }
 
-  /* The field writes `data-invalid` on all its parts when it validates and fails. */
+  /* The field writes `data-invalid` on all its parts when it validates and fails: outside a Form, on blur. */
   .Input[data-invalid] {
     border-color: light-dark(#c4314b, #ff8a9a);
   }

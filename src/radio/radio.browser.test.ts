@@ -167,3 +167,34 @@ test("inside a field, a submit focuses the checked radio", async () => {
   await user.click(getByRole("button", { name: "Submit" }));
   expect(document.activeElement).toBe(pro);
 });
+
+test("a form reset returns an uncontrolled group to its default with one change, and keeps a controlled one", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const tea = radio(getByRole, "Tea");
+  expect(tea.defaultChecked).toBe(true);
+  expect(radio(getByRole, "Coffee").defaultChecked).toBe(false);
+  await user.click(radio(getByRole, "Coffee"));
+  await user.click(radio(getByRole, "Banana"));
+  expect(getByTestId("drink-changes").textContent).toBe("coffee");
+  (getByTestId("form") as HTMLFormElement).reset();
+  // The browser's reset alone already checks the default.
+  expect(tea.checked).toBe(true);
+  await expect.poll(() => getByTestId("drink-changes").textContent).toBe("coffee,tea");
+  await expect.poll(() => radio(getByRole, "Banana").checked).toBe(true);
+  await frame();
+  expect(radio(getByRole, "Apple").checked).toBe(false);
+  expect(tea.checked).toBe(true);
+  expect(getByTestId("fruit").textContent).toBe("banana");
+  expect(getByTestId("drink-changes").textContent).toBe("coffee,tea");
+});
+
+test("a form reset clears a group that has no default", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  await user.click(radio(getByRole, "Large"));
+  expect(radio(getByRole, "Large").checked).toBe(true);
+  (getByTestId("form") as HTMLFormElement).reset();
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(radio(getByRole, "Small").checked).toBe(false);
+  expect(radio(getByRole, "Large").checked).toBe(false);
+  expect(new FormData(getByTestId("form") as HTMLFormElement).get("size")).toBeNull();
+});

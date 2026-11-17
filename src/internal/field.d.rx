@@ -2,7 +2,7 @@
 // Types come from ./impl/field.ts; an .rx module declares its own alias of the ones it names (see src/field/field.rx).
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./field.d.ts.
 export pure fn createFormRegistry(): import("./impl/field.ts").FormRegistry instantiates
-export pure fn createFieldValidation(ref form: import("./impl/field.ts").FormRegistry | undefined, ref options: import("./impl/field.ts").FieldValidationOptions): [ref import("./impl/field.ts").FieldValidity, (value: unknown, how: "commit" | "revalidate", markDirty: boolean) => void]
+export pure fn createFieldValidation(ref form: import("./impl/field.ts").FormRegistry | undefined, ref options: import("./impl/field.ts").FieldValidationOptions): [ref import("./impl/field.ts").FieldValidity, (value: unknown, how: "commit" | "revalidate" | "reset", markDirty: boolean) => void]
 export fn submitForm(registry: import("./impl/field.ts").FormRegistry | undefined): { valid: boolean; values: Record<string, unknown> }
 export fn focusFirstInvalid(registry: import("./impl/field.ts").FormRegistry | undefined, errors: import("./impl/field.ts").FormErrors | undefined): void
 export fn focusControl(control: HTMLElement | undefined): void
@@ -12,5 +12,7 @@ export pure fn sameValue(a: unknown, b: unknown): boolean
 export pure fn isFilled(value: unknown): boolean
 export pure fn isEmptyView(view: unknown): boolean
 export pure fn createCheckedInput(ref element: HTMLInputElement | undefined, ref checked: boolean, ref indeterminate: boolean, ref revision: number) instantiates
+export pure fn createFormReset(ref element: Element | undefined, onReset: () => void) instantiates
+export fn setInputValue(input: HTMLInputElement | undefined, value: string): void
 export fn reportFailure(error: unknown): void
 export pure fn createSubmission(): [ref import("./impl/field.ts").FormSubmission, (handler: (values: any) => any, values: import("./impl/field.ts").FormValues, id: number, onDone: () => void, onError: (error: unknown) => void) => void] instantiates

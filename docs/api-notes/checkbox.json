@@ -3,8 +3,8 @@
     "description": "The box: a native `<input type=\"checkbox\">`. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:indeterminate`, `:disabled`, `:focus-visible` and `:user-invalid`.",
     "props": {
       "checked": "Whether the box is checked. Pass it with `onCheckedChange` to control the box.",
-      "defaultChecked": "Whether the box is checked at first, when it isn't controlled.",
-      "onCheckedChange": "Called with the new state when the user checks or clears the box.",
+      "defaultChecked": "Whether the box is checked at first, when it isn't controlled. Also its `checked` attribute: what a form reset puts back.",
+      "onCheckedChange": "Called with the new state when the user checks or clears the box, and once when a form reset changes an uncontrolled box.",
       "indeterminate": "Shows the box as neither checked nor unchecked; `:indeterminate` matches it. A press clears it and toggles the box, as the browser does, and the box is set back to indeterminate while this stays true.",
       "disabled": "Disables the box natively: it can't be focused or pressed, and `:disabled` matches it.",
       "readOnly": "Keeps the box focusable but cancels a press or Space, so its state doesn't change. Sets `aria-readonly` and `data-readonly`.",

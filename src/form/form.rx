@@ -1,5 +1,5 @@
-import { mergeProps } from "../internal/props.js"
-import { createFormRegistry, createSubmission, submitForm, focusFirstInvalid, withoutErrors, reportFailure } from "../internal/field.js"
+import { mergeProps, createRef } from "../internal/props.js"
+import { createFormRegistry, createSubmission, createFormReset, submitForm, focusFirstInvalid, withoutErrors, reportFailure } from "../internal/field.js"
 import { FormProps } from "../internal/types.rx"
 
 export type FormValidationMode = "onSubmit" | "onBlur" | "onChange"
@@ -30,7 +30,7 @@ export type FormRootProps = {
   // When fields validate, unless a FieldRoot says otherwise. Default: "onSubmit".
   validationMode?: FormValidationMode
   // Errors to show on fields, keyed by field name, from somewhere other than a submit (a page loaded with them).
-  // An entry is hidden once its field's value changes, and shown again by the next submit.
+  // An entry is hidden once its field's value changes, until `errors` itself changes.
   errors?: FormErrors
   // Called on a valid submit with the values of the named fields; the native submission is then prevented. It may
   // take its time: return a promise (or be an action that awaits) and the form stays `data-submitting` until it
@@ -49,9 +49,13 @@ export type FormRootProps = {
 // sends it, and shows the errors that come back.
 export component Form(props: FormRootProps) {
   source cleared: string[] := []
+  // Numbers the submits: an answer carries its submit's number (FormAnswer.id), which fields compare.
   source submitCount := 0
+  // A submit was attempted since the form was mounted or last reset.
+  source submitted: boolean := false
   // True from a valid submit until `errors` next changes: errors that arrive for it move focus to their field.
   source awaitingErrors: boolean := false
+  source element: HTMLFormElement | undefined := undefined
   registry = createFormRegistry()
   errors = withoutErrors(props.errors, cleared)
   // Whether `onFormSubmit` is out, and what the last one resolved to with the values it was sent. Kept outside
@@ -76,6 +80,16 @@ export component Form(props: FormRootProps) {
     if (props.onFormError) { props.onFormError(error) } else { reportFailure(error) }
   }
 
+  // A reset returns the form to before its first submit; each Field returns itself to untouched once its control
+  // has taken the reset. A reset someone cancelled changes nothing (createFormReset).
+  action reset() {
+    submitted := false
+    awaitingErrors := false
+  }
+  _reset = createFormReset(element, reset)
+  action writeElement(form: HTMLFormElement) { element := form }
+  setElement = createRef(writeElement)
+
   action submit(event: SubmitEvent) {
     // One request at a time: a second submit while the first is out would race it.
     if (submission.pending) {
@@ -84,6 +98,7 @@ export component Form(props: FormRootProps) {
     }
     let count = submitCount + 1
     submitCount := count
+    submitted := true
     let result = submitForm(registry)
     if (!result.valid) {
       event.preventDefault()
@@ -101,12 +116,12 @@ export component Form(props: FormRootProps) {
     registry: registry,
     errors: errors,
     validationMode: props.validationMode ?? "onSubmit",
-    submitted: submitCount > 0,
+    submitted: submitted,
     answer: submission.answer,
     clearError: clearError,
   }
 
   { validationMode, errors: _errors, onFormSubmit, onFormError, onSubmit, children, ...rest } = props
-  merged = mergeProps({ novalidate: true, "data-submitting": submission.pending ? "" : undefined, "aria-busy": submission.pending ? "true" : undefined, onSubmit: submit }, rest)
+  merged = mergeProps({ novalidate: true, "data-submitting": submission.pending ? "" : undefined, "aria-busy": submission.pending ? "true" : undefined, onSubmit: submit, ref: setElement }, rest)
   <form {...merged}>{children}</form>
 }

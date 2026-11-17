@@ -6,6 +6,7 @@ export default component Fixture() {
   source fruit := "apple"
   source submitted := ""
   source refusals := 0
+  source drinkChanges: string[] := []
   <div>
     <form data-testid="form">
       <RadioGroup aria-label="Fruit" name="fruit" value={fruit} onValueChange={(next) => { fruit := next }}>
@@ -29,6 +30,12 @@ export default component Fixture() {
         <label><RadioRoot value="y" />Y</label>
       </RadioGroup>
       <output data-testid="refusals">{refusals}</output>
+      <RadioGroup aria-label="Drink" name="drink" defaultValue="tea" onValueChange={(next) => { drinkChanges := [...drinkChanges, next] }}>
+        <label><RadioRoot value="tea" />Tea</label>
+        <label><RadioRoot value="coffee" />Coffee</label>
+      </RadioGroup>
+      <output data-testid="drink-changes">{drinkChanges.join(",")}</output>
+      <button type="reset">Reset</button>
     </form>
     <Form onFormSubmit={(values) => { submitted := `plan=${values.plan}` }}>
       <FieldRoot name="plan" data-testid="plan-root">

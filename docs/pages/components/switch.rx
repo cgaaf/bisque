@@ -50,6 +50,11 @@ export default component Page() {
       <code>defaultChecked</code> to let the switch keep its own. An owner that doesn't take the new value keeps the
       switch as it was.
     </p>
+    <p>
+      <code>defaultChecked</code> is also the input's <code>checked</code> attribute, what the browser puts back
+      when the form is reset. An uncontrolled switch then takes it as its state and calls{" "}
+      <code>onCheckedChange</code> once if it changed; a controlled switch is set back to its owner's state.
+    </p>
 
     <h3 id="field">With a label and description</h3>
     <p>

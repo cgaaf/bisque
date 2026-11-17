@@ -49,3 +49,37 @@ test("inside a disabled field: disabled", () => {
   const { getByRole } = mount(basic);
   expect(textbox(getByRole, "Country").disabled).toBe(true);
 });
+
+test("a form reset returns an uncontrolled input to its default, reported once, and keeps a controlled one", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const notes = textbox(getByRole, "Notes");
+  const search = textbox(getByRole, "Search");
+  expect(notes.defaultValue).toBe("draft");
+  await user.type(notes, "!");
+  await user.clear(search);
+  await user.type(search, "new");
+  expect(getByTestId("notes-changes").textContent).toBe("draft!");
+  (getByTestId("form") as HTMLFormElement).reset();
+  // The browser's reset alone already restores the default.
+  expect(notes.value).toBe("draft");
+  await expect.poll(() => getByTestId("notes-changes").textContent).toBe("draft!|draft");
+  await expect.poll(() => search.value).toBe("new");
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(getByTestId("query").textContent).toBe("new");
+  expect(getByTestId("notes-changes").textContent).toBe("draft!|draft");
+  expect(new FormData(getByTestId("form") as HTMLFormElement).get("q")).toBe("new");
+});
+
+test("after a form reset, an input in a field keeps its default when the field's state changes", async () => {
+  const { getByRole, getByTestId, user } = mount(basic);
+  const city = textbox(getByRole, "City");
+  await user.type(city, "Oslo");
+  await user.click(getByRole("button", { name: "Reset" }));
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  expect(city.value).toBe("");
+  // Leaving it marks the field touched, which renders the input's props again.
+  await user.click(city);
+  await user.tab();
+  expect(getByTestId("city-root").hasAttribute("data-touched")).toBe(true);
+  expect(city.value).toBe("");
+});

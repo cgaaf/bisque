@@ -1,0 +1,9 @@
+import { saveProfile } from "./api.js"
+
+// saveProfile returns the request's promise, resolving to the server's errors or to nothing.
+<Form
+  onFormSubmit={(values) => saveProfile(values)}
+  onFormError={(error) => { failure := "Couldn’t save. Try again." }}
+>
+  …
+</Form>

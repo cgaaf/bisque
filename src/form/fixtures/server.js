@@ -6,3 +6,6 @@ export const register = (values, delay) =>
       else resolve(values.username === "taken" ? { username: "Already registered" } : undefined);
     }, delay);
   });
+
+// The message of a failure, which `.rx` can't read off an `unknown`.
+export const messageOf = (error) => (error instanceof Error ? error.message : String(error));

@@ -18,14 +18,14 @@
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether the switch is on at first, when it isn't controlled."
+          "description": "Whether the switch is on at first, when it isn't controlled. Also its `checked` attribute: what a form reset puts back."
         },
         {
           "name": "onCheckedChange",
           "type": "(checked: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called with the new state when the user turns the switch on or off."
+          "description": "Called with the new state when the user turns the switch on or off, and once when a form reset changes an uncontrolled switch."
         },
         {
           "name": "disabled",

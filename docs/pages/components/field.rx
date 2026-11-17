@@ -2,6 +2,7 @@ import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
 import { FieldHero } from "../../demos/field/hero.rx"
 import { FieldValidate } from "../../demos/field/validate.rx"
 import { FieldMatch } from "../../demos/field/match.rx"
+import { FieldNative } from "../../demos/field/native.rx"
 
 export default component Page() {
   <DocsPage title="Field" subtitle="Labels a control, describes it, validates it and shows its errors.">
@@ -30,7 +31,10 @@ export default component Page() {
         A <code>validate</code> function, run after the native constraints pass. Its message is also set on the
         input with <code>setCustomValidity()</code>, so <code>:invalid</code> agrees with the field.
       </li>
-      <li>When to validate: on submit, on blur or on every change.</li>
+      <li>
+        When to validate: on submit, on blur or on every change, and whenever the browser checks the input itself
+        (its <code>invalid</code> event, which a native submit fires).
+      </li>
       <li>
         State the browser has no selector for, written as <code>data-*</code> attributes on every part: touched,
         dirty, filled, valid and invalid.
@@ -50,17 +54,18 @@ export default component Page() {
     <h3 id="when">When a field validates</h3>
     <p>
       <code>validationMode</code> says when; a <a href="../form/">Form</a> sets it for all its fields, and a field's
-      own prop wins.
+      own prop wins. Inside a Form the default is <code>"onSubmit"</code>; outside one it is{" "}
+      <code>"onBlur"</code>.
     </p>
     <ul>
       <li>
-        <code>"onSubmit"</code>, the default: the Form validates every field when it is submitted, and from then on
-        each field validates on every change. Outside a Form, a field in this mode is never validated, so give it
-        one of the other modes.
+        <code>"onSubmit"</code>: the Form validates every field when it is submitted, and from then on each field
+        validates on every change.
       </li>
       <li>
         <code>"onBlur"</code>: when the control loses focus. Editing it afterwards clears the error (unless a
-        required control is now empty), and the next blur validates again. The demo above works this way.
+        required control is now empty), and the next blur validates again. The demo above works this way, as any
+        field outside a Form does unless told otherwise.
       </li>
       <li><code>"onChange"</code>: on every change of the value.</li>
     </ul>
@@ -69,6 +74,24 @@ export default component Page() {
       required field isn't marked invalid when someone only tabs through it. A disabled field isn't validated, and
       is neither valid nor invalid.
     </p>
+
+    <h3 id="plain-form">In a plain form</h3>
+    <p>
+      A field doesn't need a Form. In a plain <code>{"<form>"}</code> the browser checks the constraints when it is
+      submitted, blocks the submit and shows its own message bubble on the first invalid control. The field
+      listens for that check (the input's <code>invalid</code> event) and validates too, so its{" "}
+      <code>FieldError</code> shows the message beside the control. A Form carries <code>novalidate</code>, so
+      there the browser never checks and the event never fires.
+    </p>
+    <p>
+      A <code>validate</code> message is installed on the input with <code>setCustomValidity()</code>, so the
+      browser counts it as well: once the field has validated and failed, on blur or with <kbd>Enter</kbd> in the
+      field, a native submit is blocked until the value changes. <kbd>Enter</kbd> validates first because a submit
+      from the keyboard doesn't blur the field. A press on the submit button right after typing is blocked too: in
+      the library's tests, in Chromium, Firefox and WebKit, the press blurs the field before the browser checks
+      it. Try “studio” below.
+    </p>
+    <Demo source="field/native"><FieldNative /></Demo>
 
     <h3 id="custom-validation">Custom validation</h3>
     <p>
@@ -124,6 +147,16 @@ export default component Page() {
       the value validated, and the initial value.
     </p>
     <Code file="field/validity.rx.txt" />
+
+    <h3 id="reset">Resetting</h3>
+    <p>
+      A form reset isn't a change. When the browser resets the form, the control returns to its default (an
+      uncontrolled one) or keeps its owner's value (a controlled one), and the field takes that value without
+      validating it. It is no longer touched or validated, and any error it showed is cleared, including one from a{" "}
+      <a href="../form/">Form</a>'s server.
+      Select, Combobox, Autocomplete, Slider and Number Field don't take part in a reset yet, and neither does a field around
+      one.
+    </p>
 
     <h3 id="external">Errors from elsewhere</h3>
     <p>
