@@ -1,11 +1,21 @@
-import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "../src/collapsible/collapsible.rx"
+// The demo page: one section per component family. Its production build (`pnpm build:demo`) is the check that
+// every family bundles, so a new family is added here.
+import { CheckboxDemo } from "./checkbox.rx"
+import { CollapsibleDemo } from "./collapsible.rx"
+import { DialogDemo } from "./dialog.rx"
+import { MenuDemo } from "./menu.rx"
 
 export default component App() {
+  <style>
+    main { font-family: system-ui, sans-serif; max-width: 40rem; margin: 2rem auto; padding: 0 1rem }
+    section { border-top: 1px solid #ddd; padding: 1rem 0 }
+    h2 { font-size: 1rem; margin: 0 0 0.5rem }
+  </style>
   <main>
     <h1>rs-ui</h1>
-    <CollapsibleRoot>
-      <CollapsibleTrigger>Details</CollapsibleTrigger>
-      <CollapsiblePanel>Hidden until opened.</CollapsiblePanel>
-    </CollapsibleRoot>
+    <section><h2>Checkbox</h2><CheckboxDemo /></section>
+    <section><h2>Collapsible</h2><CollapsibleDemo /></section>
+    <section><h2>Dialog</h2><DialogDemo /></section>
+    <section><h2>Menu</h2><MenuDemo /></section>
   </main>
 }

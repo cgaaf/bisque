@@ -1,0 +1,10 @@
+import { CheckboxRoot, CheckboxIndicator } from "../src/checkbox/checkbox.rx"
+
+export component CheckboxDemo() {
+  <label>
+    <CheckboxRoot name="updates">
+      <CheckboxIndicator>✓</CheckboxIndicator>
+    </CheckboxRoot>
+    {" "}Email me updates
+  </label>
+}

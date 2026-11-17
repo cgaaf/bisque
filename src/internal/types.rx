@@ -1,14 +1,26 @@
 // Types the parts share, as names .rx can import.
 //
-// They are aliases of the definitions in ./impl/types.ts, written with `import("…")` on purpose: the compiler binds
-// every name imported from a JS or TS module as a value, so `import { ButtonProps } from "./impl/types.ts"` leaves an
-// import the bundler rejects ("ButtonProps is not exported"). A type imported from an .rx module binds nothing.
+// They are aliases of the definitions in ./impl/types.ts, written with `import("…")` on purpose: the compiler
+// binds every name imported from a JS or TS module as a value, so `import { ButtonProps } from "./impl/types.ts"`
+// leaves an import the bundler rejects ("ButtonProps is not exported"). A type imported from an .rx module binds
+// nothing. For a tag that has no alias yet, add one here.
 export type PartProps = import("./impl/types.ts").PartProps
-export type ButtonProps = import("./impl/types.ts").ButtonProps
-export type InputProps = import("./impl/types.ts").InputProps
-export type DivProps = import("./impl/types.ts").HTMLProps<HTMLDivElement>
-export type SpanProps = import("./impl/types.ts").HTMLProps<HTMLSpanElement>
-export type HeadingProps = import("./impl/types.ts").HTMLProps<HTMLHeadingElement>
-export type ParagraphProps = import("./impl/types.ts").HTMLProps<HTMLParagraphElement>
 export type TransitionStatus = "starting" | "ending" | undefined
-export type LabelProps = import("./impl/types.ts").HTMLProps<HTMLLabelElement>
+
+export type DivProps = import("./impl/types.ts").ElementProps<"div">
+export type SpanProps = import("./impl/types.ts").ElementProps<"span">
+export type ButtonProps = import("./impl/types.ts").ElementProps<"button">
+export type InputProps = import("./impl/types.ts").ElementProps<"input">
+export type TextareaProps = import("./impl/types.ts").ElementProps<"textarea">
+export type LabelProps = import("./impl/types.ts").ElementProps<"label">
+export type FormProps = import("./impl/types.ts").ElementProps<"form">
+export type FieldsetProps = import("./impl/types.ts").ElementProps<"fieldset">
+export type LegendProps = import("./impl/types.ts").ElementProps<"legend">
+export type OutputProps = import("./impl/types.ts").ElementProps<"output">
+export type AnchorProps = import("./impl/types.ts").ElementProps<"a">
+export type ImageProps = import("./impl/types.ts").ElementProps<"img">
+export type HeadingProps = import("./impl/types.ts").ElementProps<"h2">
+export type ParagraphProps = import("./impl/types.ts").ElementProps<"p">
+export type ListProps = import("./impl/types.ts").ElementProps<"ul">
+export type ListItemProps = import("./impl/types.ts").ElementProps<"li">
+export type NavProps = import("./impl/types.ts").ElementProps<"nav">

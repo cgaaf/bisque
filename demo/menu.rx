@@ -1,0 +1,17 @@
+import { MenuRoot, MenuTrigger, MenuPortal, MenuPositioner, MenuPopup, MenuItem, MenuSeparator, MenuCheckboxItem } from "../src/menu/menu.rx"
+
+export component MenuDemo() {
+  <MenuRoot>
+    <MenuTrigger>Actions</MenuTrigger>
+    <MenuPortal>
+      <MenuPositioner sideOffset={4}>
+        <MenuPopup class="popup">
+          <MenuItem>Rename</MenuItem>
+          <MenuItem>Duplicate</MenuItem>
+          <MenuSeparator />
+          <MenuCheckboxItem>Word wrap</MenuCheckboxItem>
+        </MenuPopup>
+      </MenuPositioner>
+    </MenuPortal>
+  </MenuRoot>
+}
