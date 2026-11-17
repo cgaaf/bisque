@@ -1,0 +1,77 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { CollapsibleHero } from "../../demos/collapsible/hero.rx"
+import { CollapsibleControlled } from "../../demos/collapsible/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Collapsible" subtitle="A panel that its trigger shows and hides.">
+    <Demo source="collapsible/hero"><CollapsibleHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="collapsible/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The root is a native <code>{"<details>"}</code> and the trigger is its <code>{"<summary>"}</code>. The
+      browser provides:
+    </p>
+    <ul>
+      <li>The open state, held on the element and shown as its <code>open</code> attribute.</li>
+      <li>Toggling from the summary on a press, <kbd>Enter</kbd> and <kbd>Space</kbd>.</li>
+      <li>Hiding the closed content, which stays in the document.</li>
+      <li>Opening a closed panel when find-in-page matches text inside it.</li>
+    </ul>
+    <p>
+      The library adds the open state as a prop (which may be controlled), <code>disabled</code>, the panel's
+      measured size as CSS variables, and the exit animation: a <code>{"<details>"}</code> hides its content the
+      moment it closes, so the panel gets <code>data-ending-style</code> and the element closes when the panel's
+      transitions end.
+    </p>
+    <div class="note">
+      <p>
+        The panel stays in the document while it is closed, so there is no <code>keepMounted</code> prop, and no{" "}
+        <code>hiddenUntilFound</code>: find-in-page already opens a closed <code>{"<details>"}</code>. A summary
+        must be the first child of its <code>{"<details>"}</code>, so <code>CollapsibleTrigger</code> goes first
+        and nothing may wrap it.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to hold the state yourself. A press on the trigger
+      only asks: the panel follows <code>open</code>. When the browser opens it by itself, for find-in-page, the
+      change is reported through <code>onOpenChange</code>, and if <code>open</code> stays false the panel is
+      closed again.
+    </p>
+    <Demo source="collapsible/controlled"><CollapsibleControlled /></Demo>
+
+    <h3 id="disabled">Disabled</h3>
+    <p>
+      With <code>disabled</code> the trigger does nothing on a press, <kbd>Enter</kbd> or <kbd>Space</kbd>, is
+      taken out of the tab order and gets <code>aria-disabled="true"</code>. Find-in-page still opens the panel:
+      the browser's behaviour wins.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      The panel's height is written to <code>--collapsible-panel-height</code> (and its width to{" "}
+      <code>--collapsible-panel-width</code>): in pixels while it opens and closes, <code>auto</code> once it is
+      open, so the content can still change size. Transition <code>height</code> to that variable. Opening needs
+      two rules that start from 0, because engines differ: Chrome animates from <code>@starting-style</code>,
+      Safari from a plain <code>:not([open])</code> rule. Closing goes to 0 under{" "}
+      <code>[data-ending-style]</code>. The first demo's stylesheet has all three.
+    </p>
+
+    <h3 id="custom-trigger">A trigger of your own</h3>
+    <p>
+      To put other markup in the summary, such as a heading, write the <code>{"<summary>"}</code> yourself and
+      spread <code>collapsibleTrigger</code> on it. It must still be the root's first child.
+    </p>
+    <Code file="collapsible/own-trigger.rx.txt" />
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="collapsible" />
+  </DocsPage>
+}

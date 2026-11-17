@@ -1,0 +1,86 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TabsHero } from "../../demos/tabs/hero.rx"
+import { TabsAnimated } from "../../demos/tabs/animated.rx"
+import { TabsVertical } from "../../demos/tabs/vertical.rx"
+
+export default component Page() {
+  <DocsPage title="Tabs" subtitle="A set of panels on the same page, one shown at a time.">
+    <Demo source="tabs/hero"><TabsHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="tabs/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      There is no native tabs element, so this family is mostly the library's. Each tab is a native{" "}
+      <code>{"<button>"}</code>, which brings focus and activation with <kbd>Enter</kbd> and <kbd>Space</kbd>. The
+      library adds:
+    </p>
+    <ul>
+      <li>The selected value (which may be controlled), and the first enabled tab as the default.</li>
+      <li>
+        The <code>tablist</code>, <code>tab</code> and <code>tabpanel</code> roles, <code>aria-selected</code>, and
+        the ids that connect each tab to its panel.
+      </li>
+      <li>
+        Moving between tabs with the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>, with the list as one{" "}
+        <kbd>Tab</kbd> stop that lands on the selected tab. The browser's <code>focusgroup</code> would do this,
+        but it ships only in Chrome.
+      </li>
+      <li>The selected tab's position and size for the indicator, and the direction the selection moved in.</li>
+      <li>Keeping a panel mounted while it animates out.</li>
+    </ul>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="indicator">The indicator</h3>
+    <p>
+      <code>TabsIndicator</code> goes inside <code>TabsList</code> and carries the selected tab's box as CSS
+      variables, measured against the list: <code>--active-tab-left</code>, <code>--active-tab-top</code>,{" "}
+      <code>--active-tab-width</code>, <code>--active-tab-height</code> and the matching{" "}
+      <code>-right</code> and <code>-bottom</code>. Give the list <code>position: relative</code>, place the
+      indicator with the variables and transition them to make it slide. It is measured again when the list or
+      the tab resizes, and stays hidden until the selected tab has a size.
+    </p>
+
+    <h3 id="animated-panels">Animating the panels</h3>
+    <p>
+      A panel is mounted when its tab is selected and removed when another is, unless it has{" "}
+      <code>keepMounted</code>, which keeps it in the document with <code>hidden</code>. A new panel gets{" "}
+      <code>data-starting-style</code> for its first frame and a leaving one <code>data-ending-style</code> until
+      its transitions end, so for a moment both are there: put them in one grid cell. Every part carries{" "}
+      <code>data-activation-direction</code>, the way the selection moved, so a panel can slide in from the side
+      of the new tab.
+    </p>
+    <Demo source="tabs/animated"><TabsAnimated /></Demo>
+
+    <h3 id="vertical">Vertical, controlled, selected on focus</h3>
+    <p>
+      With <code>orientation="vertical"</code> the arrow keys are <kbd>Up</kbd> and <kbd>Down</kbd>. By default
+      the arrow keys only move focus and <kbd>Enter</kbd> or <kbd>Space</kbd> selects; with{" "}
+      <code>activateOnFocus</code> on the list a tab is selected as soon as it is focused. The arrow keys wrap
+      at the ends unless <code>loopFocus={"{false}"}</code>. This demo also holds the value itself, with{" "}
+      <code>value</code> and <code>onValueChange</code>.
+    </p>
+    <Demo source="tabs/vertical"><TabsVertical /></Demo>
+
+    <h3 id="disabled">Disabled tabs</h3>
+    <p>
+      A tab with <code>disabled</code> stays in the list and carries <code>aria-disabled</code> and{" "}
+      <code>data-disabled</code>, but can't be selected, is skipped by the arrow keys, and your own{" "}
+      <code>onClick</code> on it doesn't run. The first demo's Billing tab is disabled.
+    </p>
+
+    <h3 id="links">Tabs of your own</h3>
+    <p>
+      To make a tab another element, such as a link, spread <code>tabsTab</code> on it. The root keeps a list of
+      its tabs, to find the first enabled one and to know whether a value names a tab, so register yours as{" "}
+      <code>TabsTab</code> does:
+    </p>
+    <Code file="tabs/link-tab.rx.txt" />
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="tabs" />
+  </DocsPage>
+}

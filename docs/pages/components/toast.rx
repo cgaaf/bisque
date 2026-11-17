@@ -1,0 +1,134 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { ToastHero } from "../../demos/toast/hero.rx"
+import { ToastManagerDemo } from "../../demos/toast/manager.rx"
+import { ToastUndo } from "../../demos/toast/undo.rx"
+import { ToastPromise } from "../../demos/toast/promise.rx"
+import { ToastPosition } from "../../demos/toast/position.rx"
+
+export default component Page() {
+  <DocsPage title="Toast" subtitle="Short messages that appear without taking focus and go away by themselves.">
+    <Demo source="toast/hero"><ToastHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. The provider holds the list of toasts; you render it, with a{" "}
+      <code>for</code> over <code>(use toast).toasts</code> inside the viewport:
+    </p>
+    <Code file="toast/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The viewport is an element with <code>popover="manual"</code>, shown for as long as it is mounted. That is
+      all the browser contributes, and it is enough to drop a part: the toasts are in the top layer, above the
+      rest of the page, without a portal or a <code>z-index</code>.
+    </p>
+    <p>The rest is the library's:</p>
+    <ul>
+      <li>The list: adding, updating and closing toasts through a manager, and the <code>limit</code> on how many show.</li>
+      <li>Timers that close each toast, paused while the pointer is over the viewport, while keyboard focus is in it, and while the window doesn't have focus.</li>
+      <li>Swiping a toast away, and closing it with <kbd>Escape</kbd> while focus is in it.</li>
+      <li><kbd>F6</kbd> to move focus to the viewport while there are toasts, and <kbd>F6</kbd> again to go back.</li>
+      <li>Moving focus to the next toast when the focused one closes.</li>
+      <li>A polite live region on the viewport, and an assertive alert for a toast added with <code>priority: "high"</code>.</li>
+      <li>Measuring each toast, for the CSS variables that stack them.</li>
+      <li>Raising the viewport above a modal dialog that opens after it: a popover shown earlier would be painted under the dialog's backdrop.</li>
+    </ul>
+    <div class="note">
+      <p>
+        There is no Portal part: the viewport is in the top layer already. There are no Positioner and Arrow
+        parts, because toasts anchored to an element aren't implemented. Base UI's <code>useToastManager()</code>{" "}
+        is <code>(use toast).manager</code> here.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="adding">Adding toasts</h3>
+    <p>
+      Inside the provider, <code>(use toast).manager.add(…)</code> adds a toast and returns its id. It takes a{" "}
+      <code>title</code> and a <code>description</code>, which <code>ToastTitle</code> and{" "}
+      <code>ToastDescription</code> show when they have no children of their own; a <code>type</code>, any
+      string, which the parts carry as <code>data-type</code>; a <code>timeout</code>; a <code>priority</code>;{" "}
+      <code>onClose</code> and <code>onRemove</code> callbacks; and <code>data</code>, anything you want to read
+      back from <code>t.data</code> when you render it. Adding a toast with the <code>id</code> of one that is
+      showing updates that one in place and gives it its full time again, so repeating an action doesn't pile up
+      toasts. <code>update(id, changes)</code> and <code>close(id)</code> do what they say; <code>close()</code>{" "}
+      with no id closes them all.
+    </p>
+
+    <h3 id="manager">Adding toasts from anywhere</h3>
+    <p>
+      To add toasts from outside the provider, or from plain TypeScript, create a manager with{" "}
+      <code>createToastManager()</code> from <code>./rs-ui/internal/toast.js</code>, keep it in a module of its own,
+      and pass it to the provider as <code>toastManager</code>. The provider reads it once.
+    </p>
+    <Demo source="toast/manager"><ToastManagerDemo /></Demo>
+
+    <h3 id="stacking">Stacking</h3>
+    <p>
+      How the toasts are laid out is all CSS. The first demo stacks them as a deck that spreads out under the
+      pointer, from variables each <code>ToastRoot</code> carries: <code>--toast-index</code> (0 for the newest),{" "}
+      <code>--toast-offset-y</code> (the heights of the toasts in front of it) and <code>--toast-height</code>,
+      with the viewport's <code>--toast-frontmost-height</code>. <code>data-expanded</code> is on the toasts while
+      the pointer is over the viewport or keyboard focus is in it, and <code>ToastContent</code> has{" "}
+      <code>data-behind</code> on every toast but the front one, to hide their text while the stack is collapsed.
+      The other demos are a plain column.
+    </p>
+
+    <h3 id="action">An action button</h3>
+    <p>
+      <code>ToastAction</code> takes its props from the toast's <code>actionProps</code>, with{" "}
+      <code>children</code> as its label, and renders nothing when the toast has none. Give a toast with an
+      action enough time to be used, or a <code>timeout</code> of <code>0</code> so that it waits to be closed.
+    </p>
+    <Demo source="toast/undo"><ToastUndo /></Demo>
+
+    <h3 id="promise">Following a promise</h3>
+    <p>
+      <code>manager.promise(promise, {"{ loading, success, error }"})</code> shows a toast of type{" "}
+      <code>"loading"</code>, which never closes by itself, until the promise settles, then turns it into a{" "}
+      <code>"success"</code> or <code>"error"</code> toast. Each state is a string, used as the description, or
+      the toast's options; <code>success</code> and <code>error</code> may also be functions of the result. It
+      returns the promise, which still rejects when it rejects, so catch it.
+    </p>
+    <Demo source="toast/promise"><ToastPromise /></Demo>
+
+    <h3 id="position">Position and swiping</h3>
+    <p>
+      The viewport is a popover, so it comes with the browser's popover styles, centred and bordered: give it a
+      position, and <code>pointer-events: none</code> if it covers part of the page while empty. A toast is
+      swiped away down or right by default; set <code>swipeDirection</code> to match where the toasts are, and{" "}
+      <code>swipeThreshold</code> for how far a swipe must go. A swipe that starts on a button in the toast is a
+      press, not a swipe. While dragged, the toast carries <code>data-swiping</code> and{" "}
+      <code>--toast-swipe-movement-x</code> and <code>-y</code>; once swiped away, <code>data-swipe-direction</code>{" "}
+      says which way it went.
+    </p>
+    <Demo source="toast/position"><ToastPosition /></Demo>
+
+    <h3 id="timing">Timing and the limit</h3>
+    <p>
+      A toast closes after the provider's <code>timeout</code> (5 seconds unless you say otherwise), or its own;{" "}
+      <code>0</code> means never. The time pauses while the stack is expanded, while the toast is being swiped
+      and while the window doesn't have focus, and carries on from where it stopped. Beyond the provider's{" "}
+      <code>limit</code> (3), older toasts stay in the list but are inert and carry <code>data-limited</code>, for
+      you to hide; they come back as the ones in front close.
+    </p>
+
+    <h3 id="animation">Animating them</h3>
+    <p>
+      Animate a toast in with <code>@starting-style</code>, and out under <code>[data-ending-style]</code>: a
+      closing toast stays in the list until the transitions and animations on it and inside it have finished.
+      An animation that never ends, such as a spinner, keeps it there, so stop it under{" "}
+      <code>[data-ending-style]</code> as the promise demo does.
+    </p>
+
+    <h3 id="dialogs">Toasts and modal dialogs</h3>
+    <p>
+      Toasts stay visible over a modal dialog, including one that opened after them, but everything outside a
+      modal dialog is inert: a toast shown over one can be seen and not pressed until the dialog closes.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="toast" />
+  </DocsPage>
+}

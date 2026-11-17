@@ -1,0 +1,77 @@
+.AccordionHero {
+  width: min(26rem, 100%);
+
+  .Item {
+    border-bottom: 1px solid light-dark(#e4e4ea, #2a2a31);
+  }
+
+  .Trigger {
+    /* A <summary> is a list item with a marker: hide it (the second rule is for Safari). */
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0.25rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .Trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .Trigger:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: -2px;
+    border-radius: 0.25rem;
+  }
+
+  /* A summary can't be wrapped in a heading, so the heading goes inside it. */
+  .Heading {
+    margin: 0;
+    font-size: 0.9375rem;
+    font-weight: 500;
+  }
+
+  .Icon {
+    flex: none;
+    transition: rotate 150ms;
+  }
+
+  /* Each item is a <details>: `[open]` is the hook. */
+  .Item[open] .Icon {
+    rotate: 180deg;
+  }
+
+  .Panel {
+    /* The part writes the panel's measured height here: px while it moves, `auto` once open. */
+    height: var(--accordion-panel-height);
+    overflow: hidden;
+    transition: height 200ms ease;
+  }
+
+  /* Opening starts from 0. Safari animates from the closed rule, Chrome from @starting-style. */
+  .Item:not([open]) > .Panel {
+    height: 0;
+  }
+
+  @starting-style {
+    .Item[open] > .Panel {
+      height: 0;
+    }
+  }
+
+  /* Closing: the item stays open with this attribute until the transition ends. */
+  .Panel[data-ending-style] {
+    height: 0;
+  }
+
+  .Content {
+    /* Spacing goes on the content, so a panel of height 0 shows nothing. */
+    margin: 0;
+    padding: 0 0.25rem 0.875rem;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

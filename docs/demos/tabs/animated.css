@@ -1,0 +1,102 @@
+.TabsAnimated {
+  width: min(20rem, 100%);
+
+  .List {
+    position: relative;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    padding: 0.25rem;
+    border-radius: 0.5rem;
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Tab {
+    /* Above the indicator, which is drawn behind the tabs. */
+    position: relative;
+    z-index: 1;
+    padding: 0.375rem 0;
+    border: 0;
+    border-radius: 0.375rem;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    font: inherit;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Tab[data-active] {
+    color: light-dark(#18181b, #f4f4f5);
+  }
+
+  .Tab:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: -2px;
+  }
+
+  .Indicator {
+    position: absolute;
+    top: var(--active-tab-top);
+    left: 0;
+    width: var(--active-tab-width);
+    height: var(--active-tab-height);
+    translate: var(--active-tab-left) 0;
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #3a3a43);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+    transition:
+      translate 200ms ease,
+      width 200ms ease;
+  }
+
+  /* The leaving panel stays mounted until its transition ends: stack both in one grid cell. */
+  .Panels {
+    display: grid;
+    overflow: hidden;
+    padding: 1.5rem 0 0.5rem;
+  }
+
+  .Panel {
+    grid-area: 1 / 1;
+    display: grid;
+    justify-items: center;
+    gap: 0.25rem;
+    transition:
+      opacity 200ms ease,
+      translate 200ms ease;
+  }
+
+  .Panel:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    border-radius: 0.375rem;
+  }
+
+  /* `data-activation-direction` says which way the selection moved: enter from that side, leave to the other. */
+  .Panel[data-starting-style],
+  .Panel[data-ending-style] {
+    opacity: 0;
+  }
+
+  .Panel[data-activation-direction="right"][data-starting-style],
+  .Panel[data-activation-direction="left"][data-ending-style] {
+    translate: 2rem 0;
+  }
+
+  .Panel[data-activation-direction="left"][data-starting-style],
+  .Panel[data-activation-direction="right"][data-ending-style] {
+    translate: -2rem 0;
+  }
+
+  .Figure {
+    font-size: 2rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .Label {
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

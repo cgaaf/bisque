@@ -1,0 +1,28 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuSeparator, MenuSubmenuRoot, MenuSubmenuTrigger } from "../../../src/menu/menu.rx"
+
+export component MenuSubmenu() {
+  <div class="MenuSubmenu">
+    <MenuRoot>
+      <MenuTrigger class="Button">Insert</MenuTrigger>
+      <MenuPopup class="Popup" sideOffset={6}>
+        <MenuItem class="Item">Image</MenuItem>
+        <MenuItem class="Item">Table</MenuItem>
+        <MenuSubmenuRoot>
+          <MenuSubmenuTrigger class="Item">
+            Chart
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M4.5 3 7.5 6l-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </MenuSubmenuTrigger>
+          <MenuPopup class="Popup" alignOffset={-5}>
+            <MenuItem class="Item">Bar</MenuItem>
+            <MenuItem class="Item">Line</MenuItem>
+            <MenuItem class="Item">Pie</MenuItem>
+          </MenuPopup>
+        </MenuSubmenuRoot>
+        <MenuSeparator class="Separator" />
+        <MenuItem class="Item">Page break</MenuItem>
+      </MenuPopup>
+    </MenuRoot>
+  </div>
+}

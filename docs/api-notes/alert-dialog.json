@@ -1,0 +1,31 @@
+{
+  "AlertDialogRoot": {
+    "description": "Holds the alert dialog's open state. It is a DialogRoot that is always modal, has `role=\"alertdialog\"` and ignores a press outside.",
+    "props": {
+      "open": "Whether the alert dialog is open. Pass it with `onOpenChange` to control it.",
+      "defaultOpen": "Whether the alert dialog is open at first, when it isn't controlled.",
+      "onOpenChange": "Called when a part or Escape asks to open or close the alert dialog. A controlled alert dialog changes only when `open` does."
+    }
+  },
+  "AlertDialogTrigger": {
+    "description": "The button that opens the alert dialog. Optional when the dialog is controlled.",
+    "dataAttributes": {
+      "data-popup-open": "Present while the alert dialog is open."
+    }
+  },
+  "AlertDialogPopup": {
+    "description": "The `<dialog>` element, with `role=\"alertdialog\"`. Style it with `[open]`, `::backdrop`, `@starting-style` and `[data-ending-style]`.",
+    "dataAttributes": {
+      "data-ending-style": "Present while the alert dialog animates out. It stays open until the transitions and animations on it and its descendants finish."
+    }
+  },
+  "AlertDialogTitle": {
+    "description": "A heading that names the alert dialog. The popup's `aria-labelledby` points at it."
+  },
+  "AlertDialogDescription": {
+    "description": "A paragraph that describes the alert dialog. The popup's `aria-describedby` points at it."
+  },
+  "AlertDialogClose": {
+    "description": "A button that closes the alert dialog, after running its own `onClick`. Use one for each answer."
+  }
+}

@@ -1,0 +1,67 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { ToggleGroupHero } from "../../demos/toggle-group/hero.rx"
+import { ToggleGroupMultiple } from "../../demos/toggle-group/multiple.rx"
+
+export default component Page() {
+  <DocsPage title="Toggle Group" subtitle="A set of toggles that share one state.">
+    <Demo source="toggle-group/hero"><ToggleGroupHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      The group holds <a href={href("components/toggle")}>Toggle</a>s. Import both and put the toggles inside:
+    </p>
+    <Code file="toggle-group/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Each toggle is a native <code>{"<button>"}</code>. The group is a <code>{"<div>"}</code> with the{" "}
+      <code>group</code> role, and the rest is the library's: the shared value, one-at-a-time or several pressed,
+      and the keyboard. The group is one <kbd>Tab</kbd> stop, and the arrow keys, <kbd>Home</kbd> and{" "}
+      <kbd>End</kbd> move between its toggles.
+    </p>
+    <div class="note">
+      <p>
+        Native radios sharing a <code>name</code> would give one-at-a-time behaviour, but not a group where the
+        pressed toggle can be released again or several can be pressed, so the group keeps its own value and roving
+        focus. <code>focusgroup</code>, which would take over the arrow keys, is only in Chrome.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="single">One at a time</h3>
+    <p>
+      By default one toggle is pressed at a time: pressing another releases the first, and pressing the pressed one
+      releases it, leaving none. The group's <code>value</code> is always an array of the pressed toggles' values,
+      so here it holds one value or none.
+    </p>
+
+    <h3 id="multiple">Several at once</h3>
+    <p>
+      With <code>multiple</code>, each toggle is pressed and released on its own. This demo holds the value in a
+      source with <code>value</code> and <code>onValueChange</code>:
+    </p>
+    <Demo source="toggle-group/multiple"><ToggleGroupMultiple /></Demo>
+
+    <h3 id="keyboard">Keyboard</h3>
+    <p>
+      The arrow keys along <code>orientation</code> move between enabled toggles and wrap at the ends unless{" "}
+      <code>loopFocus</code> is false. With <code>orientation="vertical"</code> they are <kbd>ArrowUp</kbd> and{" "}
+      <kbd>ArrowDown</kbd>. Inside a <a href={href("components/toolbar")}>toolbar</a> the group leaves the keyboard
+      to the toolbar, and its toggles are the toolbar's items.
+    </p>
+
+    <h3 id="disabled">Disabling it</h3>
+    <p>
+      <code>disabled</code> on the group disables every toggle in it; <code>disabled</code> on one toggle disables
+      that one, and the arrow keys skip it.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <p>
+      The toggles inside are <a href={href("components/toggle")}>Toggle</a>s; give each a <code>value</code>.
+    </p>
+    <ApiReference family="toggle-group" />
+  </DocsPage>
+}

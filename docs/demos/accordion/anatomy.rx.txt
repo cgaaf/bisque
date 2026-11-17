@@ -1,0 +1,8 @@
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "./rs-ui/accordion/accordion.rx"
+
+<AccordionRoot>
+  <AccordionItem>
+    <AccordionTrigger />
+    <AccordionPanel />
+  </AccordionItem>
+</AccordionRoot>

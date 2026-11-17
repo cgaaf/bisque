@@ -1,0 +1,40 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastClose, toast } from "../../../src/toast/toast.rx"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t} class="Toast">
+      <ToastContent class="Content">
+        <div class="Text">
+          <ToastTitle class="Title" />
+          <ToastDescription class="Description" />
+        </div>
+        <ToastClose class="Close" aria-label="Close">
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+        </ToastClose>
+      </ToastContent>
+    </ToastRoot>
+  }
+}
+
+component SaveButton() {
+  c = use toast
+  source saved := 0
+  action save() {
+    let n = saved + 1
+    saved := n
+    c.manager.add({ title: "Draft saved", description: `Version ${n} of the draft is safe.` })
+  }
+  <button class="Button" type="button" onClick={save}>Save draft</button>
+}
+
+export component ToastHero() {
+  <div class="ToastHero">
+    <ToastProvider>
+      <SaveButton />
+      <ToastViewport class="Viewport">
+        <Toasts />
+      </ToastViewport>
+    </ToastProvider>
+  </div>
+}

@@ -1,0 +1,24 @@
+import { ToggleGroup } from "../../../src/toggle-group/toggle-group.rx"
+import { Toggle } from "../../../src/toggle/toggle.rx"
+
+export component ToggleGroupHero() {
+  <div class="ToggleGroupHero">
+    <ToggleGroup class="Group" aria-label="Text alignment" defaultValue={["left"]}>
+      <Toggle class="Toggle" value="left" aria-label="Align left">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2.5 3.5h11M2.5 6.5h7M2.5 9.5h11M2.5 12.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </Toggle>
+      <Toggle class="Toggle" value="center" aria-label="Align center">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2.5 3.5h11M4.5 6.5h7M2.5 9.5h11M4.5 12.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </Toggle>
+      <Toggle class="Toggle" value="right" aria-label="Align right">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M2.5 3.5h11M6.5 6.5h7M2.5 9.5h11M6.5 12.5h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </Toggle>
+    </ToggleGroup>
+  </div>
+}

@@ -4,7 +4,7 @@
 // The card is a `popover="manual"` element opened with `showPopover({ source: link })`: the browser provides the
 // top layer and the placement against the link with CSS anchor positioning. Hover-triggered popovers
 // (`interestfor`, `popover="hint"`) aren't shipped in every engine yet, so this family keeps the hover intent and
-// closes on Escape and on a press outside itself. There is no Portal, Positioner or Arrow part: the popup is the
+// closes on Escape and on a press outside itself. There is no Portal or Positioner part: the popup is the
 // positioned element, styled with `:popover-open` and `@starting-style`.
 import { mergeProps } from "../internal/props.js"
 import { createHoverIntent, createManualDismiss } from "../internal/overlay.js"

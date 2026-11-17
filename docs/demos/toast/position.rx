@@ -1,0 +1,27 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, toast } from "../../../src/toast/toast.rx"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    // At the top of the screen, a toast is swiped away upwards.
+    <ToastRoot toast={t} class="Toast" swipeDirection="up">
+      <ToastTitle class="Title" />
+    </ToastRoot>
+  }
+}
+
+component ConnectButton() {
+  c = use toast
+  <button class="Button" type="button" onClick={() => { c.manager.add({ id: "online", title: "You're back online" }) }}>Reconnect</button>
+}
+
+export component ToastPosition() {
+  <div class="ToastPosition">
+    <ToastProvider timeout={3000}>
+      <ConnectButton />
+      <ToastViewport class="Viewport">
+        <Toasts />
+      </ToastViewport>
+    </ToastProvider>
+  </div>
+}

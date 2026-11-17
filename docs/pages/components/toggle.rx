@@ -1,0 +1,63 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { ToggleHero } from "../../demos/toggle/hero.rx"
+
+export default component Page() {
+  <DocsPage title="Toggle" subtitle="A button that is either pressed or not.">
+    <Demo source="toggle/hero"><ToggleHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the part and use it:</p>
+    <Code file="toggle/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      A toggle is a native <code>{"<button>"}</code>, so the browser provides the focus, the <kbd>Tab</kbd> stop and
+      activation with <kbd>Enter</kbd> and <kbd>Space</kbd>. HTML has no pressed state for a button, so the library
+      adds it: the state itself (which may be controlled), <code>aria-pressed</code> and <code>data-pressed</code>,
+      a disabled state, and joining a <a href={href("components/toggle-group")}>toggle group</a> or a{" "}
+      <a href={href("components/toolbar")}>toolbar</a> when it is inside one.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Without props a toggle keeps its own state, starting from <code>defaultPressed</code>. Pass{" "}
+      <code>pressed</code> and <code>onPressedChange</code> to hold the state yourself: a press calls{" "}
+      <code>onPressedChange</code> with the new state, and the toggle shows whatever <code>pressed</code> says.
+    </p>
+
+    <h3 id="styling">Styling the pressed state</h3>
+    <p>
+      Style <code>[data-pressed]</code> or <code>[aria-pressed="true"]</code>. The demo keeps two icons inside the
+      button and shows one or the other from the stylesheet.
+    </p>
+
+    <h3 id="disabled">Disabling it</h3>
+    <p>
+      A <code>disabled</code> toggle doesn't change, and your <code>onClick</code> and{" "}
+      <code>onPressedChange</code> aren't called. It gets the native <code>disabled</code> attribute and{" "}
+      <code>data-disabled</code>.
+    </p>
+
+    <h3 id="in-a-group">In a group</h3>
+    <p>
+      Inside a <a href={href("components/toggle-group")}>ToggleGroup</a> the group owns the pressed state: give
+      each toggle a <code>value</code>, and the group's <code>value</code> lists the pressed ones. Inside a{" "}
+      <a href={href("components/toolbar")}>Toolbar</a> the toggle is one of the toolbar's items, reached with the
+      arrow keys.
+    </p>
+
+    <h3 id="custom-element">On another element</h3>
+    <p>
+      The <code>toggle</code> props function gives any element the same behaviour. With{" "}
+      <code>native: false</code> it also gets the <code>button</code> role, a <kbd>Tab</kbd> stop, and{" "}
+      <kbd>Enter</kbd> and <kbd>Space</kbd>:
+    </p>
+    <Code file="toggle/custom.rx.txt" />
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="toggle" />
+  </DocsPage>
+}

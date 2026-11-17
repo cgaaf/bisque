@@ -1,0 +1,174 @@
+.ToastHero {
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Button:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Viewport {
+    /* The viewport is an open popover: undo the browser's centred, bordered box and put it in a corner. Its
+       toasts are absolutely positioned, so it has no height and covers nothing. */
+    inset: auto 1rem 1rem auto;
+    width: min(22rem, calc(100vw - 2rem));
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    overflow: visible;
+  }
+
+  .Toast {
+    --gap: 0.75rem;
+    --peek: 0.75rem;
+    /* Each toast behind the front one is a little smaller and peeks out above it. */
+    --scale: calc(max(0, 1 - (var(--toast-index) * 0.1)));
+    --shrink: calc(1 - var(--scale));
+    /* Collapsed, every toast takes the front one's height so the ones behind line up with it. */
+    --height: var(--toast-frontmost-height, var(--toast-height));
+    /* Expanded, each toast sits above the ones in front of it. */
+    --offset-y: calc(
+      var(--toast-offset-y) * -1 - var(--toast-index) * var(--gap) + var(--toast-swipe-movement-y)
+    );
+
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--height);
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.625rem;
+    background: light-dark(#fff, #1c1c21);
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.25);
+    z-index: calc(1000 - var(--toast-index));
+    transform-origin: bottom center;
+    transform: translateX(var(--toast-swipe-movement-x))
+      translateY(
+        calc(var(--toast-swipe-movement-y) - var(--toast-index) * var(--peek) - var(--shrink) * var(--height))
+      )
+      scale(var(--scale));
+    transition:
+      transform 400ms cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 400ms,
+      height 150ms;
+    user-select: none;
+    cursor: default;
+  }
+
+  /* The pointer is over the stack, or keyboard focus is in it: spread it out. */
+  .Toast[data-expanded] {
+    height: var(--toast-height);
+    transform: translateX(var(--toast-swipe-movement-x)) translateY(var(--offset-y));
+  }
+
+  /* Fills the gap under each toast, so moving the pointer between them doesn't collapse the stack. */
+  .Toast::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    height: calc(var(--gap) + 1px);
+  }
+
+  .Toast:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 1px;
+  }
+
+  /* Follow the pointer while it drags the toast. */
+  .Toast[data-swiping] {
+    transition: none;
+  }
+
+  /* Beyond the provider's limit: still in the list, but hidden and inert. */
+  .Toast[data-limited] {
+    opacity: 0;
+  }
+
+  /* In: up from below the viewport. */
+  @starting-style {
+    .Toast {
+      opacity: 0;
+      transform: translateY(150%);
+    }
+  }
+
+  /* Out: the toast stays in the list with this attribute until its transitions end. */
+  .Toast[data-ending-style] {
+    opacity: 0;
+    transform: translateY(150%);
+  }
+
+  /* A swiped toast leaves the way it was thrown. */
+  .Toast[data-ending-style][data-swipe-direction="right"] {
+    transform: translateX(calc(var(--toast-swipe-movement-x) + 150%)) translateY(var(--offset-y));
+  }
+
+  .Toast[data-ending-style][data-swipe-direction="down"] {
+    transform: translateY(calc(var(--toast-swipe-movement-y) + 150%));
+  }
+
+  .Content {
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.875rem 0.875rem 0.875rem 1rem;
+    overflow: hidden;
+    transition: opacity 250ms;
+  }
+
+  /* Collapsed, only the front toast's text shows; the ones behind are empty cards. */
+  .Content[data-behind] {
+    opacity: 0;
+  }
+
+  .Content[data-expanded] {
+    opacity: 1;
+  }
+
+  .Text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .Title {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+
+  .Description {
+    margin: 0.125rem 0 0;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Close {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: light-dark(#63636e, #9a9aa6);
+    cursor: pointer;
+  }
+
+  .Close:hover {
+    background: light-dark(#f2f2f5, #26262c);
+    color: inherit;
+  }
+}

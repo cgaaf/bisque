@@ -1,0 +1,75 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { PreviewCardHero } from "../../demos/preview-card/hero.rx"
+
+export default component Page() {
+  <DocsPage title="Preview Card" subtitle="A card that previews what a link points to while the link is hovered or focused.">
+    <Demo source="preview-card/hero"><PreviewCardHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="preview-card/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The card is an element with <code>popover="manual"</code>, shown with{" "}
+      <code>{"showPopover({ source: link })"}</code>, which makes the link its anchor. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the card is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>Placement against the link with CSS anchor positioning, flipped to the other side when it doesn't fit.</li>
+    </ul>
+    <p>
+      Popovers that open on hover (<code>interestfor</code>, <code>popover="hint"</code>) aren't in every engine
+      yet, and a manual popover gets no light dismiss, so the library adds opening after a delay on hover and on
+      keyboard focus, keeping the card open while the pointer is over it, closing on <kbd>Escape</kbd> and on a
+      press outside, and <code>data-side</code> with the arrow's position.
+    </p>
+    <div class="note">
+      <p>
+        The card is supplementary: the link works without it. So the card takes no role and focus never moves into
+        it on its own; the card stays open while focus is on something inside it. It stays in the document while
+        closed and is the positioned element itself, so there are no Portal or Positioner parts.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="delays">Delays</h3>
+    <p>
+      The card opens once the pointer has rested on the link, or focus has stayed on it, for <code>delay</code>{" "}
+      milliseconds (600 by default). It closes <code>closeDelay</code> milliseconds (300 by default) after the
+      pointer has left both the link and the card, so the pointer can cross the gap; coming back before then keeps
+      it open. Focus leaving both closes it too.
+    </p>
+
+    <h3 id="paragraphs">In a paragraph</h3>
+    <p>
+      The card is a <code>{"<div>"}</code>, which can't sit inside a <code>{"<p>"}</code>. The root renders no
+      element, so put it around the paragraph and the card after it, as the demo does.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to the root to hold the state yourself. Hover, focus,{" "}
+      <kbd>Escape</kbd> and a press outside then call <code>onOpenChange</code> with the state they ask for.
+    </p>
+
+    <h3 id="placement">Placement and the arrow</h3>
+    <p>
+      The card sits below the link, centred, unless <code>side</code> and <code>align</code> say otherwise;{" "}
+      <code>sideOffset</code> is the gap. When the browser flips it, its <code>data-side</code> changes to the side
+      it ended up on. <code>PreviewCardArrow</code> is placed on the edge facing the link, centred on the link.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the card in with <code>@starting-style</code> under <code>:popover-open</code>. The library hides it
+      as soon as it closes, so animating it out is left to CSS: transition <code>display</code> and{" "}
+      <code>overlay</code> with <code>allow-discrete</code>, which takes effect in the engines that support it and
+      is ignored in the others.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="preview-card" />
+  </DocsPage>
+}

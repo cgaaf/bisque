@@ -1,0 +1,3 @@
+// How the button loading demo may use ./wait.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./wait.d.ts.
+export fn after(ms: number, done: () => void): void

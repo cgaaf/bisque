@@ -1,0 +1,63 @@
+{
+  "ToolbarRoot": {
+    "description": "The toolbar: a `<div>` with the `toolbar` role. It is one Tab stop; the arrow keys along its orientation move between its items, and Tab comes back to the item focused last.",
+    "props": {
+      "disabled": "Disables every item. Buttons and inputs stay focusable unless they set `focusableWhenDisabled={false}`.",
+      "orientation": "Whether the items run `horizontal`ly (ArrowLeft and ArrowRight move between them) or `vertical`ly (ArrowUp and ArrowDown).",
+      "loopFocus": "Whether the arrow keys wrap around at the ends."
+    },
+    "dataAttributes": {
+      "data-orientation": "The toolbar's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the toolbar is disabled."
+    }
+  },
+  "ToolbarButton": {
+    "description": "A `<button>` that is an item of the toolbar.",
+    "props": {
+      "disabled": "A disabled button does nothing when pressed, and its `onClick` isn't called. It is also disabled when its group or the toolbar is.",
+      "focusableWhenDisabled": "Whether the button stays focusable while disabled, so the arrow keys still reach it. It then gets `aria-disabled` instead of the `disabled` attribute."
+    },
+    "dataAttributes": {
+      "data-orientation": "The toolbar's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the button is disabled.",
+      "data-focusable": "Present when the button stays focusable while disabled."
+    }
+  },
+  "ToolbarLink": {
+    "description": "An `<a>` that is an item of the toolbar. A link can't be disabled.",
+    "dataAttributes": {
+      "data-orientation": "The toolbar's orientation: `horizontal` or `vertical`."
+    }
+  },
+  "ToolbarInput": {
+    "description": "An `<input>` that is an item of the toolbar. The arrow keys move its caret, and move to the next item only from the end of the text (or the previous one from its start); Home and End stay with the input.",
+    "props": {
+      "disabled": "A disabled input takes no typing. It is also disabled when its group or the toolbar is.",
+      "focusableWhenDisabled": "Whether the input stays focusable while disabled. It then gets `aria-disabled` instead of the `disabled` attribute."
+    },
+    "dataAttributes": {
+      "data-orientation": "The toolbar's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the input is disabled.",
+      "data-focusable": "Present when the input stays focusable while disabled."
+    }
+  },
+  "ToolbarGroup": {
+    "description": "A `<div>` with the `group` role around related items. Name it with `aria-label`.",
+    "props": {
+      "disabled": "Disables every item in the group."
+    },
+    "dataAttributes": {
+      "data-orientation": "The toolbar's orientation: `horizontal` or `vertical`.",
+      "data-disabled": "Present when the group is disabled."
+    }
+  },
+  "ToolbarSeparator": {
+    "description": "A `<div>` with the `separator` role that runs across the toolbar: vertical in a horizontal toolbar, horizontal in a vertical one.",
+    "props": {
+      "orientation": "The separator's own orientation, when it shouldn't run across the toolbar."
+    },
+    "dataAttributes": {
+      "data-orientation": "The separator's orientation: `horizontal` or `vertical`."
+    }
+  }
+}

@@ -1,0 +1,76 @@
+.CollapsibleHero {
+  width: 15rem;
+
+  .Trigger {
+    /* A <summary> is a list item with a marker: hide it (the second rule is for Safari). */
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .Trigger::-webkit-details-marker {
+    display: none;
+  }
+
+  .Trigger:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Trigger:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 2px;
+  }
+
+  .Icon {
+    transition: rotate 150ms;
+  }
+
+  /* The <details> holds the open state: `[open]` is the hook. */
+  .Root[open] .Icon {
+    rotate: 90deg;
+  }
+
+  .Panel {
+    /* The part writes the panel's measured height here: px while it moves, `auto` once open. */
+    height: var(--collapsible-panel-height);
+    overflow: hidden;
+    transition: height 200ms ease;
+  }
+
+  /* Opening starts from 0. Safari animates from the closed rule, Chrome from @starting-style. */
+  .Root:not([open]) > .Panel {
+    height: 0;
+  }
+
+  @starting-style {
+    .Root[open] > .Panel {
+      height: 0;
+    }
+  }
+
+  /* Closing: the <details> stays open with this attribute until the transition ends. */
+  .Panel[data-ending-style] {
+    height: 0;
+  }
+
+  .Content {
+    /* Padding goes on the content, so a panel of height 0 shows nothing. */
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0.5rem 0 0 1.75rem;
+    list-style: none;
+    font-family: ui-monospace, monospace;
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

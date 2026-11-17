@@ -2,7 +2,7 @@
 // trigger with CSS anchor positioning (opened with `showPopover({ source: trigger })`, so the trigger is its
 // anchor). It is `popover="manual"`: hover-triggered popovers (`interestfor`, `popover="hint"`) aren't shipped in
 // every engine yet, so this family keeps the hover intent, the delay group, and closing on Escape and on a press
-// outside, which the browser does only for `popover="auto"`. There is no Portal, Positioner or Arrow part: the
+// outside, which the browser does only for `popover="auto"`. There is no Portal or Positioner part: the
 // popup is the positioned element, styled with `:popover-open` and `@starting-style`.
 import { mergeProps } from "../internal/props.js"
 import { createHoverGroup, createHoverIntent, createManualDismiss } from "../internal/overlay.js"

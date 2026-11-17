@@ -1,0 +1,11 @@
+import { ToolbarRoot, ToolbarButton, ToolbarLink, ToolbarInput, ToolbarGroup, ToolbarSeparator } from "./rs-ui/toolbar/toolbar.rx"
+
+<ToolbarRoot>
+  <ToolbarButton />
+  <ToolbarLink />
+  <ToolbarSeparator />
+  <ToolbarGroup>
+    <ToolbarButton />
+  </ToolbarGroup>
+  <ToolbarInput />
+</ToolbarRoot>

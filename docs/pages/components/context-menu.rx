@@ -1,0 +1,70 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { ContextMenuHero } from "../../demos/context-menu/hero.rx"
+
+export default component Page() {
+  <DocsPage title="Context Menu" subtitle="A menu that opens at the pointer on a right-click or a long press.">
+    <Demo source="context-menu/hero"><ContextMenuHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="context-menu/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      A context menu is a <a href={href("components/menu")}>Menu</a> opened from an area instead of a button: its
+      popup is an element with <code>popover="auto"</code>, and every part but the trigger is a Menu part under
+      another name. The browser provides the same as for a menu: the top layer, closing on <kbd>Escape</kbd> and
+      on a press outside, nested submenus, and placement with CSS anchor positioning.
+    </p>
+    <p>
+      CSS anchor positioning anchors to an element, not to a point, so the trigger area holds an empty element
+      that is moved to the point where the menu opens. The browser places the popup below and to the right of
+      that point and flips it at the edges of the viewport. The library adds the rest: preventing the browser's
+      own menu, opening from the pointer, a long press and the keyboard, and Menu's keyboard model, focus and
+      ARIA.
+    </p>
+    <div class="note">
+      <p>
+        The release of a press outside an open popover closes it, and Firefox and Safari count the right button
+        too, so the menu opens once the press is released rather than while the button is down. The moving anchor
+        is <code>position: fixed</code>: an ancestor of the trigger area with a <code>transform</code>,{" "}
+        <code>filter</code> or <code>contain</code> puts the menu in the wrong place.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="opening">Opening it</h3>
+    <p>
+      A right-click in the trigger area opens the menu at the pointer, and a right-click elsewhere in the area
+      while it is open moves it there. On a touch screen, a finger resting still for half a second opens it at
+      the finger once the finger lifts; moving the finger cancels it. The keyboard's context-menu key and{" "}
+      <kbd>Shift</kbd>+<kbd>F10</kbd> open it on its first item, below the element that has focus in the area. The
+      area itself isn't focusable, so the keys work only from something focusable inside it.
+    </p>
+
+    <h3 id="items">Items and submenus</h3>
+    <p>
+      Items, checkbox and radio items, groups and submenus work as they do in a{" "}
+      <a href={href("components/menu")}>Menu</a>, as the submenu in the demo shows. The parts read Menu's{" "}
+      <code>menu</code> context, so a custom part imports <code>menu</code> and the <code>menu*</code> props
+      functions from <code>menu.rx</code>.
+    </p>
+
+    <h3 id="disabled">Disabling it</h3>
+    <p>
+      A <code>disabled</code> root doesn't open, and the browser's own menu shows instead.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Style the popup with <code>:popover-open</code> and animate it in with <code>@starting-style</code>, as for a
+      menu. Near the bottom of the viewport the browser flips it above the point, and the popup's{" "}
+      <code>data-side</code> becomes <code>top</code>, so a transform origin can follow it.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="context-menu" />
+  </DocsPage>
+}

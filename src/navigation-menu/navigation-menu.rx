@@ -6,7 +6,7 @@
 // the list's arrow keys, focus moving into the content from the keyboard and back to the trigger when it
 // closes, closing when focus leaves, and ARIA.
 //
-// There is no Portal, Positioner, Popup, Viewport, Backdrop or Arrow part: content stays where it is declared
+// There is no Portal, Positioner, Popup, Viewport or Backdrop part: content stays where it is declared
 // and is the positioned element, styled with `:popover-open` and `@starting-style`.
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
 import { createHoverIntent } from "../internal/overlay.js"
@@ -237,6 +237,7 @@ export type NavigationMenuContentProps = {
   align?: "start" | "center" | "end"
   // Gap between trigger and content, in pixels. Default: 0.
   sideOffset?: number
+  // How far it is moved along the trigger's edge from its `align` position, in pixels. Default: 0.
   alignOffset?: number
 } & DivProps
 

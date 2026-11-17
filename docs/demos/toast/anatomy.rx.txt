@@ -1,0 +1,21 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "./rs-ui/toast/toast.rx"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t}>
+      <ToastContent>
+        <ToastTitle />
+        <ToastDescription />
+        <ToastAction />
+        <ToastClose />
+      </ToastContent>
+    </ToastRoot>
+  }
+}
+
+<ToastProvider>
+  <ToastViewport>
+    <Toasts />
+  </ToastViewport>
+</ToastProvider>

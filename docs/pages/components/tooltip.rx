@@ -1,0 +1,90 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TooltipHero } from "../../demos/tooltip/hero.rx"
+
+export default component Page() {
+  <DocsPage title="Tooltip" subtitle="A short label that appears when a button is hovered or focused.">
+    <Demo source="tooltip/hero"><TooltipHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="tooltip/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The popup is an element with <code>popover="manual"</code>, shown with{" "}
+      <code>{"showPopover({ source: trigger })"}</code>, which makes the trigger its anchor. The browser
+      provides:
+    </p>
+    <ul>
+      <li>The top layer: the popup is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>Placement against the trigger with CSS anchor positioning, flipped to the other side when it doesn't fit.</li>
+    </ul>
+    <p>
+      Popovers that open on hover (<code>interestfor</code>, <code>popover="hint"</code>) aren't in every engine
+      yet, and a manual popover gets no light dismiss, so the library adds the rest: opening after a delay on
+      hover and at once on keyboard focus, letting the pointer cross from the trigger onto the popup, the delay
+      group, closing on <kbd>Escape</kbd>, on a press outside and on a press of the trigger, the{" "}
+      <code>tooltip</code> role and the trigger's <code>aria-describedby</code>, and <code>data-side</code> with
+      the arrow's position.
+    </p>
+    <div class="note">
+      <p>
+        The trigger has no <code>popovertarget</code>: pressing it must not open a tooltip. The popup stays in the
+        document while it is closed, so there is no Portal part, and it is the positioned element itself, so there
+        is no Positioner.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="provider">Grouping tooltips</h3>
+    <p>
+      Without a provider every tooltip waits its delay. Inside a <code>TooltipProvider</code>, once one tooltip has
+      opened, moving to another trigger opens its tooltip at once and closes the first. That lasts until{" "}
+      <code>timeout</code> milliseconds after the last one closed (400 by default). The provider's{" "}
+      <code>delay</code> and <code>closeDelay</code> apply to every trigger beneath it that doesn't set its own.
+      The demo above wraps its three buttons in one provider.
+    </p>
+
+    <h3 id="delays">Delays and closing</h3>
+    <p>
+      A trigger opens its tooltip once the pointer has rested on it for <code>delay</code> milliseconds (600 by
+      default) and closes it <code>closeDelay</code> milliseconds after the pointer leaves (0 by default). Keyboard
+      focus opens it without waiting, and moving focus away closes it. Pressing the trigger closes the tooltip and
+      it doesn't come back until the pointer has left; pass <code>{"closeOnClick={false}"}</code> to keep it
+      open.
+    </p>
+    <p>
+      The pointer may move from the trigger onto the popup, crossing the gap between them, and the tooltip stays
+      open while it is there. With <code>disableHoverablePopup</code> on the root it closes as soon as the pointer
+      leaves the trigger.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to the root to hold the state yourself. Hover, focus,{" "}
+      <kbd>Escape</kbd> and presses don't change a controlled tooltip: they call <code>onOpenChange</code> with the
+      state they ask for. A <code>disabled</code> root never opens, and closes if it was open.
+    </p>
+
+    <h3 id="placement">Placement and the arrow</h3>
+    <p>
+      The popup sits above its trigger, centred, unless <code>side</code> and <code>align</code> say otherwise;{" "}
+      <code>sideOffset</code> is the gap. These become CSS anchor positioning declarations in the popup's inline
+      style, which a stylesheet can replace. When the browser flips the popup, its <code>data-side</code> changes
+      to the side it ended up on. <code>TooltipArrow</code> is placed on the edge that faces the trigger, centred
+      on the trigger; give it a shape and turn it per <code>data-side</code>, as the demo does.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the popup in with <code>@starting-style</code> under <code>:popover-open</code>. The library hides the
+      popover as soon as the tooltip closes, so animating it out is left to CSS: transition <code>display</code>{" "}
+      and <code>overlay</code> with <code>allow-discrete</code>, which takes effect in the engines that support it
+      and is ignored in the others.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="tooltip" />
+  </DocsPage>
+}

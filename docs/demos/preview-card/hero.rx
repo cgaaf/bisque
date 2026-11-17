@@ -1,0 +1,23 @@
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup, PreviewCardArrow } from "../../../src/preview-card/preview-card.rx"
+
+// The root renders nothing, so it wraps the paragraph: the card is a block and can't sit inside a <p>.
+export component PreviewCardHero() {
+  <div class="PreviewCardHero">
+    <PreviewCardRoot>
+      <p class="Text">
+        The beds along the south wall use{" "}
+        <PreviewCardTrigger class="Link" href="#companion-planting">companion planting</PreviewCardTrigger>
+        {" "}to keep pests down without sprays.
+      </p>
+      <PreviewCardPopup class="Popup" sideOffset={10}>
+        <PreviewCardArrow class="Arrow" />
+        <div class="Swatch" />
+        <p class="Title">Companion planting</p>
+        <p class="Description">
+          Growing plants side by side so that each helps the other: marigolds among tomatoes, beans climbing maize,
+          chives under roses.
+        </p>
+      </PreviewCardPopup>
+    </PreviewCardRoot>
+  </div>
+}

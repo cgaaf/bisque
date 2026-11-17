@@ -1,0 +1,30 @@
+{
+  "CollapsibleRoot": {
+    "description": "The `<details>` element. It holds the open state and shares it with the parts inside it. Style it with `[open]`.",
+    "props": {
+      "open": "Whether the panel is open. Pass it with `onOpenChange` to control the collapsible.",
+      "defaultOpen": "Whether the panel is open at first, when it isn't controlled.",
+      "onOpenChange": "Called when the trigger asks to open or close the panel, and after the browser opened it by itself for find-in-page. A controlled collapsible follows `open`, and is closed again if `open` stays false.",
+      "disabled": "Whether the trigger is disabled: it ignores presses and keys and leaves the tab order. Find-in-page still opens the panel."
+    },
+    "dataAttributes": {
+      "data-disabled": "Present when the collapsible is disabled."
+    }
+  },
+  "CollapsibleTrigger": {
+    "description": "The `<summary>` that opens and closes the panel. It must be the first child of the root. A press asks the root rather than toggling the element, so a controlled `open` decides.",
+    "dataAttributes": {
+      "data-disabled": "Present when the collapsible is disabled."
+    }
+  },
+  "CollapsiblePanel": {
+    "description": "The content after the summary, hidden by the browser while the collapsible is closed. Its measured size is written to CSS variables for animating its height.",
+    "dataAttributes": {
+      "data-ending-style": "Present while the panel animates out. The `<details>` stays open until the panel's transitions and animations finish."
+    },
+    "cssVariables": {
+      "--collapsible-panel-height": "The panel's content height: in px while it opens and closes, `auto` once it is open.",
+      "--collapsible-panel-width": "The panel's content width: in px while it opens and closes, `auto` once it is open."
+    }
+  }
+}

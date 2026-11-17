@@ -1,0 +1,69 @@
+import { MenubarRoot } from "../../../src/menubar/menubar.rx"
+import { MenuRoot, MenuTrigger, MenuPopup, MenuItem, MenuCheckboxItem, MenuSeparator, MenuSubmenuRoot, MenuSubmenuTrigger } from "../../../src/menu/menu.rx"
+
+export component MenubarHero() {
+  <div class="MenubarHero">
+    <MenubarRoot class="Menubar" aria-label="Editor">
+      <MenuRoot>
+        <MenuTrigger class="Trigger">File</MenuTrigger>
+        <MenuPopup class="Popup" sideOffset={6}>
+          <MenuItem class="Item">New file<span class="Shortcut">Ctrl N</span></MenuItem>
+          <MenuItem class="Item">Open…<span class="Shortcut">Ctrl O</span></MenuItem>
+          <MenuSubmenuRoot>
+            <MenuSubmenuTrigger class="Item">
+              Open recent
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M4.5 3 7.5 6l-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </MenuSubmenuTrigger>
+            <MenuPopup class="Popup" alignOffset={-5}>
+              <MenuItem class="Item">field-notes.md</MenuItem>
+              <MenuItem class="Item">budget-2027.csv</MenuItem>
+              <MenuItem class="Item">garden-plan.txt</MenuItem>
+            </MenuPopup>
+          </MenuSubmenuRoot>
+          <MenuSeparator class="Separator" />
+          <MenuItem class="Item">Save<span class="Shortcut">Ctrl S</span></MenuItem>
+          <MenuItem class="Item">Save as…</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+      <MenuRoot>
+        <MenuTrigger class="Trigger">Edit</MenuTrigger>
+        <MenuPopup class="Popup" sideOffset={6}>
+          <MenuItem class="Item">Undo<span class="Shortcut">Ctrl Z</span></MenuItem>
+          <MenuItem class="Item" disabled>Redo<span class="Shortcut">Ctrl Y</span></MenuItem>
+          <MenuSeparator class="Separator" />
+          <MenuItem class="Item">Cut<span class="Shortcut">Ctrl X</span></MenuItem>
+          <MenuItem class="Item">Copy<span class="Shortcut">Ctrl C</span></MenuItem>
+          <MenuItem class="Item">Paste<span class="Shortcut">Ctrl V</span></MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+      <MenuRoot>
+        <MenuTrigger class="Trigger">View</MenuTrigger>
+        <MenuPopup class="Popup" sideOffset={6}>
+          <MenuCheckboxItem class="Item" defaultChecked>
+            Sidebar
+            <svg class="Check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 6.5 5 9l4.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </MenuCheckboxItem>
+          <MenuCheckboxItem class="Item">
+            Status bar
+            <svg class="Check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 6.5 5 9l4.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </MenuCheckboxItem>
+          <MenuSeparator class="Separator" />
+          <MenuItem class="Item">Zoom in</MenuItem>
+          <MenuItem class="Item">Zoom out</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+      <MenuRoot disabled>
+        <MenuTrigger class="Trigger">Help</MenuTrigger>
+        <MenuPopup class="Popup" sideOffset={6}>
+          <MenuItem class="Item">Documentation</MenuItem>
+        </MenuPopup>
+      </MenuRoot>
+    </MenubarRoot>
+  </div>
+}

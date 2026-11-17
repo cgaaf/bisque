@@ -1,0 +1,26 @@
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../../../src/accordion/accordion.rx"
+
+export component AccordionControlled() {
+  source open: string[] := ["step-1"]
+  <div class="AccordionControlled">
+    <div class="Bar">
+      <button class="Button" type="button" onClick={() => { open := ["step-1", "step-2", "step-3"] }}>Expand all</button>
+      <button class="Button" type="button" onClick={() => { open := [] }}>Collapse all</button>
+      <output class="State">{open.length == 0 ? "none open" : open.join(", ")}</output>
+    </div>
+    <AccordionRoot class="Accordion" multiple value={open} onValueChange={(next) => { open := next }}>
+      <AccordionItem class="Item" value="step-1">
+        <AccordionTrigger class="Trigger">1. Install</AccordionTrigger>
+        <AccordionPanel class="Panel"><p class="Content">Copy the library's folder into your project.</p></AccordionPanel>
+      </AccordionItem>
+      <AccordionItem class="Item" value="step-2">
+        <AccordionTrigger class="Trigger">2. Import</AccordionTrigger>
+        <AccordionPanel class="Panel"><p class="Content">Import the parts by relative path.</p></AccordionPanel>
+      </AccordionItem>
+      <AccordionItem class="Item" value="step-3">
+        <AccordionTrigger class="Trigger">3. Style</AccordionTrigger>
+        <AccordionPanel class="Panel"><p class="Content">Write CSS against the native hooks and data attributes.</p></AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+  </div>
+}

@@ -1,0 +1,67 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { MenubarHero } from "../../demos/menubar/hero.rx"
+
+export default component Page() {
+  <DocsPage title="Menubar" subtitle="A row of menus, as at the top of a desktop application.">
+    <Demo source="menubar/hero"><MenubarHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      A menubar is one part around ordinary <a href={href("components/menu")}>Menu</a>s. Import it with the Menu
+      parts:
+    </p>
+    <Code file="menubar/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      There is no native menubar. Each menu in it is a Menu, whose popup is an element with{" "}
+      <code>popover="auto"</code>: the browser gives each one the top layer, closing on <kbd>Escape</kbd> and on a
+      press outside, nested submenus and placement with CSS anchor positioning, as it does for a menu on its own.
+    </p>
+    <p>
+      Inside a <code>MenubarRoot</code> the menus become one composite, and that is the library's: the{" "}
+      <code>menubar</code> role, the triggers as its items with one <kbd>Tab</kbd> stop between them, the arrow
+      keys, <kbd>Home</kbd> and <kbd>End</kbd> along the bar, at most one menu open at a time, and moving between
+      menus while one is open.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Moving between menus</h3>
+    <p>
+      <kbd>ArrowRight</kbd> and <kbd>ArrowLeft</kbd> move between the triggers, skipping disabled ones and
+      wrapping at the ends unless <code>loopFocus</code> is false. <kbd>ArrowDown</kbd>, <kbd>Enter</kbd> and{" "}
+      <kbd>Space</kbd> open a menu on its first item. In an open menu, <kbd>ArrowRight</kbd> and{" "}
+      <kbd>ArrowLeft</kbd> close it and open the neighbouring one, except on a submenu trigger, where{" "}
+      <kbd>ArrowRight</kbd> opens the submenu, and in a submenu, where <kbd>ArrowLeft</kbd> goes back to its
+      parent. Choosing an item closes the menu and returns focus to its trigger.
+    </p>
+
+    <h3 id="pointer">With the pointer</h3>
+    <p>
+      A press on a trigger opens its menu. While a menu is open, resting the pointer on another trigger opens that
+      menu instead, as in a desktop application. A press outside closes the open menu.
+    </p>
+
+    <h3 id="orientation">Vertical menubars</h3>
+    <p>
+      With <code>orientation="vertical"</code> the arrow keys along the bar are <kbd>ArrowDown</kbd> and{" "}
+      <kbd>ArrowUp</kbd>, <kbd>ArrowRight</kbd> opens a menu, and the menus open to the right of their triggers
+      unless their popup's <code>side</code> says otherwise.
+    </p>
+
+    <h3 id="disabled">Disabling menus</h3>
+    <p>
+      <code>disabled</code> on the <code>MenubarRoot</code> disables every menu in it; <code>disabled</code> on one{" "}
+      <code>MenuRoot</code> disables that menu only, as Help is in the demo. Its trigger gets{" "}
+      <code>data-disabled</code> and the arrow keys skip it.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <p>
+      The menus inside are Menu parts; their props are on the <a href={href("components/menu")}>Menu</a> page.
+    </p>
+    <ApiReference family="menubar" />
+  </DocsPage>
+}

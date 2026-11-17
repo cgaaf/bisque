@@ -1,0 +1,28 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../../../src/tabs/tabs.rx"
+
+export component TabsAnimated() {
+  <div class="TabsAnimated">
+    <TabsRoot defaultValue="day">
+      <TabsList class="List" aria-label="Range">
+        <TabsTab class="Tab" value="day">Day</TabsTab>
+        <TabsTab class="Tab" value="week">Week</TabsTab>
+        <TabsTab class="Tab" value="month">Month</TabsTab>
+        <TabsIndicator class="Indicator" />
+      </TabsList>
+      <div class="Panels">
+        <TabsPanel class="Panel" value="day">
+          <span class="Figure">1,284</span>
+          <span class="Label">visits today</span>
+        </TabsPanel>
+        <TabsPanel class="Panel" value="week">
+          <span class="Figure">8,930</span>
+          <span class="Label">visits this week</span>
+        </TabsPanel>
+        <TabsPanel class="Panel" value="month">
+          <span class="Figure">37,502</span>
+          <span class="Label">visits this month</span>
+        </TabsPanel>
+      </div>
+    </TabsRoot>
+  </div>
+}

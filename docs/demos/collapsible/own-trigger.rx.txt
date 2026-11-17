@@ -1,0 +1,12 @@
+import { CollapsibleRoot, CollapsiblePanel, collapsible, collapsibleTrigger } from "./rs-ui/collapsible/collapsible.rx"
+
+component SectionTrigger(props: { title: string }) {
+  c = use collapsible
+  trigger = collapsibleTrigger(c)
+  <summary class="SectionTrigger" {...trigger}><h3>{props.title}</h3></summary>
+}
+
+<CollapsibleRoot>
+  <SectionTrigger title="Billing history" />
+  <CollapsiblePanel>…</CollapsiblePanel>
+</CollapsibleRoot>

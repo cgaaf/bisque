@@ -1,0 +1,17 @@
+import { AlertDialogRoot, AlertDialogTrigger, AlertDialogPopup, AlertDialogTitle, AlertDialogDescription, AlertDialogClose } from "../../../src/alert-dialog/alert-dialog.rx"
+
+export component AlertDialogHero() {
+  <div class="AlertDialogHero">
+    <AlertDialogRoot>
+      <AlertDialogTrigger class="Button Danger">Discard draft</AlertDialogTrigger>
+      <AlertDialogPopup class="Popup">
+        <AlertDialogTitle class="Title">Discard draft?</AlertDialogTitle>
+        <AlertDialogDescription class="Description">You can't undo this action. The draft and its attachments will be removed.</AlertDialogDescription>
+        <div class="Actions">
+          <AlertDialogClose class="Button">Cancel</AlertDialogClose>
+          <AlertDialogClose class="Button Danger">Discard</AlertDialogClose>
+        </div>
+      </AlertDialogPopup>
+    </AlertDialogRoot>
+  </div>
+}

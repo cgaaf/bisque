@@ -1,0 +1,88 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { NavigationMenuHero } from "../../demos/navigation-menu/hero.rx"
+
+export default component Page() {
+  <DocsPage title="Navigation Menu" subtitle="A site's main links, with panels of more links that open from it.">
+    <Demo source="navigation-menu/hero"><NavigationMenuHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="navigation-menu/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The root is a <code>{"<nav>"}</code> around a list. Each item's content is an element with{" "}
+      <code>popover="auto"</code>, declared beside its trigger, and the trigger is a button with{" "}
+      <code>popovertarget</code>. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the content is drawn above the page, without a portal or a <code>z-index</code>.</li>
+      <li>Closing on <kbd>Escape</kbd> and on a press outside.</li>
+      <li>One open at a time: showing one item's content closes the other's.</li>
+      <li>
+        The <kbd>Tab</kbd> order: the content follows its trigger in the document, so <kbd>Tab</kbd> moves from an
+        open trigger into its content and on past it.
+      </li>
+      <li>Placement against the trigger with CSS anchor positioning, flipped to the other side when it doesn't fit.</li>
+    </ul>
+    <p>
+      The library adds the open item's value (which may be controlled), opening on hover, the arrow keys along the
+      list, moving focus into the content when the keyboard opened it and back to the trigger when it closes,
+      closing when focus leaves, <code>data-activation-direction</code>, <code>data-side</code> with the arrow's
+      position, and the ARIA attributes.
+    </p>
+    <div class="note">
+      <p>
+        Content stays where it is declared and is the positioned element itself, so there are no Portal,
+        Positioner, Popup or Viewport parts. Each item has its own content, so a single panel that resizes between
+        items isn't built in.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="opening">Opening it</h3>
+    <p>
+      Resting the pointer on a trigger opens its content after the root's <code>delay</code> (50 milliseconds by
+      default); while one item is open, moving to another trigger switches at once. The pointer may move onto the
+      content, and leaving both closes it after <code>closeDelay</code>. A press opens or closes it, and a press on
+      a trigger that hover opened makes it stay open when the pointer leaves.
+    </p>
+
+    <h3 id="keyboard">From the keyboard</h3>
+    <p>
+      The list is one <kbd>Tab</kbd> stop. The arrow keys along its orientation, <kbd>Home</kbd> and{" "}
+      <kbd>End</kbd> move between its triggers and links, without wrapping. <kbd>ArrowDown</kbd> on a trigger
+      (<kbd>ArrowRight</kbd> in a vertical menu) opens its content and moves focus to the first thing in it;{" "}
+      <kbd>Escape</kbd> closes it and puts focus back on the trigger. Arrow keys inside the content are left to the
+      content. <kbd>Tab</kbd> past the end of the content closes it and moves on.
+    </p>
+
+    <h3 id="links">Links</h3>
+    <p>
+      <code>NavigationMenuLink</code> renders an <code>{"<a>"}</code>. Mark the current page with{" "}
+      <code>active</code>, which sets <code>aria-current="page"</code> and <code>data-active</code>. A link in the
+      content leaves it open when followed, unless it has <code>closeOnClick</code>.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Give each item a <code>value</code>, and pass <code>value</code> and <code>onValueChange</code> to the root to
+      hold which one is open; <code>null</code> means none. Changes the browser makes (<kbd>Escape</kbd>, a press
+      outside) are reported once each through <code>onValueChange</code>. A <code>disabled</code> trigger doesn't
+      open its content.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate content in with <code>@starting-style</code> under <code>:popover-open</code>. When the open item
+      changes, the new content's <code>data-activation-direction</code> says where the previous one
+      was (<code>left</code> or <code>right</code>; <code>up</code> or <code>down</code> in a vertical menu), so it can
+      come in from that side, as the demo's does. <code>NavigationMenuIcon</code> carries{" "}
+      <code>data-popup-open</code> for turning a chevron.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="navigation-menu" />
+  </DocsPage>
+}

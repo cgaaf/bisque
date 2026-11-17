@@ -1,0 +1,6 @@
+import { AvatarRoot, AvatarImage, AvatarFallback } from "./rs-ui/avatar/avatar.rx"
+
+<AvatarRoot>
+  <AvatarImage />
+  <AvatarFallback />
+</AvatarRoot>

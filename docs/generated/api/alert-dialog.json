@@ -4,28 +4,28 @@
     {
       "name": "AlertDialogRoot",
       "element": null,
-      "description": "",
+      "description": "Holds the alert dialog's open state. It is a DialogRoot that is always modal, has `role=\"alertdialog\"` and ignores a press outside.",
       "props": [
         {
           "name": "open",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the alert dialog is open. Pass it with `onOpenChange` to control it."
         },
         {
           "name": "defaultOpen",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the alert dialog is open at first, when it isn't controlled."
         },
         {
           "name": "onOpenChange",
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called when a part or Escape asks to open or close the alert dialog. A controlled alert dialog changes only when `open` does."
         }
       ],
       "dataAttributes": [],
@@ -34,12 +34,12 @@
     {
       "name": "AlertDialogTrigger",
       "element": "button",
-      "description": "",
+      "description": "The button that opens the alert dialog. Optional when the dialog is controlled.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-popup-open",
-          "description": "Present on the trigger while its popup is open."
+          "description": "Present while the alert dialog is open."
         }
       ],
       "cssVariables": []
@@ -47,15 +47,20 @@
     {
       "name": "AlertDialogPopup",
       "element": "dialog",
-      "description": "",
+      "description": "The `<dialog>` element, with `role=\"alertdialog\"`. Style it with `[open]`, `::backdrop`, `@starting-style` and `[data-ending-style]`.",
       "props": [],
-      "dataAttributes": [],
+      "dataAttributes": [
+        {
+          "name": "data-ending-style",
+          "description": "Present while the alert dialog animates out. It stays open until the transitions and animations on it and its descendants finish."
+        }
+      ],
       "cssVariables": []
     },
     {
       "name": "AlertDialogTitle",
       "element": "h2",
-      "description": "",
+      "description": "A heading that names the alert dialog. The popup's `aria-labelledby` points at it.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []
@@ -63,7 +68,7 @@
     {
       "name": "AlertDialogDescription",
       "element": "p",
-      "description": "",
+      "description": "A paragraph that describes the alert dialog. The popup's `aria-describedby` points at it.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []
@@ -71,7 +76,7 @@
     {
       "name": "AlertDialogClose",
       "element": "button",
-      "description": "",
+      "description": "A button that closes the alert dialog, after running its own `onClick`. Use one for each answer.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []

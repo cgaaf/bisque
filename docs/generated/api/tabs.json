@@ -4,45 +4,45 @@
     {
       "name": "TabsRoot",
       "element": "div",
-      "description": "",
+      "description": "Holds the selected value and shares it with the parts inside it.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "The selected tab's value. Pass it with `onValueChange` to control the tabs."
         },
         {
           "name": "defaultValue",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "The tab selected at first, when the tabs aren't controlled. Without it, or when it names no tab, the first enabled tab is selected."
         },
         {
           "name": "onValueChange",
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new value when a tab is selected."
         },
         {
           "name": "orientation",
           "type": "TabsOrientation",
           "default": "\"horizontal\"",
           "required": false,
-          "description": ""
+          "description": "Which arrow keys move between tabs: Left and Right for `horizontal`, Up and Down for `vertical`."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-activation-direction",
-          "description": "The direction of the newly active item relative to the previous one."
+          "description": "Which way the selection last moved: `left` or `right` when horizontal, `up` or `down` when vertical, and `none` until it first moves."
         },
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The tabs' orientation: `horizontal` or `vertical`."
         }
       ],
       "cssVariables": []
@@ -50,31 +50,31 @@
     {
       "name": "TabsList",
       "element": "div",
-      "description": "",
+      "description": "The `tablist` that holds the tabs. It is one Tab stop, which lands on the selected tab; the arrow keys, Home and End move between tabs.",
       "props": [
         {
           "name": "activateOnFocus",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Select a tab as soon as the arrow keys focus it (automatic activation)."
+          "description": "Whether a tab is selected as soon as the arrow keys focus it. With `false`, the focused tab is selected with Enter or Space."
         },
         {
           "name": "loopFocus",
           "type": "boolean",
           "default": "true",
           "required": false,
-          "description": "Whether the arrow keys wrap around at the ends."
+          "description": "Whether the arrow keys wrap around from the last tab to the first and back."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-activation-direction",
-          "description": "The direction of the newly active item relative to the previous one."
+          "description": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
         },
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The tabs' orientation: `horizontal` or `vertical`."
         }
       ],
       "cssVariables": []
@@ -82,39 +82,39 @@
     {
       "name": "TabsTab",
       "element": "button",
-      "description": "",
+      "description": "A button that selects its panel. It carries `role=\"tab\"`, `aria-selected`, and `aria-controls` pointing at its panel while selected.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": true,
-          "description": ""
+          "description": "The value that names this tab and the panel it selects."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "A disabled tab stays in the DOM and is announced, but can't be selected and is skipped by the arrow keys."
+          "description": "Whether the tab can't be selected. It stays in the list with `aria-disabled`, is skipped by the arrow keys, and your own click and key handlers on it don't run."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-activation-direction",
-          "description": "The direction of the newly active item relative to the previous one."
+          "description": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
         },
         {
           "name": "data-active",
-          "description": ""
+          "description": "Present on the selected tab."
         },
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present when the tab is disabled."
         },
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The tabs' orientation: `horizontal` or `vertical`."
         }
       ],
       "cssVariables": []
@@ -122,43 +122,43 @@
     {
       "name": "TabsPanel",
       "element": "div",
-      "description": "",
+      "description": "The content shown while its tab is selected, with `role=\"tabpanel\"`, labelled by its tab. It is mounted while selected and stays mounted while it animates out.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": true,
-          "description": ""
+          "description": "The value of the tab that shows this panel."
         },
         {
           "name": "keepMounted",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Keep the panel in the DOM (hidden) while its tab isn't selected."
+          "description": "Whether the panel stays in the document, with `hidden`, while its tab isn't selected."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-activation-direction",
-          "description": "The direction of the newly active item relative to the previous one."
+          "description": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
         },
         {
           "name": "data-ending-style",
-          "description": "Present while the part animates out."
+          "description": "Present while the panel animates out. It is removed when its transitions and animations finish."
         },
         {
           "name": "data-hidden",
-          "description": ""
+          "description": "Present while the panel is kept mounted but its tab isn't selected."
         },
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The tabs' orientation: `horizontal` or `vertical`."
         },
         {
           "name": "data-starting-style",
-          "description": "Present while the part animates in."
+          "description": "Present for the first frame after the panel appears: style the state it animates in from."
         }
       ],
       "cssVariables": []
@@ -166,19 +166,44 @@
     {
       "name": "TabsIndicator",
       "element": "span",
-      "description": "Follows the selected tab. Its position and size are CSS variables relative to the list: `--active-tab-left`, `--active-tab-right`, `--active-tab-top`, `--active-tab-bottom`, `--active-tab-width`, `--active-tab-height`. Hidden until the selected tab has a size. Place it inside TabsList.",
+      "description": "An element that follows the selected tab. Place it inside TabsList and position it with its CSS variables. It is hidden until the selected tab has a size, and absent while no tab is selected.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-activation-direction",
-          "description": "The direction of the newly active item relative to the previous one."
+          "description": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
         },
         {
           "name": "data-orientation",
-          "description": "The orientation: `horizontal` or `vertical`."
+          "description": "The tabs' orientation: `horizontal` or `vertical`."
         }
       ],
-      "cssVariables": []
+      "cssVariables": [
+        {
+          "name": "--active-tab-left",
+          "description": "The selected tab's distance from the list's left padding edge, in px, including the list's scroll."
+        },
+        {
+          "name": "--active-tab-right",
+          "description": "The distance from the selected tab's right edge to the end of the list's scrollable width, in px."
+        },
+        {
+          "name": "--active-tab-top",
+          "description": "The selected tab's distance from the list's top padding edge, in px, including the list's scroll."
+        },
+        {
+          "name": "--active-tab-bottom",
+          "description": "The distance from the selected tab's bottom edge to the end of the list's scrollable height, in px."
+        },
+        {
+          "name": "--active-tab-width",
+          "description": "The selected tab's width, in px."
+        },
+        {
+          "name": "--active-tab-height",
+          "description": "The selected tab's height, in px."
+        }
+      ]
     }
   ]
 }

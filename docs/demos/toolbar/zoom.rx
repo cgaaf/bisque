@@ -1,0 +1,18 @@
+import { ToolbarRoot, ToolbarButton, ToolbarInput, ToolbarGroup, ToolbarSeparator } from "../../../src/toolbar/toolbar.rx"
+
+export component ToolbarZoom() {
+  <div class="ToolbarZoom">
+    <ToolbarRoot class="Toolbar" aria-label="Page">
+      <ToolbarGroup class="Group" aria-label="Zoom">
+        <ToolbarButton class="Button" aria-label="Zoom out">−</ToolbarButton>
+        <ToolbarInput class="Input" aria-label="Zoom level" defaultValue="100%" />
+        <ToolbarButton class="Button" aria-label="Zoom in">+</ToolbarButton>
+      </ToolbarGroup>
+      <ToolbarSeparator class="Separator" />
+      <ToolbarGroup class="Group" aria-label="History">
+        <ToolbarButton class="Button Text">Undo</ToolbarButton>
+        <ToolbarButton class="Button Text" disabled>Redo</ToolbarButton>
+      </ToolbarGroup>
+    </ToolbarRoot>
+  </div>
+}

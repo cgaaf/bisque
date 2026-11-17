@@ -1,0 +1,79 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { DialogHero } from "../../demos/dialog/hero.rx"
+import { DialogControlled } from "../../demos/dialog/controlled.rx"
+import { DialogNonModal } from "../../demos/dialog/non-modal.rx"
+
+export default component Page() {
+  <DocsPage title="Dialog" subtitle="A popup that opens on top of the entire page.">
+    <Demo source="dialog/hero"><DialogHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="dialog/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The popup is a native <code>{"<dialog>"}</code>, opened with <code>showModal()</code>. The browser
+      provides:
+    </p>
+    <ul>
+      <li>The top layer: the dialog is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>An inert page behind a modal dialog: <kbd>Tab</kbd> stays inside the dialog.</li>
+      <li>Moving focus into the dialog when it opens, and back to the trigger when it closes.</li>
+      <li>Closing on <kbd>Escape</kbd>.</li>
+      <li>The <code>::backdrop</code> pseudo-element behind it.</li>
+    </ul>
+    <p>
+      The library adds the open state (which may be controlled), closing on a press outside the dialog, the ARIA
+      relationships between trigger, popup, title and description, locking the page's scroll while a modal dialog
+      is open, and the exit animation: the dialog stays open with <code>data-ending-style</code> until its
+      transitions finish, because no engine but Chrome can animate a top-layer element out yet.
+    </p>
+    <div class="note">
+      <p>
+        The popup stays in the document while it is closed, so there is no Portal part and no{" "}
+        <code>keepMounted</code> prop. There is no Backdrop part: style <code>::backdrop</code>. There is no
+        Viewport part, and no <code>initialFocus</code> or <code>finalFocus</code> props: the browser moves focus.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to hold the state yourself, for instance to close the
+      dialog when a form inside it is submitted. <kbd>Escape</kbd>, a press outside and the close buttons only
+      ask to close it: a controlled dialog stays open until <code>open</code> becomes false, so it can refuse, for
+      instance while there are unsaved changes.
+    </p>
+    <Demo source="dialog/controlled"><DialogControlled /></Demo>
+
+    <h3 id="dismissal">Closing on Escape and a press outside</h3>
+    <p>
+      A dialog closes on <kbd>Escape</kbd> and on a press on its backdrop. With{" "}
+      <code>disablePointerDismissal</code> a press outside is ignored and <kbd>Escape</kbd> still closes it; with{" "}
+      <code>dismissible={"{false}"}</code> neither closes it, and only the dialog's own buttons can. A drag that
+      starts inside the dialog and ends on the backdrop, as when selecting text, doesn't count as a press
+      outside.
+    </p>
+
+    <h3 id="non-modal">A non-modal dialog</h3>
+    <p>
+      With <code>modal={"{false}"}</code> the dialog is opened with <code>show()</code>: it isn't in the top
+      layer, has no backdrop, leaves the page usable and doesn't lock its scroll, so position it yourself.{" "}
+      <kbd>Escape</kbd> closes it while focus is inside it, and a press outside doesn't.
+    </p>
+    <Demo source="dialog/non-modal"><DialogNonModal /></Demo>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the dialog in with <code>@starting-style</code> under <code>[open]</code>, and out with{" "}
+      <code>[data-ending-style]</code>: when it is asked to close, the attribute is set, the dialog waits for the
+      transitions and animations on it and inside it to finish, and then closes. Style{" "}
+      <code>::backdrop</code> the same way, as the first demo does.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="dialog" />
+  </DocsPage>
+}

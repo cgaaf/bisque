@@ -1,0 +1,102 @@
+.AlertDialogControlled {
+  width: min(20rem, 100%);
+
+  .List {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .List:empty {
+    display: none;
+  }
+
+  .Row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0.5rem 0.5rem 0.875rem;
+    font-size: 0.875rem;
+  }
+
+  .Row + .Row {
+    border-top: 1px solid light-dark(#e4e4ea, #2a2a31);
+  }
+
+  .Remove {
+    padding: 0.25rem 0.5rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: light-dark(#c62828, #f87171);
+    font: inherit;
+    font-size: 0.8125rem;
+    cursor: pointer;
+  }
+
+  .Remove:hover {
+    background: light-dark(#fdecec, #2a1617);
+  }
+
+  .Empty {
+    margin: 0;
+    text-align: center;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Danger {
+    border-color: transparent;
+    background: light-dark(#c62828, #dc2626);
+    color: #fff;
+  }
+
+  .Popup {
+    box-sizing: border-box;
+    width: min(22rem, calc(100vw - 2rem));
+    padding: 1.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.75rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.35);
+  }
+
+  .Popup::backdrop {
+    background: rgb(0 0 0 / 0.4);
+  }
+
+  .Title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+  }
+
+  .Description {
+    margin: 0.375rem 0 0;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.25rem;
+  }
+}

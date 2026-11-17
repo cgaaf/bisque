@@ -1,0 +1,3 @@
+import { Toggle } from "./rs-ui/toggle/toggle.rx"
+
+<Toggle />

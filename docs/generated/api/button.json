@@ -4,27 +4,27 @@
     {
       "name": "Button",
       "element": "button",
-      "description": "Button behaviour for the element that plays one. The consumer's activation handlers must be dropped while it is disabled: `mergeProps(button(o), gateButtonHandlers(rest, disabled))`.",
+      "description": "A native `<button>` with `type=\"button\"` by default. While disabled your own click, pointer-down, mouse-down and key handlers don't run. For another element, spread the `button` props function on it.",
       "props": [
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the button is disabled. It gets the native `disabled` attribute, or `aria-disabled` with `focusableWhenDisabled`."
         },
         {
           "name": "focusableWhenDisabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether a disabled button stays focusable and keeps its place in the Tab order. It is then disabled with `aria-disabled=\"true\"` and ignores presses, Enter and Space."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present while the button is disabled, whether through `disabled` or `aria-disabled`."
         }
       ],
       "cssVariables": []

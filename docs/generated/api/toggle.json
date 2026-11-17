@@ -4,52 +4,52 @@
     {
       "name": "Toggle",
       "element": "button",
-      "description": "A two-state button. In a toggle group the group owns the pressed state, and the toggle is one of its items; in a toolbar it is one of the toolbar's items.",
+      "description": "A `<button>` that is pressed or not, with `aria-pressed`. Inside a toggle group the group owns its state; inside a toolbar it is one of the toolbar's items.",
       "props": [
         {
           "name": "pressed",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the toggle is pressed. Pass it with `onPressedChange` to control it. Ignored inside a toggle group."
         },
         {
           "name": "defaultPressed",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the toggle is pressed at first, when it isn't controlled."
         },
         {
           "name": "onPressedChange",
           "type": "(pressed: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new state when the toggle is pressed. Inside a group it runs before the group's `onValueChange`."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "A disabled toggle doesn't change, and its `onClick` and `onPressedChange` aren't called. It is also disabled when its group is."
         },
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "What the toggle stands for in a toggle group's `value`. Give one to every toggle in a group."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present when the toggle is disabled."
         },
         {
           "name": "data-pressed",
-          "description": "Present when pressed."
+          "description": "Present while the toggle is pressed."
         }
       ],
       "cssVariables": []

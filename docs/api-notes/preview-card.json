@@ -1,0 +1,38 @@
+{
+  "PreviewCardRoot": {
+    "description": "Holds the card's open state and shares it with the link and the card. Renders no element, so it can wrap the paragraph the link is in.",
+    "props": {
+      "open": "Whether the card is open. Pass it with `onOpenChange` to control it.",
+      "defaultOpen": "Whether the card is open at first, when it isn't controlled.",
+      "onOpenChange": "Called with the new state when hover, focus, Escape or a press outside opens or closes the card."
+    }
+  },
+  "PreviewCardTrigger": {
+    "description": "The link the card previews. It opens the card on hover and on keyboard focus, after the delay.",
+    "props": {
+      "delay": "How long the pointer rests on the link, or focus stays on it, before the card opens, in milliseconds.",
+      "closeDelay": "How long after the pointer leaves the link and the card before the card closes, in milliseconds."
+    },
+    "dataAttributes": {
+      "data-popup-open": "Present while the card is open."
+    }
+  },
+  "PreviewCardPopup": {
+    "description": "The card: an element with `popover=\"manual\"`, placed against the link with CSS anchor positioning. It takes no role. Style it with `:popover-open` and `@starting-style`.",
+    "props": {
+      "side": "Which side of the link the card sits on. The browser flips it when it doesn't fit.",
+      "align": "Which edge of the link the card lines up with, along the side.",
+      "sideOffset": "The gap between the link and the card, in pixels.",
+      "alignOffset": "How far the card is moved along the link's edge from its `align` position, in pixels."
+    },
+    "dataAttributes": {
+      "data-side": "Which side of the link the card is on: the `side` asked for, then the side the browser placed it on once open."
+    }
+  },
+  "PreviewCardArrow": {
+    "description": "An element placed on the card's edge that faces the link, centred on the link. It follows the card when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
+    "dataAttributes": {
+      "data-side": "Which side of the link the card is on. Absent while the card is closed."
+    }
+  }
+}

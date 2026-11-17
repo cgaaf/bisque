@@ -3,7 +3,7 @@
 // open and closes it with the parent), and the placement against the trigger with CSS anchor positioning. The
 // platform has no menu keyboard model, so this family adds it: roving focus and typeahead between items, item
 // kinds and their activation, moving focus into the menu on open and back to the trigger on close, and the ARIA
-// roles. There is no Portal, Positioner, Backdrop or Arrow part: the popup is the positioned element, styled with
+// roles. There is no Portal, Positioner or Backdrop part: the popup is the positioned element, styled with
 // `:popover-open` and `@starting-style`, and it stays in the document while closed.
 import { mergeProps, withoutHandlers, createId } from "../internal/props.js"
 import { createRovingFocus, focusElement, clickElement, focusListItem } from "../internal/dom.js"
@@ -197,6 +197,7 @@ export type MenuPopupProps = {
   align?: "start" | "center" | "end"
   // Gap between trigger and popup, in pixels. Default: 0.
   sideOffset?: number
+  // How far it is moved along the trigger's edge from its `align` position, in pixels. Default: 0.
   alignOffset?: number
 } & DivProps
 
@@ -434,8 +435,10 @@ export component MenuSeparator(props: DivProps) {
 // submenu's trigger. (Base UI's `closeParentOnEsc` is not offered: the browser decides.)
 export type MenuSubmenuRootProps = {
   open?: boolean
+  // Default: false.
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
+  // A disabled submenu doesn't open; it is also disabled when its parent menu is. Default: false.
   disabled?: boolean
   children?: View
 }

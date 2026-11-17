@@ -1,0 +1,21 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../../../src/dialog/dialog.rx"
+
+export component DialogHero() {
+  <div class="DialogHero">
+    <DialogRoot>
+      <DialogTrigger class="Button">Rename project</DialogTrigger>
+      <DialogPopup class="Popup">
+        <DialogTitle class="Title">Rename project</DialogTitle>
+        <DialogDescription class="Description">The new name shows everywhere the project is listed.</DialogDescription>
+        <label class="Label">
+          Name
+          <input class="Input" value="Northwind roadmap" />
+        </label>
+        <div class="Actions">
+          <DialogClose class="Button">Cancel</DialogClose>
+          <DialogClose class="Button Primary">Save</DialogClose>
+        </div>
+      </DialogPopup>
+    </DialogRoot>
+  </div>
+}

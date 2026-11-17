@@ -1,0 +1,90 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { AccordionHero } from "../../demos/accordion/hero.rx"
+import { AccordionMultiple } from "../../demos/accordion/multiple.rx"
+import { AccordionControlled } from "../../demos/accordion/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Accordion" subtitle="A set of collapsible panels with headings.">
+    <Demo source="accordion/hero"><AccordionHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="accordion/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Each item is a native <code>{"<details>"}</code> and each trigger its <code>{"<summary>"}</code>. The
+      browser provides:
+    </p>
+    <ul>
+      <li>Each item's open state, shown as the item's <code>open</code> attribute.</li>
+      <li>Toggling from the summary on a press, <kbd>Enter</kbd> and <kbd>Space</kbd>.</li>
+      <li>Hiding closed content, which stays in the document.</li>
+      <li>Opening a closed item when find-in-page matches text inside it.</li>
+      <li>
+        One open item at a time: unless <code>multiple</code> is set, the items share a <code>name</code>, and
+        the browser closes the open one when another opens.
+      </li>
+    </ul>
+    <p>
+      The library adds the value (which items are open, controlled or not), <code>disabled</code>, moving
+      between triggers with the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd>, labelling each panel by its
+      trigger, the panels' measured size as CSS variables, and the exit animation.
+    </p>
+    <div class="note">
+      <p>
+        There is no Header part. A summary must be the first child of its <code>{"<details>"}</code>, so nothing
+        can wrap the trigger in a heading; put the heading inside it instead, as the demo does. Closed panels stay
+        in the document, so there is no <code>keepMounted</code> and no <code>hiddenUntilFound</code>.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="multiple">Opening several items</h3>
+    <p>
+      With <code>multiple</code> the items don't share a <code>name</code>, and any number can be open. An item
+      with <code>disabled</code>, or every item under a disabled root, ignores presses and keys, leaves the tab
+      order and is skipped by the arrow keys. All of its parts carry <code>data-disabled</code>.
+    </p>
+    <Demo source="accordion/multiple"><AccordionMultiple /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code>, the open items' values, with <code>onValueChange</code> to hold the state yourself.
+      A press on a trigger only asks: the items follow <code>value</code>. When the browser opens an item by
+      itself, for find-in-page, the change is reported, and the item is closed again if <code>value</code>{" "}
+      doesn't take it. An item without a <code>value</code> gets a generated one. Each item also has its own{" "}
+      <code>onOpenChange</code>, called before the root's.
+    </p>
+    <Demo source="accordion/controlled"><AccordionControlled /></Demo>
+
+    <h3 id="keyboard">Keyboard and orientation</h3>
+    <p>
+      <kbd>Tab</kbd> reaches every trigger. The arrow keys move focus between the triggers of one accordion,{" "}
+      <kbd>Up</kbd> and <kbd>Down</kbd> by default, <kbd>Left</kbd> and <kbd>Right</kbd> with{" "}
+      <code>orientation="horizontal"</code>, and wrap around at the ends unless <code>loopFocus</code> is false.{" "}
+      <kbd>Home</kbd> and <kbd>End</kbd> go to the first and last trigger. Keys pressed inside a panel, in an
+      input for instance, are left alone, and the triggers of an accordion nested in a panel are skipped.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Each panel's height is written to <code>--accordion-panel-height</code> (and its width to{" "}
+      <code>--accordion-panel-width</code>): in pixels while it opens and closes, <code>auto</code> once it is
+      open. Transition <code>height</code> to that variable, from 0 in two rules, because engines differ: Chrome
+      animates from <code>@starting-style</code>, Safari from a plain <code>:not([open])</code> rule. Closing
+      goes to 0 under <code>[data-ending-style]</code>: the item stays open until the panel's transitions end.
+    </p>
+    <div class="note">
+      <p>
+        When one item opens and the browser closes the other because they share a <code>name</code>, that item
+        closes at once, without its exit animation. An item that closes with no other opening in its place, from its
+        trigger or from <code>value</code>, animates out.
+      </p>
+    </div>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="accordion" />
+  </DocsPage>
+}

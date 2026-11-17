@@ -1,0 +1,28 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../../../src/tabs/tabs.rx"
+
+export component TabsVertical() {
+  source section := "profile"
+  <div class="TabsVertical">
+    <TabsRoot class="Root" orientation="vertical" value={section} onValueChange={(next) => { section := next }}>
+      <TabsList class="List" aria-label="Settings" activateOnFocus>
+        <TabsTab class="Tab" value="profile">Profile</TabsTab>
+        <TabsTab class="Tab" value="notifications">Notifications</TabsTab>
+        <TabsTab class="Tab" value="security">Security</TabsTab>
+        <TabsIndicator class="Indicator" />
+      </TabsList>
+      <TabsPanel class="Panel" value="profile">
+        <h3 class="Heading">Profile</h3>
+        <p class="Text">Your display name and the picture other members see.</p>
+      </TabsPanel>
+      <TabsPanel class="Panel" value="notifications">
+        <h3 class="Heading">Notifications</h3>
+        <p class="Text">Choose which updates reach you by email and which stay in the app.</p>
+      </TabsPanel>
+      <TabsPanel class="Panel" value="security">
+        <h3 class="Heading">Security</h3>
+        <p class="Text">Sign-in methods, recovery codes and active sessions.</p>
+      </TabsPanel>
+    </TabsRoot>
+    <output class="State">value: {section}</output>
+  </div>
+}

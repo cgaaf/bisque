@@ -1,0 +1,121 @@
+.DrawerHero {
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Primary {
+    width: 100%;
+    border-color: transparent;
+    background: light-dark(#18181b, #f4f4f5);
+    color: light-dark(#fff, #18181b);
+  }
+
+  .Popup {
+    /* The popup is the <dialog>: undo its centring and put it on the bottom edge. */
+    box-sizing: border-box;
+    width: min(100%, 30rem);
+    max-width: none;
+    margin: auto auto 0;
+    padding: 0.75rem 1.5rem 1.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-bottom: 0;
+    border-radius: 1rem 1rem 0 0;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 -10px 40px -12px rgb(0 0 0 / 0.3);
+    /* Follow the finger. Below the threshold the movement returns to 0 and the transition snaps it back. */
+    transform: translateY(var(--drawer-swipe-movement-y));
+    transition: transform 250ms cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  /* No easing while it is dragged, or it lags behind the pointer. */
+  .Popup[data-swiping] {
+    transition: none;
+  }
+
+  @starting-style {
+    .Popup[open] {
+      transform: translateY(100%);
+    }
+  }
+
+  /* Out, from wherever it was let go. */
+  .Popup[data-ending-style] {
+    transform: translateY(100%);
+  }
+
+  /* ::backdrop inherits the popup's custom properties, so it fades as the drawer is dragged away. */
+  .Popup::backdrop {
+    background: rgb(0 0 0 / 0.4);
+    opacity: calc(1 - var(--drawer-swipe-progress));
+    transition: opacity 250ms;
+  }
+
+  .Popup[data-swiping]::backdrop {
+    transition: none;
+  }
+
+  @starting-style {
+    .Popup[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  .Popup[data-ending-style]::backdrop {
+    opacity: 0;
+  }
+
+  .Handle {
+    width: 2.5rem;
+    height: 0.3125rem;
+    margin: 0 auto 1rem;
+    border-radius: 1rem;
+    background: light-dark(#d4d4dc, #3a3a43);
+  }
+
+  .Title {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+
+  .Description {
+    margin: 0.25rem 0 1rem;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Options {
+    display: grid;
+    gap: 0.625rem;
+    margin: 0 0 1.25rem;
+    padding: 0;
+    border: 0;
+  }
+
+  .Legend {
+    margin-bottom: 0.5rem;
+    padding: 0;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Option {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+  }
+
+  .Option input {
+    accent-color: light-dark(#18181b, #f4f4f5);
+  }
+}

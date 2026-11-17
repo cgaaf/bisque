@@ -1,0 +1,12 @@
+import { mergeProps } from "./rs-ui/internal/props.js"
+import { button, gateButtonHandlers } from "./rs-ui/button/button.rx"
+
+component CardButton(props: { disabled?: boolean; onClick?: () => void; children?: View }) {
+  isDisabled = props.disabled ?? false
+  // `native: false`: role="button", a Tab stop, and Enter and Space activation.
+  own = button({ disabled: isDisabled, native: false })
+  // Your own click and key handlers don't run while it is disabled.
+  external = gateButtonHandlers({ onClick: props.onClick }, isDisabled)
+  merged = mergeProps(own, external)
+  <div class="card" {...merged}>{props.children}</div>
+}

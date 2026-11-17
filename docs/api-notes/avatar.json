@@ -1,0 +1,25 @@
+{
+  "AvatarRoot": {
+    "description": "Holds the picture's loading status and shares it with the image and fallback inside it. Size and shape the avatar on this element."
+  },
+  "AvatarImage": {
+    "description": "The picture. Its source is loaded off-screen first, and the `<img>` is added only once it has loaded, so a broken image never shows.",
+    "props": {
+      "src": "The picture's URL. Without `src` or `srcset` the fallback shows.",
+      "srcset": "Candidate sources for the picture, as on an `<img>`.",
+      "crossorigin": "The CORS mode for loading the picture, as on an `<img>`.",
+      "referrerpolicy": "The referrer policy for loading the picture, as on an `<img>`.",
+      "onLoadingStatusChange": "Called with `\"loading\"`, then `\"loaded\"` or `\"error\"`, each time the source is loaded."
+    },
+    "dataAttributes": {
+      "data-starting-style": "Present for the first frame after the `<img>` appears: style the state it animates in from.",
+      "data-ending-style": "Present while the `<img>` animates out because a new source started loading. It is removed when its transitions end."
+    }
+  },
+  "AvatarFallback": {
+    "description": "Shown while the picture hasn't loaded: while it loads, when it fails, and when there is none. Usually initials or an icon.",
+    "props": {
+      "delay": "How long to wait before showing the fallback, in ms, so a picture that loads quickly doesn't flash it first."
+    }
+  }
+}

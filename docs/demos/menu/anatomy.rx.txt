@@ -1,0 +1,22 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuArrow, MenuItem, MenuLinkItem, MenuSeparator, MenuGroup, MenuGroupLabel, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuSubmenuRoot, MenuSubmenuTrigger } from "./rs-ui/menu/menu.rx"
+
+<MenuRoot>
+  <MenuTrigger />
+  <MenuPopup>
+    <MenuArrow />
+    <MenuItem />
+    <MenuLinkItem />
+    <MenuSeparator />
+    <MenuGroup>
+      <MenuGroupLabel />
+    </MenuGroup>
+    <MenuCheckboxItem />
+    <MenuRadioGroup>
+      <MenuRadioItem />
+    </MenuRadioGroup>
+    <MenuSubmenuRoot>
+      <MenuSubmenuTrigger />
+      <MenuPopup />
+    </MenuSubmenuRoot>
+  </MenuPopup>
+</MenuRoot>

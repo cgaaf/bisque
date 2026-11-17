@@ -1,0 +1,74 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { ToolbarHero } from "../../demos/toolbar/hero.rx"
+import { ToolbarZoom } from "../../demos/toolbar/zoom.rx"
+
+export default component Page() {
+  <DocsPage title="Toolbar" subtitle="A row of buttons and controls that is one stop for the Tab key.">
+    <Demo source="toolbar/hero"><ToolbarHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="toolbar/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The items are native elements: <code>{"<button>"}</code>, <code>{"<a>"}</code> and{" "}
+      <code>{"<input>"}</code>, with their own focus and activation. There is no native toolbar, and{" "}
+      <code>focusgroup</code>, which would move focus between items with the arrow keys, is only in Chrome. So the
+      library adds the <code>toolbar</code> role and its orientation, one <kbd>Tab</kbd> stop for the whole
+      toolbar, the arrow keys between items, disabled items that stay reachable, and separators that run across
+      the toolbar.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Keyboard</h3>
+    <p>
+      <kbd>Tab</kbd> enters the toolbar on the item focused last and leaves it with the next press. The arrow keys
+      along <code>orientation</code> move between items and wrap at the ends unless <code>loopFocus</code> is
+      false; a vertical toolbar uses <kbd>ArrowUp</kbd> and <kbd>ArrowDown</kbd>.
+    </p>
+
+    <h3 id="with-other-components">With toggles</h3>
+    <p>
+      A <a href={href("components/toggle-group")}>ToggleGroup</a> or a{" "}
+      <a href={href("components/toggle")}>Toggle</a> inside a toolbar becomes part of it: the group leaves the
+      arrow keys to the toolbar, and its toggles are items like the toolbar's own buttons, as in the demo above.
+    </p>
+
+    <h3 id="inputs">Inputs</h3>
+    <p>
+      In a <code>ToolbarInput</code> the arrow keys move the caret first: they move to the next item only from the
+      end of the text, or to the previous one from its start. <kbd>Home</kbd> and <kbd>End</kbd> stay with the
+      input.
+    </p>
+    <Demo source="toolbar/zoom"><ToolbarZoom /></Demo>
+
+    <h3 id="disabled">Disabled items</h3>
+    <p>
+      A disabled <code>ToolbarButton</code> or <code>ToolbarInput</code> stays focusable by default, so it can still
+      be reached with the arrow keys, but it does nothing: it gets <code>aria-disabled</code> and{" "}
+      <code>data-disabled</code> instead of the <code>disabled</code> attribute, so style it with{" "}
+      <code>[data-disabled]</code>. Pass <code>{"focusableWhenDisabled={false}"}</code> to take it out of the
+      arrow order. <code>disabled</code> on a <code>ToolbarGroup</code> or on the root disables every item inside.
+    </p>
+
+    <h3 id="separators">Separators</h3>
+    <p>
+      <code>ToolbarSeparator</code> runs across the toolbar: vertical in a horizontal toolbar and horizontal in a
+      vertical one, unless its <code>orientation</code> says otherwise. It carries <code>aria-orientation</code>{" "}
+      and <code>data-orientation</code> for styling.
+    </p>
+
+    <h3 id="custom-elements">Other elements</h3>
+    <p>
+      <code>toolbarButton</code>, <code>toolbarLink</code> and <code>toolbarInput</code> are the parts' props
+      functions. Spread one on your own element to make it a toolbar item; pass <code>native: false</code> to{" "}
+      <code>toolbarButton</code> when the element isn't a <code>{"<button>"}</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="toolbar" />
+  </DocsPage>
+}

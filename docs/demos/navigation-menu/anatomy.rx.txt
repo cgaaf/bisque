@@ -1,0 +1,18 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuArrow, NavigationMenuLink } from "./rs-ui/navigation-menu/navigation-menu.rx"
+
+<NavigationMenuRoot>
+  <NavigationMenuList>
+    <NavigationMenuItem>
+      <NavigationMenuTrigger>
+        <NavigationMenuIcon />
+      </NavigationMenuTrigger>
+      <NavigationMenuContent>
+        <NavigationMenuArrow />
+        <NavigationMenuLink />
+      </NavigationMenuContent>
+    </NavigationMenuItem>
+    <NavigationMenuItem>
+      <NavigationMenuLink />
+    </NavigationMenuItem>
+  </NavigationMenuList>
+</NavigationMenuRoot>

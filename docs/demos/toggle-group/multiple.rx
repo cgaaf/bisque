@@ -1,0 +1,26 @@
+import { ToggleGroup } from "../../../src/toggle-group/toggle-group.rx"
+import { Toggle } from "../../../src/toggle/toggle.rx"
+
+export component ToggleGroupMultiple() {
+  source styles: string[] := ["bold"]
+  <div class="ToggleGroupMultiple">
+    <ToggleGroup class="Group" aria-label="Text style" multiple value={styles} onValueChange={(next) => { styles := next }}>
+      <Toggle class="Toggle" value="bold" aria-label="Bold">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4.5 2.75h4.25a2.6 2.6 0 0 1 0 5.2H4.5zM4.5 7.95h5a2.65 2.65 0 0 1 0 5.3h-5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </svg>
+      </Toggle>
+      <Toggle class="Toggle" value="italic" aria-label="Italic">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M6.5 2.75h6M3.5 13.25h6M9.75 2.75l-3.5 10.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </Toggle>
+      <Toggle class="Toggle" value="underline" aria-label="Underline">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M4.25 2.5v5a3.75 3.75 0 0 0 7.5 0v-5M3 14h10" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+        </svg>
+      </Toggle>
+    </ToggleGroup>
+    <output class="State">{styles.length == 0 ? "none" : styles.join(", ")}</output>
+  </div>
+}

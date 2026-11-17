@@ -4,35 +4,35 @@
     {
       "name": "MenuRoot",
       "element": null,
-      "description": "",
+      "description": "Holds the menu's open state and shares it with the parts inside it. Renders no element.",
       "props": [
         {
           "name": "open",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the menu is open. Pass it with `onOpenChange` to control the menu."
         },
         {
           "name": "defaultOpen",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the menu is open at first, when it isn't controlled."
         },
         {
           "name": "onOpenChange",
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": "Called after the browser or a part opened or closed it. A press outside and Escape can't be refused: a controlled menu that keeps `open` true is shown again."
+          "description": "Called with the new state after the browser or a part opened or closed the menu. Escape and a press outside can't be refused: a controlled menu that keeps `open` true is shown again."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "A disabled menu doesn't open."
+          "description": "A disabled menu doesn't open, and its trigger is disabled."
         }
       ],
       "dataAttributes": [],
@@ -41,16 +41,16 @@
     {
       "name": "MenuTrigger",
       "element": "button",
-      "description": "Spread on a <button>. `popovertarget` is there so the browser doesn't count a press on the trigger as a press outside the open menu; the click itself is the menu's (it is prevented, so the browser doesn't toggle), which lets a menubar keep a menu open that hovering opened.",
+      "description": "The button that opens and closes the menu. Its `popovertarget` keeps a press on it from counting as a press outside the open menu; the press itself is handled by the menu. Enter, Space and ArrowDown open the menu on its first item, ArrowUp on its last.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present when the menu is disabled."
         },
         {
           "name": "data-popup-open",
-          "description": "Present on the trigger while its popup is open."
+          "description": "Present while the menu is open."
         }
       ],
       "cssVariables": []
@@ -58,41 +58,41 @@
     {
       "name": "MenuPopup",
       "element": "div",
-      "description": "The menu: a `popover=\"auto\"` element placed against its trigger. A submenu's popup is declared inside the parent's popup, which is what makes the browser treat it as nested.",
+      "description": "The menu: an element with `popover=\"auto\"` and the `menu` role, placed against the trigger with CSS anchor positioning. A submenu's popup is declared inside its parent's. Style it with `:popover-open` and `@starting-style`.",
       "props": [
         {
           "name": "side",
           "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
           "default": "\"bottom\"; \"right\" for a submenu and in a vertical menubar",
           "required": false,
-          "description": "Which side of the trigger it sits on; the browser flips it when it doesn't fit."
+          "description": "Which side of the trigger the popup sits on. The browser flips it when it doesn't fit."
         },
         {
           "name": "align",
           "type": "\"start\" | \"center\" | \"end\"",
           "default": "\"start\"",
           "required": false,
-          "description": "Which edge of the trigger it lines up with."
+          "description": "Which edge of the trigger the popup lines up with, along the side."
         },
         {
           "name": "sideOffset",
           "type": "number",
           "default": "0",
           "required": false,
-          "description": "Gap between trigger and popup, in pixels."
+          "description": "The gap between the trigger and the popup, in pixels."
         },
         {
           "name": "alignOffset",
           "type": "number",
           "default": "0",
           "required": false,
-          "description": ""
+          "description": "How far the popup is moved along the trigger's edge from its `align` position, in pixels."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+          "description": "Which side of the trigger the popup is on: the `side` asked for, then the side the browser placed it on once open."
         }
       ],
       "cssVariables": []
@@ -100,91 +100,113 @@
     {
       "name": "MenuItem",
       "element": "div",
-      "description": "",
+      "description": "An action in the menu. Choosing it with a press, Enter or Space runs its `onClick` and, by default, closes the menu.",
       "props": [
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "A disabled item can't be chosen, and the arrow keys skip it."
         },
         {
           "name": "closeOnClick",
           "type": "boolean",
           "default": "true",
           "required": false,
-          "description": "Whether choosing the item closes the menu (and every menu it is nested in)."
+          "description": "Whether choosing the item closes the menu and every menu it is nested in."
         }
       ],
-      "dataAttributes": [],
+      "dataAttributes": [
+        {
+          "name": "data-disabled",
+          "description": "Present when the item is disabled."
+        },
+        {
+          "name": "data-highlighted",
+          "description": "Present while the item has the highlight: it has focus, from the keyboard or from the pointer moving over it."
+        }
+      ],
       "cssVariables": []
     },
     {
       "name": "MenuLinkItem",
       "element": "a",
-      "description": "A menu item that is a link: Enter follows it.",
+      "description": "A menu item that is a link. Enter follows it.",
       "props": [
         {
           "name": "closeOnClick",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "Whether following the link closes the menu."
+          "description": "Whether following the link closes the menu. Off by default, since the page usually changes anyway."
         }
       ],
-      "dataAttributes": [],
+      "dataAttributes": [
+        {
+          "name": "data-highlighted",
+          "description": "Present while the item has the highlight."
+        }
+      ],
       "cssVariables": []
     },
     {
       "name": "MenuCheckboxItem",
       "element": "div",
-      "description": "",
+      "description": "An item that toggles a setting on and off, with the `menuitemcheckbox` role. Choosing it leaves the menu open by default.",
       "props": [
         {
           "name": "checked",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the item is checked. Pass it with `onCheckedChange` to control it."
         },
         {
           "name": "defaultChecked",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the item is checked at first, when it isn't controlled."
         },
         {
           "name": "onCheckedChange",
           "type": "(checked: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new state when the item is chosen."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "A disabled item can't be chosen, and the arrow keys skip it."
         },
         {
           "name": "closeOnClick",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether choosing the item closes the menu."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-checked",
-          "description": "Present when checked."
+          "description": "Present when the item is checked."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the item is disabled."
+        },
+        {
+          "name": "data-highlighted",
+          "description": "Present while the item has the highlight."
         },
         {
           "name": "data-unchecked",
-          "description": "Present when not checked."
+          "description": "Present when the item is not checked."
         }
       ],
       "cssVariables": []
@@ -192,28 +214,28 @@
     {
       "name": "MenuRadioGroup",
       "element": "div",
-      "description": "",
+      "description": "Groups radio items and holds which one is chosen.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "The value of the chosen item. Pass it with `onValueChange` to control the group."
         },
         {
           "name": "defaultValue",
           "type": "string",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "The value chosen at first, when the group isn't controlled."
         },
         {
           "name": "onValueChange",
           "type": "(value: string) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the item's value when a radio item is chosen."
         }
       ],
       "dataAttributes": [],
@@ -222,38 +244,46 @@
     {
       "name": "MenuRadioItem",
       "element": "div",
-      "description": "",
+      "description": "An item that chooses one value of its radio group, with the `menuitemradio` role. Choosing it leaves the menu open by default.",
       "props": [
         {
           "name": "value",
           "type": "string",
           "default": null,
           "required": true,
-          "description": ""
+          "description": "The value the item stands for in its group."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "A disabled item can't be chosen, and the arrow keys skip it."
         },
         {
           "name": "closeOnClick",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether choosing the item closes the menu."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-checked",
-          "description": "Present when checked."
+          "description": "Present when the item is the group's chosen one."
+        },
+        {
+          "name": "data-disabled",
+          "description": "Present when the item is disabled."
+        },
+        {
+          "name": "data-highlighted",
+          "description": "Present while the item has the highlight."
         },
         {
           "name": "data-unchecked",
-          "description": "Present when not checked."
+          "description": "Present when another item, or none, is chosen."
         }
       ],
       "cssVariables": []
@@ -261,7 +291,7 @@
     {
       "name": "MenuGroup",
       "element": "div",
-      "description": "",
+      "description": "Groups related items. A `MenuGroupLabel` inside it names the group.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []
@@ -269,7 +299,7 @@
     {
       "name": "MenuGroupLabel",
       "element": "div",
-      "description": "",
+      "description": "A label for its group: the group's `aria-labelledby` points at it. It isn't an item, so the keyboard skips it.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []
@@ -277,7 +307,7 @@
     {
       "name": "MenuSeparator",
       "element": "div",
-      "description": "",
+      "description": "A line between items or groups, with the `separator` role.",
       "props": [],
       "dataAttributes": [],
       "cssVariables": []
@@ -285,35 +315,35 @@
     {
       "name": "MenuSubmenuRoot",
       "element": null,
-      "description": "A menu inside a menu: holds a MenuSubmenuTrigger (an item of the parent) and the submenu's own MenuPopup, declared inside the parent's MenuPopup. The parts beneath it read it as `menu`, like a top-level menu.",
+      "description": "A menu inside a menu. It holds a `MenuSubmenuTrigger`, which is an item of the parent menu, and the submenu's own `MenuPopup`, declared inside the parent's popup. Renders no element.",
       "props": [
         {
           "name": "open",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the submenu is open. Pass it with `onOpenChange` to control it."
         },
         {
           "name": "defaultOpen",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the submenu is open at first, when it isn't controlled."
         },
         {
           "name": "onOpenChange",
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new state when the submenu opens or closes, including when the browser closes it with its parent."
         },
         {
           "name": "disabled",
           "type": "boolean",
-          "default": null,
+          "default": "false",
           "required": false,
-          "description": ""
+          "description": "A disabled submenu doesn't open. It is also disabled when its parent menu is."
         }
       ],
       "dataAttributes": [],
@@ -322,14 +352,14 @@
     {
       "name": "MenuSubmenuTrigger",
       "element": "button",
-      "description": "An item of the parent menu that opens the submenu: on hover (the pointer may cross other items on its way to the submenu without closing it), on click, and on ArrowRight, Enter and Space, which also move focus into it. Spread it on a <button>: like MenuTrigger, its `popovertarget` keeps a press on it from closing the submenu (a press on any other part of the parent menu does close it), and the click itself is prevented.",
+      "description": "The item of the parent menu that opens the submenu: on hover after a delay, on a press, and on ArrowRight, Enter and Space, which also move focus into it. Render it as a `<button>`, as the part does.",
       "props": [
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "A disabled trigger doesn't open its submenu, and the arrow keys skip it."
         },
         {
           "name": "openOnHover",
@@ -343,20 +373,28 @@
           "type": "number",
           "default": "100",
           "required": false,
-          "description": "How long the pointer rests on the trigger before the submenu opens, in ms."
+          "description": "How long the pointer rests on the trigger before the submenu opens, in milliseconds."
         },
         {
           "name": "closeDelay",
           "type": "number",
           "default": "0",
           "required": false,
-          "description": "How long after the pointer leaves (and not towards the submenu) before it closes, in ms."
+          "description": "How long after the pointer leaves, other than towards the submenu, before the submenu closes, in milliseconds."
         }
       ],
       "dataAttributes": [
         {
+          "name": "data-disabled",
+          "description": "Present when the trigger is disabled."
+        },
+        {
+          "name": "data-highlighted",
+          "description": "Present while the trigger has the highlight."
+        },
+        {
           "name": "data-popup-open",
-          "description": "Present on the trigger while its popup is open."
+          "description": "Present while the submenu is open."
         }
       ],
       "cssVariables": []
@@ -364,12 +402,12 @@
     {
       "name": "MenuArrow",
       "element": "div",
-      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "description": "An element placed on the popup's edge that faces the trigger, centred on the trigger. It follows the popup when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+          "description": "Which side of the trigger the popup is on. Absent while the menu is closed."
         }
       ],
       "cssVariables": []

@@ -38,9 +38,11 @@ export type DrawerRootProps = {
   // How far a swipe must travel to dismiss, in px. Default: half the popup's size along the direction. A fast
   // flick (0.5 px/ms) dismisses whatever the distance.
   swipeThreshold?: number
-  // As DialogRoot: modal by default, closed by Escape and a press outside.
+  // As DialogRoot's. Default: true.
   modal?: boolean
+  // As DialogRoot's: whether Escape and a press outside close it. Default: true.
   dismissible?: boolean
+  // As DialogRoot's: whether a press outside is ignored. Default: false.
   disablePointerDismissal?: boolean
   children?: View
 }

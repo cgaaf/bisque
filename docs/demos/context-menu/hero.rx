@@ -1,0 +1,31 @@
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../../../src/context-menu/context-menu.rx"
+
+export component ContextMenuHero() {
+  <div class="ContextMenuHero">
+    <ContextMenuRoot>
+      <ContextMenuTrigger class="Area">Right-click here</ContextMenuTrigger>
+      <ContextMenuPopup class="Popup">
+        <ContextMenuItem class="Item">Add comment</ContextMenuItem>
+        <ContextMenuItem class="Item">Copy link</ContextMenuItem>
+        <ContextMenuItem class="Item">Duplicate</ContextMenuItem>
+        <ContextMenuSeparator class="Separator" />
+        <ContextMenuSubmenuRoot>
+          <ContextMenuSubmenuTrigger class="Item">
+            Arrange
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M4.5 3 7.5 6l-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </ContextMenuSubmenuTrigger>
+          <ContextMenuPopup class="Popup" alignOffset={-5}>
+            <ContextMenuItem class="Item">Bring to front</ContextMenuItem>
+            <ContextMenuItem class="Item">Bring forward</ContextMenuItem>
+            <ContextMenuItem class="Item">Send backward</ContextMenuItem>
+            <ContextMenuItem class="Item">Send to back</ContextMenuItem>
+          </ContextMenuPopup>
+        </ContextMenuSubmenuRoot>
+        <ContextMenuSeparator class="Separator" />
+        <ContextMenuItem class="Item Danger">Delete</ContextMenuItem>
+      </ContextMenuPopup>
+    </ContextMenuRoot>
+  </div>
+}

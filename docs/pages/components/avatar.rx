@@ -1,0 +1,65 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { AvatarHero } from "../../demos/avatar/hero.rx"
+import { AvatarGroup } from "../../demos/avatar/group.rx"
+
+export default component Page() {
+  <DocsPage title="Avatar" subtitle="A picture of a user, with a fallback while it loads or when it fails.">
+    <Demo source="avatar/hero"><AvatarHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="avatar/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The picture is a native <code>{"<img>"}</code>, so the browser loads and decodes it, and{" "}
+      <code>srcset</code>, <code>crossorigin</code> and <code>referrerpolicy</code> mean what they always do. What
+      an <code>{"<img>"}</code> can't do is stay out of sight until it has loaded, or show something else when
+      it fails. The library adds that:
+    </p>
+    <ul>
+      <li>
+        <code>AvatarImage</code> loads its source off-screen first, and adds the <code>{"<img>"}</code> only once
+        it has loaded, so a broken image never shows. A picture already in the cache shows at once.
+      </li>
+      <li>
+        <code>AvatarFallback</code> shows until then: while the picture loads, when it fails, and when there is
+        no picture at all.
+      </li>
+      <li>
+        When <code>src</code> changes, the <code>{"<img>"}</code> is removed and the fallback shows again until the
+        new picture has loaded.
+      </li>
+    </ul>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="fallback-delay">Delaying the fallback</h3>
+    <p>
+      A picture that loads quickly would flash the fallback for a moment first. Give the fallback a{" "}
+      <code>delay</code> in milliseconds and it waits that long before it shows; once shown it stays until the
+      picture has loaded.
+    </p>
+
+    <h3 id="loading-status">Following the loading status</h3>
+    <p>
+      <code>onLoadingStatusChange</code> on the image is called with <code>"loading"</code>, then{" "}
+      <code>"loaded"</code> or <code>"error"</code>. The same status is in the <code>avatar</code> context as{" "}
+      <code>imageLoadingStatus</code>, for a part of your own.
+    </p>
+
+    <h3 id="animation">Animating the picture in</h3>
+    <p>
+      The <code>{"<img>"}</code> gets <code>data-starting-style</code> for the frame it appears in, so a
+      transition from there fades it in, as the first demo's does. It gets <code>data-ending-style</code> while
+      it is removed because a new <code>src</code> started loading.
+    </p>
+
+    <h3 id="group">A stack of avatars</h3>
+    <p>A group is plain CSS: overlap each avatar with the one before it and ring it in the page's colour.</p>
+    <Demo source="avatar/group"><AvatarGroup /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="avatar" />
+  </DocsPage>
+}

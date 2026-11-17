@@ -1,0 +1,53 @@
+.ButtonLoading {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+
+  .Button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    min-width: 7.5rem;
+    padding: 0.5rem 0.875rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    background: light-dark(#18181b, #f4f4f5);
+    color: light-dark(#fff, #18181b);
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Button:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 2px;
+  }
+
+  /* Disabled with focusableWhenDisabled: `aria-disabled` instead of `disabled`, so focus stays on it. */
+  .Button[data-disabled] {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  .Spinner {
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 2px solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: button-spin 700ms linear infinite;
+  }
+
+  .State {
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}
+
+@keyframes button-spin {
+  to {
+    rotate: 1turn;
+  }
+}

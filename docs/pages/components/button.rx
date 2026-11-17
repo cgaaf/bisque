@@ -1,0 +1,68 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { ButtonHero } from "../../demos/button/hero.rx"
+import { ButtonLoading } from "../../demos/button/loading.rx"
+
+export default component Page() {
+  <DocsPage title="Button" subtitle="A button that can stay focusable while disabled, or be another element.">
+    <Demo source="button/hero"><ButtonHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the component:</p>
+    <Code file="button/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>Button</code> renders a native <code>{"<button>"}</code>, which already has the button role, a Tab
+      stop, activation with <kbd>Enter</kbd> and <kbd>Space</kbd>, and <code>disabled</code>. The library adds
+      little:
+    </p>
+    <ul>
+      <li>
+        <code>type="button"</code> by default, so a button inside a form doesn't submit it. Pass{" "}
+        <code>type="submit"</code> for one that should.
+      </li>
+      <li>
+        <code>focusableWhenDisabled</code>, which disables the button with <code>aria-disabled</code> instead of{" "}
+        <code>disabled</code>, so it stays focusable and keeps its place in the Tab order.
+      </li>
+      <li>
+        Dropping your own <code>onClick</code>, <code>onPointerDown</code>, <code>onMouseDown</code>,{" "}
+        <code>onKeyDown</code> and <code>onKeyUp</code> while the button is disabled. Others, such as{" "}
+        <code>onFocus</code>, still run.
+      </li>
+      <li>
+        <code>data-disabled</code>, present however the button is disabled, to style both kinds with one
+        selector.
+      </li>
+    </ul>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="loading">Loading states</h3>
+    <p>
+      A button with the native <code>disabled</code> attribute drops out of the Tab order. For one that is
+      disabled only while its work runs, pass <code>focusableWhenDisabled</code>: it stays focusable, carries{" "}
+      <code>aria-disabled="true"</code>, ignores presses, <kbd>Enter</kbd> and <kbd>Space</kbd>, and still lets{" "}
+      <kbd>Tab</kbd> move on.
+    </p>
+    <Demo source="button/loading"><ButtonLoading /></Demo>
+
+    <h3 id="other-element">Another element as a button</h3>
+    <p>
+      For an element that can't be a <code>{"<button>"}</code>, spread the <code>button</code> props function on
+      it with <code>native: false</code>. It gets <code>role="button"</code>, a Tab stop, activation on{" "}
+      <kbd>Enter</kbd> and on the release of <kbd>Space</kbd> as a native button has, and{" "}
+      <code>aria-disabled</code> with no Tab stop when disabled. Wrap your handlers in{" "}
+      <code>gateButtonHandlers</code> so they don't run while it is disabled.
+    </p>
+    <Code file="button/other-element.rx.txt" />
+    <p>
+      A link that should act as a button can take the same props: <kbd>Enter</kbd> follows the link once, as
+      links do, and <kbd>Space</kbd> activates it. Inside a toolbar or toggle group, pass{" "}
+      <code>composite: true</code> and the list manages the <code>tabindex</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="button" />
+  </DocsPage>
+}

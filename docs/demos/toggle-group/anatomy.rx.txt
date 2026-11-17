@@ -1,0 +1,6 @@
+import { ToggleGroup } from "./rs-ui/toggle-group/toggle-group.rx"
+import { Toggle } from "./rs-ui/toggle/toggle.rx"
+
+<ToggleGroup>
+  <Toggle value="…" />
+</ToggleGroup>

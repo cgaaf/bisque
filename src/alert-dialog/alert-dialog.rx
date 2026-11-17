@@ -7,6 +7,7 @@ import { ButtonProps, DialogElementProps, HeadingProps, ParagraphProps } from ".
 
 export type AlertDialogRootProps = {
   open?: boolean
+  // Whether it is open at first, when it isn't controlled. Default: false.
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
   children?: View

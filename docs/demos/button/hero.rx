@@ -1,0 +1,11 @@
+import { Button } from "../../../src/button/button.rx"
+
+export component ButtonHero() {
+  source count := 0
+  <div class="ButtonHero">
+    <Button class="Button Primary" onClick={() => { count := count + 1 }}>Like</Button>
+    <Button class="Button">Share</Button>
+    <Button class="Button" disabled>Archived</Button>
+    <output class="Count">{count} {count == 1 ? "like" : "likes"}</output>
+  </div>
+}

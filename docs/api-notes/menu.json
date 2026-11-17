@@ -1,0 +1,126 @@
+{
+  "MenuRoot": {
+    "description": "Holds the menu's open state and shares it with the parts inside it. Renders no element.",
+    "props": {
+      "open": "Whether the menu is open. Pass it with `onOpenChange` to control the menu.",
+      "defaultOpen": "Whether the menu is open at first, when it isn't controlled.",
+      "onOpenChange": "Called with the new state after the browser or a part opened or closed the menu. Escape and a press outside can't be refused: a controlled menu that keeps `open` true is shown again.",
+      "disabled": "A disabled menu doesn't open, and its trigger is disabled."
+    }
+  },
+  "MenuTrigger": {
+    "description": "The button that opens and closes the menu. Its `popovertarget` keeps a press on it from counting as a press outside the open menu; the press itself is handled by the menu. Enter, Space and ArrowDown open the menu on its first item, ArrowUp on its last.",
+    "dataAttributes": {
+      "data-popup-open": "Present while the menu is open.",
+      "data-disabled": "Present when the menu is disabled."
+    }
+  },
+  "MenuPopup": {
+    "description": "The menu: an element with `popover=\"auto\"` and the `menu` role, placed against the trigger with CSS anchor positioning. A submenu's popup is declared inside its parent's. Style it with `:popover-open` and `@starting-style`.",
+    "props": {
+      "side": "Which side of the trigger the popup sits on. The browser flips it when it doesn't fit.",
+      "align": "Which edge of the trigger the popup lines up with, along the side.",
+      "sideOffset": "The gap between the trigger and the popup, in pixels.",
+      "alignOffset": "How far the popup is moved along the trigger's edge from its `align` position, in pixels."
+    },
+    "dataAttributes": {
+      "data-side": "Which side of the trigger the popup is on: the `side` asked for, then the side the browser placed it on once open."
+    }
+  },
+  "MenuArrow": {
+    "description": "An element placed on the popup's edge that faces the trigger, centred on the trigger. It follows the popup when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
+    "dataAttributes": {
+      "data-side": "Which side of the trigger the popup is on. Absent while the menu is closed."
+    }
+  },
+  "MenuItem": {
+    "description": "An action in the menu. Choosing it with a press, Enter or Space runs its `onClick` and, by default, closes the menu.",
+    "props": {
+      "disabled": "A disabled item can't be chosen, and the arrow keys skip it.",
+      "closeOnClick": "Whether choosing the item closes the menu and every menu it is nested in."
+    },
+    "dataAttributes": {
+      "data-highlighted": "Present while the item has the highlight: it has focus, from the keyboard or from the pointer moving over it.",
+      "data-disabled": "Present when the item is disabled."
+    }
+  },
+  "MenuLinkItem": {
+    "description": "A menu item that is a link. Enter follows it.",
+    "props": {
+      "closeOnClick": "Whether following the link closes the menu. Off by default, since the page usually changes anyway."
+    },
+    "dataAttributes": {
+      "data-highlighted": "Present while the item has the highlight."
+    }
+  },
+  "MenuCheckboxItem": {
+    "description": "An item that toggles a setting on and off, with the `menuitemcheckbox` role. Choosing it leaves the menu open by default.",
+    "props": {
+      "checked": "Whether the item is checked. Pass it with `onCheckedChange` to control it.",
+      "defaultChecked": "Whether the item is checked at first, when it isn't controlled.",
+      "onCheckedChange": "Called with the new state when the item is chosen.",
+      "disabled": "A disabled item can't be chosen, and the arrow keys skip it.",
+      "closeOnClick": "Whether choosing the item closes the menu."
+    },
+    "dataAttributes": {
+      "data-checked": "Present when the item is checked.",
+      "data-unchecked": "Present when the item is not checked.",
+      "data-highlighted": "Present while the item has the highlight.",
+      "data-disabled": "Present when the item is disabled."
+    }
+  },
+  "MenuRadioGroup": {
+    "description": "Groups radio items and holds which one is chosen.",
+    "props": {
+      "value": "The value of the chosen item. Pass it with `onValueChange` to control the group.",
+      "defaultValue": "The value chosen at first, when the group isn't controlled.",
+      "onValueChange": "Called with the item's value when a radio item is chosen."
+    }
+  },
+  "MenuRadioItem": {
+    "description": "An item that chooses one value of its radio group, with the `menuitemradio` role. Choosing it leaves the menu open by default.",
+    "props": {
+      "value": "The value the item stands for in its group.",
+      "disabled": "A disabled item can't be chosen, and the arrow keys skip it.",
+      "closeOnClick": "Whether choosing the item closes the menu."
+    },
+    "dataAttributes": {
+      "data-checked": "Present when the item is the group's chosen one.",
+      "data-unchecked": "Present when another item, or none, is chosen.",
+      "data-highlighted": "Present while the item has the highlight.",
+      "data-disabled": "Present when the item is disabled."
+    }
+  },
+  "MenuGroup": {
+    "description": "Groups related items. A `MenuGroupLabel` inside it names the group."
+  },
+  "MenuGroupLabel": {
+    "description": "A label for its group: the group's `aria-labelledby` points at it. It isn't an item, so the keyboard skips it."
+  },
+  "MenuSeparator": {
+    "description": "A line between items or groups, with the `separator` role."
+  },
+  "MenuSubmenuRoot": {
+    "description": "A menu inside a menu. It holds a `MenuSubmenuTrigger`, which is an item of the parent menu, and the submenu's own `MenuPopup`, declared inside the parent's popup. Renders no element.",
+    "props": {
+      "open": "Whether the submenu is open. Pass it with `onOpenChange` to control it.",
+      "defaultOpen": "Whether the submenu is open at first, when it isn't controlled.",
+      "onOpenChange": "Called with the new state when the submenu opens or closes, including when the browser closes it with its parent.",
+      "disabled": "A disabled submenu doesn't open. It is also disabled when its parent menu is."
+    }
+  },
+  "MenuSubmenuTrigger": {
+    "description": "The item of the parent menu that opens the submenu: on hover after a delay, on a press, and on ArrowRight, Enter and Space, which also move focus into it. Render it as a `<button>`, as the part does.",
+    "props": {
+      "disabled": "A disabled trigger doesn't open its submenu, and the arrow keys skip it.",
+      "openOnHover": "Whether resting the pointer on the trigger opens the submenu.",
+      "delay": "How long the pointer rests on the trigger before the submenu opens, in milliseconds.",
+      "closeDelay": "How long after the pointer leaves, other than towards the submenu, before the submenu closes, in milliseconds."
+    },
+    "dataAttributes": {
+      "data-popup-open": "Present while the submenu is open.",
+      "data-highlighted": "Present while the trigger has the highlight.",
+      "data-disabled": "Present when the trigger is disabled."
+    }
+  }
+}

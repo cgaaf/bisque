@@ -1,0 +1,110 @@
+.DialogHero {
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Button:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Primary {
+    border-color: transparent;
+    background: light-dark(#18181b, #f4f4f5);
+    color: light-dark(#fff, #18181b);
+  }
+
+  .Primary:hover {
+    background: light-dark(#2e2e33, #dcdce0);
+  }
+
+  .Popup {
+    /* A <dialog> comes with the browser's border, padding and maximum size: reset what you change. */
+    box-sizing: border-box;
+    width: min(24rem, calc(100vw - 2rem));
+    padding: 1.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.75rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.35);
+    transition:
+      opacity 150ms,
+      scale 150ms;
+  }
+
+  /* The browser draws the backdrop; the dialog's `[open]` and `[data-ending-style]` reach it too. */
+  .Popup::backdrop {
+    background: rgb(0 0 0 / 0.4);
+    transition: opacity 150ms;
+  }
+
+  /* In: from these values, the moment the dialog opens. */
+  @starting-style {
+    .Popup[open] {
+      opacity: 0;
+      scale: 0.96;
+    }
+
+    .Popup[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* Out: the dialog stays open with this attribute until its transitions end. */
+  .Popup[data-ending-style] {
+    opacity: 0;
+    scale: 0.96;
+  }
+
+  .Popup[data-ending-style]::backdrop {
+    opacity: 0;
+  }
+
+  .Title {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+
+  .Description {
+    margin: 0.375rem 0 1.25rem;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Label {
+    display: grid;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Input {
+    padding: 0.5rem 0.625rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-weight: 400;
+  }
+
+  .Input:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 1px;
+  }
+
+  .Actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+}

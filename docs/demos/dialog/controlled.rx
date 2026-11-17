@@ -1,0 +1,23 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "../../../src/dialog/dialog.rx"
+
+export component DialogControlled() {
+  source open := false
+  source draft := ""
+  source saved := "No note yet."
+  <div class="DialogControlled">
+    <DialogRoot open={open} onOpenChange={(next) => { open := next }}>
+      <DialogTrigger class="Button">Add a note</DialogTrigger>
+      <DialogPopup class="Popup">
+        <DialogTitle class="Title">Add a note</DialogTitle>
+        <form onSubmit={(event) => { event.preventDefault(); saved := draft; draft := ""; open := false }}>
+          <textarea class="Input" aria-label="Note" rows={3} required value={draft} onInput={(event) => { draft := event.currentTarget.value }} />
+          <div class="Actions">
+            <DialogClose class="Button">Cancel</DialogClose>
+            <button class="Button Primary" type="submit">Save note</button>
+          </div>
+        </form>
+      </DialogPopup>
+    </DialogRoot>
+    <p class="State">{saved}</p>
+  </div>
+}

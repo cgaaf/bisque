@@ -1,0 +1,67 @@
+import { NavigationMenuRoot, NavigationMenuList, NavigationMenuItem, NavigationMenuTrigger, NavigationMenuIcon, NavigationMenuContent, NavigationMenuLink, NavigationMenuArrow } from "../../../src/navigation-menu/navigation-menu.rx"
+
+export component NavigationMenuHero() {
+  <div class="NavigationMenuHero">
+    <NavigationMenuRoot class="Root" aria-label="Main">
+      <NavigationMenuList class="List">
+        <NavigationMenuItem value="guides">
+          <NavigationMenuTrigger class="Trigger">
+            Guides
+            <NavigationMenuIcon class="Icon">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5 5 6.5l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </NavigationMenuIcon>
+          </NavigationMenuTrigger>
+          <NavigationMenuContent class="Content" sideOffset={10}>
+            <NavigationMenuArrow class="Arrow" />
+            <ul class="Grid">
+              <li>
+                <NavigationMenuLink class="Card" href="#getting-started">
+                  <span class="CardTitle">Getting started</span>
+                  <span class="CardText">Install the kit and plant your first seed tray.</span>
+                </NavigationMenuLink>
+              </li>
+              <li>
+                <NavigationMenuLink class="Card" href="#soil">
+                  <span class="CardTitle">Soil and compost</span>
+                  <span class="CardText">Mix a bed that holds water without going sour.</span>
+                </NavigationMenuLink>
+              </li>
+              <li>
+                <NavigationMenuLink class="Card" href="#watering">
+                  <span class="CardTitle">Watering</span>
+                  <span class="CardText">How often, how much, and what the leaves tell you.</span>
+                </NavigationMenuLink>
+              </li>
+              <li>
+                <NavigationMenuLink class="Card" href="#pests">
+                  <span class="CardTitle">Pests</span>
+                  <span class="CardText">Keep slugs and aphids off without sprays.</span>
+                </NavigationMenuLink>
+              </li>
+            </ul>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem value="seasons">
+          <NavigationMenuTrigger class="Trigger">
+            Seasons
+            <NavigationMenuIcon class="Icon">
+              <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 3.5 5 6.5l3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </NavigationMenuIcon>
+          </NavigationMenuTrigger>
+          <NavigationMenuContent class="Content" sideOffset={10}>
+            <NavigationMenuArrow class="Arrow" />
+            <ul class="Stack">
+              <li><NavigationMenuLink class="Row" href="#spring">Spring sowing</NavigationMenuLink></li>
+              <li><NavigationMenuLink class="Row" href="#summer">Summer care</NavigationMenuLink></li>
+              <li><NavigationMenuLink class="Row" href="#autumn">Autumn harvest</NavigationMenuLink></li>
+              <li><NavigationMenuLink class="Row" href="#winter">Winter rest</NavigationMenuLink></li>
+            </ul>
+          </NavigationMenuContent>
+        </NavigationMenuItem>
+        <NavigationMenuItem>
+          <NavigationMenuLink class="Trigger" href="#journal" active>Journal</NavigationMenuLink>
+        </NavigationMenuItem>
+      </NavigationMenuList>
+    </NavigationMenuRoot>
+  </div>
+}

@@ -1,0 +1,28 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, ToastDescription, ToastClose, toast } from "../../../src/toast/toast.rx"
+import { createToastManager } from "../../../src/internal/toast.js"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t} class="Toast">
+      <div class="Text">
+        <ToastTitle class="Title" />
+        <ToastDescription class="Description" />
+      </div>
+      <ToastClose class="Close">Dismiss</ToastClose>
+    </ToastRoot>
+  }
+}
+
+export component ToastManagerDemo() {
+  // In an app this lives in a module of its own, so any code can import it.
+  manager = createToastManager()
+  <div class="ToastManagerDemo">
+    <button class="Button" type="button" onClick={() => { manager.add({ title: "Link copied", description: "Anyone with the link can view the board." }) }}>Copy link</button>
+    <ToastProvider toastManager={manager}>
+      <ToastViewport class="Viewport">
+        <Toasts />
+      </ToastViewport>
+    </ToastProvider>
+  </div>
+}

@@ -1,0 +1,61 @@
+.ButtonHero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Button:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Button:active {
+    background: light-dark(#e8e8ed, #2a2a31);
+  }
+
+  .Button:focus-visible {
+    outline: 2px solid light-dark(#18181b, #f4f4f5);
+    outline-offset: 2px;
+  }
+
+  .Primary {
+    border-color: transparent;
+    background: light-dark(#18181b, #f4f4f5);
+    color: light-dark(#fff, #18181b);
+  }
+
+  .Primary:hover {
+    background: light-dark(#2e2e33, #dcdce0);
+  }
+
+  .Primary:active {
+    background: light-dark(#3a3a43, #c8c8ce);
+  }
+
+  /* `data-disabled` is there however the button is disabled, `disabled` or `aria-disabled`. */
+  .Button[data-disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .Count {
+    min-width: 4.5rem;
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

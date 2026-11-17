@@ -1,0 +1,18 @@
+import { Button } from "../../../src/button/button.rx"
+import { after } from "./wait.js"
+
+export component ButtonLoading() {
+  source saving := false
+  source saved := 0
+  action finish() {
+    saving := false
+    saved := saved + 1
+  }
+  <div class="ButtonLoading">
+    <Button class="Button" disabled={saving} focusableWhenDisabled onClick={() => { saving := true; after(1500, finish) }}>
+      {if saving { <span class="Spinner" aria-hidden="true" /> }}
+      {saving ? "Saving" : "Save draft"}
+    </Button>
+    <span class="State">{saved == 0 ? "Not saved yet" : "Saved " + saved + (saved == 1 ? " time" : " times")}</span>
+  </div>
+}

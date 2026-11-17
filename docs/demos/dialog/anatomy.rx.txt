@@ -1,0 +1,10 @@
+import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "./rs-ui/dialog/dialog.rx"
+
+<DialogRoot>
+  <DialogTrigger />
+  <DialogPopup>
+    <DialogTitle />
+    <DialogDescription />
+    <DialogClose />
+  </DialogPopup>
+</DialogRoot>

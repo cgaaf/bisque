@@ -1,0 +1,68 @@
+.ToolbarZoom {
+  .Toolbar {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .Group {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+  }
+
+  .Button {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Button:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  /* A disabled toolbar button stays focusable by default: it has `aria-disabled` and `data-disabled`, not the
+     `disabled` attribute, so `:disabled` doesn't match it. */
+  .Button[data-disabled] {
+    color: light-dark(#a1a1ab, #5c5c66);
+    background: none;
+    cursor: default;
+  }
+
+  .Input {
+    box-sizing: border-box;
+    width: 4rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: center;
+  }
+
+  :is(.Button, .Input):focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Separator[data-orientation="vertical"] {
+    align-self: stretch;
+    width: 1px;
+    margin: 0.25rem;
+    background: light-dark(#e4e4e8, #2c2c33);
+  }
+}

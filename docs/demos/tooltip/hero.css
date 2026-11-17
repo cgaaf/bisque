@@ -1,0 +1,96 @@
+.TooltipHero {
+  .Group {
+    display: flex;
+    gap: 1px;
+    padding: 0.125rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .IconButton {
+    display: grid;
+    place-items: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: none;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .IconButton:hover,
+  .IconButton[data-popup-open] {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .IconButton:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Popup {
+    /* A popover comes with the browser's border, padding and scrolling; the arrow sits outside its box. */
+    padding: 0.25rem 0.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    overflow: visible;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    font-size: 0.8125rem;
+    box-shadow: 0 6px 20px -8px rgb(0 0 0 / 0.25);
+
+    /* Grow out of the trigger's side. The library closes a tooltip at once; engines that can transition
+       `display` and `overlay` also animate it out. */
+    transform-origin: bottom center;
+    transition:
+      opacity 120ms,
+      scale 120ms,
+      display 120ms allow-discrete,
+      overlay 120ms allow-discrete;
+    opacity: 0;
+    scale: 0.9;
+  }
+
+  /* `data-side` is the side the browser put it on, after any flip. */
+  .Popup[data-side="bottom"] {
+    transform-origin: top center;
+  }
+
+  .Popup:popover-open {
+    opacity: 1;
+    scale: 1;
+  }
+
+  @starting-style {
+    .Popup:popover-open {
+      opacity: 0;
+      scale: 0.9;
+    }
+  }
+
+  /* The part puts the arrow's centre on the popup's edge, under the trigger's centre. A square with two
+     borders, turned so they face away from the popup, reads as a point. */
+  .Arrow {
+    width: 0.5rem;
+    height: 0.5rem;
+    rotate: 225deg;
+    background: inherit;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  .Arrow[data-side="bottom"] {
+    rotate: 45deg;
+  }
+
+  .Arrow[data-side="left"] {
+    rotate: 135deg;
+  }
+
+  .Arrow[data-side="right"] {
+    rotate: -45deg;
+  }
+}

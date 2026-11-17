@@ -1,0 +1,68 @@
+{
+  "TabsRoot": {
+    "description": "Holds the selected value and shares it with the parts inside it.",
+    "props": {
+      "value": "The selected tab's value. Pass it with `onValueChange` to control the tabs.",
+      "defaultValue": "The tab selected at first, when the tabs aren't controlled. Without it, or when it names no tab, the first enabled tab is selected.",
+      "onValueChange": "Called with the new value when a tab is selected.",
+      "orientation": "Which arrow keys move between tabs: Left and Right for `horizontal`, Up and Down for `vertical`."
+    },
+    "dataAttributes": {
+      "data-orientation": "The tabs' orientation: `horizontal` or `vertical`.",
+      "data-activation-direction": "Which way the selection last moved: `left` or `right` when horizontal, `up` or `down` when vertical, and `none` until it first moves."
+    }
+  },
+  "TabsList": {
+    "description": "The `tablist` that holds the tabs. It is one Tab stop, which lands on the selected tab; the arrow keys, Home and End move between tabs.",
+    "props": {
+      "activateOnFocus": "Whether a tab is selected as soon as the arrow keys focus it. With `false`, the focused tab is selected with Enter or Space.",
+      "loopFocus": "Whether the arrow keys wrap around from the last tab to the first and back."
+    },
+    "dataAttributes": {
+      "data-orientation": "The tabs' orientation: `horizontal` or `vertical`.",
+      "data-activation-direction": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
+    }
+  },
+  "TabsTab": {
+    "description": "A button that selects its panel. It carries `role=\"tab\"`, `aria-selected`, and `aria-controls` pointing at its panel while selected.",
+    "props": {
+      "value": "The value that names this tab and the panel it selects.",
+      "disabled": "Whether the tab can't be selected. It stays in the list with `aria-disabled`, is skipped by the arrow keys, and your own click and key handlers on it don't run."
+    },
+    "dataAttributes": {
+      "data-active": "Present on the selected tab.",
+      "data-disabled": "Present when the tab is disabled.",
+      "data-orientation": "The tabs' orientation: `horizontal` or `vertical`.",
+      "data-activation-direction": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
+    }
+  },
+  "TabsPanel": {
+    "description": "The content shown while its tab is selected, with `role=\"tabpanel\"`, labelled by its tab. It is mounted while selected and stays mounted while it animates out.",
+    "props": {
+      "value": "The value of the tab that shows this panel.",
+      "keepMounted": "Whether the panel stays in the document, with `hidden`, while its tab isn't selected."
+    },
+    "dataAttributes": {
+      "data-hidden": "Present while the panel is kept mounted but its tab isn't selected.",
+      "data-starting-style": "Present for the first frame after the panel appears: style the state it animates in from.",
+      "data-ending-style": "Present while the panel animates out. It is removed when its transitions and animations finish.",
+      "data-orientation": "The tabs' orientation: `horizontal` or `vertical`.",
+      "data-activation-direction": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
+    }
+  },
+  "TabsIndicator": {
+    "description": "An element that follows the selected tab. Place it inside TabsList and position it with its CSS variables. It is hidden until the selected tab has a size, and absent while no tab is selected.",
+    "dataAttributes": {
+      "data-orientation": "The tabs' orientation: `horizontal` or `vertical`.",
+      "data-activation-direction": "Which way the selection last moved: `left`, `right`, `up`, `down`, or `none` until it first moves."
+    },
+    "cssVariables": {
+      "--active-tab-left": "The selected tab's distance from the list's left padding edge, in px, including the list's scroll.",
+      "--active-tab-right": "The distance from the selected tab's right edge to the end of the list's scrollable width, in px.",
+      "--active-tab-top": "The selected tab's distance from the list's top padding edge, in px, including the list's scroll.",
+      "--active-tab-bottom": "The distance from the selected tab's bottom edge to the end of the list's scrollable height, in px.",
+      "--active-tab-width": "The selected tab's width, in px.",
+      "--active-tab-height": "The selected tab's height, in px."
+    }
+  }
+}

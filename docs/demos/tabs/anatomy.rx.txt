@@ -1,0 +1,9 @@
+import { TabsRoot, TabsList, TabsTab, TabsIndicator, TabsPanel } from "./rs-ui/tabs/tabs.rx"
+
+<TabsRoot>
+  <TabsList>
+    <TabsTab />
+    <TabsIndicator />
+  </TabsList>
+  <TabsPanel />
+</TabsRoot>

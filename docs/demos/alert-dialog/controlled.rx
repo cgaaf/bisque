@@ -1,0 +1,28 @@
+import { AlertDialogRoot, AlertDialogPopup, AlertDialogTitle, AlertDialogDescription, AlertDialogClose } from "../../../src/alert-dialog/alert-dialog.rx"
+
+export component AlertDialogControlled() {
+  source files: string[] := ["quarterly-report.pdf", "site-photos.zip", "notes.txt"]
+  source pending := ""
+  source open := false
+  <div class="AlertDialogControlled">
+    <ul class="List">
+      {for file in files {
+        <li class="Row">
+          <span>{file}</span>
+          <button class="Remove" type="button" onClick={() => { pending := file; open := true }}>Delete</button>
+        </li>
+      }}
+    </ul>
+    {if files.length == 0 { <p class="Empty">No files left.</p> }}
+    <AlertDialogRoot open={open} onOpenChange={(next) => { open := next }}>
+      <AlertDialogPopup class="Popup">
+        <AlertDialogTitle class="Title">Delete {pending}?</AlertDialogTitle>
+        <AlertDialogDescription class="Description">It is removed for everyone who has access to it.</AlertDialogDescription>
+        <div class="Actions">
+          <AlertDialogClose class="Button">Keep it</AlertDialogClose>
+          <AlertDialogClose class="Button Danger" onClick={() => { files := files.filter((name) => name != pending) }}>Delete</AlertDialogClose>
+        </div>
+      </AlertDialogPopup>
+    </AlertDialogRoot>
+  </div>
+}

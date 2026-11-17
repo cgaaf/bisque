@@ -1,0 +1,74 @@
+{
+  "NavigationMenuRoot": {
+    "description": "The `<nav>` that holds which item is open and shares it with the parts inside.",
+    "props": {
+      "value": "The open item's value, or `null` for none. Pass it with `onValueChange` to control the menu.",
+      "defaultValue": "The item open at first, when the menu isn't controlled.",
+      "onValueChange": "Called once per change with the open item's value, or `null` when it closed, including when the browser closed it (Escape, a press outside).",
+      "orientation": "Whether the list runs `horizontal`ly or `vertical`ly: which arrow keys move along it and which one opens an item.",
+      "delay": "How long the pointer rests on a trigger before its content opens, in milliseconds. While another item is open, the switch is immediate.",
+      "closeDelay": "How long after the pointer leaves the trigger and its content before the content closes, in milliseconds."
+    },
+    "dataAttributes": {
+      "data-orientation": "The menu's orientation: `horizontal` or `vertical`."
+    }
+  },
+  "NavigationMenuList": {
+    "description": "The `<ul>` of items. It is one Tab stop: the arrow keys along the orientation, Home and End move between its triggers and links, without wrapping.",
+    "dataAttributes": {
+      "data-orientation": "The menu's orientation: `horizontal` or `vertical`."
+    }
+  },
+  "NavigationMenuItem": {
+    "description": "An `<li>` in the list: a link, or a trigger with its content.",
+    "props": {
+      "value": "Identifies the item; the root's `value` names the open one. Without it the item gets a generated id."
+    }
+  },
+  "NavigationMenuTrigger": {
+    "description": "The button that opens its item's content: on hover after the root's delay, on a press, and with ArrowDown (ArrowRight in a vertical menu), which also moves focus into it. Its `popovertarget` keeps a press on it from counting as a press outside the content.",
+    "props": {
+      "disabled": "A disabled trigger doesn't open its content on hover, press or keys."
+    },
+    "dataAttributes": {
+      "data-popup-open": "Present while its content is open.",
+      "data-disabled": "Present when the trigger is disabled.",
+      "data-focusable": "Always present: tells the list's arrow keys to stop on the trigger even while it is disabled."
+    }
+  },
+  "NavigationMenuIcon": {
+    "description": "A `<span>` inside the trigger for a chevron or similar, hidden from assistive technology. It shows whether its item is open with `data-popup-open`.",
+    "dataAttributes": {
+      "data-popup-open": "Present while its item's content is open."
+    }
+  },
+  "NavigationMenuContent": {
+    "description": "The item's panel: an element with `popover=\"auto\"`, declared after the item's trigger and placed against it with CSS anchor positioning. Focus leaving it, other than to its trigger, closes it. Style it with `:popover-open` and `@starting-style`.",
+    "props": {
+      "side": "Which side of the trigger the content sits on. The browser flips it when it doesn't fit.",
+      "align": "Which edge of the trigger the content lines up with, along the side.",
+      "sideOffset": "The gap between the trigger and the content, in pixels.",
+      "alignOffset": "How far the content is moved along the trigger's edge from its `align` position, in pixels."
+    },
+    "dataAttributes": {
+      "data-side": "Which side of the trigger the content is on: the `side` asked for, then the side the browser placed it on once open.",
+      "data-activation-direction": "While the content is open after another item's was: where that item was, `left` or `right` (`up` or `down` in a vertical menu)."
+    }
+  },
+  "NavigationMenuLink": {
+    "description": "A link, in the list or in some content. In the list it is one of the arrow-key stops; in content it is an ordinary link.",
+    "props": {
+      "active": "Whether the link is the current page: it gets `aria-current=\"page\"` and `data-active`.",
+      "closeOnClick": "Whether following the link closes the open content."
+    },
+    "dataAttributes": {
+      "data-active": "Present when the link is the current page."
+    }
+  },
+  "NavigationMenuArrow": {
+    "description": "An element placed on the content's edge that faces the trigger, centred on the trigger. It follows the content when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
+    "dataAttributes": {
+      "data-side": "Which side of the trigger the content is on. Absent while the content is closed."
+    }
+  }
+}

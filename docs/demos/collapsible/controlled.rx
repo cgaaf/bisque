@@ -1,0 +1,20 @@
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "../../../src/collapsible/collapsible.rx"
+
+export component CollapsibleControlled() {
+  source open := false
+  <div class="CollapsibleControlled">
+    <CollapsibleRoot class="Root" open={open} onOpenChange={(next) => { open := next }}>
+      <CollapsibleTrigger class="Trigger">
+        Advanced options
+        <span class="State">{open ? "Shown" : "Hidden"}</span>
+      </CollapsibleTrigger>
+      <CollapsiblePanel class="Panel">
+        <div class="Content">
+          <label class="Row"><input type="checkbox" checked /> Keep a backup copy</label>
+          <label class="Row"><input type="checkbox" /> Compress large files</label>
+          <button class="Button" type="button" onClick={() => { open := false }}>Done</button>
+        </div>
+      </CollapsiblePanel>
+    </CollapsibleRoot>
+  </div>
+}

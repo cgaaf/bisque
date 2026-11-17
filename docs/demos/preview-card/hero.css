@@ -1,0 +1,95 @@
+.PreviewCardHero {
+  .Text {
+    max-width: 22rem;
+    margin: 0;
+    font-size: 0.9375rem;
+    line-height: 1.6;
+  }
+
+  .Link {
+    color: light-dark(#2f5bea, #8eabff);
+    text-decoration: underline;
+    text-decoration-color: light-dark(rgb(47 91 234 / 0.4), rgb(142 171 255 / 0.4));
+    text-underline-offset: 0.2em;
+    white-space: nowrap;
+  }
+
+  .Link:hover,
+  .Link[data-popup-open] {
+    text-decoration-color: currentColor;
+  }
+
+  .Popup {
+    /* A popover comes with the browser's border, padding and scrolling; the arrow sits outside its box. */
+    box-sizing: border-box;
+    width: 17rem;
+    padding: 0.5rem 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.625rem;
+    overflow: visible;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 12px 32px -12px rgb(0 0 0 / 0.3);
+
+    transform-origin: top center;
+    transition:
+      opacity 150ms,
+      scale 150ms,
+      display 150ms allow-discrete,
+      overlay 150ms allow-discrete;
+    opacity: 0;
+    scale: 0.96;
+  }
+
+  .Popup[data-side="top"] {
+    transform-origin: bottom center;
+  }
+
+  .Popup:popover-open {
+    opacity: 1;
+    scale: 1;
+  }
+
+  @starting-style {
+    .Popup:popover-open {
+      opacity: 0;
+      scale: 0.96;
+    }
+  }
+
+  .Arrow {
+    width: 0.625rem;
+    height: 0.625rem;
+    rotate: 45deg;
+    background: inherit;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-right-color: transparent;
+    border-bottom-color: transparent;
+  }
+
+  .Arrow[data-side="top"] {
+    rotate: 225deg;
+  }
+
+  .Swatch {
+    height: 6rem;
+    border-radius: 0.375rem;
+    background:
+      radial-gradient(circle at 30% 60%, light-dark(#f4b740, #c98f1d) 0 0.75rem, transparent 0.8rem),
+      radial-gradient(circle at 62% 40%, light-dark(#e2553f, #b8422f) 0 1rem, transparent 1.05rem),
+      linear-gradient(light-dark(#dcefd8, #1f3320), light-dark(#b9dcb2, #2b4a2c));
+  }
+
+  .Title {
+    margin: 0.75rem 0.375rem 0;
+    font-size: 0.9375rem;
+    font-weight: 600;
+  }
+
+  .Description {
+    margin: 0.25rem 0.375rem 0;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

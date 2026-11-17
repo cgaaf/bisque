@@ -1,0 +1,20 @@
+import { AccordionRoot, AccordionItem, AccordionTrigger, AccordionPanel } from "../../../src/accordion/accordion.rx"
+
+export component AccordionMultiple() {
+  <div class="AccordionMultiple">
+    <AccordionRoot class="Accordion" multiple defaultValue={["account", "alerts"]}>
+      <AccordionItem class="Item" value="account">
+        <AccordionTrigger class="Trigger">Account</AccordionTrigger>
+        <AccordionPanel class="Panel"><p class="Content">Name, email address and the time zone used for reports.</p></AccordionPanel>
+      </AccordionItem>
+      <AccordionItem class="Item" value="alerts">
+        <AccordionTrigger class="Trigger">Alerts</AccordionTrigger>
+        <AccordionPanel class="Panel"><p class="Content">A summary every Monday, and an email when a build fails.</p></AccordionPanel>
+      </AccordionItem>
+      <AccordionItem class="Item" value="billing" disabled>
+        <AccordionTrigger class="Trigger">Billing <span class="Badge">Owners only</span></AccordionTrigger>
+        <AccordionPanel class="Panel"><p class="Content">Invoices and payment details.</p></AccordionPanel>
+      </AccordionItem>
+    </AccordionRoot>
+  </div>
+}

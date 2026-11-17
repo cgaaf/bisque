@@ -1,0 +1,21 @@
+import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuLinkItem, ContextMenuSeparator, ContextMenuGroup, ContextMenuGroupLabel, ContextMenuCheckboxItem, ContextMenuRadioGroup, ContextMenuRadioItem, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "./rs-ui/context-menu/context-menu.rx"
+
+<ContextMenuRoot>
+  <ContextMenuTrigger />
+  <ContextMenuPopup>
+    <ContextMenuItem />
+    <ContextMenuLinkItem />
+    <ContextMenuSeparator />
+    <ContextMenuGroup>
+      <ContextMenuGroupLabel />
+    </ContextMenuGroup>
+    <ContextMenuCheckboxItem />
+    <ContextMenuRadioGroup>
+      <ContextMenuRadioItem />
+    </ContextMenuRadioGroup>
+    <ContextMenuSubmenuRoot>
+      <ContextMenuSubmenuTrigger />
+      <ContextMenuPopup />
+    </ContextMenuSubmenuRoot>
+  </ContextMenuPopup>
+</ContextMenuRoot>

@@ -1,0 +1,119 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { MenuHero } from "../../demos/menu/hero.rx"
+import { MenuOptions } from "../../demos/menu/options.rx"
+import { MenuSubmenu } from "../../demos/menu/submenu.rx"
+
+export default component Page() {
+  <DocsPage title="Menu" subtitle="A list of actions in a popup, opened from a button and driven from the keyboard.">
+    <Demo source="menu/hero"><MenuHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="menu/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The popup is an element with <code>popover="auto"</code>, and the trigger is a button with{" "}
+      <code>popovertarget</code>. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the popup is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>Closing on <kbd>Escape</kbd> and on a press outside the popup.</li>
+      <li>
+        Nesting: a submenu's popup is declared inside its parent's, so the browser keeps the parent open while the
+        submenu is open, closes the submenu with its parent, and closes only the innermost menu on{" "}
+        <kbd>Escape</kbd>.
+      </li>
+      <li>Placement against the trigger with CSS anchor positioning, flipped to the other side when it doesn't fit.</li>
+    </ul>
+    <p>
+      The platform has no menu keyboard model, so the library adds it: arrow keys that move between items and
+      wrap, <kbd>Home</kbd> and <kbd>End</kbd>, typeahead, activation with <kbd>Enter</kbd> and <kbd>Space</kbd>,
+      focus moving into the menu when it opens and back to the trigger when it closes (including after{" "}
+      <kbd>Escape</kbd> closes a submenu, which no engine does), the item kinds, submenus that open on hover, the
+      ARIA roles, and <code>data-side</code> with the arrow's position.
+    </p>
+    <div class="note">
+      <p>
+        The popup stays in the document while it is closed, so there is no Portal part. There is no Positioner or
+        Backdrop part either: the popup is the positioned element, and <code>::backdrop</code> styles what is behind
+        it. The trigger has no <code>openOnHover</code> (a menu opens on hover only in a{" "}
+        <a href={href("components/menubar")}>menubar</a>), and there are no detached triggers.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Opening it</h3>
+    <p>
+      A press on the trigger opens the menu and focuses the popup, so the next arrow key lands on an item.{" "}
+      <kbd>Enter</kbd>, <kbd>Space</kbd> and <kbd>ArrowDown</kbd> on the trigger open it on the first item, and{" "}
+      <kbd>ArrowUp</kbd> on the last. Choosing an item closes the menu and returns focus to the trigger;{" "}
+      <kbd>Tab</kbd> closes it and moves on. Disabled items are skipped by the arrow keys and can't be chosen.
+    </p>
+
+    <h3 id="checkbox-and-radio-items">Checkbox and radio items</h3>
+    <p>
+      <code>MenuCheckboxItem</code> toggles a boolean, and <code>MenuRadioItem</code>s inside a{" "}
+      <code>MenuRadioGroup</code> choose one value; both work controlled or not. They carry{" "}
+      <code>data-checked</code> or <code>data-unchecked</code>, so the indicator is any child you show for one of
+      them. Choosing one leaves the menu open, so several can be set at once. Wrap related items in a{" "}
+      <code>MenuGroup</code> with a <code>MenuGroupLabel</code> to name them.
+    </p>
+    <Demo source="menu/options"><MenuOptions /></Demo>
+
+    <h3 id="close-on-click">Closing on click</h3>
+    <p>
+      Every item kind takes <code>closeOnClick</code>. A plain <code>MenuItem</code> closes the menu by default,
+      checkbox and radio items keep it open, and a <code>MenuLinkItem</code> keeps it open too, since following the
+      link usually changes the page anyway.
+    </p>
+
+    <h3 id="submenu">Submenus</h3>
+    <p>
+      A <code>MenuSubmenuRoot</code> holds a <code>MenuSubmenuTrigger</code>, which is an item of the parent menu,
+      and the submenu's own <code>MenuPopup</code>, declared inside the parent's popup. Resting the pointer on the
+      trigger opens the submenu after <code>delay</code> milliseconds, and the pointer may cross other items on its
+      way there without closing it. A press, <kbd>ArrowRight</kbd>, <kbd>Enter</kbd> and <kbd>Space</kbd> open it
+      too, and the keys move focus into it; <kbd>ArrowLeft</kbd> closes it again. Choosing an item in a submenu
+      closes the whole tree.
+    </p>
+    <Demo source="menu/submenu"><MenuSubmenu /></Demo>
+
+    <h3 id="links">Links</h3>
+    <p>
+      <code>MenuLinkItem</code> renders an <code>{"<a>"}</code> that is a menu item: give it an{" "}
+      <code>href</code>, and <kbd>Enter</kbd> follows it.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to <code>MenuRoot</code> to hold the state yourself.
+      Escape and a press outside can't be refused: they are reported through <code>onOpenChange</code> after the
+      browser closed the menu, and a menu whose <code>open</code> stays true is shown again. A{" "}
+      <code>disabled</code> menu doesn't open.
+    </p>
+
+    <h3 id="placement">Placement and the arrow</h3>
+    <p>
+      The popup sits below its trigger with their start edges lined up; a submenu sits to the right of its
+      trigger. <code>side</code>, <code>align</code>, <code>sideOffset</code> and <code>alignOffset</code> become
+      CSS anchor positioning declarations in the popup's inline style. When the browser flips the popup, its{" "}
+      <code>data-side</code> changes to the side it ended up on. <code>MenuArrow</code> is placed on the edge
+      facing the trigger, centred on the trigger, as in the first demo.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Animate the popup in with <code>@starting-style</code> under <code>:popover-open</code>. A press outside
+      closes a popover at once, so animating it out is left to CSS: transition <code>display</code> and{" "}
+      <code>overlay</code> with <code>allow-discrete</code>, which takes effect in the engines that support it and
+      is ignored in the others. The highlighted item has no native selector; style{" "}
+      <code>[data-highlighted]</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="menu" />
+  </DocsPage>
+}

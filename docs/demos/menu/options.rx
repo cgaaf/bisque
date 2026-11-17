@@ -1,0 +1,33 @@
+import { MenuRoot, MenuTrigger, MenuPopup, MenuCheckboxItem, MenuRadioGroup, MenuRadioItem, MenuGroup, MenuGroupLabel, MenuSeparator } from "../../../src/menu/menu.rx"
+
+export component MenuOptions() {
+  source sort := "modified"
+  <div class="MenuOptions">
+    <MenuRoot>
+      <MenuTrigger class="Button">View</MenuTrigger>
+      <MenuPopup class="Popup" sideOffset={6}>
+        <MenuCheckboxItem class="Item" defaultChecked>
+          <svg class="Check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2.5 6.5 5 9l4.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Show hidden files
+        </MenuCheckboxItem>
+        <MenuCheckboxItem class="Item">
+          <svg class="Check" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+            <path d="M2.5 6.5 5 9l4.5-6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          Show file extensions
+        </MenuCheckboxItem>
+        <MenuSeparator class="Separator" />
+        <MenuGroup>
+          <MenuGroupLabel class="Label">Sort by</MenuGroupLabel>
+          <MenuRadioGroup value={sort} onValueChange={(next) => { sort := next }}>
+            <MenuRadioItem class="Item" value="name"><span class="Dot" />Name</MenuRadioItem>
+            <MenuRadioItem class="Item" value="modified"><span class="Dot" />Date modified</MenuRadioItem>
+            <MenuRadioItem class="Item" value="size"><span class="Dot" />Size</MenuRadioItem>
+          </MenuRadioGroup>
+        </MenuGroup>
+      </MenuPopup>
+    </MenuRoot>
+  </div>
+}

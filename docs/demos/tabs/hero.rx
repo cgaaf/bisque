@@ -1,0 +1,31 @@
+import { TabsRoot, TabsList, TabsTab, TabsPanel, TabsIndicator } from "../../../src/tabs/tabs.rx"
+
+export component TabsHero() {
+  <div class="TabsHero">
+    <TabsRoot>
+      <TabsList class="List" aria-label="Project">
+        <TabsTab class="Tab" value="overview">Overview</TabsTab>
+        <TabsTab class="Tab" value="activity">Activity</TabsTab>
+        <TabsTab class="Tab" value="settings">Settings</TabsTab>
+        <TabsTab class="Tab" value="billing" disabled>Billing</TabsTab>
+        <TabsIndicator class="Indicator" />
+      </TabsList>
+      <TabsPanel class="Panel" value="overview">
+        <h3 class="Heading">Northwind roadmap</h3>
+        <p class="Text">Twelve open tasks across three milestones. The next one is due on Friday.</p>
+      </TabsPanel>
+      <TabsPanel class="Panel" value="activity">
+        <h3 class="Heading">Recent activity</h3>
+        <p class="Text">Four tasks were closed this week, and two new ones were added to the backlog.</p>
+      </TabsPanel>
+      <TabsPanel class="Panel" value="settings">
+        <h3 class="Heading">Settings</h3>
+        <p class="Text">Rename the project, change who can see it, or archive it.</p>
+      </TabsPanel>
+      <TabsPanel class="Panel" value="billing">
+        <h3 class="Heading">Billing</h3>
+        <p class="Text">Billing is managed by the workspace owner.</p>
+      </TabsPanel>
+    </TabsRoot>
+  </div>
+}

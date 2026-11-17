@@ -1,0 +1,96 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { DrawerHero } from "../../demos/drawer/hero.rx"
+import { DrawerSide } from "../../demos/drawer/side.rx"
+
+export default component Page() {
+  <DocsPage title="Drawer" subtitle="A panel that slides in from an edge of the screen and can be swiped away.">
+    <Demo source="drawer/hero"><DrawerHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="drawer/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      A drawer is a <a href="../dialog/">Dialog</a> that can be swiped out. The popup is a native{" "}
+      <code>{"<dialog>"}</code>, so the browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the drawer is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>An inert page behind a modal drawer: <kbd>Tab</kbd> stays inside it.</li>
+      <li>Moving focus into the drawer when it opens, and back to the trigger when it closes.</li>
+      <li>Closing on <kbd>Escape</kbd>.</li>
+      <li>The <code>::backdrop</code> pseudo-element behind it, which inherits the drawer's custom properties.</li>
+    </ul>
+    <p>
+      The library adds what Dialog adds (the open state, closing on a press outside, the ARIA relationships,
+      scroll locking and the exit animation under <code>data-ending-style</code>) and swipe to dismiss: while the
+      drawer is dragged it writes how far it has moved and what fraction of its size that is as CSS variables,
+      and when it is let go it either returns to rest or closes.
+    </p>
+    <div class="note">
+      <p>
+        There is no Portal, Backdrop or Viewport part: position the <code>{"<dialog>"}</code> against its edge
+        yourself, and style <code>::backdrop</code>. Base UI's snap points, nested-drawer indent
+        (<code>Provider</code>, <code>Indent</code>, <code>IndentBackground</code>), <code>SwipeArea</code> and
+        virtual keyboard handling aren't implemented here.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="positioning">Placing it on an edge</h3>
+    <p>
+      The parts ship no styles, and a <code>{"<dialog>"}</code> is centred by the browser, so the drawer's
+      stylesheet puts it on its edge: <code>margin: auto auto 0</code> for the bottom, or{" "}
+      <code>margin: 0 0 0 auto</code> with <code>height: 100%</code> and <code>max-height: none</code> for the
+      right. <code>swipeDirection</code> says which edge it leaves through, <code>"down"</code> unless you say
+      otherwise, and it is written on the popup as <code>data-swipe-direction</code>.
+    </p>
+    <Demo source="drawer/side"><DrawerSide /></Demo>
+
+    <h3 id="swiping">Following the swipe</h3>
+    <p>
+      While it is dragged the popup has <code>data-swiping</code> and three variables:{" "}
+      <code>--drawer-swipe-movement-x</code> and <code>--drawer-swipe-movement-y</code>, in pixels, and{" "}
+      <code>--drawer-swipe-progress</code>, from 0 to 1. Translate the popup by the movement and turn its
+      transition off under <code>[data-swiping]</code>, so it stays under the pointer. Dragging the other way
+      moves it only a little, and never closes it.
+    </p>
+    <p>
+      When it is let go, it closes if it travelled <code>swipeThreshold</code> pixels (half its size when that
+      isn't given) or was flicked quickly, whatever the distance. Otherwise the movement goes back to 0 and its
+      transition carries it back. A drawer closed by a swipe gets <code>data-swipe-dismiss</code>, and leaves from
+      where it was let go.
+    </p>
+    <p>
+      A mouse press inside <code>DrawerContent</code> selects text instead of starting a swipe; a touch there still
+      swipes. Keep a handle or header outside it if a mouse should be able to drag the drawer, as both demos do. A
+      press on the backdrop closes the drawer without starting a swipe.
+    </p>
+
+    <h3 id="backdrop">Fading the backdrop</h3>
+    <p>
+      <code>::backdrop</code> inherits the popup's custom properties, so{" "}
+      <code>opacity: calc(1 - var(--drawer-swipe-progress))</code> on it fades the backdrop as the drawer is
+      dragged out, and <code>[data-swiping]::backdrop</code> matches during the drag.
+    </p>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      Slide it in with <code>@starting-style</code> under <code>[open]</code> and out under{" "}
+      <code>[data-ending-style]</code>: when it is asked to close, the drawer stays open with that attribute until
+      its transitions finish.
+    </p>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      <code>open</code>, <code>defaultOpen</code> and <code>onOpenChange</code> work as Dialog's, and a swipe is
+      reported through <code>onOpenChange</code> like any other close. <code>modal</code>,{" "}
+      <code>dismissible</code> and <code>disablePointerDismissal</code> are passed on to Dialog.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="drawer" />
+  </DocsPage>
+}

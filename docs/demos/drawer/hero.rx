@@ -1,0 +1,23 @@
+import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "../../../src/drawer/drawer.rx"
+
+export component DrawerHero() {
+  <div class="DrawerHero">
+    <DrawerRoot>
+      <DrawerTrigger class="Button">Open filters</DrawerTrigger>
+      <DrawerPopup class="Popup">
+        <div class="Handle" />
+        <DrawerContent class="Content">
+          <DrawerTitle class="Title">Filters</DrawerTitle>
+          <DrawerDescription class="Description">Swipe down, press outside or press Done to close.</DrawerDescription>
+          <fieldset class="Options">
+            <legend class="Legend">Availability</legend>
+            <label class="Option"><input type="checkbox" checked /> In stock</label>
+            <label class="Option"><input type="checkbox" /> Ships this week</label>
+            <label class="Option"><input type="checkbox" /> Pick up in store</label>
+          </fieldset>
+          <DrawerClose class="Button Primary">Done</DrawerClose>
+        </DrawerContent>
+      </DrawerPopup>
+    </DrawerRoot>
+  </div>
+}

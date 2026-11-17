@@ -1,0 +1,90 @@
+.AlertDialogHero {
+  .Button {
+    padding: 0.5rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Button:hover {
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Danger {
+    color: light-dark(#c62828, #f87171);
+  }
+
+  .Actions .Danger {
+    border-color: transparent;
+    background: light-dark(#c62828, #dc2626);
+    color: #fff;
+  }
+
+  .Actions .Danger:hover {
+    background: light-dark(#a51f1f, #b91c1c);
+  }
+
+  .Popup {
+    /* A <dialog> comes with the browser's border, padding and maximum size: reset what you change. */
+    box-sizing: border-box;
+    width: min(24rem, calc(100vw - 2rem));
+    padding: 1.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.75rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 20px 50px -12px rgb(0 0 0 / 0.35);
+    transition:
+      opacity 150ms,
+      scale 150ms;
+  }
+
+  .Popup::backdrop {
+    background: rgb(0 0 0 / 0.4);
+    transition: opacity 150ms;
+  }
+
+  @starting-style {
+    .Popup[open] {
+      opacity: 0;
+      scale: 0.96;
+    }
+
+    .Popup[open]::backdrop {
+      opacity: 0;
+    }
+  }
+
+  /* The dialog stays open with this attribute until its transitions end. */
+  .Popup[data-ending-style] {
+    opacity: 0;
+    scale: 0.96;
+  }
+
+  .Popup[data-ending-style]::backdrop {
+    opacity: 0;
+  }
+
+  .Title {
+    margin: 0;
+    font-size: 1.0625rem;
+    font-weight: 600;
+  }
+
+  .Description {
+    margin: 0.375rem 0 0;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+}

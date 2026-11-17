@@ -1,0 +1,44 @@
+.AvatarGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  .Stack {
+    display: flex;
+  }
+
+  .Root {
+    display: inline-grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    overflow: hidden;
+    background: light-dark(#ececf1, #2a2a31);
+    /* A ring in the page's colour separates each avatar from the one it overlaps. */
+    box-shadow: 0 0 0 2px light-dark(#fff, #0e0e11);
+    user-select: none;
+  }
+
+  .Root + .Root {
+    margin-left: -0.625rem;
+  }
+
+  .Image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .Fallback,
+  .More {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: light-dark(#4a4a55, #c4c4cc);
+  }
+
+  .Caption {
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

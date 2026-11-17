@@ -4,41 +4,41 @@
     {
       "name": "CollapsibleRoot",
       "element": "details",
-      "description": "",
+      "description": "The `<details>` element. It holds the open state and shares it with the parts inside it. Style it with `[open]`.",
       "props": [
         {
           "name": "open",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the panel is open. Pass it with `onOpenChange` to control the collapsible."
         },
         {
           "name": "defaultOpen",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the panel is open at first, when it isn't controlled."
         },
         {
           "name": "onOpenChange",
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called when the trigger asks to open or close the panel, and after the browser opened it by itself for find-in-page. A controlled collapsible follows `open`, and is closed again if `open` stays false."
         },
         {
           "name": "disabled",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": "The trigger does nothing while disabled. Find-in-page still opens it: the browser's behaviour wins."
+          "description": "Whether the trigger is disabled: it ignores presses and keys and leaves the tab order. Find-in-page still opens the panel."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present when the collapsible is disabled."
         }
       ],
       "cssVariables": []
@@ -46,12 +46,12 @@
     {
       "name": "CollapsibleTrigger",
       "element": "summary",
-      "description": "Spread on a <summary> that is the first child of the root's <details>: the toggling, focusability and the expanded state come from that element, and it works on no other. A press asks the root instead of toggling, so a controlled `open` decides and the close can animate.",
+      "description": "The `<summary>` that opens and closes the panel. It must be the first child of the root. A press asks the root rather than toggling the element, so a controlled `open` decides.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-disabled",
-          "description": "Present when the part is disabled."
+          "description": "Present when the collapsible is disabled."
         }
       ],
       "cssVariables": []
@@ -59,10 +59,24 @@
     {
       "name": "CollapsiblePanel",
       "element": "div",
-      "description": "The content after the summary. Its size is written to `--collapsible-panel-height` and `--collapsible-panel-width`: px while it opens and closes, `auto` once open. Animate `height` from 0 with both `details:not([open]) > .panel` and `@starting-style` (Chrome needs the second, Safari the first), and to 0 under `[data-ending-style]`.",
+      "description": "The content after the summary, hidden by the browser while the collapsible is closed. Its measured size is written to CSS variables for animating its height.",
       "props": [],
-      "dataAttributes": [],
-      "cssVariables": []
+      "dataAttributes": [
+        {
+          "name": "data-ending-style",
+          "description": "Present while the panel animates out. The `<details>` stays open until the panel's transitions and animations finish."
+        }
+      ],
+      "cssVariables": [
+        {
+          "name": "--collapsible-panel-height",
+          "description": "The panel's content height: in px while it opens and closes, `auto` once it is open."
+        },
+        {
+          "name": "--collapsible-panel-width",
+          "description": "The panel's content width: in px while it opens and closes, `auto` once it is open."
+        }
+      ]
     }
   ]
 }

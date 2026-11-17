@@ -1,0 +1,6 @@
+import { CollapsibleRoot, CollapsibleTrigger, CollapsiblePanel } from "./rs-ui/collapsible/collapsible.rx"
+
+<CollapsibleRoot>
+  <CollapsibleTrigger />
+  <CollapsiblePanel />
+</CollapsibleRoot>

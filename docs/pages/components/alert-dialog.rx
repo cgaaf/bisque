@@ -1,0 +1,67 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { AlertDialogHero } from "../../demos/alert-dialog/hero.rx"
+import { AlertDialogControlled } from "../../demos/alert-dialog/controlled.rx"
+
+export default component Page() {
+  <DocsPage title="Alert Dialog" subtitle="A dialog that interrupts to ask for a decision.">
+    <Demo source="alert-dialog/hero"><AlertDialogHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="alert-dialog/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      An alert dialog is a <a href="../dialog/">Dialog</a> with three settings fixed: it is always modal, its{" "}
+      <code>{"<dialog>"}</code> has <code>role="alertdialog"</code>, and a press outside doesn't close it. Everything
+      else is Dialog's. The browser provides:
+    </p>
+    <ul>
+      <li>The top layer: the dialog is drawn above everything else, without a portal or a <code>z-index</code>.</li>
+      <li>An inert page behind it: <kbd>Tab</kbd> stays inside the dialog.</li>
+      <li>Moving focus into the dialog when it opens, and back to the trigger when it closes.</li>
+      <li>Closing on <kbd>Escape</kbd>.</li>
+      <li>The <code>::backdrop</code> pseudo-element behind it.</li>
+    </ul>
+    <p>
+      The library adds the open state (which may be controlled), the ARIA relationships between trigger, popup,
+      title and description, locking the page's scroll while it is open, and the exit animation under{" "}
+      <code>data-ending-style</code>.
+    </p>
+    <div class="note">
+      <p>
+        There is no Portal, Backdrop or Viewport part, for the same reasons as Dialog: the popup is the{" "}
+        <code>{"<dialog>"}</code>, it stays in the document while closed, and <code>::backdrop</code> styles what is
+        behind it. A part of your own reads the <code>dialog</code> context and the <code>dialog*</code> props
+        functions from <code>dialog.rx</code>: the alert dialog's parts are Dialog's.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="closing">Closing it</h3>
+    <p>
+      Every <code>AlertDialogClose</code> closes the dialog, and runs its own <code>onClick</code> first, so the
+      button that confirms is a close button with the action on it, as the first demo's <em>Discard</em> would be.{" "}
+      <kbd>Escape</kbd> closes it too, as a choice not to go ahead. A press on the backdrop does nothing: an alert
+      dialog waits for an answer.
+    </p>
+
+    <h3 id="controlled">Opening it from your own code</h3>
+    <p>
+      Pass <code>open</code> and <code>onOpenChange</code> to hold the state yourself. The trigger is optional, so
+      one alert dialog can confirm an action started anywhere, here each row's <em>Delete</em> button.
+    </p>
+    <Demo source="alert-dialog/controlled"><AlertDialogControlled /></Demo>
+
+    <h3 id="animation">Animating it</h3>
+    <p>
+      As with Dialog: animate in with <code>@starting-style</code> under <code>[open]</code>, and out with{" "}
+      <code>[data-ending-style]</code>, which stays on the dialog, open, until its transitions and animations
+      finish. Style <code>::backdrop</code> the same way.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="alert-dialog" />
+  </DocsPage>
+}

@@ -1,0 +1,10 @@
+import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPopup, TooltipArrow } from "./rs-ui/tooltip/tooltip.rx"
+
+<TooltipProvider>
+  <TooltipRoot>
+    <TooltipTrigger />
+    <TooltipPopup>
+      <TooltipArrow />
+    </TooltipPopup>
+  </TooltipRoot>
+</TooltipProvider>

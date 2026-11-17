@@ -44,6 +44,7 @@ export fn toggle(ref group: ToggleGroupContext, ref bar: ToolbarContext, ref o: 
 
 export type ToggleProps = {
   pressed?: boolean
+  // Default: false.
   defaultPressed?: boolean
   onPressedChange?: (pressed: boolean) => void
   disabled?: boolean

@@ -1,0 +1,103 @@
+.MenubarHero {
+  .Menubar {
+    display: flex;
+    gap: 0.125rem;
+    padding: 0.125rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .Trigger {
+    padding: 0.375rem 0.75rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: default;
+    outline: 0;
+  }
+
+  .Trigger:hover,
+  .Trigger:focus-visible,
+  .Trigger[data-popup-open] {
+    background: light-dark(#f2f2f5, #26262c);
+  }
+
+  .Trigger[data-disabled] {
+    color: light-dark(#a1a1ab, #5c5c66);
+    background: none;
+  }
+
+  .Popup {
+    /* A popover comes with the browser's border, padding and scrolling. */
+    min-width: 12rem;
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.25);
+    outline: 0;
+  }
+
+  /* The submenu trigger is a <button>: reset it to look like the other items. */
+  .Item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5rem;
+    box-sizing: border-box;
+    width: 100%;
+    padding: 0.375rem 0.625rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    text-align: start;
+    cursor: default;
+    user-select: none;
+    outline: 0;
+  }
+
+  .Item[data-highlighted] {
+    background: light-dark(#17171a, #ededf0);
+    color: light-dark(#fff, #17171a);
+  }
+
+  .Item[data-popup-open]:not([data-highlighted]) {
+    background: light-dark(#f2f2f5, #26262c);
+  }
+
+  .Item[data-disabled] {
+    color: light-dark(#a1a1ab, #5c5c66);
+  }
+
+  .Shortcut {
+    font-size: 0.75rem;
+    color: light-dark(#8a8a94, #7d7d8a);
+  }
+
+  .Item[data-highlighted] .Shortcut {
+    color: inherit;
+    opacity: 0.7;
+  }
+
+  .Check {
+    visibility: hidden;
+  }
+
+  .Item[data-checked] .Check {
+    visibility: visible;
+  }
+
+  .Separator {
+    height: 1px;
+    margin: 0.25rem 0.625rem;
+    background: light-dark(#e4e4e8, #2c2c33);
+  }
+}

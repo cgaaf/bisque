@@ -1,0 +1,42 @@
+import { ToastProvider, ToastViewport, ToastRoot, ToastTitle, ToastDescription, toast } from "../../../src/toast/toast.rx"
+import { publishPost } from "./publish.js"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t} class="Toast">
+      <span class="Icon" data-type={t.type} aria-hidden="true" />
+      <div>
+        <ToastTitle class="Title" />
+        <ToastDescription class="Description" />
+      </div>
+    </ToastRoot>
+  }
+}
+
+component PublishButton() {
+  c = use toast
+  action publish() {
+    // A "loading" toast until the promise settles, then the same toast turns into "success" or "error".
+    let published = c.manager.promise(publishPost(), {
+      loading: { title: "Publishing…", description: "Sending the post to the server." },
+      success: { title: "Post published", description: "It is live on the blog now." },
+      error: { title: "Couldn't publish", description: "The server didn't answer. Try again." },
+    })
+    // The promise still rejects after the toast has shown the error. Not awaited here: an action that awaits
+    // holds back its writes, the loading toast included, until it ends.
+    let _handled = published.catch((error) => error)
+  }
+  <button class="Button" type="button" onClick={publish}>Publish post</button>
+}
+
+export component ToastPromise() {
+  <div class="ToastPromise">
+    <ToastProvider>
+      <PublishButton />
+      <ToastViewport class="Viewport">
+        <Toasts />
+      </ToastViewport>
+    </ToastProvider>
+  </div>
+}

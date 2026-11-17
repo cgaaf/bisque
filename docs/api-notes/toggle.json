@@ -1,0 +1,16 @@
+{
+  "Toggle": {
+    "description": "A `<button>` that is pressed or not, with `aria-pressed`. Inside a toggle group the group owns its state; inside a toolbar it is one of the toolbar's items.",
+    "props": {
+      "pressed": "Whether the toggle is pressed. Pass it with `onPressedChange` to control it. Ignored inside a toggle group.",
+      "defaultPressed": "Whether the toggle is pressed at first, when it isn't controlled.",
+      "onPressedChange": "Called with the new state when the toggle is pressed. Inside a group it runs before the group's `onValueChange`.",
+      "disabled": "A disabled toggle doesn't change, and its `onClick` and `onPressedChange` aren't called. It is also disabled when its group is.",
+      "value": "What the toggle stands for in a toggle group's `value`. Give one to every toggle in a group."
+    },
+    "dataAttributes": {
+      "data-pressed": "Present while the toggle is pressed.",
+      "data-disabled": "Present when the toggle is disabled."
+    }
+  }
+}

@@ -1,0 +1,12 @@
+import { DrawerRoot, DrawerTrigger, DrawerPopup, DrawerContent, DrawerTitle, DrawerDescription, DrawerClose } from "./rs-ui/drawer/drawer.rx"
+
+<DrawerRoot>
+  <DrawerTrigger />
+  <DrawerPopup>
+    <DrawerContent>
+      <DrawerTitle />
+      <DrawerDescription />
+      <DrawerClose />
+    </DrawerContent>
+  </DrawerPopup>
+</DrawerRoot>

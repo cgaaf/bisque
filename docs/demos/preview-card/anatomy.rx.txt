@@ -1,0 +1,8 @@
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup, PreviewCardArrow } from "./rs-ui/preview-card/preview-card.rx"
+
+<PreviewCardRoot>
+  <PreviewCardTrigger />
+  <PreviewCardPopup>
+    <PreviewCardArrow />
+  </PreviewCardPopup>
+</PreviewCardRoot>

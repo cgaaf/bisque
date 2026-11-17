@@ -4,28 +4,28 @@
     {
       "name": "PreviewCardRoot",
       "element": null,
-      "description": "",
+      "description": "Holds the card's open state and shares it with the link and the card. Renders no element, so it can wrap the paragraph the link is in.",
       "props": [
         {
           "name": "open",
           "type": "boolean",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Whether the card is open. Pass it with `onOpenChange` to control it."
         },
         {
           "name": "defaultOpen",
           "type": "boolean",
           "default": "false",
           "required": false,
-          "description": ""
+          "description": "Whether the card is open at first, when it isn't controlled."
         },
         {
           "name": "onOpenChange",
           "type": "(open: boolean) => void",
           "default": null,
           "required": false,
-          "description": ""
+          "description": "Called with the new state when hover, focus, Escape or a press outside opens or closes the card."
         }
       ],
       "dataAttributes": [],
@@ -34,27 +34,27 @@
     {
       "name": "PreviewCardTrigger",
       "element": "a",
-      "description": "Spread on the link the card previews. It opens the card on hover and keyboard focus, after the delay.",
+      "description": "The link the card previews. It opens the card on hover and on keyboard focus, after the delay.",
       "props": [
         {
           "name": "delay",
           "type": "number",
           "default": "600",
           "required": false,
-          "description": "How long the pointer rests on the link (or focus stays on it) before the card opens, in ms."
+          "description": "How long the pointer rests on the link, or focus stays on it, before the card opens, in milliseconds."
         },
         {
           "name": "closeDelay",
           "type": "number",
           "default": "300",
           "required": false,
-          "description": "How long after the pointer leaves the link and the card before it closes, in ms."
+          "description": "How long after the pointer leaves the link and the card before the card closes, in milliseconds."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-popup-open",
-          "description": "Present on the trigger while its popup is open."
+          "description": "Present while the card is open."
         }
       ],
       "cssVariables": []
@@ -62,41 +62,41 @@
     {
       "name": "PreviewCardPopup",
       "element": "div",
-      "description": "",
+      "description": "The card: an element with `popover=\"manual\"`, placed against the link with CSS anchor positioning. It takes no role. Style it with `:popover-open` and `@starting-style`.",
       "props": [
         {
           "name": "side",
           "type": "\"top\" | \"bottom\" | \"left\" | \"right\"",
           "default": "\"bottom\"",
           "required": false,
-          "description": "Which side of the link it sits on; the browser flips it when it doesn't fit."
+          "description": "Which side of the link the card sits on. The browser flips it when it doesn't fit."
         },
         {
           "name": "align",
           "type": "\"start\" | \"center\" | \"end\"",
           "default": "\"center\"",
           "required": false,
-          "description": "Which edge of the link it lines up with."
+          "description": "Which edge of the link the card lines up with, along the side."
         },
         {
           "name": "sideOffset",
           "type": "number",
           "default": "0",
           "required": false,
-          "description": "Gap between link and card, in pixels."
+          "description": "The gap between the link and the card, in pixels."
         },
         {
           "name": "alignOffset",
           "type": "number",
           "default": "0",
           "required": false,
-          "description": ""
+          "description": "How far the card is moved along the link's edge from its `align` position, in pixels."
         }
       ],
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+          "description": "Which side of the link the card is on: the `side` asked for, then the side the browser placed it on once open."
         }
       ],
       "cssVariables": []
@@ -104,12 +104,12 @@
     {
       "name": "PreviewCardArrow",
       "element": "div",
-      "description": "Spread on an element inside the popup: it is placed on the popup's edge that faces the trigger, centred on the trigger, and carries the popup's `data-side`. The shape (a rotated square, an SVG) is the stylesheet's.",
+      "description": "An element placed on the card's edge that faces the link, centred on the link. It follows the card when the browser flips it. Give it a shape in CSS and turn it per `data-side`.",
       "props": [],
       "dataAttributes": [
         {
           "name": "data-side",
-          "description": "Which side of its anchor the popup is on: the one asked for, then the one the browser placed it on."
+          "description": "Which side of the link the card is on. Absent while the card is closed."
         }
       ],
       "cssVariables": []
