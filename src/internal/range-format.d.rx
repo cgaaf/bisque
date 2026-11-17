@@ -1,0 +1,3 @@
+// How .rx may use ./range-format.js (implemented in ./impl/range-format.ts): values of progress and meter.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./range-format.d.ts.
+export pure fn rangeValue(value: number | null | undefined, min: number, max: number, locale: string | string[] | undefined, format: Intl.NumberFormatOptions | undefined): { clamped: number | null; percent: number | null; formatted: string }

@@ -1,0 +1,42 @@
+import { ToolbarRoot, ToolbarButton, ToolbarLink, ToolbarInput, ToolbarGroup, ToolbarSeparator, toolbar, toolbarGroup, toolbarButton } from "../toolbar.rx"
+import { ToggleGroup } from "../../toggle-group/toggle-group.rx"
+import { Toggle } from "../../toggle/toggle.rx"
+
+component SpanButton(props: { children?: View }) {
+  own = toolbarButton(use toolbar, use toolbarGroup, { native: false })
+  <span data-testid="span" {...own}>{props.children}</span>
+}
+
+export default component Fixture() {
+  source log := ""
+  <main>
+    <button>Before</button>
+    <ToolbarRoot data-testid="toolbar" aria-label="Format" class="mine">
+      <ToolbarButton onClick={() => { log := log + "u" }}>Undo</ToolbarButton>
+      <ToolbarButton disabled onClick={() => { log := log + "r" }}>Redo</ToolbarButton>
+      <ToolbarButton disabled focusableWhenDisabled={false}>Cut</ToolbarButton>
+      <ToolbarSeparator data-testid="sep" />
+      <ToggleGroup data-testid="toggles" aria-label="Alignment" defaultValue={["left"]}>
+        <Toggle value="left">Left</Toggle>
+        <Toggle value="right">Right</Toggle>
+      </ToggleGroup>
+      <ToolbarGroup data-testid="group" disabled>
+        <ToolbarButton>Grouped</ToolbarButton>
+      </ToolbarGroup>
+      <SpanButton>Span</SpanButton>
+      <ToolbarLink href="#help">Help</ToolbarLink>
+      <ToolbarInput aria-label="Search" defaultValue="abc" />
+    </ToolbarRoot>
+    <button>After</button>
+    <ToolbarRoot data-testid="vertical" orientation="vertical" loopFocus={false} aria-label="Side">
+      <ToolbarButton>Up one</ToolbarButton>
+      <ToolbarSeparator data-testid="vsep" />
+      <ToolbarButton>Up two</ToolbarButton>
+    </ToolbarRoot>
+    <ToolbarRoot data-testid="disabled" disabled aria-label="Off">
+      <ToolbarButton onClick={() => { log := log + "x" }}>Off one</ToolbarButton>
+      <ToolbarInput aria-label="Off input" />
+    </ToolbarRoot>
+    <output data-testid="log">{log}</output>
+  </main>
+}

@@ -1,0 +1,31 @@
+import { ProgressRoot, ProgressTrack, ProgressIndicator, ProgressValue, ProgressLabel, progress, progressValue } from "../progress.rx"
+
+component OwnValue() {
+  c = use progress
+  own = progressValue(c)
+  <strong data-testid="own-value" {...own}>{c.status == "indeterminate" ? "…" : `${c.clamped} of 100`}</strong>
+}
+
+export default component Fixture() {
+  source amount: number | null := 25
+  <main>
+    <ProgressRoot data-testid="root" class="mine" value={amount}>
+      <ProgressLabel>Uploading</ProgressLabel>
+      <ProgressValue data-testid="value" />
+      <ProgressTrack data-testid="track">
+        <ProgressIndicator data-testid="indicator" />
+      </ProgressTrack>
+    </ProgressRoot>
+    <button onClick={() => { amount := 100 }}>Finish</button>
+    <button onClick={() => { amount := null }}>Unknown</button>
+    <button onClick={() => { amount := 250 }}>Overflow</button>
+    <ProgressRoot data-testid="custom" value={3} min={1} max={5} format={{ style: "unit", unit: "kilobyte" }} locale="en-US" getAriaValueText={(formatted, raw) => `${formatted} of 5`}>
+      <ProgressLabel id="custom-label">Custom</ProgressLabel>
+      <ProgressValue data-testid="custom-value" />
+      <ProgressIndicator data-testid="custom-indicator" />
+    </ProgressRoot>
+    <ProgressRoot data-testid="children" value={10}>
+      <OwnValue />
+    </ProgressRoot>
+  </main>
+}

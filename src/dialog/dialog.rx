@@ -8,6 +8,8 @@ export type DialogContext = {
   mounted: boolean
   status: TransitionStatus
   modal: boolean
+  // "alertdialog" under AlertDialogRoot.
+  role: "dialog" | "alertdialog"
   popupId: string
   titleId: string | undefined
   descriptionId: string | undefined
@@ -28,6 +30,10 @@ export type DialogRootProps = {
   modal?: boolean
   // Whether Escape and a press outside close it. Default: true.
   dismissible?: boolean
+  // Whether a press outside is ignored (Escape still closes it). Default: false.
+  disablePointerDismissal?: boolean
+  // The popup's role. AlertDialogRoot sets "alertdialog". Default: "dialog".
+  role?: "dialog" | "alertdialog"
   children?: View
 }
 
@@ -46,7 +52,10 @@ export component DialogRoot(props: DialogRootProps) {
     uncontrolled := next
     if (props.onOpenChange) { props.onOpenChange(next) }
   }
-  action dismiss() { setOpen(false) }
+  action dismiss(reason: "escape-key" | "outside-press") {
+    if (reason == "outside-press" && (props.disablePointerDismissal ?? false)) { return }
+    setOpen(false)
+  }
   action setPopup(element: HTMLElement) { popup := element }
   action setTrigger(element: HTMLElement) { trigger := element }
   action setTitleId(id: string | undefined) { titleId := id }
@@ -62,6 +71,7 @@ export component DialogRoot(props: DialogRootProps) {
     mounted: mounted,
     status: status,
     modal: isModal,
+    role: props.role ?? "dialog",
     popupId: popupId,
     titleId: titleId,
     descriptionId: descriptionId,
@@ -123,7 +133,7 @@ export fn dialogPopup(ref c: DialogContext): PartProps {
   state = stateAttributes(c)
   {
     id: c.popupId,
-    role: "dialog",
+    role: c.role,
     tabindex: "-1",
     "aria-modal": c.modal ? "true" : undefined,
     "aria-labelledby": c.titleId,

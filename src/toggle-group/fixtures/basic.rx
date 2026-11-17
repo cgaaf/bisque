@@ -1,0 +1,32 @@
+import { ToggleGroup } from "../toggle-group.rx"
+import { Toggle } from "../../toggle/toggle.rx"
+
+export default component Fixture() {
+  source align: string[] := ["left"]
+  source log := ""
+  <main>
+    <button>Before</button>
+    <ToggleGroup data-testid="single" class="mine" defaultValue={["center"]} onValueChange={(next) => { log := next.join(",") }}>
+      <Toggle value="left">Left</Toggle>
+      <Toggle value="center">Center</Toggle>
+      <Toggle value="justify" disabled>Justify</Toggle>
+      <Toggle value="right" onPressedChange={(next) => { log := log + "!" }}>Right</Toggle>
+    </ToggleGroup>
+    <button>Between</button>
+    <ToggleGroup data-testid="multiple" multiple orientation="vertical" loopFocus={false}>
+      <Toggle value="bold">Bold</Toggle>
+      <Toggle value="italic">Italic</Toggle>
+      <Toggle value="underline">Underline</Toggle>
+    </ToggleGroup>
+    <ToggleGroup data-testid="controlled" value={align} onValueChange={(next) => { align := next }}>
+      <Toggle value="left">C left</Toggle>
+      <Toggle value="right">C right</Toggle>
+    </ToggleGroup>
+    <ToggleGroup data-testid="disabled" disabled defaultValue={["a"]}>
+      <Toggle value="a">D a</Toggle>
+      <Toggle value="b">D b</Toggle>
+    </ToggleGroup>
+    <output data-testid="log">{log}</output>
+    <output data-testid="align">{align.join(",")}</output>
+  </main>
+}

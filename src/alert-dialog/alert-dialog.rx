@@ -1,0 +1,46 @@
+// A dialog that interrupts to ask for a decision: always modal, `role="alertdialog"`, and not dismissed by a
+// press outside (Escape still closes it). It is Dialog underneath: the parts read the `dialog` context from
+// ../dialog/dialog.rx, so a custom part imports `dialog` and the `dialog*` props functions from there.
+import { DialogRoot, DialogTrigger, DialogPortal, DialogBackdrop, DialogPopup, DialogTitle, DialogDescription, DialogClose } from "../dialog/dialog.rx"
+import { ButtonProps, DivProps, HeadingProps, ParagraphProps } from "../internal/types.rx"
+
+export type AlertDialogRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children?: View
+}
+
+export component AlertDialogRoot(props: AlertDialogRootProps) {
+  <DialogRoot open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} modal={true} disablePointerDismissal={true} role="alertdialog">
+    {props.children}
+  </DialogRoot>
+}
+
+export component AlertDialogTrigger({ children, ...rest }: ButtonProps) {
+  <DialogTrigger {...rest}>{children}</DialogTrigger>
+}
+
+export component AlertDialogPortal(props: { keepMounted?: boolean; children?: View }) {
+  <DialogPortal keepMounted={props.keepMounted}>{props.children}</DialogPortal>
+}
+
+export component AlertDialogBackdrop({ children, ...rest }: DivProps) {
+  <DialogBackdrop {...rest}>{children}</DialogBackdrop>
+}
+
+export component AlertDialogPopup({ children, ...rest }: DivProps) {
+  <DialogPopup {...rest}>{children}</DialogPopup>
+}
+
+export component AlertDialogTitle({ children, ...rest }: HeadingProps) {
+  <DialogTitle {...rest}>{children}</DialogTitle>
+}
+
+export component AlertDialogDescription({ children, ...rest }: ParagraphProps) {
+  <DialogDescription {...rest}>{children}</DialogDescription>
+}
+
+export component AlertDialogClose({ children, ...rest }: ButtonProps) {
+  <DialogClose {...rest}>{children}</DialogClose>
+}

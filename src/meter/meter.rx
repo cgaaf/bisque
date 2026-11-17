@@ -1,0 +1,98 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { rangeValue } from "../internal/range-format.js"
+import { DivProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type MeterContext = {
+  value: number
+  // Clamped to [min, max].
+  clamped: number
+  // 0 to 100.
+  percent: number
+  formatted: string
+  setLabelId: (id: string | undefined) => void
+}
+
+export context meter: MeterContext
+
+export type MeterRootProps = {
+  value: number
+  min?: number
+  max?: number
+  // How the value is shown and announced. Default: a percentage of the range.
+  format?: Intl.NumberFormatOptions
+  locale?: string | string[]
+  // The accessible text of the value, from the formatted value and the raw one.
+  getAriaValueText?: (formattedValue: string, value: number) => string
+  children?: View
+} & Omit<DivProps, "children">
+
+// A measurement within a known range (disk usage, battery level), not the progress of a task.
+export component MeterRoot(props: MeterRootProps) {
+  source labelId: string | undefined := undefined
+  action setLabelId(id: string | undefined) { labelId := id }
+  low = props.min ?? 0
+  high = props.max ?? 100
+  range = rangeValue(props.value, low, high, props.locale, props.format)
+  // A value that isn't a number reads as the minimum.
+  clamped = range.clamped ?? low
+  percent = range.percent ?? 0
+
+  provide meter = { value: props.value, clamped: clamped, percent: percent, formatted: range.formatted, setLabelId: setLabelId }
+
+  { value, min, max, format, locale, getAriaValueText, children, ...rest } = props
+  own = {
+    role: "meter",
+    "aria-valuemin": low,
+    "aria-valuemax": high,
+    "aria-valuenow": clamped,
+    "aria-valuetext": getAriaValueText ? getAriaValueText(range.formatted, value) : range.formatted,
+    "aria-labelledby": labelId,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component MeterTrack(props: DivProps) {
+  <div {...props} />
+}
+
+// Its width is the value's share of the range.
+export fn meterIndicator(ref c: MeterContext): PartProps {
+  { style: { "inset-inline-start": "0", height: "inherit", width: `${c.percent}%` } }
+}
+
+export component MeterIndicator({ children, ...rest }: DivProps) {
+  c = use meter
+  own = meterIndicator(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The formatted value, hidden from assistive technology (the root announces it). For other text, put
+// `meterValue()` on an element of your own and show what you like from the context.
+export fn meterValue(): PartProps {
+  { "aria-hidden": "true" }
+}
+
+export component MeterValue(props: Omit<SpanProps, "children">) {
+  c = use meter
+  merged = mergeProps(meterValue(), props)
+  <span {...merged}>{c.formatted}</span>
+}
+
+// Names the meter: the root's `aria-labelledby` points here.
+export fn meterLabel(ref c: MeterContext, ref id: string): PartProps {
+  effect (id) {
+    c.setLabelId($0)
+    return () => { c.setLabelId(undefined) }
+  }
+  { id: id, role: "presentation" }
+}
+
+export component MeterLabel({ id, children, ...rest }: SpanProps) {
+  c = use meter
+  generated = createId("meter-label")
+  own = meterLabel(c, id || generated)
+  merged = mergeProps(own, rest)
+  <span {...merged}>{children}</span>
+}

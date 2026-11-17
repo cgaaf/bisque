@@ -1,0 +1,23 @@
+import { mergeProps } from "../internal/props.js"
+import { DivProps, PartProps } from "../internal/types.rx"
+
+export type SeparatorOrientation = "horizontal" | "vertical"
+
+export type SeparatorProps = {
+  orientation?: SeparatorOrientation
+} & DivProps
+
+// What a separator is, on whatever element plays it: a line between groups, announced as one.
+export fn separator(ref orientation: SeparatorOrientation): PartProps {
+  {
+    role: "separator",
+    "aria-orientation": orientation,
+    "data-orientation": orientation,
+  }
+}
+
+export component Separator({ orientation = "horizontal", ...rest }: SeparatorProps) {
+  own = separator(orientation)
+  merged = mergeProps(own, rest)
+  <div {...merged} />
+}

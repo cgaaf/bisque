@@ -1,0 +1,45 @@
+import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup, TooltipArrow } from "../tooltip.rx"
+
+export default component Fixture() {
+  source changes := 0
+  <main>
+    <button>Before</button>
+    <TooltipRoot onOpenChange={(open) => { changes := changes + 1 }}>
+      <TooltipTrigger>Bold</TooltipTrigger>
+      <TooltipPortal>
+        <TooltipPositioner data-testid="positioner" sideOffset={6}>
+          <TooltipPopup data-testid="popup">
+            <TooltipArrow data-testid="arrow" />
+            Make the selection bold
+          </TooltipPopup>
+        </TooltipPositioner>
+      </TooltipPortal>
+    </TooltipRoot>
+    <TooltipRoot disableHoverablePopup>
+      <TooltipTrigger delay={0}>Italic</TooltipTrigger>
+      <TooltipPortal>
+        <TooltipPositioner>
+          <TooltipPopup data-testid="italic-popup">Italic text</TooltipPopup>
+        </TooltipPositioner>
+      </TooltipPortal>
+    </TooltipRoot>
+    <TooltipRoot disabled>
+      <TooltipTrigger delay={0}>Strike</TooltipTrigger>
+      <TooltipPortal>
+        <TooltipPositioner>
+          <TooltipPopup>Strikethrough</TooltipPopup>
+        </TooltipPositioner>
+      </TooltipPortal>
+    </TooltipRoot>
+    <TooltipRoot>
+      <TooltipTrigger delay={0} closeOnClick={false}>Underline</TooltipTrigger>
+      <TooltipPortal>
+        <TooltipPositioner>
+          <TooltipPopup>Underline text</TooltipPopup>
+        </TooltipPositioner>
+      </TooltipPortal>
+    </TooltipRoot>
+    <p data-testid="outside">Elsewhere</p>
+    <output data-testid="changes">{changes}</output>
+  </main>
+}

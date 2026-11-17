@@ -1,0 +1,186 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { createFloating } from "../internal/dom.js"
+import { createHoverGroup, createHoverIntent, createArrow } from "../internal/overlay.js"
+import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
+
+type HoverGroup = import("../internal/impl/overlay.ts").HoverGroup
+
+// What a TooltipProvider shares with the tooltips beneath it. Without one, each tooltip uses its own delays and
+// waits every time.
+export type TooltipProviderContext = {
+  delay: number | undefined
+  closeDelay: number | undefined
+  group: HoverGroup | undefined
+}
+
+export context tooltipProvider: TooltipProviderContext = { delay: undefined, closeDelay: undefined, group: undefined }
+
+export type TooltipProviderProps = {
+  // How long the pointer rests on a trigger before its tooltip opens, in ms. A trigger's own `delay` wins.
+  delay?: number
+  // How long after the pointer leaves before a tooltip closes, in ms. A trigger's own `closeDelay` wins.
+  closeDelay?: number
+  // After a tooltip closes, another opens at once if hovered within this many ms. Default: 400.
+  timeout?: number
+  children?: View
+}
+
+// Groups tooltips: once one has opened, moving to another opens it without the delay, and closes the first.
+export component TooltipProvider(props: TooltipProviderProps) {
+  group = createHoverGroup(props.timeout ?? 400)
+  provide tooltipProvider = { delay: props.delay, closeDelay: props.closeDelay, group: group }
+  {props.children}
+}
+
+export type TooltipContext = PopupState & {
+  popupId: string
+  disabled: boolean
+  hoverablePopup: boolean
+}
+
+export context tooltip: TooltipContext
+
+export type TooltipRootProps = {
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // A disabled tooltip doesn't open, and closes if it was open. Default: false.
+  disabled?: boolean
+  // Whether the tooltip closes as soon as the pointer leaves the trigger, instead of letting it move onto the
+  // popup. Default: false.
+  disableHoverablePopup?: boolean
+  children?: View
+}
+
+export component TooltipRoot(props: TooltipRootProps) {
+  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
+  popupId = createId("tooltip")
+  isDisabled = props.disabled ?? false
+
+  effect (isDisabled) {
+    if ($0 && state.open) { state.setOpen(false) }
+  }
+
+  provide tooltip = {
+    ...state,
+    popupId: popupId,
+    disabled: isDisabled,
+    hoverablePopup: !(props.disableHoverablePopup ?? false),
+  }
+
+  {props.children}
+}
+
+export type TooltipTriggerProps = {
+  // How long the pointer rests on the trigger before the tooltip opens, in ms. Default: the provider's, else 600.
+  delay?: number
+  // How long after the pointer leaves before it closes, in ms. Default: the provider's, else 0.
+  closeDelay?: number
+  // Whether pressing the trigger closes the tooltip. Default: true.
+  closeOnClick?: boolean
+} & ButtonProps
+
+// Opens the tooltip on hover (after the delay) and on keyboard focus; closes it on leave, blur and press.
+export fn tooltipTrigger(ref c: TooltipContext, ref provider: TooltipProviderContext, ref delay: number, ref closeDelay: number, ref closeOnClick: boolean): PartProps {
+  action change(next: boolean, reason: "hover" | "focus" | "press" | "group") { c.setOpen(next) }
+  _hover = createHoverIntent(!c.disabled, c.open, c.trigger, c.popup, {
+    openDelay: delay,
+    closeDelay: closeDelay,
+    hoverablePopup: c.hoverablePopup,
+    focus: true,
+    focusDelay: 0,
+    closeOnPress: closeOnClick,
+    group: provider.group,
+  }, change)
+  {
+    type: "button",
+    "aria-describedby": c.open ? c.popupId : undefined,
+    "data-popup-open": c.open ? "" : undefined,
+    ref: c.setTrigger,
+  }
+}
+
+export component TooltipTrigger({ delay, closeDelay, closeOnClick = true, children, ...rest }: TooltipTriggerProps) {
+  c = use tooltip
+  provider = use tooltipProvider
+  own = tooltipTrigger(c, provider, delay ?? provider.delay ?? 600, closeDelay ?? provider.closeDelay ?? 0, closeOnClick)
+  merged = mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// Renders its children at the end of <body> while the tooltip is mounted.
+export component TooltipPortal(props: { keepMounted?: boolean; children?: View }) {
+  c = use tooltip
+  {if c.mounted || (props.keepMounted ?? false) {
+    portal { {props.children} }
+  }}
+}
+
+// Where the positioner put the popup, for the popup and the arrow inside it.
+export type TooltipPositionerContext = {
+  side: "top" | "bottom" | "left" | "right"
+  align: "start" | "center" | "end"
+  arrowUncentered: boolean
+  setArrow: (element: HTMLElement) => void
+}
+
+export context tooltipPositioner: TooltipPositionerContext
+
+export type TooltipPositionerProps = {
+  side?: "top" | "bottom" | "left" | "right"
+  align?: "start" | "center" | "end"
+  sideOffset?: number
+  alignOffset?: number
+  collisionPadding?: number
+} & DivProps
+
+// Positions the popup against the trigger, above it by default. Carries `data-side` and `data-align`.
+export component TooltipPositioner(props: TooltipPositionerProps) {
+  c = use tooltip
+  source arrow: HTMLElement | undefined := undefined
+  action setArrow(element: HTMLElement) { arrow := element }
+  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
+    side: props.side ?? "top",
+    align: props.align ?? "center",
+    sideOffset: props.sideOffset ?? 0,
+    alignOffset: props.alignOffset ?? 0,
+    collisionPadding: props.collisionPadding ?? 5,
+  })
+  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
+  provide tooltipPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
+  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
+  state = popupStateAttributes(c)
+  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn tooltipPopup(ref c: TooltipContext): PartProps {
+  state = popupStateAttributes(c)
+  { id: c.popupId, role: "tooltip", ref: c.setPopup, ...state }
+}
+
+export component TooltipPopup({ children, ...rest }: DivProps) {
+  c = use tooltip
+  p = use tooltipPositioner
+  own = tooltipPopup(c)
+  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
+// by `data-side`.
+export component TooltipArrow({ children, ...rest }: DivProps) {
+  c = use tooltip
+  p = use tooltipPositioner
+  state = popupStateAttributes(c)
+  merged = mergeProps({
+    "aria-hidden": "true",
+    "data-side": p.side,
+    "data-align": p.align,
+    "data-uncentered": p.arrowUncentered ? "" : undefined,
+    ref: p.setArrow,
+    ...state,
+  }, rest)
+  <div {...merged}>{children}</div>
+}

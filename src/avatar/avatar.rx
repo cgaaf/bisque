@@ -1,0 +1,68 @@
+import { mergeProps } from "../internal/props.js"
+import { createPresence } from "../internal/dom.js"
+import { createImageLoadingStatus, createDelayPassed } from "../internal/image-loading.js"
+import { SpanProps, ImageProps, PartProps } from "../internal/types.rx"
+
+export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error"
+
+export type AvatarContext = {
+  // How the image is doing: the fallback shows until it is "loaded".
+  imageLoadingStatus: ImageLoadingStatus
+  setImageLoadingStatus: (status: ImageLoadingStatus) => void
+}
+
+export context avatar: AvatarContext
+
+export component AvatarRoot(props: SpanProps) {
+  source status: ImageLoadingStatus := "idle"
+  action setImageLoadingStatus(next: ImageLoadingStatus) { status := next }
+  provide avatar = { imageLoadingStatus: status, setImageLoadingStatus: setImageLoadingStatus }
+  { children, ...rest } = props
+  <span {...rest}>{children}</span>
+}
+
+export type AvatarImageProps = {
+  src?: string
+  srcset?: string
+  crossorigin?: "anonymous" | "use-credentials" | ""
+  referrerpolicy?: string
+  onLoadingStatusChange?: (status: ImageLoadingStatus) => void
+} & Omit<ImageProps, "src" | "srcset" | "crossorigin" | "referrerpolicy">
+
+// Loads the source off-screen and mounts the <img> only once it has loaded, so a broken image never shows.
+// It animates in and out with `data-starting-style` and `data-ending-style`.
+export component AvatarImage({ src, srcset, crossorigin, referrerpolicy, onLoadingStatusChange, ...rest }: AvatarImageProps) {
+  c = use avatar
+  status = createImageLoadingStatus(src, srcset, crossorigin, referrerpolicy)
+  effect (status) {
+    c.setImageLoadingStatus($0)
+    if ($0 != "idle" && onLoadingStatusChange) { onLoadingStatusChange($0) }
+    return () => { c.setImageLoadingStatus("idle") }
+  }
+  source element: HTMLElement | undefined := undefined
+  action setElement(el: HTMLElement) { element := el }
+  [mounted, transition] = createPresence(status == "loaded", element)
+  own = {
+    ref: setElement,
+    "data-starting-style": transition == "starting" ? "" : undefined,
+    "data-ending-style": transition == "ending" ? "" : undefined,
+  }
+  merged = mergeProps(own, rest)
+  {if mounted {
+    <img {...merged} crossorigin={crossorigin} referrerpolicy={referrerpolicy} srcset={srcset} src={src} />
+  }}
+}
+
+export type AvatarFallbackProps = {
+  // Milliseconds to wait before showing, so a fast-loading image doesn't flash the fallback first. Default: 0.
+  delay?: number
+} & SpanProps
+
+// Shown while the image hasn't loaded: before it does, when it fails, and when there is no image at all.
+export component AvatarFallback({ delay = 0, children, ...rest }: AvatarFallbackProps) {
+  c = use avatar
+  passed = createDelayPassed(delay)
+  {if c.imageLoadingStatus != "loaded" && passed {
+    <span {...rest}>{children}</span>
+  }}
+}

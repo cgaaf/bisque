@@ -1,0 +1,33 @@
+import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup } from "../tooltip.rx"
+
+export default component Fixture() {
+  <main>
+    <TooltipProvider delay={300} closeDelay={50} timeout={400}>
+      <TooltipRoot>
+        <TooltipTrigger>Undo</TooltipTrigger>
+        <TooltipPortal>
+          <TooltipPositioner>
+            <TooltipPopup>Undo last change</TooltipPopup>
+          </TooltipPositioner>
+        </TooltipPortal>
+      </TooltipRoot>
+      <TooltipRoot>
+        <TooltipTrigger>Redo</TooltipTrigger>
+        <TooltipPortal>
+          <TooltipPositioner>
+            <TooltipPopup>Redo last change</TooltipPopup>
+          </TooltipPositioner>
+        </TooltipPortal>
+      </TooltipRoot>
+      <TooltipRoot>
+        <TooltipTrigger delay={1000}>Share</TooltipTrigger>
+        <TooltipPortal>
+          <TooltipPositioner>
+            <TooltipPopup>Share document</TooltipPopup>
+          </TooltipPositioner>
+        </TooltipPortal>
+      </TooltipRoot>
+    </TooltipProvider>
+    <p data-testid="outside">Elsewhere</p>
+  </main>
+}

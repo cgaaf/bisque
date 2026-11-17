@@ -1,0 +1,23 @@
+import { Toggle, toggle } from "../toggle.rx"
+import { toggleGroup } from "../../toggle-group/toggle-group.rx"
+import { toolbar } from "../../toolbar/toolbar.rx"
+
+component SpanToggle() {
+  own = toggle(use toggleGroup, use toolbar, { native: false })
+  <span data-testid="span" {...own}>Italic</span>
+}
+
+export default component Fixture() {
+  source bold := false
+  source log := ""
+  <main>
+    <Toggle class="mine" onPressedChange={(next) => { log := log + (next ? "+" : "-") }}>Plain</Toggle>
+    <Toggle defaultPressed>Preset</Toggle>
+    <Toggle pressed={bold} onPressedChange={(next) => { bold := next }}>Bold</Toggle>
+    <Toggle pressed={false} onPressedChange={(next) => { log := log + "c" }}>Stuck</Toggle>
+    <Toggle disabled onClick={() => { log := log + "x" }} onPressedChange={(next) => { log := log + "d" }}>Disabled</Toggle>
+    <SpanToggle />
+    <output data-testid="bold">{bold ? "on" : "off"}</output>
+    <output data-testid="log">{log}</output>
+  </main>
+}

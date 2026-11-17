@@ -1,0 +1,21 @@
+import { MeterRoot, MeterTrack, MeterIndicator, MeterValue, MeterLabel } from "../meter.rx"
+
+export default component Fixture() {
+  source level := 40
+  <main>
+    <MeterRoot data-testid="root" class="mine" value={level}>
+      <MeterLabel>Battery</MeterLabel>
+      <MeterValue data-testid="value" />
+      <MeterTrack data-testid="track">
+        <MeterIndicator data-testid="indicator" />
+      </MeterTrack>
+    </MeterRoot>
+    <button onClick={() => { level := 120 }}>Overflow</button>
+    <button onClick={() => { level := -5 }}>Underflow</button>
+    <MeterRoot value={6} min={2} max={10} format={{ style: "unit", unit: "gigabyte" }} locale="en-US" getAriaValueText={(formatted, raw) => `${formatted} used`}>
+      <MeterLabel id="disk-label">Disk</MeterLabel>
+      <MeterValue data-testid="disk-value" />
+      <MeterIndicator data-testid="disk-indicator" />
+    </MeterRoot>
+  </main>
+}

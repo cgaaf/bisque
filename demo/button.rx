@@ -1,0 +1,9 @@
+import { Button } from "../src/button/button.rx"
+
+export component ButtonDemo() {
+  source count := 0
+  <div>
+    <Button onClick={() => { count := count + 1 }}>Clicked {count} times</Button>{" "}
+    <Button disabled focusableWhenDisabled>Disabled but focusable</Button>
+  </div>
+}

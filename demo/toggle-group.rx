@@ -1,0 +1,14 @@
+import { ToggleGroup } from "../src/toggle-group/toggle-group.rx"
+import { Toggle } from "../src/toggle/toggle.rx"
+
+export component ToggleGroupDemo() {
+  source align: string[] := ["left"]
+  <div>
+    <ToggleGroup aria-label="Text alignment" value={align} onValueChange={(next) => { align := next }}>
+      <Toggle value="left">Left</Toggle>
+      <Toggle value="center">Center</Toggle>
+      <Toggle value="right">Right</Toggle>
+    </ToggleGroup>
+    <p>Aligned: {align.length == 0 ? "none" : align[0]}</p>
+  </div>
+}

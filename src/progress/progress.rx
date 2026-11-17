@@ -1,0 +1,135 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { rangeValue } from "../internal/range-format.js"
+import { DivProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type ProgressStatus = "indeterminate" | "progressing" | "complete"
+
+export type ProgressContext = {
+  // The value as given: null while the progress is indeterminate.
+  value: number | null
+  // Clamped to [min, max]; null while indeterminate.
+  clamped: number | null
+  // 0 to 100; null while indeterminate.
+  percent: number | null
+  formatted: string
+  status: ProgressStatus
+  setLabelId: (id: string | undefined) => void
+}
+
+export context progress: ProgressContext
+
+export type ProgressRootProps = {
+  // null (or a value that isn't finite) is indeterminate: work is happening, but how much is unknown.
+  value: number | null
+  min?: number
+  max?: number
+  // How the value is shown and announced. Default: a percentage of the range.
+  format?: Intl.NumberFormatOptions
+  locale?: string | string[]
+  // The accessible text of the value, from the formatted value and the raw one.
+  getAriaValueText?: (formattedValue: string, value: number | null) => string
+  children?: View
+} & Omit<DivProps, "children">
+
+// The status attributes every part carries.
+fn progressState(ref c: ProgressContext): PartProps {
+  {
+    "data-indeterminate": c.status == "indeterminate" ? "" : undefined,
+    "data-progressing": c.status == "progressing" ? "" : undefined,
+    "data-complete": c.status == "complete" ? "" : undefined,
+  }
+}
+
+export component ProgressRoot(props: ProgressRootProps) {
+  source labelId: string | undefined := undefined
+  action setLabelId(id: string | undefined) { labelId := id }
+  low = props.min ?? 0
+  high = props.max ?? 100
+  range = rangeValue(props.value, low, high, props.locale, props.format)
+  status: ProgressStatus = range.clamped == null ? "indeterminate" : range.clamped == high ? "complete" : "progressing"
+  self = {
+    value: props.value,
+    clamped: range.clamped,
+    percent: range.percent,
+    formatted: range.formatted,
+    status: status,
+    setLabelId: setLabelId,
+  }
+
+  provide progress = self
+
+  { value, min, max, format, locale, getAriaValueText, children, ...rest } = props
+  valueText = getAriaValueText ? getAriaValueText(range.formatted, value) : range.clamped == null ? "indeterminate progress" : range.formatted
+  state = progressState(self)
+  own = {
+    role: "progressbar",
+    "aria-valuemin": low,
+    "aria-valuemax": high,
+    "aria-valuenow": range.clamped ?? undefined,
+    "aria-valuetext": valueText,
+    "aria-labelledby": labelId,
+    ...state,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export fn progressTrack(ref c: ProgressContext): PartProps {
+  state = progressState(c)
+  state
+}
+
+export component ProgressTrack({ children, ...rest }: DivProps) {
+  c = use progress
+  own = progressTrack(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Its width is the share of the range done; it has none while indeterminate.
+export fn progressIndicator(ref c: ProgressContext): PartProps {
+  state = progressState(c)
+  {
+    ...state,
+    style: c.percent == null ? undefined : { "inset-inline-start": "0", height: "inherit", width: `${c.percent}%` },
+  }
+}
+
+export component ProgressIndicator({ children, ...rest }: DivProps) {
+  c = use progress
+  own = progressIndicator(c)
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The formatted value, hidden from assistive technology (the root announces it). Empty while indeterminate.
+// For other text, put `progressValue(c)` on an element of your own and show what you like from the context.
+export fn progressValue(ref c: ProgressContext): PartProps {
+  state = progressState(c)
+  { ...state, "aria-hidden": "true" }
+}
+
+export component ProgressValue(props: Omit<SpanProps, "children">) {
+  c = use progress
+  own = progressValue(c)
+  merged = mergeProps(own, props)
+  <span {...merged}>{c.formatted}</span>
+}
+
+// Names the progress bar: the root's `aria-labelledby` points here.
+export fn progressLabel(ref c: ProgressContext, ref id: string): PartProps {
+  effect (id) {
+    c.setLabelId($0)
+    return () => { c.setLabelId(undefined) }
+  }
+  state = progressState(c)
+  { ...state, id: id, role: "presentation" }
+}
+
+export component ProgressLabel({ id, children, ...rest }: SpanProps) {
+  c = use progress
+  generated = createId("progress-label")
+  own = progressLabel(c, id || generated)
+  merged = mergeProps(own, rest)
+  <span {...merged}>{children}</span>
+}

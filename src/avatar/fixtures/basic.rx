@@ -1,0 +1,21 @@
+import { AvatarRoot, AvatarImage, AvatarFallback } from "../avatar.rx"
+
+export default component Fixture() {
+  source src := "/first.png"
+  source log := ""
+  <main>
+    <AvatarRoot data-testid="root" class="mine">
+      <AvatarImage data-testid="image" class="photo" alt="Ada" src={src} onLoadingStatusChange={(s) => { log := log + s + "," }} />
+      <AvatarFallback data-testid="fallback">AL</AvatarFallback>
+    </AvatarRoot>
+    <button onClick={() => { src := "/second.png" }}>Change</button>
+    <AvatarRoot data-testid="none">
+      <AvatarFallback data-testid="initials">NO</AvatarFallback>
+    </AvatarRoot>
+    <AvatarRoot>
+      <AvatarImage alt="Slow" src="/slow.png" />
+      <AvatarFallback data-testid="delayed" delay={50}>SL</AvatarFallback>
+    </AvatarRoot>
+    <output data-testid="log">{log}</output>
+  </main>
+}

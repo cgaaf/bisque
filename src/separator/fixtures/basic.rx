@@ -1,0 +1,17 @@
+import { Separator, separator } from "../separator.rx"
+
+component RuleSeparator() {
+  s = separator("vertical")
+  <hr data-testid="hr" {...s} />
+}
+
+export default component Fixture() {
+  source vertical := false
+  <main>
+    <Separator data-testid="default" class="line" />
+    <Separator data-testid="vertical" orientation="vertical" />
+    <Separator data-testid="switch" orientation={vertical ? "vertical" : "horizontal"} />
+    <button onClick={() => { vertical := !vertical }}>Flip</button>
+    <RuleSeparator />
+  </main>
+}

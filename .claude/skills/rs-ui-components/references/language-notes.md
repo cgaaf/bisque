@@ -15,7 +15,21 @@ after an upgrade, and delete the ones the compiler has since fixed.
 | A bare call, `createFocusScope(…)` | `PARSE expected a declaration or markup`               | Bind it: `_scope = createFocusScope(…)`        |
 | `import { X } from "pkg/file.rx"`  | `MODULE_NOT_FOUND`; without `.rx`, `UNKNOWN_COMPONENT` | A relative path                                |
 
-Accepted, and useful: `import("./impl/types.ts").T` as a type, intersection types, object spread in
+More that isn't there, found while building components:
+
+- **No re-exports.** `export { X as Y } from "./a.rx"` is a `PARSE` error. A family that reuses another's part
+  wraps it in a thin component that renders `{children}` (see `src/alert-dialog`).
+- **No `Math`, `Number`, `Intl` or `typeof`** in `.rx` (`UNBOUND`, or `PARSE` for `typeof`). Arithmetic helpers
+  and formatting go in a JS module (`src/internal/range-format.js`). `Intl.*` works as a type.
+- **`children` is never `undefined`**, even on a self-closing component, so it can't tell you whether children
+  were passed.
+- **`==` is strict**: it compiles to `===`.
+- **A `fn` with a `ref` parameter must be bound before it is another `fn`'s result**: `item = itemState(c)` then
+  `item` on the last line. Returning the call directly is `INSTANTIATION_NOT_BOUND`.
+
+Accepted, and useful: a context with a default (`export context x: T = { … }`): `use x` with no provider above
+returns it, which is how an optional parent (a Field around a control, a TooltipProvider) is read. The default
+is emitted before the module's actions, so it may call a `fn` but not reference an `action`. Also: `import("./impl/types.ts").T` as a type, intersection types, object spread in
 an expression, a component with several root nodes, `portal { … }`, `effect () { …; return () => { … } }` for
 mount and cleanup, an action calling another action, and method calls on DOM objects in imperative code
 (`event.preventDefault()`).
@@ -45,6 +59,16 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - `scripts/rx-check.mjs` calls the compiler directly and answers in milliseconds, with no types.
 - The Vite plugin's `next` dist-tag has pointed at an older build than `3.0.0-next.57`, the first with `.rx`
   support. The version is pinned.
+
+## Testing notes
+
+- Delays: fake only the timers, `vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] })`, so
+  `requestAnimationFrame` stays real and presence can still unmount. Give user-event
+  `advanceTimers: (ms) => vi.advanceTimersByTime(ms)`, and call `flush()` after advancing.
+- `vitest run src/toggle` also runs `src/toggle-group`: the path is a prefix match.
+- `console.log` in a test isn't shown. Assert on the value instead.
+- A button outside a popup can't close it in a test: its pointerdown dismisses the popup, then its click reopens
+  it. Close from the trigger or with Escape.
 
 ## Not yet tried here
 

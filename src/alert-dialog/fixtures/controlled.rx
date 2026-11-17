@@ -1,0 +1,17 @@
+import { AlertDialogRoot, AlertDialogPortal, AlertDialogPopup, AlertDialogTitle, AlertDialogClose } from "../alert-dialog.rx"
+
+export default component Fixture() {
+  source open := false
+  <main>
+    <button onClick={() => { open := true }}>Open from outside</button>
+    <AlertDialogRoot open={open} onOpenChange={(next) => { open := next }}>
+      <AlertDialogPortal>
+        <AlertDialogPopup>
+          <AlertDialogTitle>Sign out?</AlertDialogTitle>
+          <AlertDialogClose>Stay</AlertDialogClose>
+        </AlertDialogPopup>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+  </main>
+}

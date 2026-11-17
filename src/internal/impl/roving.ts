@@ -30,10 +30,15 @@ function belongsTo(item: HTMLElement, container: HTMLElement): boolean {
   return list === null || list === container || !container.contains(list);
 }
 
-/** The enabled items of `container`, in document order, leaving out those of a list nested inside it. */
+/** A disabled item is skipped, unless it is marked `data-focusable` (a toolbar button that stays reachable). */
+function isFocusable(item: HTMLElement): boolean {
+  return !item.hasAttribute("data-disabled") || item.hasAttribute("data-focusable");
+}
+
+/** The focusable items of `container`, in document order, leaving out those of a list nested inside it. */
 export function listItems(container: HTMLElement): HTMLElement[] {
   return [...container.querySelectorAll<HTMLElement>(ITEM)].filter(
-    (item) => !item.hasAttribute("data-disabled") && belongsTo(item, container),
+    (item) => isFocusable(item) && belongsTo(item, container),
   );
 }
 

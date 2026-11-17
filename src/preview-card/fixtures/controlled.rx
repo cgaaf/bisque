@@ -1,0 +1,17 @@
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPortal, PreviewCardPositioner, PreviewCardPopup } from "../preview-card.rx"
+
+export default component Fixture() {
+  source open := true
+  <main>
+    <PreviewCardRoot open={open} onOpenChange={(next) => { open := next }}>
+      <PreviewCardTrigger href="#a" delay={100} closeDelay={0}>Kerning</PreviewCardTrigger>
+      <PreviewCardPortal>
+        <PreviewCardPositioner side="top" align="start">
+          <PreviewCardPopup data-testid="popup">The space between letters.</PreviewCardPopup>
+        </PreviewCardPositioner>
+      </PreviewCardPortal>
+    </PreviewCardRoot>
+    <button onClick={() => { open := true }}>Show</button>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+  </main>
+}

@@ -1,0 +1,17 @@
+import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverPositioner, PopoverPopup } from "../popover.rx"
+
+export default component Fixture() {
+  source open := true
+  <main>
+    <button onClick={() => { open := !open }}>Toggle from outside</button>
+    <PopoverRoot open={open} onOpenChange={(next) => { open := next }}>
+      <PopoverTrigger>Filters</PopoverTrigger>
+      <PopoverPortal>
+        <PopoverPositioner side="right" align="start">
+          <PopoverPopup data-testid="popup">Filter options</PopoverPopup>
+        </PopoverPositioner>
+      </PopoverPortal>
+    </PopoverRoot>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+  </main>
+}

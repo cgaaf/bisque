@@ -1,0 +1,23 @@
+import { AlertDialogRoot, AlertDialogTrigger, AlertDialogPortal, AlertDialogBackdrop, AlertDialogPopup, AlertDialogTitle, AlertDialogDescription, AlertDialogClose } from "../alert-dialog.rx"
+
+export default component Fixture() {
+  source changes := 0
+  source discarded := false
+  <main>
+    <button>Before</button>
+    <AlertDialogRoot onOpenChange={(open) => { changes := changes + 1 }}>
+      <AlertDialogTrigger>Discard draft</AlertDialogTrigger>
+      <AlertDialogPortal>
+        <AlertDialogBackdrop data-testid="backdrop" />
+        <AlertDialogPopup data-testid="popup">
+          <AlertDialogTitle>Discard draft?</AlertDialogTitle>
+          <AlertDialogDescription>You can't undo this action.</AlertDialogDescription>
+          <AlertDialogClose>Cancel</AlertDialogClose>
+          <AlertDialogClose onClick={() => { discarded := true }}>Discard</AlertDialogClose>
+        </AlertDialogPopup>
+      </AlertDialogPortal>
+    </AlertDialogRoot>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="discarded">{discarded ? "yes" : "no"}</output>
+  </main>
+}

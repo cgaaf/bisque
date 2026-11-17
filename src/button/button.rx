@@ -1,0 +1,86 @@
+import { mergeProps } from "../internal/props.js"
+import { clickElement } from "../internal/dom.js"
+import { ButtonProps, PartProps } from "../internal/types.rx"
+
+export type ButtonOptions = {
+  disabled?: boolean
+  // Keep the button in the Tab order while disabled, so it can still be found and announced. Default: false.
+  focusableWhenDisabled?: boolean
+  // Whether the element is a native <button>. Pass false to make a <span>, <div> or <a> act as one: it gets
+  // `role="button"`, a tab stop, and Enter and Space activation. Default: true.
+  native?: boolean
+  // Whether the element is an item of a roving-focus list (toolbar, toggle group), whose `tabindex` the list
+  // manages. Default: false.
+  composite?: boolean
+}
+
+// Button behaviour for the element that plays one. The consumer's activation handlers must be dropped while it
+// is disabled: `mergeProps(button(o), gateButtonHandlers(rest, disabled))`.
+export fn button(ref o: ButtonOptions): PartProps {
+  disabled = o.disabled ?? false
+  focusable = o.focusableWhenDisabled ?? false
+  native = o.native ?? true
+  composite = o.composite ?? false
+
+  action click(event: MouseEvent) {
+    if (disabled) { event.preventDefault() }
+  }
+  action pointerDown(event: PointerEvent) {
+    if (disabled) { event.preventDefault() }
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    if (disabled) {
+      // A focusable disabled button keeps focus moving (Tab) but does nothing else.
+      if (focusable && event.key != "Tab") { event.preventDefault() }
+      return
+    }
+    if (native || event.target != event.currentTarget) { return }
+    if (event.key == " ") {
+      // Space activates on key up, as a native button does; stop the page from scrolling now.
+      event.preventDefault()
+    } else if (event.key == "Enter" && !isLink(event.currentTarget)) {
+      // A link already follows itself on Enter.
+      event.preventDefault()
+      clickElement(event.currentTarget)
+    }
+  }
+  action keyUp(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    if (disabled || native || event.target != event.currentTarget) { return }
+    if (event.key == " " && !event.defaultPrevented) { clickElement(event.currentTarget) }
+  }
+
+  {
+    type: native ? "button" : undefined,
+    role: native ? undefined : "button",
+    disabled: native && disabled && !focusable ? true : undefined,
+    "aria-disabled": disabled && (focusable || !native) ? "true" : undefined,
+    tabindex: composite || native ? undefined : disabled && !focusable ? "-1" : "0",
+    "data-disabled": disabled ? "" : undefined,
+    onClick: click,
+    onPointerDown: pointerDown,
+    onKeyDown: keyDown,
+    onKeyUp: keyUp,
+  }
+}
+
+// The consumer's props without the handlers that activate a button (click, mouse and pointer down, key down and
+// up) while `disabled`. Others, such as `onFocus` and `onMouseEnter`, still run: a disabled button that stays
+// focusable can still show a tooltip.
+export fn gateButtonHandlers(ref external: any, ref disabled: boolean): any {
+  { onClick, onMouseDown, onPointerDown, onKeyDown, onKeyUp, ...others } = external
+  disabled ? others : external
+}
+
+fn isLink(element: HTMLElement): boolean => element.tagName == "A" && element.hasAttribute("href")
+
+export type ButtonRootProps = {
+  disabled?: boolean
+  focusableWhenDisabled?: boolean
+} & Omit<ButtonProps, "disabled">
+
+export component Button({ disabled = false, focusableWhenDisabled = false, children, ...rest }: ButtonRootProps) {
+  own = button({ disabled: disabled, focusableWhenDisabled: focusableWhenDisabled })
+  external = gateButtonHandlers(rest, disabled)
+  merged = mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}

@@ -1,0 +1,492 @@
+// Behaviour shared by the popups that open on hover or position an arrow (popover, tooltip, preview card): hover
+// intent with delays and a safe area, a delay group for tooltips, the arrow's offset, and a popup's focus.
+// `../overlay.d.rx` declares how `.rx` may call these, through the `../overlay.js` facade.
+import { autoUpdate } from "@floating-ui/dom";
+import { createEffect, createSignal, onCleanup, untrack, type Accessor } from "solid-js";
+import { tabbables } from "./dom.ts";
+
+type MaybeElement = HTMLElement | undefined;
+type Side = "top" | "bottom" | "left" | "right";
+
+export type HoverReason = "hover" | "focus" | "press" | "group";
+
+/** A tooltip (or any hover popup) taking part in a delay group. */
+type GroupMember = { close: () => void };
+
+/**
+ * Tooltips under one provider: while one is open, or for `timeout` ms after it closed, the next opens without
+ * waiting, and opening one closes the other at once.
+ */
+export type HoverGroup = {
+  enter: (member: GroupMember) => void;
+  leave: (member: GroupMember) => void;
+  isInstant: () => boolean;
+};
+
+export function createHoverGroup(timeout: Accessor<number>): HoverGroup {
+  let active: GroupMember | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const clear = () => {
+    if (timer !== undefined) clearTimeout(timer);
+    timer = undefined;
+  };
+  onCleanup(clear);
+  return {
+    enter(member) {
+      clear();
+      const previous = active;
+      active = member;
+      if (previous && previous !== member) previous.close();
+    },
+    leave(member) {
+      if (active !== member) return;
+      active = undefined;
+      clear();
+      timer = setTimeout(() => {
+        timer = undefined;
+      }, untrack(timeout));
+    },
+    isInstant: () => active !== undefined || timer !== undefined,
+  };
+}
+
+export type HoverOptions = {
+  /** Wait before opening when the pointer enters the trigger, in ms. */
+  openDelay: number;
+  /** Wait before closing when the pointer leaves, in ms. */
+  closeDelay: number;
+  /** Whether the pointer may move onto the popup (through the safe area) without closing it. */
+  hoverablePopup: boolean;
+  /** Whether keyboard focus on the trigger opens it, and blur closes it. */
+  focus: boolean;
+  /** Wait before opening on focus, in ms. */
+  focusDelay: number;
+  /** Whether pressing the trigger closes the popup. */
+  closeOnPress: boolean;
+  group: HoverGroup | undefined;
+};
+
+type Point = [number, number];
+
+// oxlint-disable-next-line typescript/no-explicit-any
+type Handlers = Record<string, (event: any) => void>;
+
+/** Adds each handler as a listener of its event; returns what removes them. */
+function listen(element: HTMLElement, handlers: Handlers): () => void {
+  for (const [type, handler] of Object.entries(handlers)) element.addEventListener(type, handler);
+  return () => {
+    for (const [type, handler] of Object.entries(handlers)) element.removeEventListener(type, handler);
+  };
+}
+
+function isMouseLike(event: PointerEvent): boolean {
+  return event.pointerType !== "touch";
+}
+
+/** Whether focus on `target` is keyboard-style focus. Where `:focus-visible` isn't supported, assume it is. */
+function matchesFocusVisible(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) return true;
+  try {
+    return target.matches(":focus-visible");
+  } catch {
+    return true;
+  }
+}
+
+function within(element: MaybeElement, target: EventTarget | null): boolean {
+  return !!element && target instanceof Node && element.contains(target);
+}
+
+function inPolygon([x, y]: Point, polygon: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const [xi, yi] = polygon[i];
+    const [xj, yj] = polygon[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+function inRect([x, y]: Point, left: number, top: number, right: number, bottom: number): boolean {
+  return x > left && x < right && y > top && y < bottom;
+}
+
+/**
+ * Whether `point` is on the way from the trigger to the popup: in the triangle from where the pointer left the
+ * trigger to the popup's near edge, or in the gap between the two. With no layout (every rect empty) nothing is.
+ */
+export function inSafeArea(point: Point, exit: Point, trigger: DOMRect, popup: DOMRect): boolean {
+  if (popup.width === 0 || popup.height === 0) return false;
+  let side: Side;
+  if (popup.top >= trigger.bottom) side = "bottom";
+  else if (popup.bottom <= trigger.top) side = "top";
+  else if (popup.left >= trigger.right) side = "right";
+  else if (popup.right <= trigger.left) side = "left";
+  // Overlapping: the popup touches the trigger, so there is no gap to cross.
+  else return false;
+  const overlapLeft = Math.max(trigger.left, popup.left);
+  const overlapRight = Math.min(trigger.right, popup.right);
+  const overlapTop = Math.max(trigger.top, popup.top);
+  const overlapBottom = Math.min(trigger.bottom, popup.bottom);
+  const [crossLeft, crossRight] =
+    overlapRight > overlapLeft ? [overlapLeft, overlapRight] : [trigger.left, trigger.right];
+  const [crossTop, crossBottom] =
+    overlapBottom > overlapTop ? [overlapTop, overlapBottom] : [trigger.top, trigger.bottom];
+  // A pixel of slack on the trigger side, so leaving exactly at its edge still counts as in the gap.
+  const gap =
+    side === "bottom"
+      ? inRect(point, crossLeft, trigger.bottom - 1, crossRight, popup.top + 1)
+      : side === "top"
+        ? inRect(point, crossLeft, popup.bottom - 1, crossRight, trigger.top + 1)
+        : side === "right"
+          ? inRect(point, trigger.right - 1, crossTop, popup.left + 1, crossBottom)
+          : inRect(point, popup.right - 1, crossTop, trigger.left + 1, crossBottom);
+  if (gap) return true;
+  const edge: [Point, Point] =
+    side === "bottom"
+      ? [
+          [popup.left, popup.top],
+          [popup.right, popup.top],
+        ]
+      : side === "top"
+        ? [
+            [popup.left, popup.bottom],
+            [popup.right, popup.bottom],
+          ]
+        : side === "right"
+          ? [
+              [popup.left, popup.top],
+              [popup.left, popup.bottom],
+            ]
+          : [
+              [popup.right, popup.top],
+              [popup.right, popup.bottom],
+            ];
+  return inPolygon(point, [exit, ...edge]);
+}
+
+/**
+ * Opens and closes a popup from the pointer and, optionally, keyboard focus on its trigger.
+ *
+ * While `enabled`: the pointer entering the trigger opens it after `openDelay` (at once in an instant group
+ * phase); leaving closes it after `closeDelay`, unless the pointer goes onto the popup, directly or through the
+ * safe area, when `hoverablePopup` is set. Touch pointers are ignored. A press on the trigger cancels a pending
+ * open, and with `closeOnPress` closes it; only the pointer entering again reopens it.
+ * With `focus`, keyboard focus on the trigger opens it after `focusDelay` and focus leaving both trigger and
+ * popup closes it. Focus that follows a pointer press, or that doesn't match `:focus-visible`, doesn't open it.
+ */
+export function createHoverIntent(
+  enabled: Accessor<boolean>,
+  open: Accessor<boolean>,
+  trigger: Accessor<MaybeElement>,
+  popup: Accessor<MaybeElement>,
+  options: Accessor<HoverOptions>,
+  onOpenChange: (open: boolean, reason: HoverReason) => void,
+): void {
+  // Options are read when used, never tracked: changing a delay must not tear the listeners down.
+  const current = () => untrack(options);
+  const isOpen = () => untrack(open);
+  let openTimer: ReturnType<typeof setTimeout> | undefined;
+  let closeTimer: ReturnType<typeof setTimeout> | undefined;
+  let stopTracking: (() => void) | undefined;
+  // Set by a pointer press: the focus that follows it is not keyboard focus.
+  let pointerFocus = false;
+
+  const member: GroupMember = { close: () => change(false, "group") };
+
+  function clearOpen() {
+    if (openTimer !== undefined) clearTimeout(openTimer);
+    openTimer = undefined;
+  }
+  function clearClose() {
+    if (closeTimer !== undefined) clearTimeout(closeTimer);
+    closeTimer = undefined;
+  }
+  function untrackPointer() {
+    stopTracking?.();
+    stopTracking = undefined;
+  }
+  function reset() {
+    clearOpen();
+    clearClose();
+    untrackPointer();
+  }
+
+  function change(next: boolean, reason: HoverReason) {
+    reset();
+    if (next === isOpen()) return;
+    if (next) current().group?.enter(member);
+    onOpenChange(next, reason);
+  }
+
+  function scheduleOpen(delay: number, reason: HoverReason) {
+    clearOpen();
+    if (delay <= 0) change(true, reason);
+    else openTimer = setTimeout(() => change(true, reason), delay);
+  }
+
+  function scheduleClose() {
+    clearOpen();
+    untrackPointer();
+    const delay = current().closeDelay;
+    if (delay <= 0) change(false, "hover");
+    else if (closeTimer === undefined) closeTimer = setTimeout(() => change(false, "hover"), delay);
+  }
+
+  // After the pointer left the trigger for somewhere that isn't the popup: keep the popup open while the pointer
+  // travels through the safe area towards it, close once it strays.
+  function trackToPopup(exit: Point) {
+    untrackPointer();
+    const onMove = (event: PointerEvent) => {
+      const triggerEl = untrack(trigger);
+      const popupEl = untrack(popup);
+      if (within(popupEl, event.target) || within(triggerEl, event.target)) {
+        untrackPointer();
+        return;
+      }
+      if (!triggerEl || !popupEl) return scheduleClose();
+      const point: Point = [event.clientX, event.clientY];
+      if (inSafeArea(point, exit, triggerEl.getBoundingClientRect(), popupEl.getBoundingClientRect())) return;
+      scheduleClose();
+    };
+    document.addEventListener("pointermove", onMove);
+    stopTracking = () => document.removeEventListener("pointermove", onMove);
+  }
+
+  const triggerHandlers = {
+    pointerenter(event: PointerEvent) {
+      if (!isMouseLike(event)) return;
+      clearClose();
+      untrackPointer();
+      if (isOpen()) return;
+      const { openDelay, group } = current();
+      scheduleOpen(group?.isInstant() ? 0 : openDelay, "hover");
+    },
+    pointerleave(event: PointerEvent) {
+      if (!isMouseLike(event)) return;
+      pointerFocus = false;
+      clearOpen();
+      if (!isOpen()) return;
+      const popupEl = untrack(popup);
+      if (current().hoverablePopup && popupEl) {
+        if (within(popupEl, event.relatedTarget)) return;
+        trackToPopup([event.clientX, event.clientY]);
+        return;
+      }
+      scheduleClose();
+    },
+    pointerdown() {
+      clearOpen();
+      pointerFocus = true;
+    },
+    click() {
+      clearOpen();
+      if (current().closeOnPress && isOpen()) change(false, "press");
+    },
+    focus(event: FocusEvent) {
+      if (!current().focus) return;
+      if (pointerFocus) {
+        pointerFocus = false;
+        return;
+      }
+      // Programmatic focus after a pointer interaction (focus returned when a menu closes) isn't focus-visible.
+      if (isOpen() || !matchesFocusVisible(event.target)) return;
+      scheduleOpen(current().focusDelay, "focus");
+    },
+    blur(event: FocusEvent) {
+      pointerFocus = false;
+      if (!current().focus) return;
+      clearOpen();
+      if (within(untrack(popup), event.relatedTarget)) return;
+      if (isOpen()) change(false, "focus");
+    },
+  };
+
+  const popupHandlers = {
+    pointerenter(event: PointerEvent) {
+      if (!isMouseLike(event) || !current().hoverablePopup) return;
+      clearClose();
+      untrackPointer();
+    },
+    pointerleave(event: PointerEvent) {
+      if (!isMouseLike(event) || !current().hoverablePopup) return;
+      if (within(untrack(trigger), event.relatedTarget)) return;
+      if (isOpen()) scheduleClose();
+    },
+    focusout(event: FocusEvent) {
+      const next = event.relatedTarget;
+      if (!current().focus || next === null) return;
+      if (within(untrack(popup), next) || within(untrack(trigger), next)) return;
+      if (isOpen()) change(false, "focus");
+    },
+  };
+
+  createEffect(
+    () => (enabled() ? trigger() : undefined),
+    (el) => {
+      if (!el) return;
+      const detach = listen(el, triggerHandlers);
+      return () => {
+        detach();
+        reset();
+        pointerFocus = false;
+      };
+    },
+  );
+
+  createEffect(
+    () => (enabled() ? popup() : undefined),
+    (el) => (el ? listen(el, popupHandlers) : undefined),
+  );
+
+  // However it closed (Escape, outside press, the consumer), nothing pending may reopen or re-close it.
+  createEffect(
+    () => open(),
+    (isNowOpen) => {
+      if (isNowOpen) return;
+      reset();
+      untrack(options).group?.leave(member);
+    },
+  );
+  onCleanup(() => {
+    reset();
+    untrack(options).group?.leave(member);
+  });
+}
+
+/**
+ * While `active`, keeps an arrow element pointing at the center of `anchor`, along the edge of the popup it sits
+ * in (`side` is the side the popup ended up on). It writes only the arrow's cross-axis offset (`left` for top and
+ * bottom, `top` for left and right): placing it on the edge is the stylesheet's job. Returns whether the arrow had
+ * to be clamped short of the anchor's center (the popup was shifted too far): `data-uncentered`.
+ */
+export function createArrow(
+  active: Accessor<boolean>,
+  anchor: Accessor<MaybeElement>,
+  floating: Accessor<MaybeElement>,
+  arrow: Accessor<MaybeElement>,
+  side: Accessor<Side>,
+): Accessor<boolean> {
+  const [uncentered, setUncentered] = createSignal(false);
+  createEffect(
+    () => (active() ? ([anchor(), floating(), arrow(), side()] as const) : undefined),
+    (input) => {
+      if (!input) return;
+      const [reference, el, arrowEl, usedSide] = input;
+      if (!reference || !el || !arrowEl) return;
+      const vertical = usedSide === "top" || usedSide === "bottom";
+      const update = () => {
+        const anchorRect = reference.getBoundingClientRect();
+        const box = (arrowEl.offsetParent as HTMLElement | null) ?? el;
+        const boxRect = box.getBoundingClientRect();
+        const size = vertical ? arrowEl.offsetWidth : arrowEl.offsetHeight;
+        const length = vertical ? boxRect.width : boxRect.height;
+        const center = vertical
+          ? anchorRect.left + anchorRect.width / 2 - boxRect.left
+          : anchorRect.top + anchorRect.height / 2 - boxRect.top;
+        const wanted = center - size / 2;
+        const offset = Math.min(Math.max(wanted, 0), Math.max(length - size, 0));
+        arrowEl.style.position = "absolute";
+        if (vertical) {
+          arrowEl.style.left = `${offset}px`;
+          arrowEl.style.removeProperty("top");
+        } else {
+          arrowEl.style.top = `${offset}px`;
+          arrowEl.style.removeProperty("left");
+        }
+        setUncentered(Math.abs(offset - wanted) > 0.5);
+      };
+      // The popup moves when createFloating writes its `left` and `top`: follow that as well as layout changes.
+      const observer = new MutationObserver(update);
+      observer.observe(el, { attributes: true, attributeFilter: ["style"] });
+      const stop = autoUpdate(reference, el, update);
+      return () => {
+        observer.disconnect();
+        stop();
+      };
+    },
+  );
+  return uncentered;
+}
+
+/** The first tabbable element after `element` in document order, outside `skip`. */
+function nextTabbable(element: HTMLElement, skip: MaybeElement): HTMLElement | undefined {
+  return tabbables(document.body).find(
+    (candidate) =>
+      !within(skip, candidate) &&
+      element.compareDocumentPosition(candidate) & Node.DOCUMENT_POSITION_FOLLOWING &&
+      !element.contains(candidate),
+  );
+}
+
+/**
+ * Focus for a popup anchored to a trigger (popover). While `active`: focus moves into `popup` (`[autofocus]`,
+ * else the first tabbable element, else the popup itself). With `trap`, Tab wraps inside it. Without, the popup
+ * acts as if it followed the trigger in the tab order: Shift+Tab from its start goes back to the trigger, Tab from
+ * its end goes to whatever follows the trigger, and focus leaving it calls `onFocusOut`.
+ * When it deactivates with focus still inside, focus goes back to the trigger.
+ */
+export function createPopupFocus(
+  active: Accessor<boolean>,
+  popup: Accessor<MaybeElement>,
+  trigger: Accessor<MaybeElement>,
+  trap: Accessor<boolean>,
+  onFocusOut: () => void,
+): void {
+  createEffect(
+    () => (active() ? popup() : undefined),
+    (el) => {
+      if (!el) return;
+      if (!el.contains(document.activeElement)) {
+        (el.querySelector<HTMLElement>("[autofocus]") ?? tabbables(el)[0] ?? el).focus();
+      }
+      const onKeyDown = (event: KeyboardEvent) => {
+        if (event.key !== "Tab" || event.defaultPrevented) return;
+        const items = tabbables(el);
+        const first = items[0];
+        const last = items[items.length - 1];
+        const focused = document.activeElement;
+        const atStart = items.length === 0 || focused === el || focused === first;
+        const atEnd = items.length === 0 || focused === last;
+        if (untrack(trap)) {
+          if (event.shiftKey && atStart) {
+            event.preventDefault();
+            (last ?? el).focus();
+          } else if (!event.shiftKey && atEnd) {
+            event.preventDefault();
+            (first ?? el).focus();
+          }
+          return;
+        }
+        const triggerEl = untrack(trigger);
+        if (!triggerEl) return;
+        if (event.shiftKey && atStart) {
+          event.preventDefault();
+          triggerEl.focus();
+          onFocusOut();
+        } else if (!event.shiftKey && atEnd) {
+          event.preventDefault();
+          const next = nextTabbable(triggerEl, el);
+          if (next) next.focus();
+          else triggerEl.focus();
+          onFocusOut();
+        }
+      };
+      const onLeaveFocus = (event: FocusEvent) => {
+        if (untrack(trap)) return;
+        const next = event.relatedTarget;
+        // `null`: focus went to nothing focusable (a press on the page). An outside press is dismissal's call.
+        if (next === null || within(el, next) || within(untrack(trigger), next)) return;
+        onFocusOut();
+      };
+      el.addEventListener("keydown", onKeyDown);
+      el.addEventListener("focusout", onLeaveFocus);
+      return () => {
+        el.removeEventListener("keydown", onKeyDown);
+        el.removeEventListener("focusout", onLeaveFocus);
+        const triggerEl = untrack(trigger);
+        if (el.contains(document.activeElement) && triggerEl?.isConnected) triggerEl.focus();
+      };
+    },
+  );
+}

@@ -1,0 +1,30 @@
+import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup, TooltipArrow } from "../src/tooltip/tooltip.rx"
+
+export component TooltipDemo() {
+  <TooltipProvider>
+    <div role="toolbar" aria-label="Formatting">
+      <TooltipRoot>
+        <TooltipTrigger aria-label="Bold">B</TooltipTrigger>
+        <TooltipPortal>
+          <TooltipPositioner sideOffset={6}>
+            <TooltipPopup class="popup">
+              <TooltipArrow class="arrow" />
+              Bold
+            </TooltipPopup>
+          </TooltipPositioner>
+        </TooltipPortal>
+      </TooltipRoot>
+      <TooltipRoot>
+        <TooltipTrigger aria-label="Italic">I</TooltipTrigger>
+        <TooltipPortal>
+          <TooltipPositioner sideOffset={6}>
+            <TooltipPopup class="popup">
+              <TooltipArrow class="arrow" />
+              Italic
+            </TooltipPopup>
+          </TooltipPositioner>
+        </TooltipPortal>
+      </TooltipRoot>
+    </div>
+  </TooltipProvider>
+}

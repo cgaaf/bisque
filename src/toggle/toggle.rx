@@ -1,0 +1,60 @@
+import { mergeProps, createId } from "../internal/props.js"
+import { ButtonProps, PartProps } from "../internal/types.rx"
+import { button, gateButtonHandlers } from "../button/button.rx"
+import { toggleGroup, ToggleGroupContext } from "../toggle-group/toggle-group.rx"
+import { toolbar, ToolbarContext } from "../toolbar/toolbar.rx"
+
+export type ToggleOptions = {
+  pressed?: boolean
+  defaultPressed?: boolean
+  onPressedChange?: (pressed: boolean) => void
+  disabled?: boolean
+  // What the toggle stands for in a toggle group's `value`. Give one to every toggle in a group.
+  value?: string
+  // Pass false when the element playing the toggle isn't a <button>. Default: true.
+  native?: boolean
+}
+
+// A two-state button. In a toggle group the group owns the pressed state, and the toggle is one of its items;
+// in a toolbar it is one of the toolbar's items.
+export fn toggle(ref group: ToggleGroupContext, ref bar: ToolbarContext, ref o: ToggleOptions): PartProps {
+  source uncontrolled := peek(o.defaultPressed ?? false)
+  fallbackValue = createId("toggle")
+  key = o.value ?? fallbackValue
+  isPressed = group.present ? group.value.includes(key) : (o.pressed ?? uncontrolled)
+  isDisabled = (o.disabled ?? false) || group.disabled
+  composite = group.present || bar.present
+  own = button({ disabled: isDisabled, native: o.native ?? true, composite: composite })
+
+  action press() {
+    if (isDisabled) { return }
+    let next = !isPressed
+    if (o.onPressedChange) { o.onPressedChange(next) }
+    if (group.present) { group.setPressed(key, next) } else { uncontrolled := next }
+  }
+
+  // `press` runs before the button's own click handler, which only cancels the click while disabled.
+  mergeProps(own, {
+    "aria-pressed": isPressed ? "true" : "false",
+    "data-pressed": isPressed ? "" : undefined,
+    "data-rs-ui-item": composite ? "" : undefined,
+    onClick: press,
+  })
+}
+
+export type ToggleProps = {
+  pressed?: boolean
+  defaultPressed?: boolean
+  onPressedChange?: (pressed: boolean) => void
+  disabled?: boolean
+  value?: string
+} & Omit<ButtonProps, "value" | "disabled">
+
+export component Toggle({ pressed, defaultPressed, onPressedChange, disabled = false, value, children, ...rest }: ToggleProps) {
+  group = use toggleGroup
+  bar = use toolbar
+  own = toggle(group, bar, { pressed: pressed, defaultPressed: defaultPressed, onPressedChange: onPressedChange, disabled: disabled, value: value })
+  external = gateButtonHandlers(rest, disabled || group.disabled)
+  merged = mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}

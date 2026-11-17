@@ -1,0 +1,41 @@
+import { PopoverRoot, PopoverTrigger, PopoverPortal, PopoverBackdrop, PopoverPositioner, PopoverPopup, PopoverTitle, PopoverClose } from "../popover.rx"
+
+export default component Fixture() {
+  <main>
+    <PopoverRoot modal={true}>
+      <PopoverTrigger>Edit name</PopoverTrigger>
+      <PopoverPortal>
+        <PopoverBackdrop data-testid="backdrop" />
+        <PopoverPositioner>
+          <PopoverPopup>
+            <PopoverTitle>Edit name</PopoverTitle>
+            <input aria-label="Name" />
+            <PopoverClose>Done</PopoverClose>
+          </PopoverPopup>
+        </PopoverPositioner>
+      </PopoverPortal>
+    </PopoverRoot>
+    <PopoverRoot modal="trap-focus">
+      <PopoverTrigger>Trap only</PopoverTrigger>
+      <PopoverPortal>
+        <PopoverPositioner>
+          <PopoverPopup>
+            <button>Inside</button>
+            <PopoverClose>Close trap</PopoverClose>
+          </PopoverPopup>
+        </PopoverPositioner>
+      </PopoverPortal>
+    </PopoverRoot>
+    <PopoverRoot modal={true}>
+      <PopoverTrigger>No close part</PopoverTrigger>
+      <PopoverPortal>
+        <PopoverPositioner>
+          <PopoverPopup>
+            <button>Lonely</button>
+          </PopoverPopup>
+        </PopoverPositioner>
+      </PopoverPortal>
+    </PopoverRoot>
+    <button>Elsewhere</button>
+  </main>
+}

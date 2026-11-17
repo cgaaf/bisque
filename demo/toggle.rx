@@ -1,0 +1,8 @@
+import { Toggle } from "../src/toggle/toggle.rx"
+
+export component ToggleDemo() {
+  source starred := false
+  <div>
+    <Toggle aria-label="Star" pressed={starred} onPressedChange={(next) => { starred := next }}>{starred ? "★" : "☆"}</Toggle>
+  </div>
+}

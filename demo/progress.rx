@@ -1,0 +1,15 @@
+import { ProgressRoot, ProgressTrack, ProgressIndicator, ProgressValue, ProgressLabel } from "../src/progress/progress.rx"
+
+export component ProgressDemo() {
+  source amount: number | null := 30
+  <div>
+    <ProgressRoot value={amount}>
+      <ProgressLabel>Uploading</ProgressLabel>{" "}
+      <ProgressValue />
+      <ProgressTrack style={{ height: "6px", background: "#eee" }}>
+        <ProgressIndicator style={{ background: "#36c" }} />
+      </ProgressTrack>
+    </ProgressRoot>
+    <button onClick={() => { amount := amount == null ? 10 : amount >= 100 ? null : amount + 10 }}>Step</button>
+  </div>
+}

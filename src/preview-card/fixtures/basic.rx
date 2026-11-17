@@ -1,0 +1,25 @@
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPortal, PreviewCardPositioner, PreviewCardPopup, PreviewCardArrow } from "../preview-card.rx"
+
+export default component Fixture() {
+  source changes := 0
+  <main>
+    <button>Before</button>
+    <p>
+      Built with{" "}
+      <PreviewCardRoot onOpenChange={(open) => { changes := changes + 1 }}>
+        <PreviewCardTrigger href="#typography">Typography</PreviewCardTrigger>
+        <PreviewCardPortal>
+          <PreviewCardPositioner data-testid="positioner" sideOffset={8}>
+            <PreviewCardPopup data-testid="popup">
+              <PreviewCardArrow data-testid="arrow" />
+              <a href="#more">Read more about type</a>
+            </PreviewCardPopup>
+          </PreviewCardPositioner>
+        </PreviewCardPortal>
+      </PreviewCardRoot>
+    </p>
+    <button>After</button>
+    <p data-testid="outside">Elsewhere</p>
+    <output data-testid="changes">{changes}</output>
+  </main>
+}

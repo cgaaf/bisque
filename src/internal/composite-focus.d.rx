@@ -1,0 +1,3 @@
+// How .rx may use ./composite-focus.js (implemented in ./impl/composite-focus.ts): toolbar and toggle group focus.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./composite-focus.d.ts.
+export pure fn createCompositeFocus(ref container: HTMLElement | undefined, ref options: { orientation: "horizontal" | "vertical"; loop: boolean; homeEnd: boolean }) instantiates

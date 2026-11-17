@@ -1,0 +1,176 @@
+import { mergeProps } from "../internal/props.js"
+import { createCompositeFocus } from "../internal/composite-focus.js"
+import { DivProps, ButtonProps, AnchorProps, InputProps, PartProps } from "../internal/types.rx"
+import { button, gateButtonHandlers } from "../button/button.rx"
+import { separator, SeparatorOrientation } from "../separator/separator.rx"
+
+export type ToolbarOrientation = "horizontal" | "vertical"
+
+// `present` is false outside a toolbar: the default lets parts that may sit in one (a toggle group) ask.
+export type ToolbarContext = {
+  present: boolean
+  disabled: boolean
+  orientation: ToolbarOrientation
+}
+
+export context toolbar: ToolbarContext = { present: false, disabled: false, orientation: "horizontal" }
+
+export type ToolbarGroupContext = {
+  disabled: boolean
+}
+
+export context toolbarGroup: ToolbarGroupContext = { disabled: false }
+
+export type ToolbarRootProps = {
+  // Disables every item. Buttons and inputs stay focusable unless they set `focusableWhenDisabled={false}`.
+  disabled?: boolean
+  orientation?: ToolbarOrientation
+  // Whether the arrow keys wrap around at the ends. Default: true.
+  loopFocus?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+// One Tab stop: the arrow keys along `orientation` move between items, and the item last focused is where Tab
+// comes back to.
+export component ToolbarRoot(props: ToolbarRootProps) {
+  source element: HTMLElement | undefined := undefined
+  action setElement(el: HTMLElement) { element := el }
+  dir = props.orientation ?? "horizontal"
+  isDisabled = props.disabled ?? false
+  _focus = createCompositeFocus(element, { orientation: dir, loop: props.loopFocus ?? true, homeEnd: false })
+
+  provide toolbar = { present: true, disabled: isDisabled, orientation: dir }
+
+  { orientation, disabled, loopFocus, children, ...rest } = props
+  own = {
+    role: "toolbar",
+    "aria-orientation": dir,
+    "data-orientation": dir,
+    "data-disabled": isDisabled ? "" : undefined,
+    ref: setElement,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// What every toolbar item carries: it is a roving-focus item and shows the toolbar's orientation.
+fn itemState(ref c: ToolbarContext): PartProps {
+  { "data-rs-ui-item": "", "data-orientation": c.orientation }
+}
+
+export type ToolbarButtonOptions = {
+  disabled?: boolean
+  // Default: true, so a disabled button can still be reached with the arrow keys and announced.
+  focusableWhenDisabled?: boolean
+  // Pass false when the element playing the button isn't a <button>. Default: true.
+  native?: boolean
+}
+
+export fn toolbarButton(ref c: ToolbarContext, ref g: ToolbarGroupContext, ref o: ToolbarButtonOptions): PartProps {
+  isDisabled = c.disabled || g.disabled || (o.disabled ?? false)
+  focusable = o.focusableWhenDisabled ?? true
+  own = button({ disabled: isDisabled, focusableWhenDisabled: focusable, native: o.native ?? true, composite: true })
+  item = itemState(c)
+  { ...own, ...item, "data-focusable": focusable ? "" : undefined }
+}
+
+export type ToolbarButtonProps = {
+  disabled?: boolean
+  focusableWhenDisabled?: boolean
+} & Omit<ButtonProps, "disabled">
+
+export component ToolbarButton({ disabled = false, focusableWhenDisabled = true, children, ...rest }: ToolbarButtonProps) {
+  c = use toolbar
+  g = use toolbarGroup
+  own = toolbarButton(c, g, { disabled: disabled, focusableWhenDisabled: focusableWhenDisabled })
+  external = gateButtonHandlers(rest, c.disabled || g.disabled || disabled)
+  merged = mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}
+
+// A link can't be disabled; it is an item like the others.
+export fn toolbarLink(ref c: ToolbarContext): PartProps {
+  item = itemState(c)
+  item
+}
+
+export component ToolbarLink({ children, ...rest }: AnchorProps) {
+  c = use toolbar
+  own = toolbarLink(c)
+  merged = mergeProps(own, rest)
+  <a {...merged}>{children}</a>
+}
+
+export type ToolbarInputOptions = {
+  disabled?: boolean
+  // Default: true. A focusable disabled input takes focus but no typing.
+  focusableWhenDisabled?: boolean
+}
+
+// In the input the arrow keys move the caret; they move to the next item only from the end of the text (or the
+// start, going back). Home and End stay with the input.
+export fn toolbarInput(ref c: ToolbarContext, ref g: ToolbarGroupContext, ref o: ToolbarInputOptions): PartProps {
+  isDisabled = c.disabled || g.disabled || (o.disabled ?? false)
+  focusable = o.focusableWhenDisabled ?? true
+  action keyDown(event: KeyboardEvent) {
+    if (isDisabled && event.key != "Tab") { event.preventDefault() }
+  }
+  action block(event: Event) {
+    if (isDisabled) { event.preventDefault() }
+  }
+  item = itemState(c)
+  {
+    ...item,
+    disabled: isDisabled && !focusable ? true : undefined,
+    "aria-disabled": isDisabled && focusable ? "true" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-focusable": focusable ? "" : undefined,
+    onKeyDown: keyDown,
+    onClick: block,
+    onPointerDown: block,
+  }
+}
+
+export type ToolbarInputProps = {
+  disabled?: boolean
+  focusableWhenDisabled?: boolean
+} & Omit<InputProps, "disabled">
+
+export component ToolbarInput({ disabled = false, focusableWhenDisabled = true, ...rest }: ToolbarInputProps) {
+  c = use toolbar
+  g = use toolbarGroup
+  own = toolbarInput(c, g, { disabled: disabled, focusableWhenDisabled: focusableWhenDisabled })
+  external = gateButtonHandlers(rest, c.disabled || g.disabled || disabled)
+  merged = mergeProps(own, external)
+  <input {...merged} />
+}
+
+export type ToolbarGroupProps = {
+  disabled?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+// Groups items for assistive technology; `disabled` disables the items in it.
+export component ToolbarGroup(props: ToolbarGroupProps) {
+  c = use toolbar
+  isDisabled = c.disabled || (props.disabled ?? false)
+  provide toolbarGroup = { disabled: isDisabled }
+
+  { disabled, children, ...rest } = props
+  own = {
+    role: "group",
+    "data-orientation": c.orientation,
+    "data-disabled": isDisabled ? "" : undefined,
+  }
+  merged = mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// A separator across the toolbar: vertical in a horizontal toolbar, unless `orientation` says otherwise.
+export component ToolbarSeparator({ orientation, ...rest }: { orientation?: SeparatorOrientation } & DivProps) {
+  c = use toolbar
+  across: SeparatorOrientation = c.orientation == "vertical" ? "horizontal" : "vertical"
+  own = separator(orientation ?? across)
+  merged = mergeProps(own, rest)
+  <div {...merged} />
+}

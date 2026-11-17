@@ -1,0 +1,17 @@
+import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup } from "../tooltip.rx"
+
+export default component Fixture() {
+  source open := true
+  <main>
+    <button onClick={() => { open := !open }}>Toggle from outside</button>
+    <TooltipRoot open={open} onOpenChange={(next) => { open := next }}>
+      <TooltipTrigger>Save</TooltipTrigger>
+      <TooltipPortal>
+        <TooltipPositioner side="bottom">
+          <TooltipPopup data-testid="popup">Save the file</TooltipPopup>
+        </TooltipPositioner>
+      </TooltipPortal>
+    </TooltipRoot>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+  </main>
+}

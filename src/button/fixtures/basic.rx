@@ -1,0 +1,32 @@
+import { mergeProps } from "../../internal/props.js"
+import { Button, button, gateButtonHandlers } from "../button.rx"
+
+component SpanButton(props: { disabled?: boolean; onClick?: () => void; children?: View }) {
+  isDisabled = props.disabled ?? false
+  own = button({ disabled: isDisabled, native: false })
+  external = gateButtonHandlers({ onClick: props.onClick }, isDisabled)
+  merged = mergeProps(own, external)
+  <span {...merged}>{props.children}</span>
+}
+
+component LinkButton(props: { onClick?: () => void; children?: View }) {
+  own = button({ native: false })
+  merged = mergeProps(own, { onClick: props.onClick })
+  <a href="#target" {...merged}>{props.children}</a>
+}
+
+export default component Fixture() {
+  source clicks := ""
+  source off := true
+  <main>
+    <Button class="mine" onClick={() => { clicks := clicks + "p" }}>Plain</Button>
+    <Button disabled onClick={() => { clicks := clicks + "d" }} onKeyDown={() => { clicks := clicks + "k" }}>Disabled</Button>
+    <Button disabled focusableWhenDisabled onClick={() => { clicks := clicks + "f" }} onFocus={() => { clicks := clicks + "F" }}>Focusable</Button>
+    <Button disabled={off} onClick={() => { clicks := clicks + "t" }}>Toggled</Button>
+    <button data-testid="enable" onClick={() => { off := !off }}>enable</button>
+    <SpanButton onClick={() => { clicks := clicks + "s" }}>Span</SpanButton>
+    <SpanButton disabled onClick={() => { clicks := clicks + "x" }}>Off span</SpanButton>
+    <LinkButton onClick={() => { clicks := clicks + "l" }}>Link</LinkButton>
+    <output data-testid="clicks">{clicks}</output>
+  </main>
+}

@@ -1,0 +1,9 @@
+import { Separator } from "../src/separator/separator.rx"
+
+export component SeparatorDemo() {
+  <div>
+    <p>Above the line</p>
+    <Separator style={{ "border-top": "1px solid #ccc" }} />
+    <p>Below the line</p>
+  </div>
+}
