@@ -1,0 +1,17 @@
+import { TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
+import { PopoverRoot, PopoverTrigger, PopoverPopup } from "../../popover/popover.rx"
+
+// A tooltip inside a popover: Escape closes the tooltip and leaves the popover open.
+export default component Fixture() {
+  <main style="padding: 40px 0 0 200px">
+    <PopoverRoot>
+      <PopoverTrigger>Format</PopoverTrigger>
+      <PopoverPopup data-testid="panel" aria-label="Format" sideOffset={60}>
+        <TooltipRoot>
+          <TooltipTrigger delay={0}>Bold</TooltipTrigger>
+          <TooltipPopup data-testid="popup">Make the selection bold</TooltipPopup>
+        </TooltipRoot>
+      </PopoverPopup>
+    </PopoverRoot>
+  </main>
+}

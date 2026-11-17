@@ -1,33 +1,21 @@
-import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup } from "../tooltip.rx"
+import { TooltipProvider, TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
 
 export default component Fixture() {
-  <main>
-    <TooltipProvider delay={300} closeDelay={50} timeout={400}>
+  <main style="padding: 120px 0 120px 200px">
+    <TooltipProvider delay={300} closeDelay={300} timeout={400}>
       <TooltipRoot>
         <TooltipTrigger>Undo</TooltipTrigger>
-        <TooltipPortal>
-          <TooltipPositioner>
-            <TooltipPopup>Undo last change</TooltipPopup>
-          </TooltipPositioner>
-        </TooltipPortal>
+        <TooltipPopup data-testid="undo-popup">Undo last change</TooltipPopup>
       </TooltipRoot>
       <TooltipRoot>
         <TooltipTrigger>Redo</TooltipTrigger>
-        <TooltipPortal>
-          <TooltipPositioner>
-            <TooltipPopup>Redo last change</TooltipPopup>
-          </TooltipPositioner>
-        </TooltipPortal>
+        <TooltipPopup data-testid="redo-popup">Redo last change</TooltipPopup>
       </TooltipRoot>
       <TooltipRoot>
         <TooltipTrigger delay={1000}>Share</TooltipTrigger>
-        <TooltipPortal>
-          <TooltipPositioner>
-            <TooltipPopup>Share document</TooltipPopup>
-          </TooltipPositioner>
-        </TooltipPortal>
+        <TooltipPopup data-testid="share-popup">Share document</TooltipPopup>
       </TooltipRoot>
     </TooltipProvider>
-    <p data-testid="outside">Elsewhere</p>
+    <p data-testid="outside" style="margin-top: 80px">Elsewhere</p>
   </main>
 }

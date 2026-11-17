@@ -2,8 +2,17 @@ import { expect, test } from "vitest";
 import { frame, mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
 import controlled from "./fixtures/controlled.rx";
+import hover from "./fixtures/hover.rx";
 
 const shown = (popup: HTMLElement) => popup.matches(":popover-open");
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** The real pointer stays where the last test left it: start a hover test away from every trigger. */
+async function startHover() {
+  const mounted = mount(hover);
+  await mounted.user.hover(mounted.getByTestId("outside"));
+  return mounted;
+}
 
 test("is closed until the trigger is pressed, then wires ARIA", async () => {
   const { getByRole, getByText, user } = mount(basic);
@@ -103,4 +112,97 @@ test("can be controlled from outside its parts", async () => {
   await user.keyboard("{Escape}");
   await expect.poll(() => getByTestId("open").textContent).toBe("closed");
   expect(shown(popup)).toBe(false);
+});
+
+test("without openOnHover, resting the pointer on the trigger does nothing", async () => {
+  const { getByRole, getByText, user } = mount(basic);
+  await user.hover(getByRole("button", { name: "Notifications" }));
+  await sleep(500);
+  expect(shown(getByText("Inbox").parentElement!)).toBe(false);
+});
+
+test("openOnHover: opens after the default 300ms and closes when the pointer leaves", async () => {
+  const { getByRole, getByTestId, user } = await startHover();
+  const trigger = getByRole("button", { name: "Account" });
+  const popup = getByTestId("account");
+  await user.hover(trigger);
+  await sleep(150);
+  expect(shown(popup)).toBe(false);
+  await expect.poll(() => shown(popup), { timeout: 600 }).toBe(true);
+  await expect.poll(() => trigger.getAttribute("aria-expanded")).toBe("true");
+  // Still a light-dismiss popover, anchored to its trigger.
+  expect(popup.getAttribute("popover")).toBe("auto");
+  await frame();
+  expect(Math.round(popup.getBoundingClientRect().top - trigger.getBoundingClientRect().bottom)).toBe(8);
+
+  await user.hover(getByTestId("outside"));
+  await expect.poll(() => shown(popup)).toBe(false);
+  await expect.poll(() => getByTestId("changes").textContent).toBe("2");
+});
+
+test("openOnHover: the pointer can move onto the popup; leaving the popup closes it", async () => {
+  const { getByRole, getByTestId, user } = await startHover();
+  const popup = getByTestId("account");
+  await user.hover(getByRole("button", { name: "Account" }));
+  await expect.poll(() => shown(popup), { timeout: 800 }).toBe(true);
+  await frame();
+  await user.hover(popup);
+  await sleep(200);
+  expect(shown(popup)).toBe(true);
+  await user.hover(getByTestId("outside"));
+  await expect.poll(() => shown(popup)).toBe(false);
+});
+
+test("openOnHover: a press while hover has it open keeps it open, and then leaving doesn't close it", async () => {
+  const { getByRole, getByTestId, user } = await startHover();
+  const trigger = getByRole("button", { name: "Account" });
+  const popup = getByTestId("account");
+  await user.hover(trigger);
+  await expect.poll(() => shown(popup), { timeout: 800 }).toBe(true);
+  await user.click(trigger);
+  await sleep(100);
+  expect(shown(popup)).toBe(true);
+  await user.hover(getByTestId("outside"));
+  await sleep(200);
+  expect(shown(popup)).toBe(true);
+  // Now it is an ordinary popover: the trigger toggles it.
+  await user.click(trigger);
+  await expect.poll(() => shown(popup)).toBe(false);
+  expect(getByTestId("changes").textContent).toBe("2");
+});
+
+test("openOnHover: a popover opened by a press before the delay stays open when the pointer leaves", async () => {
+  const { getByRole, getByTestId, user } = await startHover();
+  const trigger = getByRole("button", { name: "Account" });
+  const popup = getByTestId("account");
+  await user.click(trigger);
+  expect(shown(popup)).toBe(true);
+  await sleep(400);
+  await user.hover(getByTestId("outside"));
+  await sleep(200);
+  expect(shown(popup)).toBe(true);
+  await user.keyboard("{Escape}");
+  expect(shown(popup)).toBe(false);
+});
+
+test("openOnHover: the trigger's own delay and closeDelay", async () => {
+  const { getByRole, getByTestId, user } = await startHover();
+  const popup = getByTestId("help");
+  await user.hover(getByRole("button", { name: "Help" }));
+  await expect.poll(() => shown(popup), { timeout: 250 }).toBe(true);
+  await user.hover(getByTestId("outside"));
+  await sleep(100);
+  expect(shown(popup)).toBe(true);
+  await expect.poll(() => shown(popup), { timeout: 800 }).toBe(false);
+});
+
+test("openOnHover: Escape closes a popover hover opened", async () => {
+  const { getByRole, getByTestId, user } = await startHover();
+  const trigger = getByRole("button", { name: "Account" });
+  const popup = getByTestId("account");
+  await user.hover(trigger);
+  await expect.poll(() => shown(popup), { timeout: 800 }).toBe(true);
+  await user.keyboard("{Escape}");
+  expect(shown(popup)).toBe(false);
+  await expect.poll(() => trigger.getAttribute("aria-expanded")).toBe("false");
 });

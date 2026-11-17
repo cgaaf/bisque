@@ -23,12 +23,15 @@ on the "not yet" list, because features move off it with each release.
 ## Not shipped in all three yet: the library still does these
 
 - **Exit animation of a top-layer element.** Firefox does not transition `display` and only Chrome has
-  `overlay`, so a closing dialog or popover leaves the top layer at once. The part sets `data-ending-style`,
-  waits for the element's animations, then closes it natively.
+  `overlay`, so a closing dialog or popover leaves the top layer at once. A `<dialog>` can be closed late,
+  because every way of closing it can be intercepted: it gets `data-ending-style`, its animations run, then it
+  closes. A popover can't: a press outside closes it immediately and can't be delayed, so its exit is left to
+  CSS and only animates where the engine can.
 - **Animating to `auto` height** (`interpolate-size`: Chrome only). A disclosure panel's measured size is still
   written to a CSS variable.
 - **Hover-triggered popups** (`interestfor`: Chrome only; `popover="hint"`: not in Safari). Tooltip and
-  PreviewCard use `popover="manual"` with the library's hover-intent logic.
+  PreviewCard use `popover="manual"` with the library's hover-intent logic, and since a manual popover gets no
+  Escape or light dismiss from the browser, the library closes those two itself.
 - **Closing a dialog on a press outside** (`<dialog closedby>`: not in Safari). Detected from a click on the
   dialog's own backdrop area.
 - **Roving focus** (`focusgroup`: Chrome only). Menu, Tabs, Toolbar and ToggleGroup keep `createRovingFocus`.

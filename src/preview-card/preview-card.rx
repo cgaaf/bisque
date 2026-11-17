@@ -1,14 +1,17 @@
 // A card that previews what a link points to, shown while the link is hovered or focused. It is supplementary:
 // the link works without it, so the popup takes no role and focus never moves into it on its own.
-import { mergeProps, createId } from "../internal/props.js"
-import { createFloating } from "../internal/dom.js"
-import { createHoverIntent, createArrow } from "../internal/overlay.js"
-import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+//
+// The card is a `popover="manual"` element opened with `showPopover({ source: link })`: the browser provides the
+// top layer and the placement against the link with CSS anchor positioning. Hover-triggered popovers
+// (`interestfor`, `popover="hint"`) aren't shipped in every engine yet, so this family keeps the hover intent and
+// closes on Escape and on a press outside itself. There is no Portal, Positioner or Arrow part: the popup is the
+// positioned element, styled with `:popover-open` and `@starting-style`.
+import { mergeProps } from "../internal/props.js"
+import { createHoverIntent, createManualDismiss } from "../internal/overlay.js"
+import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, AnchorProps, PartProps } from "../internal/types.rx"
 
-export type PreviewCardContext = PopupState & {
-  popupId: string
-}
+export type PreviewCardContext = PopoverState
 
 export context previewCard: PreviewCardContext
 
@@ -20,9 +23,10 @@ export type PreviewCardRootProps = {
 }
 
 export component PreviewCardRoot(props: PreviewCardRootProps) {
-  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
-  popupId = createId("preview-card")
-  provide previewCard = { ...state, popupId: popupId }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
+  action dismiss(reason: "escape-key" | "outside-press") { state.setOpen(false) }
+  _dismiss = createManualDismiss(state.open, state.trigger, state.popup, dismiss)
+  provide previewCard = state
   {props.children}
 }
 
@@ -33,6 +37,7 @@ export type PreviewCardTriggerProps = {
   closeDelay?: number
 } & AnchorProps
 
+// Spread on the link the card previews. It opens the card on hover and keyboard focus, after the delay.
 export fn previewCardTrigger(ref c: PreviewCardContext, ref delay: number, ref closeDelay: number): PartProps {
   action change(next: boolean, reason: "hover" | "focus" | "press" | "group") { c.setOpen(next) }
   _hover = createHoverIntent(true, c.open, c.trigger, c.popup, {
@@ -54,78 +59,24 @@ export component PreviewCardTrigger({ delay = 600, closeDelay = 300, children, .
   <a {...merged}>{children}</a>
 }
 
-// Renders its children at the end of <body> while the card is mounted.
-export component PreviewCardPortal(props: { keepMounted?: boolean; children?: View }) {
-  c = use previewCard
-  {if c.mounted || (props.keepMounted ?? false) {
-    portal { {props.children} }
-  }}
-}
-
-// Where the positioner put the popup, for the popup and the arrow inside it.
-export type PreviewCardPositionerContext = {
-  side: "top" | "bottom" | "left" | "right"
-  align: "start" | "center" | "end"
-  arrowUncentered: boolean
-  setArrow: (element: HTMLElement) => void
-}
-
-export context previewCardPositioner: PreviewCardPositionerContext
-
-export type PreviewCardPositionerProps = {
+export type PreviewCardPopupProps = {
+  // Which side of the link it sits on; the browser flips it when it doesn't fit. Default: "bottom".
   side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the link it lines up with. Default: "center".
   align?: "start" | "center" | "end"
+  // Gap between link and card, in pixels. Default: 0.
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: number
 } & DivProps
 
-// Positions the card against the link, below it by default. Carries `data-side` and `data-align`.
-export component PreviewCardPositioner(props: PreviewCardPositionerProps) {
-  c = use previewCard
-  source arrow: HTMLElement | undefined := undefined
-  action setArrow(element: HTMLElement) { arrow := element }
-  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
-    side: props.side ?? "bottom",
-    align: props.align ?? "center",
-    sideOffset: props.sideOffset ?? 0,
-    alignOffset: props.alignOffset ?? 0,
-    collisionPadding: props.collisionPadding ?? 5,
-  })
-  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
-  provide previewCardPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
-  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
-  <div {...merged}>{children}</div>
+export fn previewCardPopup(ref c: PreviewCardContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  base = popoverPopupProps(c, "manual", side, align, sideOffset, alignOffset)
+  base
 }
 
-export fn previewCardPopup(ref c: PreviewCardContext): PartProps {
-  state = popupStateAttributes(c)
-  { id: c.popupId, ref: c.setPopup, ...state }
-}
-
-export component PreviewCardPopup({ children, ...rest }: DivProps) {
+export component PreviewCardPopup({ side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: PreviewCardPopupProps) {
   c = use previewCard
-  p = use previewCardPositioner
-  own = previewCardPopup(c)
-  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Points at the link. Its offset along the card's edge is written for you; place it on the edge with CSS, by
-// `data-side`.
-export component PreviewCardArrow({ children, ...rest }: DivProps) {
-  c = use previewCard
-  p = use previewCardPositioner
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    "aria-hidden": "true",
-    "data-side": p.side,
-    "data-align": p.align,
-    "data-uncentered": p.arrowUncentered ? "" : undefined,
-    ref: p.setArrow,
-    ...state,
-  }, rest)
+  own = previewCardPopup(c, side, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

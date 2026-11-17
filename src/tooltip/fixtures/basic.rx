@@ -1,45 +1,27 @@
-import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup, TooltipArrow } from "../tooltip.rx"
+import { TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
 
+// Room above the triggers, where the tooltips go by default.
 export default component Fixture() {
   source changes := 0
-  <main>
+  <main style="padding: 160px 0 120px 200px">
     <button>Before</button>
     <TooltipRoot onOpenChange={(open) => { changes := changes + 1 }}>
-      <TooltipTrigger>Bold</TooltipTrigger>
-      <TooltipPortal>
-        <TooltipPositioner data-testid="positioner" sideOffset={6}>
-          <TooltipPopup data-testid="popup">
-            <TooltipArrow data-testid="arrow" />
-            Make the selection bold
-          </TooltipPopup>
-        </TooltipPositioner>
-      </TooltipPortal>
+      <TooltipTrigger style="width: 40px; height: 20px; padding: 0">Bold</TooltipTrigger>
+      <TooltipPopup data-testid="popup" sideOffset={10} style="width: 120px; height: 40px; border: 0; padding: 0">Make the selection bold</TooltipPopup>
     </TooltipRoot>
     <TooltipRoot disableHoverablePopup>
       <TooltipTrigger delay={0}>Italic</TooltipTrigger>
-      <TooltipPortal>
-        <TooltipPositioner>
-          <TooltipPopup data-testid="italic-popup">Italic text</TooltipPopup>
-        </TooltipPositioner>
-      </TooltipPortal>
+      <TooltipPopup data-testid="italic-popup" sideOffset={4}>Italic text</TooltipPopup>
     </TooltipRoot>
     <TooltipRoot disabled>
       <TooltipTrigger delay={0}>Strike</TooltipTrigger>
-      <TooltipPortal>
-        <TooltipPositioner>
-          <TooltipPopup>Strikethrough</TooltipPopup>
-        </TooltipPositioner>
-      </TooltipPortal>
+      <TooltipPopup data-testid="strike-popup">Strikethrough</TooltipPopup>
     </TooltipRoot>
     <TooltipRoot>
       <TooltipTrigger delay={0} closeOnClick={false}>Underline</TooltipTrigger>
-      <TooltipPortal>
-        <TooltipPositioner>
-          <TooltipPopup>Underline text</TooltipPopup>
-        </TooltipPositioner>
-      </TooltipPortal>
+      <TooltipPopup data-testid="underline-popup">Underline text</TooltipPopup>
     </TooltipRoot>
-    <p data-testid="outside">Elsewhere</p>
+    <p data-testid="outside" style="margin-top: 80px">Elsewhere</p>
     <output data-testid="changes">{changes}</output>
   </main>
 }

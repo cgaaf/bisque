@@ -1,17 +1,15 @@
-import { TooltipRoot, TooltipTrigger, TooltipPortal, TooltipPositioner, TooltipPopup } from "../tooltip.rx"
+import { TooltipRoot, TooltipTrigger, TooltipPopup } from "../tooltip.rx"
 
+// Open from the start, below its trigger.
 export default component Fixture() {
   source open := true
-  <main>
+  <main style="padding: 40px 0 200px 20px">
     <button onClick={() => { open := !open }}>Toggle from outside</button>
     <TooltipRoot open={open} onOpenChange={(next) => { open := next }}>
       <TooltipTrigger>Save</TooltipTrigger>
-      <TooltipPortal>
-        <TooltipPositioner side="bottom">
-          <TooltipPopup data-testid="popup">Save the file</TooltipPopup>
-        </TooltipPositioner>
-      </TooltipPortal>
+      <TooltipPopup data-testid="popup" side="bottom" align="start" sideOffset={4} style="width: 100px; height: 30px; border: 0; padding: 0">Save the file</TooltipPopup>
     </TooltipRoot>
     <output data-testid="open">{open ? "open" : "closed"}</output>
+    <p data-testid="outside" style="margin-top: 120px">Elsewhere</p>
   </main>
 }

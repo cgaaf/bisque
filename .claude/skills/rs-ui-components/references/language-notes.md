@@ -123,6 +123,21 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - A button outside a popup can't close it in a test: its pointerdown dismisses the popup, then its click reopens
   it. Close from the trigger or with Escape.
 
+## Testing in the three engines
+
+- The test viewport is 414px wide. A popup near the right edge gets flipped, so keep fixtures narrow.
+- `user.hover(element)` waits for the element to stay visible, and hangs on a popup that closes as the pointer
+  arrives. Move to coordinates instead: `user.hover(container, { position })`. The pointer stays where the last
+  test left it, so start a hover test by moving it somewhere neutral.
+- `:focus-visible` after a scripted `focus()` depends on how focus last moved. `user.keyboard("{Tab}")` then
+  `element.focus()` works in all three; a modifier key doesn't count in Firefox or WebKit.
+- Fake timers with real pointer input misfire in WebKit. Use real timers with a margin.
+- WebKit can round a geometry difference to `-0`, which `toBe(0)` rejects. Compare `Math.abs(…)`.
+- `preventDefault()` on an Escape keydown stops an enclosing `popover="auto"` from closing on it, and on a
+  click it cancels the `popovertarget` toggle, in all three engines.
+- A popup can't be written inside a `<p>`: the compiler refuses it (`CONTENT_MODEL`), as the HTML parser would
+  close the paragraph.
+
 ## Not yet tried here
 
 Server rendering and hydration (upstream calls SSR in Vite "not yet"), `for … in` over a keyed collection

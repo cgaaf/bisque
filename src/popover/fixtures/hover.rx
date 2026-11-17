@@ -1,0 +1,20 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle } from "../popover.rx"
+
+// Popovers that also open on hover: one with the default delays, one with its own.
+export default component Fixture() {
+  source changes := 0
+  <main style="padding: 40px 0 200px 20px">
+    <PopoverRoot onOpenChange={(open) => { changes := changes + 1 }}>
+      <PopoverTrigger openOnHover>Account</PopoverTrigger>
+      <PopoverPopup data-testid="account" align="start" sideOffset={8} style="width: 160px; height: 80px; border: 0; padding: 0">
+        <PopoverTitle>Signed in</PopoverTitle>
+      </PopoverPopup>
+    </PopoverRoot>
+    <PopoverRoot>
+      <PopoverTrigger openOnHover delay={100} closeDelay={400}>Help</PopoverTrigger>
+      <PopoverPopup data-testid="help" aria-label="Help" align="start" sideOffset={8} style="width: 160px; height: 80px; border: 0; padding: 0">Ask us anything</PopoverPopup>
+    </PopoverRoot>
+    <p data-testid="outside" style="margin-top: 140px">Elsewhere</p>
+    <output data-testid="changes">{changes}</output>
+  </main>
+}

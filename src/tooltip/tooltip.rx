@@ -1,7 +1,12 @@
-import { mergeProps, createId } from "../internal/props.js"
-import { createFloating } from "../internal/dom.js"
-import { createHoverGroup, createHoverIntent, createArrow } from "../internal/overlay.js"
-import { createPopupState, popupStateAttributes, PopupState } from "../internal/popup.rx"
+// A tooltip on the native `popover` attribute. The browser provides the top layer and the placement against the
+// trigger with CSS anchor positioning (opened with `showPopover({ source: trigger })`, so the trigger is its
+// anchor). It is `popover="manual"`: hover-triggered popovers (`interestfor`, `popover="hint"`) aren't shipped in
+// every engine yet, so this family keeps the hover intent, the delay group, and closing on Escape and on a press
+// outside, which the browser does only for `popover="auto"`. There is no Portal, Positioner or Arrow part: the
+// popup is the positioned element, styled with `:popover-open` and `@starting-style`.
+import { mergeProps } from "../internal/props.js"
+import { createHoverGroup, createHoverIntent, createManualDismiss } from "../internal/overlay.js"
+import { createPopoverState, popoverPopupProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, PartProps } from "../internal/types.rx"
 
 type HoverGroup = import("../internal/impl/overlay.ts").HoverGroup
@@ -33,8 +38,7 @@ export component TooltipProvider(props: TooltipProviderProps) {
   {props.children}
 }
 
-export type TooltipContext = PopupState & {
-  popupId: string
+export type TooltipContext = PopoverState & {
   disabled: boolean
   hoverablePopup: boolean
 }
@@ -54,9 +58,10 @@ export type TooltipRootProps = {
 }
 
 export component TooltipRoot(props: TooltipRootProps) {
-  state = createPopupState(props.open, peek(props.defaultOpen ?? false), true, props.onOpenChange)
-  popupId = createId("tooltip")
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), props.onOpenChange)
   isDisabled = props.disabled ?? false
+  action dismiss(reason: "escape-key" | "outside-press") { state.setOpen(false) }
+  _dismiss = createManualDismiss(state.open, state.trigger, state.popup, dismiss)
 
   effect (isDisabled) {
     if ($0 && state.open) { state.setOpen(false) }
@@ -64,7 +69,6 @@ export component TooltipRoot(props: TooltipRootProps) {
 
   provide tooltip = {
     ...state,
-    popupId: popupId,
     disabled: isDisabled,
     hoverablePopup: !(props.disableHoverablePopup ?? false),
   }
@@ -81,7 +85,8 @@ export type TooltipTriggerProps = {
   closeOnClick?: boolean
 } & ButtonProps
 
-// Opens the tooltip on hover (after the delay) and on keyboard focus; closes it on leave, blur and press.
+// Opens the tooltip on hover (after the delay) and on keyboard focus; closes it on leave, blur and press. It has
+// no `popovertarget`: a press must not open a tooltip. Spread on any focusable element.
 export fn tooltipTrigger(ref c: TooltipContext, ref provider: TooltipProviderContext, ref delay: number, ref closeDelay: number, ref closeOnClick: boolean): PartProps {
   action change(next: boolean, reason: "hover" | "focus" | "press" | "group") { c.setOpen(next) }
   _hover = createHoverIntent(!c.disabled, c.open, c.trigger, c.popup, {
@@ -109,78 +114,24 @@ export component TooltipTrigger({ delay, closeDelay, closeOnClick = true, childr
   <button {...merged}>{children}</button>
 }
 
-// Renders its children at the end of <body> while the tooltip is mounted.
-export component TooltipPortal(props: { keepMounted?: boolean; children?: View }) {
-  c = use tooltip
-  {if c.mounted || (props.keepMounted ?? false) {
-    portal { {props.children} }
-  }}
-}
-
-// Where the positioner put the popup, for the popup and the arrow inside it.
-export type TooltipPositionerContext = {
-  side: "top" | "bottom" | "left" | "right"
-  align: "start" | "center" | "end"
-  arrowUncentered: boolean
-  setArrow: (element: HTMLElement) => void
-}
-
-export context tooltipPositioner: TooltipPositionerContext
-
-export type TooltipPositionerProps = {
+export type TooltipPopupProps = {
+  // Which side of the trigger it sits on; the browser flips it when it doesn't fit. Default: "top".
   side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the trigger it lines up with. Default: "center".
   align?: "start" | "center" | "end"
+  // Gap between trigger and popup, in pixels. Default: 0.
   sideOffset?: number
   alignOffset?: number
-  collisionPadding?: number
 } & DivProps
 
-// Positions the popup against the trigger, above it by default. Carries `data-side` and `data-align`.
-export component TooltipPositioner(props: TooltipPositionerProps) {
-  c = use tooltip
-  source arrow: HTMLElement | undefined := undefined
-  action setArrow(element: HTMLElement) { arrow := element }
-  [usedSide, usedAlign] = createFloating(c.mounted, c.trigger, c.positioner, {
-    side: props.side ?? "top",
-    align: props.align ?? "center",
-    sideOffset: props.sideOffset ?? 0,
-    alignOffset: props.alignOffset ?? 0,
-    collisionPadding: props.collisionPadding ?? 5,
-  })
-  arrowUncentered = createArrow(c.mounted, c.trigger, c.positioner, arrow, usedSide)
-  provide tooltipPositioner = { side: usedSide, align: usedAlign, arrowUncentered: arrowUncentered, setArrow: setArrow }
-  { side, align, sideOffset, alignOffset, collisionPadding, children, ...rest } = props
-  state = popupStateAttributes(c)
-  merged = mergeProps({ role: "presentation", "data-side": usedSide, "data-align": usedAlign, ref: c.setPositioner, ...state }, rest)
-  <div {...merged}>{children}</div>
+export fn tooltipPopup(ref c: TooltipContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  base = popoverPopupProps(c, "manual", side, align, sideOffset, alignOffset)
+  { ...base, role: "tooltip" }
 }
 
-export fn tooltipPopup(ref c: TooltipContext): PartProps {
-  state = popupStateAttributes(c)
-  { id: c.popupId, role: "tooltip", ref: c.setPopup, ...state }
-}
-
-export component TooltipPopup({ children, ...rest }: DivProps) {
+export component TooltipPopup({ side = "top", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: TooltipPopupProps) {
   c = use tooltip
-  p = use tooltipPositioner
-  own = tooltipPopup(c)
-  merged = mergeProps({ ...own, "data-side": p.side, "data-align": p.align }, rest)
-  <div {...merged}>{children}</div>
-}
-
-// Points at the trigger. Its offset along the popup's edge is written for you; place it on the edge with CSS,
-// by `data-side`.
-export component TooltipArrow({ children, ...rest }: DivProps) {
-  c = use tooltip
-  p = use tooltipPositioner
-  state = popupStateAttributes(c)
-  merged = mergeProps({
-    "aria-hidden": "true",
-    "data-side": p.side,
-    "data-align": p.align,
-    "data-uncentered": p.arrowUncentered ? "" : undefined,
-    ref: p.setArrow,
-    ...state,
-  }, rest)
+  own = tooltipPopup(c, side, align, sideOffset, alignOffset)
+  merged = mergeProps(own, rest)
   <div {...merged}>{children}</div>
 }

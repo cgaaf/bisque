@@ -1,5 +1,7 @@
-// Behaviour shared by the popups that open on hover or position an arrow (popover, tooltip, preview card): hover
-// intent with delays and a safe area, a delay group for tooltips, the arrow's offset, and a popup's focus.
+// Behaviour the platform doesn't provide for popups that open on hover (tooltip, preview card, popover with
+// `openOnHover`, menu, navigation menu): hover intent with delays and a safe area, a delay group for tooltips, and
+// Escape / outside press for a `popover="manual"` popup. `createArrow` and `createPopupFocus` remain only for the
+// families not yet moved to `popover` and CSS anchor positioning (navigation menu); delete them with the last.
 // `../overlay.d.rx` declares how `.rx` may call these, through the `../overlay.js` facade.
 import { autoUpdate } from "@floating-ui/dom";
 import { createEffect, createSignal, onCleanup, untrack, type Accessor } from "solid-js";
@@ -64,6 +66,12 @@ export type HoverOptions = {
   /** Whether pressing the trigger closes the popup. */
   closeOnPress: boolean;
   group: HoverGroup | undefined;
+  /**
+   * For a trigger that also opens the popup on a press (a `popovertarget` button). The pointer leaving closes only
+   * a popup that hover opened, and pressing the trigger while hover has it open keeps it open (the press's own
+   * toggle is cancelled) instead of closing it. `closeOnPress` is ignored.
+   */
+  stickOnPress?: boolean;
 };
 
 type Point = [number, number];
@@ -191,6 +199,10 @@ export function createHoverIntent(
   let stopTracking: (() => void) | undefined;
   // Set by a pointer press: the focus that follows it is not keyboard focus.
   let pointerFocus = false;
+  // Whether this opened the popup (rather than a press, the consumer, or the popup starting open).
+  let openedHere = false;
+  // With `stickOnPress`, the pointer leaving closes the popup only if hover opened it.
+  const closesOnLeave = () => !current().stickOnPress || openedHere;
 
   const member: GroupMember = { close: () => change(false, "group") };
 
@@ -216,6 +228,7 @@ export function createHoverIntent(
     reset();
     if (next === isOpen()) return;
     if (next) current().group?.enter(member);
+    openedHere = next;
     onOpenChange(next, reason);
   }
 
@@ -266,7 +279,7 @@ export function createHoverIntent(
       if (!isMouseLike(event)) return;
       pointerFocus = false;
       clearOpen();
-      if (!isOpen()) return;
+      if (!isOpen() || !closesOnLeave()) return;
       const popupEl = untrack(popup);
       if (current().hoverablePopup && popupEl) {
         if (within(popupEl, event.relatedTarget)) return;
@@ -279,8 +292,18 @@ export function createHoverIntent(
       clearOpen();
       pointerFocus = true;
     },
-    click() {
+    click(event: MouseEvent) {
       clearOpen();
+      if (current().stickOnPress) {
+        // Hover opened it: the press keeps it open, and from now on only a press or dismissal closes it.
+        if (isOpen() && openedHere) {
+          event.preventDefault();
+          openedHere = false;
+          clearClose();
+          untrackPointer();
+        }
+        return;
+      }
       if (current().closeOnPress && isOpen()) change(false, "press");
     },
     focus(event: FocusEvent) {
@@ -311,7 +334,7 @@ export function createHoverIntent(
     pointerleave(event: PointerEvent) {
       if (!isMouseLike(event) || !current().hoverablePopup) return;
       if (within(untrack(trigger), event.relatedTarget)) return;
-      if (isOpen()) scheduleClose();
+      if (isOpen() && closesOnLeave()) scheduleClose();
     },
     focusout(event: FocusEvent) {
       const next = event.relatedTarget;
@@ -345,6 +368,7 @@ export function createHoverIntent(
     (isNowOpen) => {
       if (isNowOpen) return;
       reset();
+      openedHere = false;
       untrack(options).group?.leave(member);
     },
   );
@@ -352,6 +376,43 @@ export function createHoverIntent(
     reset();
     untrack(options).group?.leave(member);
   });
+}
+
+export type DismissReason = "escape-key" | "outside-press";
+
+/**
+ * Escape and a press outside, for a `popover="manual"` popup (tooltip, preview card): the browser closes only an
+ * `auto` popover itself, and hover popups can't be `auto` or `hint` yet. While `active`, Escape anywhere and a
+ * pointer press outside both `trigger` and `popup` call `onDismiss`. Escape is consumed (`preventDefault`), so a
+ * popover or dialog the popup sits in stays open; an Escape something else already consumed is left alone.
+ */
+export function createManualDismiss(
+  active: Accessor<boolean>,
+  trigger: Accessor<MaybeElement>,
+  popup: Accessor<MaybeElement>,
+  onDismiss: (reason: DismissReason) => void,
+): void {
+  const onKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== "Escape" || event.defaultPrevented) return;
+    event.preventDefault();
+    onDismiss("escape-key");
+  };
+  const onPointerDown = (event: PointerEvent) => {
+    if (within(untrack(trigger), event.target) || within(untrack(popup), event.target)) return;
+    onDismiss("outside-press");
+  };
+  createEffect(
+    () => active(),
+    (isActive) => {
+      if (!isActive) return;
+      document.addEventListener("keydown", onKeyDown);
+      document.addEventListener("pointerdown", onPointerDown, true);
+      return () => {
+        document.removeEventListener("keydown", onKeyDown);
+        document.removeEventListener("pointerdown", onPointerDown, true);
+      };
+    },
+  );
 }
 
 /**

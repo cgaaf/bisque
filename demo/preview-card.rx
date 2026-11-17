@@ -1,19 +1,15 @@
-import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPortal, PreviewCardPositioner, PreviewCardPopup, PreviewCardArrow } from "../src/preview-card/preview-card.rx"
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup } from "../src/preview-card/preview-card.rx"
 
+// The root renders nothing, so it can wrap the paragraph: the card is a block and can't sit inside a <p>.
 export component PreviewCardDemo() {
-  <p>
-    The principles of good{" "}
-    <PreviewCardRoot>
+  <PreviewCardRoot>
+    <p>
+      The principles of good{" "}
       <PreviewCardTrigger href="https://en.wikipedia.org/wiki/Typography">typography</PreviewCardTrigger>
-      <PreviewCardPortal>
-        <PreviewCardPositioner sideOffset={8}>
-          <PreviewCardPopup class="popup">
-            <PreviewCardArrow class="arrow" />
-            Typography is the art and technique of arranging type to make written language legible.
-          </PreviewCardPopup>
-        </PreviewCardPositioner>
-      </PreviewCardPortal>
-    </PreviewCardRoot>
-    {" "}remain in the digital age.
-  </p>
+      {" "}remain in the digital age.
+    </p>
+    <PreviewCardPopup class="popup" sideOffset={8}>
+      Typography is the art and technique of arranging type to make written language legible.
+    </PreviewCardPopup>
+  </PreviewCardRoot>
 }

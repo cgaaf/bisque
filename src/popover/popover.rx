@@ -3,7 +3,12 @@
 // anchor positioning. This family adds the open state and ARIA labelling. There is no Portal, Positioner,
 // Backdrop or Arrow part: the popup is the positioned element, styled with `:popover-open`, `::backdrop` and
 // `@starting-style`. For a modal popup that traps focus, use Dialog.
+//
+// With `openOnHover` on the trigger it also opens when the pointer rests on the trigger, and closes when the
+// pointer leaves both trigger and popup. No engine-wide native hover trigger exists yet (`interestfor`), so that
+// part is the library's hover intent (../internal/overlay.js).
 import { mergeProps, createId } from "../internal/props.js"
+import { createHoverIntent } from "../internal/overlay.js"
 import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
 import { DivProps, ButtonProps, HeadingProps, ParagraphProps, PartProps } from "../internal/types.rx"
 
@@ -37,15 +42,37 @@ export component PopoverRoot(props: PopoverRootProps) {
   {props.children}
 }
 
-// Spread on a <button>: the browser's `popovertarget` does the opening and closing.
-export fn popoverTrigger(ref c: PopoverContext): PartProps {
+export type PopoverTriggerProps = {
+  // Whether resting the pointer on the trigger also opens the popover. A press still toggles it. Default: false.
+  openOnHover?: boolean
+  // With `openOnHover`: how long the pointer rests on the trigger before it opens, in ms. Default: 300.
+  delay?: number
+  // With `openOnHover`: how long after the pointer leaves trigger and popup before it closes, in ms. Default: 0.
+  closeDelay?: number
+} & ButtonProps
+
+// Spread on a <button>: the browser's `popovertarget` does the opening and closing on a press. With
+// `openOnHover`, hovering opens it too; leaving closes only what hover opened, and a press while hover has it
+// open keeps it open instead of toggling it shut.
+export fn popoverTrigger(ref c: PopoverContext, ref openOnHover: boolean, ref delay: number, ref closeDelay: number): PartProps {
+  action change(next: boolean, reason: "hover" | "focus" | "press" | "group") { c.setOpen(next) }
+  _hover = createHoverIntent(openOnHover, c.open, c.trigger, c.popup, {
+    openDelay: delay,
+    closeDelay: closeDelay,
+    hoverablePopup: true,
+    focus: false,
+    focusDelay: 0,
+    closeOnPress: false,
+    group: undefined,
+    stickOnPress: true,
+  }, change)
   base = popoverTriggerProps(c)
   { ...base, "aria-haspopup": "dialog" }
 }
 
-export component PopoverTrigger({ children, ...rest }: ButtonProps) {
+export component PopoverTrigger({ openOnHover = false, delay = 300, closeDelay = 0, children, ...rest }: PopoverTriggerProps) {
   c = use popover
-  own = popoverTrigger(c)
+  own = popoverTrigger(c, openOnHover, delay, closeDelay)
   merged = mergeProps(own, rest)
   <button {...merged}>{children}</button>
 }

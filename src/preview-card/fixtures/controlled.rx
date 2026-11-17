@@ -1,17 +1,15 @@
-import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPortal, PreviewCardPositioner, PreviewCardPopup } from "../preview-card.rx"
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup } from "../preview-card.rx"
 
+// Open from the start, above its link and start-aligned.
 export default component Fixture() {
   source open := true
-  <main>
+  <main style="padding: 160px 0 120px 20px">
     <PreviewCardRoot open={open} onOpenChange={(next) => { open := next }}>
       <PreviewCardTrigger href="#a" delay={100} closeDelay={0}>Kerning</PreviewCardTrigger>
-      <PreviewCardPortal>
-        <PreviewCardPositioner side="top" align="start">
-          <PreviewCardPopup data-testid="popup">The space between letters.</PreviewCardPopup>
-        </PreviewCardPositioner>
-      </PreviewCardPortal>
+      <PreviewCardPopup data-testid="popup" side="top" align="start" sideOffset={6} style="width: 160px; height: 60px; border: 0; padding: 0">The space between letters.</PreviewCardPopup>
     </PreviewCardRoot>
     <button onClick={() => { open := true }}>Show</button>
     <output data-testid="open">{open ? "open" : "closed"}</output>
+    <p data-testid="outside" style="margin-top: 80px">Elsewhere</p>
   </main>
 }

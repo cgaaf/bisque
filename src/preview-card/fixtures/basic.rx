@@ -1,25 +1,22 @@
-import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPortal, PreviewCardPositioner, PreviewCardPopup, PreviewCardArrow } from "../preview-card.rx"
+import { PreviewCardRoot, PreviewCardTrigger, PreviewCardPopup } from "../preview-card.rx"
 
+// The card is a block, so it can't sit inside the paragraph: the root, which renders nothing, wraps both.
 export default component Fixture() {
   source changes := 0
-  <main>
+  <main style="padding: 40px 0 240px 20px">
     <button>Before</button>
-    <p>
-      Built with{" "}
-      <PreviewCardRoot onOpenChange={(open) => { changes := changes + 1 }}>
+    <PreviewCardRoot onOpenChange={(open) => { changes := changes + 1 }}>
+      <p>
+        Built with{" "}
         <PreviewCardTrigger href="#typography">Typography</PreviewCardTrigger>
-        <PreviewCardPortal>
-          <PreviewCardPositioner data-testid="positioner" sideOffset={8}>
-            <PreviewCardPopup data-testid="popup">
-              <PreviewCardArrow data-testid="arrow" />
-              <a href="#more">Read more about type</a>
-            </PreviewCardPopup>
-          </PreviewCardPositioner>
-        </PreviewCardPortal>
-      </PreviewCardRoot>
-    </p>
+        {" "}and care.
+      </p>
+      <PreviewCardPopup data-testid="popup" sideOffset={8} style="width: 200px; height: 80px; border: 0; padding: 0">
+        <a href="#more">Read more about type</a>
+      </PreviewCardPopup>
+    </PreviewCardRoot>
     <button>After</button>
-    <p data-testid="outside">Elsewhere</p>
+    <p data-testid="outside" style="margin-top: 140px">Elsewhere</p>
     <output data-testid="changes">{changes}</output>
   </main>
 }

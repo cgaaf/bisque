@@ -1,12 +1,21 @@
 import { PopoverRoot, PopoverTrigger, PopoverPopup, PopoverTitle, PopoverDescription, PopoverClose } from "../src/popover/popover.rx"
 
 export component PopoverDemo() {
-  <PopoverRoot>
-    <PopoverTrigger>Notifications</PopoverTrigger>
-    <PopoverPopup class="popup" align="start" sideOffset={8}>
-      <PopoverTitle>Notifications</PopoverTitle>
-      <PopoverDescription>You're all caught up.</PopoverDescription>
-      <PopoverClose>Done</PopoverClose>
-    </PopoverPopup>
-  </PopoverRoot>
+  <div>
+    <PopoverRoot>
+      <PopoverTrigger>Notifications</PopoverTrigger>
+      <PopoverPopup class="popup" align="start" sideOffset={8}>
+        <PopoverTitle>Notifications</PopoverTitle>
+        <PopoverDescription>You're all caught up.</PopoverDescription>
+        <PopoverClose>Done</PopoverClose>
+      </PopoverPopup>
+    </PopoverRoot>
+    <PopoverRoot>
+      <PopoverTrigger openOnHover>Account</PopoverTrigger>
+      <PopoverPopup class="popup" align="start" sideOffset={8}>
+        <PopoverTitle>Signed in</PopoverTitle>
+        <PopoverDescription>Opens on hover; press the trigger to keep it open.</PopoverDescription>
+      </PopoverPopup>
+    </PopoverRoot>
+  </div>
 }
