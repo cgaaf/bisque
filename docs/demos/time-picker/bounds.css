@@ -1,0 +1,160 @@
+.TimePickerBounds {
+  display: grid;
+  justify-items: start;
+  gap: 0.375rem;
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  /* The field's group holds the segments and the trigger, styled as one input. */
+  .Field {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: 2.5rem;
+    padding: 0 0.25rem 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A segment has focus: ring the whole input, as a native one would be. */
+  .Field[data-focused] {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Field[data-invalid] {
+    border-color: light-dark(#c4314b, #ff8a9a);
+  }
+
+  .Input {
+    display: inline-flex;
+    align-items: center;
+    cursor: text;
+  }
+
+  .Segment {
+    padding: 0.125rem 0.0625rem;
+    border-radius: 0.25rem;
+    outline: none;
+  }
+
+  .Segment[data-type="literal"] {
+    color: light-dark(#8a8a95, #75757f);
+  }
+
+  .Segment[role="spinbutton"]:focus {
+    background: light-dark(#2f5bea, #8eabff);
+    color: light-dark(#fff, #0b0b0e);
+  }
+
+  .Segment[data-placeholder]:not(:focus) {
+    color: light-dark(#a0a0aa, #6e6e7a);
+  }
+
+  .Trigger {
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+
+  .Trigger:hover,
+  .Trigger[data-popup-open] {
+    background: light-dark(#f2f2f5, #24242a);
+  }
+
+  .Trigger:disabled {
+    opacity: 0.45;
+    cursor: default;
+  }
+
+  .Popup {
+    /* A popover comes with the browser's border, padding and scrolling. */
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    overflow: visible;
+    background: light-dark(#fff, #1c1c21);
+    color: inherit;
+    box-shadow: 0 10px 30px -10px rgb(0 0 0 / 0.25);
+    transition:
+      opacity 120ms,
+      translate 120ms,
+      display 120ms allow-discrete,
+      overlay 120ms allow-discrete;
+    opacity: 0;
+    translate: 0 -4px;
+  }
+
+  .Popup:popover-open {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  @starting-style {
+    .Popup:popover-open {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+
+  /* Not on the popup itself: a \`display\` rule there would show the closed popover in place. */
+  .Columns {
+    display: flex;
+    gap: 0.25rem;
+  }
+
+  /* Each column is a listbox that scrolls on its own; opening scrolls it to the selected option. */
+  .Column {
+    width: 3.25rem;
+    height: 13rem;
+    padding: 0.125rem;
+    overflow: hidden auto;
+    scrollbar-width: thin;
+  }
+
+  /* The options are the listbox's: style them through the column. They take real focus. */
+  .Column [role="option"] {
+    padding: 0.375rem 0;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    text-align: center;
+    cursor: default;
+    user-select: none;
+  }
+
+  .Column [role="option"]:hover:not([data-disabled]) {
+    background: light-dark(#f2f2f5, #24242a);
+  }
+
+  .Column [role="option"]:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -2px;
+  }
+
+  .Column [role="option"][data-selected] {
+    background: light-dark(#2f5bea, #8eabff);
+    color: light-dark(#fff, #0b0b0e);
+  }
+
+  /* Outside min and max: disabled, not hidden. */
+  .Column [role="option"][data-disabled] {
+    opacity: 0.3;
+  }
+
+  .Hint {
+    font-size: 0.8125rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+}

@@ -1,0 +1,92 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd } from "../time-range-picker.rx"
+import { TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../../time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+import { PlainTime, TimeRange } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+component Columns() {
+  column = "height: 120px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  columns = "display: flex; gap: 4px"
+  <div style={columns}>
+    <TimePickerHours style={column} />
+    <TimePickerMinutes style={column} />
+    <TimePickerDayPeriod style={column} />
+  </div>
+}
+
+// The range as the server stores it, `09:00/17:00`.
+fn text(time: PlainTime | undefined): string => time == undefined ? "" : time.toString({ smallestUnit: "minute" })
+fn rangeText(range: TimeRange): string => `${text(range.start)}/${text(range.end)}`
+fn rangeOf(value: string): TimeRange => ({ start: parseTime(value.split("/")[0]), end: parseTime(value.split("/")[1]) })
+fn stringValue(value: string): string => value
+
+// A range saved to a server optimistically (../../test/settings-server.ts), and one disabled while its save is out.
+export default component Fixture() {
+  shift = await load("shift", stringValue("09:00/17:00")) -> "09:00/17:00"
+  source shiftError := ""
+  locked = await load("locked", stringValue("09:00/17:00")) -> "09:00/17:00"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <TimeRangePickerRoot aria-label="Shift" locale="en-US" minuteStep={15} value={rangeOf(shift)} onValueChange={(next) => {
+      let value = rangeText(next)
+      guess shift := value
+      onFlush(() => { shiftError := "" })
+      affects shift
+      try {
+        await save("shift", value)
+        refresh shift
+      } catch (e) {
+        shiftError := "failed"
+      }
+    }}>
+      <TimeRangePickerStart>
+        <TimePickerField aria-label="Start time">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open start" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="start-popup"><Columns /></TimePickerPopup>
+      </TimeRangePickerStart>
+      <TimeRangePickerEnd>
+        <TimePickerField aria-label="End time">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open end" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="end-popup"><Columns /></TimePickerPopup>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+    <output data-testid="shift">{shift}</output>
+    <output data-testid="shift-saving">{pending? shift ? "saving" : ""}</output>
+    <output data-testid="shift-error">{shiftError}</output>
+
+    <TimeRangePickerRoot aria-label="Locked" locale="en-US" minuteStep={15} value={rangeOf(locked)} disabled={pending? locked} onValueChange={(next) => {
+      let value = rangeText(next)
+      guess locked := value
+      affects locked
+      try {
+        await save("locked", value)
+        refresh locked
+      } catch (e) {
+      }
+    }}>
+      <TimeRangePickerStart>
+        <TimePickerField aria-label="Locked start">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open locked start" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="locked-popup"><Columns /></TimePickerPopup>
+      </TimeRangePickerStart>
+      <TimeRangePickerEnd>
+        <TimePickerField aria-label="Locked end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+    }}
+  </div>
+}

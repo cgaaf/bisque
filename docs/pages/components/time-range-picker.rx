@@ -1,0 +1,58 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TimeRangePickerHero } from "../../demos/time-range-picker/hero.rx"
+import { TimeRangePickerOvernight } from "../../demos/time-range-picker/overnight.rx"
+
+export default component Page() {
+  <DocsPage title="Time Range Picker" subtitle="A start and an end time, each with its own picker, in one group.">
+    <Demo source="time-range-picker/hero"><TimeRangePickerHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Each side is a <a href="../time-picker/">Time Picker</a>: inside <code>TimeRangePickerStart</code> and{" "}
+      <code>TimeRangePickerEnd</code> go the Time Picker's parts.
+    </p>
+    <Code file="time-range-picker/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      What the <a href="../time-picker/#platform">Time Picker page</a> says holds for each side: the popups are
+      native popovers, and each field's hidden <code>{"<input type=\"time\">"}</code> submits its time and carries
+      its native range checks. There is no native range input. The library adds the group, the range value, and the
+      tie between the two sides.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="range">The range</h3>
+    <p>
+      The value is <code>{"{ start, end }"}</code>, either one missing while it is being chosen, and{" "}
+      <code>onValueChange</code> gets the whole range when either side changes. Each side has its own popup, placed
+      under its own field. An end before the start is invalid, not swapped: the end's field takes the start as its
+      minimum, so its popup disables what would put it earlier, and an earlier end typed in it marks the field and
+      the group <code>data-invalid</code> (the start's field takes the end as its maximum the same way).
+    </p>
+
+    <h3 id="overnight">Overnight ranges</h3>
+    <p>
+      With <code>allowOvernight</code>, the end may come before the start: 22:00 to 06:00 is a night. The two sides
+      are then independent.
+    </p>
+    <Demo source="time-range-picker/overnight"><TimeRangePickerOvernight /></Demo>
+
+    <h3 id="forms">Forms and Field</h3>
+    <p>
+      The root renders two hidden <code>{"<input type=\"time\">"}</code>s that submit the range as{" "}
+      <code>{"<name>-start"}</code> and <code>{"<name>-end"}</code>, or under <code>startName</code> and{" "}
+      <code>endName</code>, as Range Calendar does, with the native <code>min</code>, <code>max</code> and{" "}
+      <code>required</code>. Inside a <code>FieldRoot</code> the group is labelled by its <code>FieldLabel</code>,
+      the Field's value is <code>{"{ start, end }"}</code> (<code>null</code> until both are there), and the Field is
+      invalid when either side is: empty and required, partly typed (<code>incompleteMessage</code>), or the end
+      before the start (<code>rangeOrderMessage</code>). <code>FieldError</code> shows the message, and each side's
+      segments carry the Field's description and error. A form reset puts <code>defaultValue</code> back and the
+      Field is no longer dirty.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="time-range-picker" />
+  </DocsPage>
+}

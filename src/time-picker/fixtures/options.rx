@@ -1,0 +1,33 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerOptions } from "../time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { PlainTime } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+fn show(time: PlainTime | undefined): string => time == undefined ? "none" : time.toString()
+
+// The one-list variant: whole times every 30 minutes, those outside 09:00–17:00 disabled.
+export default component Fixture() {
+  source changes: string[] := []
+  list = "height: 160px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  <main>
+    <form data-testid="form">
+      <TimePickerRoot locale="en-US" name="meeting" min={parseTime("09:00")} max={parseTime("17:00")} defaultValue={parseTime("10:00")} onValueChange={(v) => { changes := [...changes, show(v)] }}>
+        <TimePickerField aria-label="Meeting">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open meeting" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="popup">
+          <TimePickerOptions interval={30} style={list} />
+        </TimePickerPopup>
+      </TimePickerRoot>
+    </form>
+    <output data-testid="changes">{changes.join(" ")}</output>
+  </main>
+}

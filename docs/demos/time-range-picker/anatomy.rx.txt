@@ -1,0 +1,28 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd, TimeRangePickerSeparator } from "./bisque/time-range-picker/time-range-picker.rx"
+import { TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "./bisque/time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "./bisque/time-field/time-field.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+<TimeRangePickerRoot aria-label="Opening hours">
+  <TimeRangePickerStart>
+    <TimePickerField aria-label="Opens">
+      <TimeFieldInput><Segments /></TimeFieldInput>
+      <TimePickerTrigger />
+    </TimePickerField>
+    <TimePickerPopup>
+      <TimePickerHours />
+      <TimePickerMinutes />
+      <TimePickerDayPeriod />
+    </TimePickerPopup>
+  </TimeRangePickerStart>
+  <TimeRangePickerSeparator>–</TimeRangePickerSeparator>
+  <TimeRangePickerEnd>
+    // The same parts, for the end.
+  </TimeRangePickerEnd>
+</TimeRangePickerRoot>

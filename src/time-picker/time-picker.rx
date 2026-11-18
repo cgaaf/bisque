@@ -1,0 +1,565 @@
+// Time Picker: a Time Field, a trigger button and a popup of time options, behind one `Temporal.PlainTime` value.
+// Base UI has none, and no headless library ships a canonical one (React Aria and Ark stop at TimeField; Kobalte's
+// and MUI's pickers are the models). It is a composition of tested parts, not new behaviour:
+// - the field is TimeFieldRoot (../time-field/time-field.rx), controlled by the picker: TimePickerField wraps it with
+//   the root's shared props, and the segments inside are TimeField's own parts (TimeFieldInput, TimeFieldSegment);
+// - the popup is the Popover family's native `popover="auto"` and anchor positioning (../internal/popover.rx, the
+//   state every anchored popup here shares), with `role="dialog"`: it holds several listboxes, so it isn't one;
+// - each column is a ListboxRoot (../listbox/listbox.rx): roving focus, typeahead, single selection.
+//
+// THE POPUP: COLUMNS, OR ONE LIST. The default parts are columns: TimePickerHours, TimePickerMinutes (every
+// `minuteStep`), TimePickerSeconds (only when `granularity="second"`) and TimePickerDayPeriod (only in a 12-hour
+// locale or with `hourCycle={12}`), each a listbox. Put all four in the popup and the ones the locale and granularity
+// don't use render nothing. TimePickerOptions is the other design, one listbox of whole times every `interval`
+// minutes (09:00, 09:30 …), which is what scheduling UIs use; it reads the same root.
+//
+// THE VALUE. It is committed as the user goes; there is no "OK" button. A choice in a column replaces that unit of
+// the time (the rest come from the value, else `placeholderValue`, else the time the popup opened at) and is clamped
+// into [min, max], so choosing an hour never lands on a minute it doesn't allow. A choice in the one-list variant is
+// the whole time. Typing in the field moves the columns' selection, since both show the one value. The step shapes
+// the lists, not the value: 09:07 typed with a `minuteStep` of 15 is valid, and selects no minute. Options outside
+// [min, max] are disabled, not hidden: an hour only when the whole hour is outside, a minute when the whole minute of
+// the value's hour is. A time outside [min, max] typed in the field is kept and marks it invalid, as in Time Field.
+//
+// OPENING AND CLOSING. Opening scrolls every column to its selected option (else the one nearest the value's unit,
+// else the current time rounded to the step), makes it the column's Tab stop and focuses the first column's. Up and
+// Down, Home and End and typeahead move within a column; Left and Right (mirrored in a right-to-left popup, by its
+// computed `direction`), or Tab, move between columns. Space or a click chooses and keeps the popup open (a time
+// is several choices); Enter chooses and closes it. In the one-list
+// variant any choice closes it. Escape and a press outside close it too (the browser's light dismiss), as does focus
+// leaving the popup. Focus goes back to the trigger when it closes from the keyboard. Nothing opens while the picker
+// is disabled or read-only: the trigger is a disabled button.
+//
+// FORMS. The field's own hidden `<input type="time">` is the only one, named by the root's `name` (or an enclosing
+// FieldRoot's): it submits `13:45`, or `13:45:00` down to seconds, and carries the native `min`, `max` and `required`
+// checks Field reads. The popup provides no Field to its listboxes, so they render no inputs of their own and don't
+// register with a FieldRoot around the picker. A form reset puts the root's `defaultValue` back.
+//
+// Why not `<input type="time">` and its own picker: Time Field's header has what was measured (the locale and hour
+// cycle are the browser's, partial input can't be read, `step` doesn't take the minutes away, Firefox can't style its
+// segments). Its native popup is the browser's own, different in each engine, and can't be styled at all (not
+// measured here beyond that). So the popup is the library's.
+import { mergeProps } from "../internal/props.js"
+import { now, parseTime, isSameTime, timeToString, clampTime } from "../internal/date.js"
+import { isTwelveHour, columnOptions, columnValue, columnTarget, chooseInColumn, intervalOptions, intervalTarget, focusColumns, focusAdjacentColumn, focusLeft, chosenOption, createLateFormReset, openingTime } from "../internal/time-picker.js"
+import { createOnShow } from "../internal/listbox.js"
+import { focusElement } from "../internal/dom.js"
+import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { TimeFieldRoot, timeField } from "../time-field/time-field.rx"
+import { ListboxRoot, ListboxItem } from "../listbox/listbox.rx"
+import { field } from "../field/field.rx"
+import { DivProps, ButtonProps, PartProps, PlainTime, TimeGranularity } from "../internal/types.rx"
+
+// A column of the popup.
+export type TimePickerUnit = "hour" | "minute" | "second" | "dayPeriod"
+
+export type TimePickerContext = PopoverState & {
+  // The popup's state alone (../internal/popover.rx), for the trigger's and popup's props: it changes less often.
+  popover: PopoverState
+  // The time chosen; undefined while there is none (or the field is incomplete).
+  value: PlainTime | undefined
+  // What a choice in a column starts from: the value, else `placeholderValue`, else the time the popup opened at.
+  basis: PlainTime
+  locale: string | string[] | undefined
+  granularity: TimeGranularity
+  hourCycle: 12 | 24 | undefined
+  // The hours are 1–12 with a day period (the locale's, or `hourCycle={12}`).
+  twelveHour: boolean
+  minuteStep: number
+  secondStep: number
+  min: PlainTime | undefined
+  max: PlainTime | undefined
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  name: string | undefined
+  form: string | undefined
+  // A composition's invalid state and description ids for the field, when it gives them.
+  invalid: boolean | undefined
+  describedBy: string | undefined
+  // Reports whether the field is partly filled to a composition that asked (`onIncompleteChange`).
+  reportIncomplete: (incomplete: boolean) => void
+  placeholderValue: PlainTime | undefined
+  // Sets the value (the field reports a complete time, or undefined).
+  setValue: (value: PlainTime | undefined) => void
+  // A choice in a column: that unit of the time, as the column's option value.
+  choose: (unit: TimePickerUnit, value: string) => void
+  // A choice of a whole time, as its form string (`09:30`).
+  chooseTime: (text: string) => void
+  // Closes the popup and gives focus back to the trigger.
+  close: () => void
+  focusTrigger: () => void
+}
+
+export context timePicker: lane TimePickerContext
+
+type TimePickerUnits = { minute: boolean; second: boolean; dayPeriod: boolean }
+
+context timePickerUnits: TimePickerUnits = { minute: true, second: false, dayPeriod: false }
+
+// A time as text that compares with `==`: "" for none.
+fn timeKey(time: PlainTime | undefined): string => time == undefined ? "" : time.toString()
+
+export type TimePickerRootProps = {
+  // The time. `null` is controlled and empty; leaving it out lets the picker hold its own value.
+  value?: PlainTime | null
+  defaultValue?: PlainTime
+  // Called with the time when it changes: from the popup, or when every segment of the field is filled; with
+  // undefined when the field becomes incomplete.
+  onValueChange?: (value: PlainTime | undefined) => void
+  // Whether the popup is open. A press outside and Escape can't be refused: a controlled popup kept open is shown again.
+  // While the picker is disabled or read-only the trigger can't open it, but an `open` (or `defaultOpen`) the app
+  // passes is still the app's.
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  // The earliest valid time. Earlier options are disabled; an earlier time typed in the field marks it invalid.
+  min?: PlainTime
+  // The latest valid time. Later options are disabled; a later time typed in the field marks it invalid.
+  max?: PlainTime
+  // The locale of the field's segments and the options' text, digits, day periods and hour cycle. Default: the browser's.
+  locale?: string | string[]
+  // The smallest unit: "hour", "minute" or "second". Default: "minute".
+  granularity?: TimeGranularity
+  // 12 or 24 overrides the locale's hour cycle.
+  hourCycle?: 12 | 24
+  // Minutes between the minute column's options. It shapes the list, not the value. Default: 1.
+  minuteStep?: number
+  // Seconds between the second column's options. Default: 1.
+  secondStep?: number
+  // What a choice in a column, or a stepped empty segment, starts from while there is no value. Default: the time the
+  // popup opened at (for the field: midnight).
+  placeholderValue?: PlainTime
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // Submits the time (`13:45`, `13:45:00` down to seconds) with a form, from the field's hidden input.
+  name?: string
+  form?: string
+  // For a composition that keeps the Field to itself (Time Range Picker): marks the field and its segments invalid,
+  // and gives each segment's `aria-describedby`. Given, they win over an enclosing FieldRoot's.
+  invalid?: boolean
+  describedBy?: string
+  // For a composition: called with whether the field is partly filled, whenever that changes.
+  onIncompleteChange?: (incomplete: boolean) => void
+  children?: View
+}
+
+export component TimePickerRoot(props: TimePickerRootProps) {
+  f = use field
+  // Boxed: a source seeded with a Temporal value breaks it (../internal/date.d.rx).
+  source held := { time: peek(props.defaultValue) }
+  // The time the popup last opened at: what the columns open on and start from while there is no value.
+  source opened: { time: PlainTime | undefined } := { time: undefined }
+  // What a form reset puts back.
+  initial = peek(props.defaultValue)
+  // `value` and `disabled` are often read from an answer that can fail: that failure is the app's to show.
+  givenValue = props.value catch (e) => undefined
+  given = (givenValue == undefined ? held.time : givenValue == null ? undefined : givenValue)
+  // Each Temporal value is kept as its text and parsed back only when the text changes: an app that parses its value
+  // on every render (`value={parseTime(saved)}`) passes a new object each time, and every equation below would re-run
+  // with equal content.
+  current = parseTime(timeKey(given))
+  isDisabled = ((latest props.disabled ?? false) catch (e) => false) || (f?.disabled ?? false)
+  isReadOnly = (latest props.readOnly ?? false) catch (e) => false
+  granularity = latest props.granularity ?? "minute"
+  locale = latest props.locale
+  hourCycle = latest props.hourCycle
+  minTime = parseTime(timeKey(latest props.min))
+  maxTime = parseTime(timeKey(latest props.max))
+  placeholder = parseTime(timeKey(latest props.placeholderValue))
+  basis = parseTime(timeKey(current ?? placeholder ?? opened.time)) ?? now(undefined, granularity)
+
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
+
+  // The owner's handler is called in a change of its own: one that saves holds its change until the answer lands,
+  // and the picker's own state would be held with it.
+  action notify(next: PlainTime | undefined) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action commit(next: PlainTime | undefined) {
+    let shown = latest current
+    if (isSameTime(next, shown)) { return }
+    held := { time: next }
+    notify(next)
+  }
+  action setValue(next: PlainTime | undefined) { commit(next) }
+  action choose(unit: TimePickerUnit, value: string) {
+    if (isDisabled || isReadOnly) { return }
+    // From the time the user sees: an app whose value prop a loading question reads holds that prop until the
+    // answer lands, and a choice in the next column must start from this one.
+    let from = latest basis
+    let next = chooseInColumn(from, unit, value, granularity, minTime, maxTime)
+    if (next != undefined) { commit(next) }
+  }
+  action chooseTime(text: string) {
+    if (isDisabled || isReadOnly) { return }
+    let next = parseTime(text)
+    if (next != undefined) { commit(next) }
+  }
+  action focusTrigger() { focusElement(state.trigger) }
+  // Focus leaves the popup before it closes, so it lands on the trigger in every engine.
+  action close() {
+    focusElement(state.trigger)
+    state.setOpen(false)
+  }
+  action shown() {
+    // Clamped, so that a time of day outside min and max opens on the nearest allowed time, not on columns of
+    // disabled options.
+    opened := { time: clampTime(openingTime(granularity, minuteStep, secondStep), minTime, maxTime) }
+    focusColumns(state.popup)
+  }
+  _show = createOnShow(state.popup, shown)
+  // The field is controlled by the picker, so its own reset keeps the picker's value: the picker puts its default back.
+  // Inside a FieldRoot, Field ends up with the default as the value it starts from, so the Field isn't dirty after a
+  // reset (time-picker.browser.test.ts checks it).
+  action reset() {
+    if (givenValue == undefined && !isSameTime(initial, held.time)) {
+      held := { time: initial }
+      notify(initial)
+    }
+  }
+  _reset = createLateFormReset(state.trigger, formId, reset)
+
+  // Every prop read into an equation of its own, so that the provision is rebuilt only when a value changes.
+  twelveHour = isTwelveHour(locale, hourCycle)
+  minuteStep = latest props.minuteStep ?? 1
+  secondStep = latest props.secondStep ?? 1
+  isRequired = latest props.required ?? false
+  inputName = latest props.name
+  formId = latest props.form
+  givenInvalid = latest props.invalid
+  givenDescribedBy = latest props.describedBy
+  action reportIncomplete(incomplete: boolean) {
+    if (props.onIncompleteChange) {
+      let report = props.onIncompleteChange
+      onFlush(() => { report(incomplete) })
+    }
+  }
+  self = latest {
+    ...state,
+    popover: state,
+    value: current,
+    basis: basis,
+    locale: locale,
+    granularity: granularity,
+    hourCycle: hourCycle,
+    twelveHour: twelveHour,
+    minuteStep: minuteStep,
+    secondStep: secondStep,
+    min: minTime,
+    max: maxTime,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    name: inputName,
+    form: formId,
+    invalid: givenInvalid,
+    describedBy: givenDescribedBy,
+    reportIncomplete: reportIncomplete,
+    placeholderValue: placeholder,
+    setValue: setValue,
+    choose: choose,
+    chooseTime: chooseTime,
+    close: close,
+    focusTrigger: focusTrigger,
+  }
+
+  provide timePicker = self
+  // Which columns render, in a context of their own: read from the main one, a column's `if` was re-created
+  // whenever that context changed while an app's change was in flight (a save that disables the picker).
+  showMinutes = (props.granularity ?? "minute") != "hour"
+  showSeconds = props.granularity == "second"
+  showDayPeriod = isTwelveHour(props.locale, props.hourCycle)
+  provide timePickerUnits = { minute: showMinutes, second: showSeconds, dayPeriod: showDayPeriod }
+
+  {props.children}
+}
+
+// What the field takes beyond what the root shares with it (value, bounds, locale, name and the rest).
+export type TimePickerFieldProps = {
+  // An empty segment's `aria-valuetext`, in the app's language. Default: "Empty".
+  emptyText?: string
+  // The validation message while some segments are filled and others not. Default: "Enter a complete time."
+  incompleteMessage?: string
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue" | "onChange">
+
+// The field: TimeFieldRoot, given the picker's value and shared props. Inside it go TimeField's own parts
+// (TimeFieldInput, and a TimeFieldSegment per entry of `use timeField`'s `segments`), and usually the trigger. Label
+// it with `aria-label`, `aria-labelledby` or an enclosing FieldLabel, as a Time Field.
+export component TimePickerField(props: TimePickerFieldProps) {
+  c = use timePicker
+  // Each field read on its own: the context object is rebuilt whenever any of it changes (the popup's placement
+  // while it is open, too), and a prop read straight from it would re-run the field's equations each time.
+  value = c.value ?? null
+  setValue = c.setValue
+  min = c.min
+  max = c.max
+  locale = c.locale
+  granularity = c.granularity
+  hourCycle = c.hourCycle
+  placeholderValue = c.placeholderValue
+  disabled = c.disabled
+  readOnly = c.readOnly
+  required = c.required
+  name = c.name
+  form = c.form
+  invalid = c.invalid
+  describedBy = c.describedBy
+  reportIncomplete = c.reportIncomplete
+  <TimeFieldRoot {...props} value={value} onValueChange={setValue} min={min} max={max} locale={locale} granularity={granularity} hourCycle={hourCycle} placeholderValue={placeholderValue} disabled={disabled} readOnly={readOnly} required={required} name={name} form={form} invalid={invalid} describedBy={describedBy}>
+    {props.children}
+    <IncompleteReport onChange={reportIncomplete} />
+  </TimeFieldRoot>
+}
+
+// Inside the field: tells the picker whether the field is partly filled.
+component IncompleteReport(props: { onChange: (incomplete: boolean) => void }) {
+  c = use timeField
+  action report(incomplete: boolean) { props.onChange(incomplete) }
+  effect (c.incomplete) { report($0) }
+  {""}
+}
+
+// Spread on a <button>: `popovertarget` opens and closes the popup (it only works on a button). It is disabled while
+// the picker is disabled or read-only. Its default name is "Choose time"; an icon button keeps it, or pass `aria-label`.
+export fn timePickerTrigger(ref c: TimePickerContext): PartProps {
+  p = c.popover
+  base = popoverTriggerProps(p)
+  disabled = c.disabled
+  readOnly = c.readOnly
+  own = latest {
+    ...base,
+    "aria-haspopup": "dialog",
+    "aria-label": "Choose time",
+    disabled: disabled || readOnly,
+    "data-disabled": disabled ? "" : undefined,
+    "data-readonly": readOnly ? "" : undefined,
+  }
+  own
+}
+
+export component TimePickerTrigger({ children, ...rest }: ButtonProps) {
+  c = use timePicker
+  own = timePickerTrigger(c)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export type TimePickerPopupProps = {
+  // Which side of the trigger it sits on; the browser flips it when it doesn't fit. Default: "bottom".
+  side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the trigger it lines up with. Default: "end", under a trigger at the field's end.
+  align?: "start" | "center" | "end"
+  // Gap between trigger and popup, in pixels. Default: 0.
+  sideOffset?: number
+  alignOffset?: number
+} & DivProps
+
+// The popup: a `popover="auto"` element placed against the trigger, `role="dialog"`, named "Choose time" unless it
+// is given `aria-label` or `aria-labelledby`. The browser closes it on Escape and a press outside; focus leaving it
+// closes it too. Style it with `:popover-open` and `@starting-style`.
+export fn timePickerPopup(ref c: TimePickerContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  p = c.popover
+  base = popoverPopupProps(p, "auto", side, align, sideOffset, alignOffset)
+  trigger = c.trigger
+  action keyDown(event: KeyboardEvent) {
+    // The browser closes it; focus goes back to the trigger first, which the browser alone does only when the
+    // trigger had focus when it opened (Safari doesn't focus a clicked button).
+    if (event.key == "Escape") { c.focusTrigger() }
+  }
+  action focusOut(event: FocusEvent & { currentTarget: HTMLElement; relatedTarget: Node | null }) {
+    // Focus has gone elsewhere on purpose (Tab past the last column, a press outside): it stays where it went.
+    if (focusLeft(event.currentTarget, trigger, event.relatedTarget)) { c.setOpen(false) }
+  }
+  own = latest {
+    ...base,
+    role: "dialog",
+    "aria-label": "Choose time",
+    tabindex: "-1",
+    onKeyDown: keyDown,
+    onFocusOut: focusOut,
+  }
+  own
+}
+
+export component TimePickerPopup(props: TimePickerPopupProps) {
+  c = use timePicker
+  // The columns are listboxes, which would each submit and register with a FieldRoot around the picker: the field's
+  // hidden input is the only one.
+  provide field = undefined
+  { side = "bottom", align = "end", sideOffset = 0, alignOffset = 0, children, ...rest } = props
+  own = timePickerPopup(c, side, align, sideOffset, alignOffset)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+fn stepOf(ref c: TimePickerContext, ref unit: TimePickerUnit): number => unit == "minute" ? c.minuteStep : unit == "second" ? c.secondStep : 1
+
+fn unitLabel(unit: TimePickerUnit): string => unit == "hour" ? "Hours" : unit == "minute" ? "Minutes" : unit == "second" ? "Seconds" : "AM/PM"
+
+// Spread on a ListboxRoot: one column. It selects the value's `unit` and applies a choice (a click, Space or Enter)
+// to the picker; Left and Right move to the neighbouring column, Enter also closes the popup. Its options are ListboxItems, one per
+// entry of `columnOptions` (../internal/time-picker.js), with `value` and `disabled` as given. Its default name is
+// the unit's in English ("Hours", "Minutes", "Seconds", "AM/PM"): pass `aria-label` in the app's language.
+export fn timePickerColumn(ref c: TimePickerContext, ref unit: TimePickerUnit): PartProps {
+  // Each field read on its own (see TimePickerField): the strings settle where the context object doesn't.
+  time = c.value
+  basis = c.basis
+  blocked = c.disabled || c.readOnly
+  selected = time == undefined ? null : columnValue(time, unit)
+  step = stepOf(c, unit)
+  target = columnTarget(basis, unit, step)
+  action keyDown(event: KeyboardEvent & { target: EventTarget | null }) {
+    if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) { return }
+    let key = event.key
+    if (key == "ArrowLeft" || key == "ArrowRight") {
+      if (focusAdjacentColumn(event.target, key == "ArrowRight" ? 1 : -1)) { event.preventDefault() }
+    } else if (key == "Enter" || key == " ") {
+      let value = chosenOption(event.target)
+      if (value == undefined) { return }
+      event.preventDefault()
+      c.choose(unit, value)
+      if (key == "Enter") { c.close() }
+    }
+  }
+  // A choice is applied here, not from the listbox's `onValueChange`: that report comes in a change of its own, later,
+  // and computed from the time as it was, it could undo a choice made in the next column meanwhile. The listbox's
+  // selection only shows the picker's value.
+  action click(event: MouseEvent & { target: EventTarget | null }) {
+    let value = chosenOption(event.target)
+    if (value != undefined) { c.choose(unit, value) }
+  }
+  own = latest {
+    value: selected,
+    disabled: blocked,
+    "aria-label": unitLabel(unit),
+    "data-bisque-time-column": "",
+    "data-unit": unit,
+    "data-target": target,
+    onKeyDown: keyDown,
+    onClick: click,
+  }
+  own
+}
+
+type TimeColumnProps = { unit: TimePickerUnit } & Omit<DivProps, "children" | "defaultValue">
+
+component TimeColumn(props: TimeColumnProps) {
+  c = use timePicker
+  { unit, ...rest } = props
+  step = stepOf(c, unit)
+  basis = c.basis
+  locale = c.locale
+  hourCycle = c.hourCycle
+  min = c.min
+  max = c.max
+  options key value = columnOptions(unit, basis, { locale: locale, hourCycle: hourCycle, step: step, min: min, max: max })
+  units = use timePickerUnits
+  shown = unit == "dayPeriod" ? units.dayPeriod : unit == "second" ? units.second : unit == "minute" ? units.minute : true
+  own = timePickerColumn(c, unit)
+  merged = latest mergeProps(own, rest)
+  {if shown {
+    <ListboxRoot {...merged}>
+      {for option in options {
+        <ListboxItem value={option.value} disabled={option.disabled}>{option.label}</ListboxItem>
+      }}
+    </ListboxRoot>
+  }}
+}
+
+export type TimePickerColumnProps = Omit<DivProps, "children" | "defaultValue">
+
+// The hours: 0–23, or in a 12-hour locale the 12 hours of the value's day period (with no value, of the time the
+// popup opened at).
+export component TimePickerHours(props: TimePickerColumnProps) {
+  <TimeColumn {...props} unit="hour" />
+}
+
+// The minutes, every `minuteStep`. Renders nothing with `granularity="hour"`.
+export component TimePickerMinutes(props: TimePickerColumnProps) {
+  <TimeColumn {...props} unit="minute" />
+}
+
+// The seconds, every `secondStep`. Renders nothing unless `granularity="second"`.
+export component TimePickerSeconds(props: TimePickerColumnProps) {
+  <TimeColumn {...props} unit="second" />
+}
+
+// AM and PM, in the locale's words. Renders nothing in a 24-hour locale (or with `hourCycle={24}`).
+export component TimePickerDayPeriod(props: TimePickerColumnProps) {
+  <TimeColumn {...props} unit="dayPeriod" />
+}
+
+// Spread on a ListboxRoot: the one-list variant, whole times every `interval` minutes. It selects the value when it
+// is one of them; any choice (a click, Enter or Space) sets the whole time and closes the popup. Its options are
+// ListboxItems, one per entry of `intervalOptions` (../internal/time-picker.js). Default name: "Times".
+export fn timePickerOptions(ref c: TimePickerContext, ref interval: number): PartProps {
+  time = c.value
+  basis = c.basis
+  granularity = c.granularity
+  blocked = c.disabled || c.readOnly
+  selected = time == undefined ? null : timeToString(time, granularity)
+  target = intervalTarget(basis, interval, granularity)
+  action keyDown(event: KeyboardEvent & { target: EventTarget | null }) {
+    if (event.altKey || event.ctrlKey || event.metaKey) { return }
+    if (event.key == "Enter" || event.key == " ") {
+      let value = chosenOption(event.target)
+      if (value == undefined) { return }
+      event.preventDefault()
+      c.chooseTime(value)
+      c.close()
+    }
+  }
+  // As in a column, the choice is applied here rather than from the listbox's report.
+  action click(event: MouseEvent & { target: EventTarget | null }) {
+    let value = chosenOption(event.target)
+    if (value == undefined) { return }
+    c.chooseTime(value)
+    c.close()
+  }
+  own = latest {
+    value: selected,
+    disabled: blocked,
+    "aria-label": "Times",
+    "data-bisque-time-column": "",
+    "data-target": target,
+    onKeyDown: keyDown,
+    onClick: click,
+  }
+  own
+}
+
+export type TimePickerOptionsProps = {
+  // Minutes between the options, from midnight. Default: 30.
+  interval?: number
+} & Omit<DivProps, "children" | "defaultValue">
+
+// One listbox of whole times every `interval` minutes, from 00:00: the scheduling variant, instead of the columns.
+export component TimePickerOptions(props: TimePickerOptionsProps) {
+  c = use timePicker
+  { interval = 30, ...rest } = props
+  locale = c.locale
+  granularity = c.granularity
+  hourCycle = c.hourCycle
+  min = c.min
+  max = c.max
+  options key value = intervalOptions(locale, interval, granularity, hourCycle, min, max)
+  own = timePickerOptions(c, interval)
+  merged = latest mergeProps(own, rest)
+  <ListboxRoot {...merged}>
+    {for option in options {
+      <ListboxItem value={option.value} disabled={option.disabled}>{option.label}</ListboxItem>
+    }}
+  </ListboxRoot>
+}

@@ -1,0 +1,21 @@
+// How .rx may use ./time-picker.js (implemented in ./impl/time-picker.ts): the options, choices and opening of a
+// time picker's columns and interval list (src/time-picker, src/time-range-picker).
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./time-picker.d.ts.
+export type TimeUnit = import("./impl/time-picker.ts").TimeUnit
+export type TimePickerOption = import("./impl/time-picker.ts").TimePickerOption
+export type ColumnSettings = import("./impl/time-picker.ts").ColumnSettings
+export fn openingTime(granularity: "hour" | "minute" | "second" | undefined, minuteStep: number | undefined, secondStep: number | undefined): Temporal.PlainTime
+export pure fn isTwelveHour(locale: string | string[] | undefined, hourCycle: 12 | 24 | undefined): boolean
+export pure fn columnOptions(unit: TimeUnit, basis: Temporal.PlainTime, settings: ColumnSettings): TimePickerOption[]
+export pure fn columnValue(time: Temporal.PlainTime, unit: TimeUnit): string
+export pure fn columnTarget(basis: Temporal.PlainTime, unit: TimeUnit, step: number | undefined): string
+export pure fn chooseInColumn(basis: Temporal.PlainTime, unit: TimeUnit, value: string, granularity: "hour" | "minute" | "second" | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): Temporal.PlainTime | undefined
+export pure fn intervalOptions(locale: string | string[] | undefined, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined, hourCycle: 12 | 24 | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): TimePickerOption[]
+export pure fn intervalTarget(basis: Temporal.PlainTime, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined): string
+export fn focusColumns(popup: HTMLElement | undefined): void
+export fn focusAdjacentColumn(from: EventTarget | null, direction: number): boolean
+export fn focusLeft(popup: HTMLElement | undefined, trigger: HTMLElement | undefined, next: EventTarget | null): boolean
+export fn chosenOption(target: EventTarget | null): string | undefined
+export pure fn createLateFormReset(ref element: HTMLElement | undefined, ref formId: string | undefined, onReset: () => void) instantiates
+export pure fn createTimeRangeValidity(ref start: HTMLInputElement | undefined, ref end: HTMLInputElement | undefined, ref startMessage: string, ref endMessage: string, ref key: string) instantiates
+export pure fn rangeFieldValue(start: string, end: string): { start: string; end: string } | null

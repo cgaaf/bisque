@@ -1,0 +1,110 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerSeconds, TimePickerDayPeriod } from "../time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { PlainTime } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+fn show(time: PlainTime | undefined): string => time == undefined ? "none" : time.toString()
+
+// 12-hour with a minute step; 24-hour with seconds and bounds; controlled; disabled; read-only.
+export default component Fixture() {
+  // Columns that scroll, side by side: the popup must fit below its trigger in the 414px test viewport.
+  column = "height: 120px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  // Not `display` on the popup itself: it would show the closed popover in place.
+  popup = "padding: 4px"
+  columns = "display: flex; gap: 4px"
+  source changes: string[] := []
+  source opens: string[] := []
+  // Boxed: a source seeded with a Temporal value breaks it (../../internal/date.d.rx).
+  source controlled := { time: parseTime("18:15") ?? null }
+  source open := false
+  <main>
+    <form data-testid="form">
+      <TimePickerRoot locale="en-US" minuteStep={15} name="start" defaultValue={parseTime("09:30")} onValueChange={(v) => { changes := [...changes, show(v)] }} onOpenChange={(o) => { opens := [...opens, `${o}`] }}>
+        <TimePickerField aria-label="Start">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open start">◷</TimePickerTrigger>
+        </TimePickerField>
+        <TimePickerPopup style={popup} data-testid="start-popup">
+          <div style={columns}>
+            <TimePickerHours style={column} />
+            <TimePickerMinutes style={column} />
+            <TimePickerSeconds style={column} />
+            <TimePickerDayPeriod style={column} />
+          </div>
+        </TimePickerPopup>
+      </TimePickerRoot>
+      <TimePickerRoot locale="en-GB" hourCycle={24} granularity="second" secondStep={10} name="alarm" min={parseTime("08:30")} max={parseTime("17:00")}>
+        <TimePickerField aria-label="Alarm">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open alarm" />
+        </TimePickerField>
+        <TimePickerPopup style={popup} data-testid="alarm-popup">
+          <div style={columns}>
+            <TimePickerHours style={column} />
+            <TimePickerMinutes style={column} />
+            <TimePickerSeconds style={column} />
+            <TimePickerDayPeriod style={column} />
+          </div>
+        </TimePickerPopup>
+      </TimePickerRoot>
+      <button type="reset">Reset</button>
+    </form>
+    <TimePickerRoot locale="en-US" value={controlled.time} onValueChange={(v) => { controlled.time := v ?? null }} open={open} onOpenChange={(o) => { open := o }}>
+      <TimePickerField aria-label="Controlled">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+        <TimePickerTrigger aria-label="Open controlled" />
+      </TimePickerField>
+      <TimePickerPopup style={popup} data-testid="controlled-popup">
+          <div style={columns}>
+          <TimePickerHours style={column} />
+          <TimePickerMinutes style={column} />
+          <TimePickerDayPeriod style={column} />
+          </div>
+      </TimePickerPopup>
+    </TimePickerRoot>
+    <button onClick={() => { controlled.time := parseTime("07:45") ?? null }}>Set morning</button>
+    <button onClick={() => { open := !open }}>Toggle controlled</button>
+    <output data-testid="controlled-value">{controlled.time == null ? "none" : controlled.time.toString()}</output>
+    <output data-testid="controlled-open">{open ? "open" : "closed"}</output>
+    <TimePickerRoot locale="en-US" disabled defaultValue={parseTime("10:00")}>
+      <TimePickerField aria-label="Disabled">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+        <TimePickerTrigger aria-label="Open disabled" />
+      </TimePickerField>
+      <TimePickerPopup style={popup}><TimePickerHours style={column} /></TimePickerPopup>
+    </TimePickerRoot>
+    <TimePickerRoot locale="en-US" readOnly defaultValue={parseTime("10:00")}>
+      <TimePickerField aria-label="Read-only">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+        <TimePickerTrigger aria-label="Open read-only" />
+      </TimePickerField>
+      <TimePickerPopup style={popup}><TimePickerHours style={column} /></TimePickerPopup>
+    </TimePickerRoot>
+    // Right to left: the columns run from the right, and Left moves to the next one.
+    <div dir="rtl">
+      <TimePickerRoot locale="en-US" defaultValue={parseTime("09:30")}>
+        <TimePickerField aria-label="Right to left">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open rtl" />
+        </TimePickerField>
+        <TimePickerPopup style={popup} data-testid="rtl-popup">
+          <div style={columns}>
+            <TimePickerHours style={column} />
+            <TimePickerMinutes style={column} />
+            <TimePickerDayPeriod style={column} />
+          </div>
+        </TimePickerPopup>
+      </TimePickerRoot>
+    </div>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <output data-testid="opens">{opens.join(" ")}</output>
+    <input aria-label="After" />
+  </main>
+}

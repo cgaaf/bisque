@@ -1,0 +1,115 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TimePickerHero } from "../../demos/time-picker/hero.rx"
+import { TimePickerHourCycle } from "../../demos/time-picker/hour-cycle.rx"
+import { TimePickerBounds } from "../../demos/time-picker/bounds.rx"
+import { TimePickerList } from "../../demos/time-picker/list.rx"
+import { TimePickerForm } from "../../demos/time-picker/form.rx"
+
+export default component Page() {
+  <DocsPage title="Time Picker" subtitle="A time field with a popup of hours, minutes and AM/PM to choose from.">
+    <Demo source="time-picker/hero"><TimePickerHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      A time picker is a <a href="../time-field/">Time Field</a>, a trigger and a popup, behind one value. The field
+      is Time Field's, so its segments are Time Field's parts, rendered by a small component inside it:
+    </p>
+    <Code file="time-picker/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>{"<input type=\"time\">"}</code> is in every browser, but the <a href="../time-field/#platform">Time
+      Field page</a> lists why it can't be the field: its locale and hour cycle are the browser's, its partial input
+      can't be read, <code>step</code> can't take the minutes away, and Firefox can't style its segments. Its own
+      picker is no better: it is different in each engine, and no engine lets it be styled.
+    </p>
+    <p>
+      What the browser does do here is the popup. It is an element with the native <code>popover</code> attribute,
+      opened by a <code>popovertarget</code> button, as in <a href="../popover/">Popover</a>: the top layer,
+      closing on <kbd>Escape</kbd> and on a press outside, and placement against the trigger with CSS anchor
+      positioning come from the browser. The field's hidden <code>{"<input type=\"time\">"}</code> submits the value
+      and carries the native <code>min</code>, <code>max</code> and <code>required</code> checks.
+    </p>
+    <p>
+      The library adds the columns (each a <a href="../listbox/">Listbox</a>, with roving focus and typeahead), the
+      one shared <code>Temporal.PlainTime</code>, opening on the selected time, moving between columns, and
+      disabling the options outside <code>min</code> and <code>max</code>. Base UI has no time picker, and no
+      headless library has a canonical one: React Aria and Ark stop at the field.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="choosing">Choosing a time</h3>
+    <p>
+      The value is committed as you go; there is no OK button. A choice in a column replaces that part of the time
+      and shows in the field at once, and the popup stays open for the next one (<kbd>Space</kbd> or a click).{" "}
+      <kbd>Enter</kbd> chooses and closes it; so do <kbd>Escape</kbd>, a press outside, and focus leaving the popup.
+      Typing in the field moves the columns' selection, since both show the same value. While there is no value, a
+      choice starts from <code>placeholderValue</code>, else from the time the popup opened at.
+    </p>
+    <p>
+      Opening scrolls each column to its selected option and focuses the hours. With no value the columns open on
+      the current time, rounded to the step. <kbd>↑</kbd> <kbd>↓</kbd> <kbd>Home</kbd> <kbd>End</kbd> and typing
+      move within a column; <kbd>←</kbd> <kbd>→</kbd> (mirrored when the popup is right to left) or{" "}
+      <kbd>Tab</kbd> move between columns. Focus goes back to the
+      trigger when the popup closes from the keyboard.
+    </p>
+
+    <h3 id="hour-cycle">Hour cycle and seconds</h3>
+    <p>
+      Put all four columns in the popup. The AM/PM column renders only in a 12-hour locale (or with{" "}
+      <code>hourCycle={"{12}"}</code>), and the seconds only with <code>granularity="second"</code>. In 12-hour time
+      the hours column lists the hours of the chosen day period. <code>minuteStep</code> and{" "}
+      <code>secondStep</code> space the options.
+    </p>
+    <Demo source="time-picker/hour-cycle"><TimePickerHourCycle /></Demo>
+
+    <h3 id="bounds">Minimum and maximum</h3>
+    <p>
+      Options outside <code>min</code> and <code>max</code> are disabled, not hidden: an hour when the whole hour is
+      outside, a minute when the whole minute is. A choice is clamped into the range, so choosing 9 from 10:15 with
+      a minimum of 9:30 gives 9:30. A time typed outside the range is kept, and the field is invalid.
+    </p>
+    <p>
+      The step shapes the lists, not the value: 9:07 typed with a <code>minuteStep</code> of 15 is valid, and no
+      minute is selected.
+    </p>
+    <Demo source="time-picker/bounds"><TimePickerBounds /></Demo>
+
+    <h3 id="list">One list of times</h3>
+    <p>
+      Scheduling UIs show whole times at an interval instead of columns. <code>TimePickerOptions</code> is that
+      list, every <code>interval</code> minutes from midnight, on the same root; the options outside{" "}
+      <code>min</code> and <code>max</code> are disabled. Any choice sets the whole time and closes the popup.
+    </p>
+    <Demo source="time-picker/list"><TimePickerList /></Demo>
+
+    <h3 id="form">In a form</h3>
+    <p>
+      With a <code>name</code>, or inside a named <code>FieldRoot</code>, the field's hidden input submits{" "}
+      <code>13:45</code> (<code>13:45:00</code> down to seconds), and nothing while the field is incomplete. It is
+      the only one: the columns submit nothing. A form reset puts <code>defaultValue</code> back.
+    </p>
+    <Demo source="time-picker/form"><TimePickerForm /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> with <code>onValueChange</code>, and <code>open</code> with{" "}
+      <code>onOpenChange</code>, to hold either yourself; <code>null</code> is a controlled, empty value.{" "}
+      <code>onValueChange</code> gets a time for each choice and for each complete time typed, and{" "}
+      <code>undefined</code> when the field becomes incomplete. Both callbacks run in a change of their own, so they
+      may save without holding the picker. Disabled or read-only, the trigger is a disabled button.
+    </p>
+
+    <h3 id="styling">Styling</h3>
+    <p>
+      The parts ship no styles. Style the popup with <code>:popover-open</code> and <code>@starting-style</code>, not
+      with a <code>display</code> rule on the popup itself (it would show the closed popover in place). The options
+      are a listbox's: select them through the column, with <code>[data-selected]</code>,{" "}
+      <code>[data-disabled]</code> and <code>:focus-visible</code>, as the demos do.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="time-picker" />
+  </DocsPage>
+}

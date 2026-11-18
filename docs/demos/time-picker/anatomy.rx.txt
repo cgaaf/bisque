@@ -1,0 +1,28 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerSeconds, TimePickerDayPeriod, TimePickerOptions } from "./bisque/time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "./bisque/time-field/time-field.rx"
+
+// The field's segments come from Time Field's context, as in a Time Field.
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+<TimePickerRoot>
+  <TimePickerField aria-label="Time">
+    <TimeFieldInput>
+      <Segments />
+    </TimeFieldInput>
+    <TimePickerTrigger />
+  </TimePickerField>
+  <TimePickerPopup>
+    // Columns: each renders nothing where the locale or granularity doesn't use it…
+    <TimePickerHours />
+    <TimePickerMinutes />
+    <TimePickerSeconds />
+    <TimePickerDayPeriod />
+    // …or, instead, one list of whole times.
+    <TimePickerOptions interval={30} />
+  </TimePickerPopup>
+</TimePickerRoot>

@@ -1,0 +1,47 @@
+{
+  "TimeRangePickerRoot": {
+    "description": "Holds the range and shares it, with the bounds, locale and the rest, with the two sides. A `role=\"group\"`, named by its `aria-label`, `aria-labelledby` or an enclosing FieldLabel. With a name, or inside a FieldRoot, it renders the two hidden `<input type=\"time\">`s that submit the range and that Field validates.",
+    "props": {
+      "defaultValue": "The range at first, when it isn't controlled. A form reset puts it back.",
+      "locale": "The locale of both fields and their popups.",
+      "granularity": "The smallest unit of both times: `\"hour\"`, `\"minute\"` or `\"second\"`.",
+      "hourCycle": "`12` or `24` overrides the locale's hour cycle.",
+      "secondStep": "Seconds between the second columns' options.",
+      "placeholderValue": "What a choice starts from on a side with no time yet.",
+      "disabled": "Whether neither side can be changed. Also true inside a disabled FieldRoot.",
+      "readOnly": "Whether the fields can be focused but not changed; the triggers are disabled.",
+      "required": "Whether both times are needed for the form to be valid.",
+      "form": "The id of a `<form>` the hidden inputs belong to.",
+      "incompleteMessage": "The validation message while a side is partly filled.",
+      "rangeOrderMessage": "The validation message for an end before the start (unless `allowOvernight`)."
+    },
+    "dataAttributes": {
+      "data-invalid": "Present when the end is before the start (and `allowOvernight` is off), a side is outside `min`/`max` or partly filled, or the FieldRoot around it is invalid.",
+      "data-disabled": "Present when the range is disabled."
+    },
+    "defaults": {
+      "granularity": "\"minute\"",
+      "minuteStep": "1",
+      "secondStep": "1",
+      "incompleteMessage": "\"Enter a complete time.\"",
+      "rangeOrderMessage": "\"The end time is before the start time.\""
+    }
+  },
+  "TimeRangePickerStart": {
+    "description": "The start: a TimePickerRoot for the range's start, bounded above by the end unless `allowOvernight`. Inside it go the Time Picker's parts (TimePickerField, TimePickerTrigger, TimePickerPopup and its columns). Its field submits `<name>-start`.",
+    "props": {
+      "defaultOpen": "Whether this side's popup is open at first, when it isn't controlled.",
+      "onOpenChange": "Called after this side's popup opens or closes."
+    }
+  },
+  "TimeRangePickerEnd": {
+    "description": "The end: a TimePickerRoot for the range's end, bounded below by the start unless `allowOvernight`, so its popup disables what would put it earlier. Its field submits `<name>-end`.",
+    "props": {
+      "defaultOpen": "Whether this side's popup is open at first, when it isn't controlled.",
+      "onOpenChange": "Called after this side's popup opens or closes."
+    }
+  },
+  "TimeRangePickerSeparator": {
+    "description": "A span between the two sides, hidden from assistive technology (each field has its own name). Its text is yours: \"–\", \"to\"."
+  }
+}

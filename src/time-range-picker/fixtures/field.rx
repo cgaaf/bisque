@@ -1,0 +1,74 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd, TimeRangePickerSeparator } from "../time-range-picker.rx"
+import { TimePickerField } from "../../time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { parseTime } from "../../internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+// The Field's value for a range: `{ start, end }` form strings, or null.
+fn describe(range: any): string => range == null ? "null" : `${range.start}/${range.end}`
+
+// Ranges in named FieldRoots inside a Form: required with a default, required and empty, overnight, and disabled.
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `shift=${describe(values.shift)} night=${describe(values.night)}` }}>
+    <FieldRoot name="shift" data-testid="shift-field">
+      <FieldLabel>Shift</FieldLabel>
+      <TimeRangePickerRoot data-testid="shift" locale="en-US" required defaultValue={{ start: parseTime("09:00"), end: parseTime("17:00") }}>
+        <TimeRangePickerStart>
+          <TimePickerField aria-label="Start time"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerStart>
+        <TimeRangePickerSeparator>–</TimeRangePickerSeparator>
+        <TimeRangePickerEnd>
+          <TimePickerField aria-label="End time"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerEnd>
+      </TimeRangePickerRoot>
+      <FieldDescription data-testid="shift-description">Within one day.</FieldDescription>
+      <FieldError data-testid="shift-error" />
+    </FieldRoot>
+    <FieldRoot name="break" data-testid="break-field">
+      <FieldLabel>Break</FieldLabel>
+      <TimeRangePickerRoot data-testid="break" locale="en-US" required>
+        <TimeRangePickerStart>
+          <TimePickerField aria-label="Break start"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerStart>
+        <TimeRangePickerEnd>
+          <TimePickerField aria-label="Break end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerEnd>
+      </TimeRangePickerRoot>
+      <FieldError data-testid="break-error" />
+    </FieldRoot>
+    <FieldRoot name="night">
+      <FieldLabel>Night</FieldLabel>
+      <TimeRangePickerRoot data-testid="night" locale="en-GB" allowOvernight defaultValue={{ start: parseTime("22:00"), end: parseTime("06:00") }}>
+        <TimeRangePickerStart>
+          <TimePickerField aria-label="Night start"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerStart>
+        <TimeRangePickerEnd>
+          <TimePickerField aria-label="Night end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerEnd>
+      </TimeRangePickerRoot>
+    </FieldRoot>
+    <FieldRoot name="locked" disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <TimeRangePickerRoot locale="en-US">
+        <TimeRangePickerStart>
+          <TimePickerField aria-label="Locked start"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerStart>
+        <TimeRangePickerEnd>
+          <TimePickerField aria-label="Locked end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerEnd>
+      </TimeRangePickerRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <button type="reset">Reset</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

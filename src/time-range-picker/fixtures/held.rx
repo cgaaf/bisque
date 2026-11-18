@@ -1,0 +1,63 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd } from "../time-range-picker.rx"
+import { TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../../time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { save } from "../../test/slow-server.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+component Columns() {
+  column = "height: 120px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  columns = "display: flex; gap: 4px"
+  <div style={columns}>
+    <TimePickerHours style={column} />
+    <TimePickerMinutes style={column} />
+    <TimePickerDayPeriod style={column} />
+  </div>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while a prop of the range picker,
+// or an attribute of its group, is computed from that write. The picker's own state must not wait.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    <TimeRangePickerRoot aria-label="Root prop" locale="en-US" defaultValue={{ start: parseTime("09:00"), end: parseTime("17:00") }} max={step == 1 ? parseTime("20:00") : parseTime("19:00")}>
+      <TimeRangePickerStart>
+        <TimePickerField aria-label="Root prop start">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open root prop" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="root-prop-popup"><Columns /></TimePickerPopup>
+      </TimeRangePickerStart>
+      <TimeRangePickerEnd>
+        <TimePickerField aria-label="Root prop end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+
+    <TimeRangePickerRoot aria-label="Attribute" locale="en-US" class={step == 2 ? "second" : "first"} defaultValue={{ start: parseTime("09:00"), end: parseTime("17:00") }}>
+      <TimeRangePickerStart>
+        <TimePickerField aria-label="Attribute start">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open attribute" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="attribute-popup"><Columns /></TimePickerPopup>
+      </TimeRangePickerStart>
+      <TimeRangePickerEnd>
+        <TimePickerField aria-label="Attribute end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+  </main>
+}

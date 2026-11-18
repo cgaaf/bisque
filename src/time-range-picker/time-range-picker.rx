@@ -1,0 +1,301 @@
+// Time Range Picker: a start and an end time, each a Time Picker (../time-picker/time-picker.rx), in one labelled
+// `role="group"`. Base UI has none; React Aria's TimeField docs compose a range from two fields the same way. It is a
+// composition: TimeRangePickerStart and TimeRangePickerEnd are TimePickerRoots, controlled by this root, so inside
+// each go the Time Picker's parts (TimePickerField with TimeField's segments, TimePickerTrigger, TimePickerPopup and
+// its columns or interval list). Each side has its own popup: two pickers with nothing new is smaller than one popup
+// with two sets of columns, and each popup sits under the field it fills.
+//
+// THE RANGE. The value is `{ start, end }`, either missing while it is being chosen, and every change of either is
+// reported. An end before the start is invalid, not swapped: the end's field takes the start as its `min` and the
+// start's field the end as its `max`, so the out-of-order field is `data-invalid` and options that would put the end
+// before the start are disabled in the end's popup (and the reverse in the start's); the group is `data-invalid` and
+// the start's hidden input carries `rangeOrderMessage`. With `allowOvernight` the end may be earlier than the start,
+// a range across midnight (22:00–06:00); then nothing ties the two together. Default: false.
+//
+// FORMS AND FIELD. The root owns both, as Date Range Picker's does: two hidden `type="time"` inputs submit
+// `<name>-start` and `<name>-end` (or `startName` / `endName`), as Range Calendar does, each with the native `min`,
+// `max` and `required`. The sides' fields render none and don't register with a FieldRoot (two controls can't be one
+// Field's control). Inside a FieldRoot the group is labelled by its FieldLabel, the Field's value is `{ start, end }`
+// form strings (null until both are there), and Field reads the start input, whose validity also carries the end's
+// problem (createTimeRangeValidity: incomplete, out of order, the end's native range), so the Field is invalid when
+// either side is. Each side's segments get the Field's description and error ids and that side's invalid state
+// through TimePickerRoot's `describedBy` / `invalid`. A form reset puts `defaultValue` back and Field starts again
+// from it (not dirty).
+import { mergeProps } from "../internal/props.js"
+import { parseTime, isSameTime, compareTimes, timeToString, isTimeInRange } from "../internal/date.js"
+import { createLateFormReset, createTimeRangeValidity, rangeFieldValue } from "../internal/time-picker.js"
+import { setInputValue } from "../internal/field.js"
+import { TimePickerRoot } from "../time-picker/time-picker.rx"
+import { field, fieldGroupProps } from "../field/field.rx"
+import { DivProps, SpanProps, PlainTime, TimeGranularity, TimeRange } from "../internal/types.rx"
+
+export type TimeRangePickerContext = {
+  start: PlainTime | undefined
+  end: PlainTime | undefined
+  // The range is invalid: out of order (unless `allowOvernight`), outside min/max, partly typed, or by its Field.
+  invalid: boolean
+  // Each side's invalid state, and the Field's description ids, for that side's segments.
+  startInvalid: boolean
+  endInvalid: boolean
+  describedBy: string | undefined
+  setStartIncomplete: (incomplete: boolean) => void
+  setEndIncomplete: (incomplete: boolean) => void
+  // The bounds each side's field and popup take: the root's, narrowed by the other side unless overnight.
+  startMax: PlainTime | undefined
+  endMin: PlainTime | undefined
+  min: PlainTime | undefined
+  max: PlainTime | undefined
+  locale: string | string[] | undefined
+  granularity: TimeGranularity | undefined
+  hourCycle: 12 | 24 | undefined
+  minuteStep: number | undefined
+  secondStep: number | undefined
+  placeholderValue: PlainTime | undefined
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  startName: string | undefined
+  endName: string | undefined
+  form: string | undefined
+  setStart: (time: PlainTime | undefined) => void
+  setEnd: (time: PlainTime | undefined) => void
+}
+
+export context timeRangePicker: lane TimeRangePickerContext
+
+export type TimeRangePickerRootProps = {
+  // The range. `null` is controlled and empty; leaving it out lets the picker hold its own.
+  value?: TimeRange | null
+  defaultValue?: TimeRange
+  // Called with the whole range whenever either end changes (undefined while that end is empty or incomplete).
+  onValueChange?: (value: TimeRange) => void
+  // Whether the end may be earlier than the start, a range across midnight. Default: false.
+  allowOvernight?: boolean
+  // The earliest valid time, for both ends.
+  min?: PlainTime
+  // The latest valid time, for both ends.
+  max?: PlainTime
+  locale?: string | string[]
+  // Default: "minute".
+  granularity?: TimeGranularity
+  hourCycle?: 12 | 24
+  // Minutes between the minute columns' options. Default: 1.
+  minuteStep?: number
+  secondStep?: number
+  placeholderValue?: PlainTime
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // Submits the range as `<name>-start` and `<name>-end`. Taken from an enclosing FieldRoot when not given.
+  name?: string
+  // The start time's name with a form. Default: `<name>-start`.
+  startName?: string
+  // The end time's name with a form. Default: `<name>-end`.
+  endName?: string
+  form?: string
+  // The validation message while a side is partly filled. Default: "Enter a complete time."
+  incompleteMessage?: string
+  // The validation message for an end before the start. Default: "The end time is before the start time."
+  rangeOrderMessage?: string
+} & Omit<DivProps, "defaultValue" | "onChange">
+
+// A time as text that compares with `==`: "" for none.
+fn timeKey(time: PlainTime | undefined): string => time == undefined ? "" : time.toString()
+
+// The group, `role="group"`: label it with `aria-label`, `aria-labelledby` or an enclosing FieldLabel.
+export component TimeRangePickerRoot(props: TimeRangePickerRootProps) {
+  f = use field
+  // Boxed: a source seeded with a Temporal value breaks it (../internal/date.d.rx).
+  source held := { start: peek(props.defaultValue?.start), end: peek(props.defaultValue?.end) }
+  source element: HTMLElement | undefined := undefined
+  initialStart = peek(props.defaultValue?.start)
+  initialEnd = peek(props.defaultValue?.end)
+  givenValue = props.value catch (e) => undefined
+  controlled = givenValue != undefined
+  // Kept as text and parsed back only when it changes (see TimePickerRoot).
+  start = parseTime(timeKey(givenValue == undefined ? held.start : givenValue == null ? undefined : givenValue.start))
+  end = parseTime(timeKey(givenValue == undefined ? held.end : givenValue == null ? undefined : givenValue.end))
+  overnight = latest props.allowOvernight ?? false
+  minTime = parseTime(timeKey(latest props.min))
+  maxTime = parseTime(timeKey(latest props.max))
+  reversed = !overnight && start != undefined && end != undefined && compareTimes(end, start) < 0
+  source startIncomplete: boolean := false
+  source endIncomplete: boolean := false
+  action setStartIncomplete(next: boolean) { startIncomplete := next }
+  action setEndIncomplete(next: boolean) { endIncomplete := next }
+  outOfRange = (start != undefined && !isTimeInRange(start, minTime, maxTime)) || (end != undefined && !isTimeInRange(end, minTime, maxTime))
+  fieldInvalid = f?.state.valid == false
+  invalid = reversed || outOfRange || startIncomplete || endIncomplete || fieldInvalid
+  startInvalid = reversed || startIncomplete || fieldInvalid
+  endInvalid = reversed || endIncomplete || fieldInvalid
+  describedBy = f?.describedBy
+  // The end can't be before the start, nor the start after the end: the later (earlier) of the bound and the other side.
+  endMin = !overnight && start != undefined && (minTime == undefined || compareTimes(start, minTime) > 0) ? start : minTime
+  startMax = !overnight && end != undefined && (maxTime == undefined || compareTimes(end, maxTime) < 0) ? end : maxTime
+  isDisabled = ((latest props.disabled ?? false) catch (e) => false) || (f?.disabled ?? false)
+  inputName = (latest props.name) ?? f?.name
+  startName = (latest props.startName) ?? (inputName == undefined ? undefined : `${inputName}-start`)
+  endName = (latest props.endName) ?? (inputName == undefined ? undefined : `${inputName}-end`)
+
+  // The owner's handler is called in a change of its own (see TimePickerRoot).
+  action notify(next: TimeRange) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action setStart(time: PlainTime | undefined) {
+    let shown = latest start
+    if (isSameTime(time, shown)) { return }
+    let other = latest end
+    held.start := time
+    notify({ start: time, end: other })
+  }
+  action setEnd(time: PlainTime | undefined) {
+    let shown = latest end
+    if (isSameTime(time, shown)) { return }
+    let other = latest start
+    held.end := time
+    notify({ start: other, end: time })
+  }
+  // Forms and Field: the root owns both, as Date Range Picker's does. Two hidden time inputs submit the sides, with
+  // the native `min`, `max` and `required`; Field reads the start input, whose validity also carries the end's.
+  hasInputs = startName != undefined || endName != undefined || f != undefined
+  unit = granularity ?? "minute"
+  startText = timeToString(start, unit)
+  endText = timeToString(end, unit)
+  minText = minTime == undefined ? undefined : timeToString(minTime, unit)
+  maxText = maxTime == undefined ? undefined : timeToString(maxTime, unit)
+  source startInput: HTMLInputElement | undefined := undefined
+  source endInput: HTMLInputElement | undefined := undefined
+  action setStartInput(input: HTMLInputElement) {
+    startInput := input
+    if (f) { f.setInput(input) }
+  }
+  action setEndInput(input: HTMLInputElement) { endInput := input }
+  incompleteText = (latest props.incompleteMessage) ?? "Enter a complete time."
+  startMessage = startIncomplete ? incompleteText : reversed ? (latest props.rangeOrderMessage) ?? "The end time is before the start time." : ""
+  endMessage = endIncomplete ? incompleteText : ""
+  _validity = createTimeRangeValidity(startInput, endInput, startMessage, endMessage, `${startText}/${endText}/${minText ?? ""}/${maxText ?? ""}/${isRequired}`)
+  // The Field's value: `{ start, end }` form strings, null until both are there.
+  fieldValue = rangeFieldValue(startText, endText)
+  effect (fieldValue) { if (f) { f.setValue($0) } }
+  // The pickers are controlled by this root, so their own resets keep its range: the root puts its default back
+  // (or the owner's range), writes the inputs the form emptied, and gives Field the value it starts from.
+  action reset() {
+    let nextStart = controlled ? start : initialStart
+    let nextEnd = controlled ? end : initialEnd
+    if (!controlled && !(isSameTime(initialStart, held.start) && isSameTime(initialEnd, held.end))) {
+      held := { start: initialStart, end: initialEnd }
+      notify({ start: initialStart, end: initialEnd })
+    }
+    setInputValue(startInput, timeToString(nextStart, unit))
+    setInputValue(endInput, timeToString(nextEnd, unit))
+    if (f) { f.reset(rangeFieldValue(timeToString(nextStart, unit), timeToString(nextEnd, unit))) }
+  }
+  _reset = createLateFormReset(element, formId, reset)
+  action setElement(div: HTMLElement) { element := div }
+
+  // Every prop read into an equation of its own, so that the provision is rebuilt only when a value changes.
+  locale = latest props.locale
+  granularity = latest props.granularity
+  hourCycle = latest props.hourCycle
+  minuteStep = latest props.minuteStep
+  secondStep = latest props.secondStep
+  placeholder = parseTime(timeKey(latest props.placeholderValue))
+  isReadOnly = (latest props.readOnly ?? false) catch (e) => false
+  isRequired = latest props.required ?? false
+  formId = latest props.form
+  provide timeRangePicker = latest {
+    start: start,
+    end: end,
+    invalid: invalid,
+    startInvalid: startInvalid,
+    endInvalid: endInvalid,
+    describedBy: describedBy,
+    setStartIncomplete: setStartIncomplete,
+    setEndIncomplete: setEndIncomplete,
+    startMax: startMax,
+    endMin: endMin,
+    min: minTime,
+    max: maxTime,
+    locale: locale,
+    granularity: granularity,
+    hourCycle: hourCycle,
+    minuteStep: minuteStep,
+    secondStep: secondStep,
+    placeholderValue: placeholder,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    startName: startName,
+    endName: endName,
+    form: formId,
+    setStart: setStart,
+    setEnd: setEnd,
+  }
+
+  { value, defaultValue, onValueChange, allowOvernight, min, max, locale: _locale, granularity: _granularity, hourCycle: _hourCycle, minuteStep: _minuteStep, secondStep: _secondStep, placeholderValue, disabled, readOnly, required, name, startName: _startName, endName: _endName, form, incompleteMessage, rangeOrderMessage, children, ...rest } = props
+  inField = fieldGroupProps(f)
+  own = mergeProps(inField, {
+    role: "group",
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "aria-invalid": invalid ? "true" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-invalid": invalid ? "" : undefined,
+    ref: setElement,
+  })
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+  {if hasInputs {
+    <input type="time" hidden aria-hidden="true" tabindex="-1" name={startName} form={formId} min={minText} max={maxText} step="any" value={startText} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setStartInput} />
+    <input type="time" hidden aria-hidden="true" tabindex="-1" name={endName} form={formId} min={minText} max={maxText} step="any" value={endText} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setEndInput} />
+  }}
+}
+
+// The two fields don't register with a FieldRoot around the range (see the header): the group is what it labels. Each
+// side is wrapped, since a provision in the root would also answer the root's own `use field`, and the root's
+// children are instantiated before it provides.
+component WithoutField(props: { children: View }) {
+  provide field = undefined
+  {props.children}
+}
+
+export type TimeRangePickerSideProps = {
+  // Whether this side's popup is open.
+  open?: boolean
+  defaultOpen?: boolean
+  onOpenChange?: (open: boolean) => void
+  children?: View
+}
+
+// The start: a TimePickerRoot for the range's start, bounded by the end. Its parts go inside.
+export component TimeRangePickerStart(props: TimeRangePickerSideProps) {
+  r = use timeRangePicker
+  startInvalid = r.startInvalid
+  describedBy = r.describedBy
+  <WithoutField>
+    <TimePickerRoot value={r.start ?? null} onValueChange={r.setStart} min={r.min} max={r.startMax} locale={r.locale} granularity={r.granularity} hourCycle={r.hourCycle} minuteStep={r.minuteStep} secondStep={r.secondStep} placeholderValue={r.placeholderValue} disabled={r.disabled} readOnly={r.readOnly} required={r.required} invalid={startInvalid} describedBy={describedBy} onIncompleteChange={r.setStartIncomplete} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange}>
+      {props.children}
+    </TimePickerRoot>
+  </WithoutField>
+}
+
+// The end: a TimePickerRoot for the range's end, bounded by the start (unless `allowOvernight`). Its parts go inside.
+export component TimeRangePickerEnd(props: TimeRangePickerSideProps) {
+  r = use timeRangePicker
+  endInvalid = r.endInvalid
+  describedBy = r.describedBy
+  <WithoutField>
+    <TimePickerRoot value={r.end ?? null} onValueChange={r.setEnd} min={r.endMin} max={r.max} locale={r.locale} granularity={r.granularity} hourCycle={r.hourCycle} minuteStep={r.minuteStep} secondStep={r.secondStep} placeholderValue={r.placeholderValue} disabled={r.disabled} readOnly={r.readOnly} required={r.required} invalid={endInvalid} describedBy={describedBy} onIncompleteChange={r.setEndIncomplete} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange}>
+      {props.children}
+    </TimePickerRoot>
+  </WithoutField>
+}
+
+// Between the two sides (its text is yours: "–", "to"): hidden from assistive technology, which hears each field's
+// own name.
+export component TimeRangePickerSeparator({ children, ...rest }: SpanProps) {
+  merged = latest mergeProps({ "aria-hidden": "true" }, rest)
+  <span {...merged}>{children}</span>
+}

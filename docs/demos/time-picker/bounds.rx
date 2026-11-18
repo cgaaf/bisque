@@ -1,0 +1,38 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerSeconds, TimePickerDayPeriod } from "../../../src/time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
+import { parseTime } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+// Opening hours: options before 08:30 or after 18:00 are disabled. A time typed outside them is kept and marks the
+// field invalid.
+export component TimePickerBounds() {
+  <div class="TimePickerBounds">
+    <span class="Label" id="time-picker-bounds-label">Pickup</span>
+    <TimePickerRoot locale="en-US" minuteStep={15} min={parseTime("08:30")} max={parseTime("18:00")} defaultValue={parseTime("12:00")}>
+      <TimePickerField class="Field" aria-labelledby="time-picker-bounds-label">
+        <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+        <TimePickerTrigger class="Trigger">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.2" />
+            <path d="M8 4.5V8l2.25 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </TimePickerTrigger>
+      </TimePickerField>
+      <TimePickerPopup class="Popup" sideOffset={6}>
+        <div class="Columns">
+          <TimePickerHours class="Column" />
+          <TimePickerMinutes class="Column" />
+          <TimePickerSeconds class="Column" />
+          <TimePickerDayPeriod class="Column" />
+        </div>
+      </TimePickerPopup>
+    </TimePickerRoot>
+    <span class="Hint">Open 8:30 AM to 6:00 PM.</span>
+  </div>
+}

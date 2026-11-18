@@ -1,0 +1,58 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd, TimeRangePickerSeparator } from "../../../src/time-range-picker/time-range-picker.rx"
+import { TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../../../src/time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
+import { parseTime } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+// A night shift: `allowOvernight` lets the end come before the start, a range across midnight.
+export component TimeRangePickerOvernight() {
+  <div class="TimeRangePickerOvernight">
+    <span class="Label" id="time-range-picker-overnight-label">Night shift</span>
+    <TimeRangePickerRoot class="Range" aria-labelledby="time-range-picker-overnight-label" locale="en-GB" allowOvernight minuteStep={30} name="shift" defaultValue={{ start: parseTime("22:00"), end: parseTime("06:00") }}>
+      <TimeRangePickerStart>
+        <TimePickerField class="Field" aria-label="Starts">
+          <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+          <TimePickerTrigger class="Trigger" aria-label="Choose start time">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.2" />
+              <path d="M8 4.5V8l2.25 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </TimePickerTrigger>
+        </TimePickerField>
+        <TimePickerPopup class="Popup" sideOffset={6}>
+          <div class="Columns">
+            <TimePickerHours class="Column" />
+            <TimePickerMinutes class="Column" />
+            <TimePickerDayPeriod class="Column" />
+          </div>
+        </TimePickerPopup>
+      </TimeRangePickerStart>
+      <TimeRangePickerSeparator class="Separator">to</TimeRangePickerSeparator>
+      <TimeRangePickerEnd>
+        <TimePickerField class="Field" aria-label="Ends">
+          <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+          <TimePickerTrigger class="Trigger" aria-label="Choose end time">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.2" />
+              <path d="M8 4.5V8l2.25 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </TimePickerTrigger>
+        </TimePickerField>
+        <TimePickerPopup class="Popup" sideOffset={6}>
+          <div class="Columns">
+            <TimePickerHours class="Column" />
+            <TimePickerMinutes class="Column" />
+            <TimePickerDayPeriod class="Column" />
+          </div>
+        </TimePickerPopup>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+    <span class="Hint">Submits shift-start and shift-end.</span>
+  </div>
+}

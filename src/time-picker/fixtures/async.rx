@@ -1,0 +1,101 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+import { PlainTime } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+// The form string a time is saved as (`09:30`); "" for none. The server stores strings.
+fn text(time: PlainTime | undefined): string => time == undefined ? "" : time.toString({ smallestUnit: "minute" })
+fn timeOf(value: string): PlainTime | null => parseTime(value) ?? null
+fn stringValue(value: string): string => value
+
+// Time pickers whose value is saved to a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  column = "height: 120px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  columns = "display: flex; gap: 4px"
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  alarm = await load("alarm", stringValue("09:30")) -> "09:30"
+  source alarmError := ""
+  // Disabled while its save is out.
+  locked = await load("locked", stringValue("09:30")) -> "09:30"
+  // Follows every change in the app's state, which a loading question reads.
+  source picked := "09:30"
+  summary = await load(`summary-${picked}`, picked) -> "09:30"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <TimePickerRoot locale="en-US" minuteStep={15} value={timeOf(alarm)} onValueChange={(next) => {
+      let value = text(next)
+      guess alarm := value
+      onFlush(() => { alarmError := "" })
+      affects alarm
+      try {
+        await save("alarm", value)
+        refresh alarm
+      } catch (e) {
+        alarmError := "failed"
+      }
+    }}>
+      <TimePickerField aria-label="Alarm">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+        <TimePickerTrigger aria-label="Open alarm" />
+      </TimePickerField>
+      <TimePickerPopup data-testid="alarm-popup">
+        <div style={columns}>
+          <TimePickerHours style={column} />
+          <TimePickerMinutes style={column} />
+          <TimePickerDayPeriod style={column} />
+        </div>
+      </TimePickerPopup>
+    </TimePickerRoot>
+    <output data-testid="alarm">{alarm}</output>
+    <output data-testid="alarm-saving">{pending? alarm ? "saving" : ""}</output>
+    <output data-testid="alarm-error">{alarmError}</output>
+
+    <TimePickerRoot locale="en-US" minuteStep={15} value={timeOf(locked)} disabled={pending? locked} onValueChange={(next) => {
+      let value = text(next)
+      guess locked := value
+      affects locked
+      try {
+        await save("locked", value)
+        refresh locked
+      } catch (e) {
+      }
+    }}>
+      <TimePickerField aria-label="Locked">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+        <TimePickerTrigger aria-label="Open locked" />
+      </TimePickerField>
+      <TimePickerPopup data-testid="locked-popup">
+        <div style={columns}>
+          <TimePickerHours style={column} />
+          <TimePickerMinutes style={column} />
+          <TimePickerDayPeriod style={column} />
+        </div>
+      </TimePickerPopup>
+    </TimePickerRoot>
+
+    <TimePickerRoot locale="en-US" minuteStep={15} value={timeOf(picked)} onValueChange={(next) => { picked := text(next) }}>
+      <TimePickerField aria-label="Picked">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+        <TimePickerTrigger aria-label="Open picked" />
+      </TimePickerField>
+      <TimePickerPopup data-testid="picked-popup">
+        <div style={columns}>
+          <TimePickerHours style={column} />
+          <TimePickerMinutes style={column} />
+          <TimePickerDayPeriod style={column} />
+        </div>
+      </TimePickerPopup>
+    </TimePickerRoot>
+    <output data-testid="summary">{summary}</output>
+    <output data-testid="summarizing">{pending? summary ? "loading" : ""}</output>
+    }}
+  </div>
+}

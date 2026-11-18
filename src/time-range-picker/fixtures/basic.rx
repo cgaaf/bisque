@@ -1,0 +1,84 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd, TimeRangePickerSeparator } from "../time-range-picker.rx"
+import { TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../../time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { PlainTime, TimeRange } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+fn show(time: PlainTime | undefined): string => time == undefined ? "-" : time.toString({ smallestUnit: "minute" })
+fn showRange(range: TimeRange): string => `${show(range.start)}/${show(range.end)}`
+
+component Columns() {
+  column = "height: 120px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  columns = "display: flex; gap: 4px"
+  <div style={columns}>
+    <TimePickerHours style={column} />
+    <TimePickerMinutes style={column} />
+    <TimePickerDayPeriod style={column} />
+  </div>
+}
+
+// A shift (09:00–17:00, a 15-minute step) in a form; an overnight range; a controlled one; a disabled one.
+export default component Fixture() {
+  source changes: string[] := []
+  source controlled: { range: TimeRange | null } := { range: null }
+  <main>
+    <form data-testid="form">
+      <TimeRangePickerRoot aria-label="Shift" locale="en-US" minuteStep={15} name="shift" defaultValue={{ start: parseTime("09:00"), end: parseTime("17:00") }} onValueChange={(r) => { changes := [...changes, showRange(r)] }}>
+        <TimeRangePickerStart>
+          <TimePickerField aria-label="Start time">
+            <TimeFieldInput><Segments /></TimeFieldInput>
+            <TimePickerTrigger aria-label="Open start" />
+          </TimePickerField>
+          <TimePickerPopup data-testid="start-popup"><Columns /></TimePickerPopup>
+        </TimeRangePickerStart>
+        <TimeRangePickerSeparator>–</TimeRangePickerSeparator>
+        <TimeRangePickerEnd>
+          <TimePickerField aria-label="End time">
+            <TimeFieldInput><Segments /></TimeFieldInput>
+            <TimePickerTrigger aria-label="Open end" />
+          </TimePickerField>
+          <TimePickerPopup data-testid="end-popup"><Columns /></TimePickerPopup>
+        </TimeRangePickerEnd>
+      </TimeRangePickerRoot>
+      <TimeRangePickerRoot aria-label="Night" locale="en-GB" allowOvernight name="night" startName="from" defaultValue={{ start: parseTime("22:00"), end: parseTime("06:00") }}>
+        <TimeRangePickerStart>
+          <TimePickerField aria-label="Night start"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerStart>
+        <TimeRangePickerSeparator>–</TimeRangePickerSeparator>
+        <TimeRangePickerEnd>
+          <TimePickerField aria-label="Night end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+        </TimeRangePickerEnd>
+      </TimeRangePickerRoot>
+      <button type="reset">Reset</button>
+    </form>
+    <TimeRangePickerRoot aria-label="Controlled" locale="en-US" value={controlled.range} onValueChange={(r) => { controlled.range := r }}>
+      <TimeRangePickerStart>
+        <TimePickerField aria-label="Controlled start"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+      </TimeRangePickerStart>
+      <TimeRangePickerEnd>
+        <TimePickerField aria-label="Controlled end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+    <button onClick={() => { controlled.range := { start: parseTime("08:00"), end: parseTime("12:30") } }}>Set morning</button>
+    <output data-testid="controlled-value">{controlled.range == null ? "none" : showRange(controlled.range)}</output>
+    <TimeRangePickerRoot aria-label="Disabled" locale="en-US" disabled defaultValue={{ start: parseTime("10:00"), end: parseTime("11:00") }}>
+      <TimeRangePickerStart>
+        <TimePickerField aria-label="Disabled start">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open disabled start" />
+        </TimePickerField>
+      </TimeRangePickerStart>
+      <TimeRangePickerEnd>
+        <TimePickerField aria-label="Disabled end"><TimeFieldInput><Segments /></TimeFieldInput></TimePickerField>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+    <output data-testid="changes">{changes.join(" ")}</output>
+  </main>
+}

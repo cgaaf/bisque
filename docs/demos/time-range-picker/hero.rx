@@ -1,0 +1,58 @@
+import { TimeRangePickerRoot, TimeRangePickerStart, TimeRangePickerEnd, TimeRangePickerSeparator } from "../../../src/time-range-picker/time-range-picker.rx"
+import { TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../../../src/time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
+import { parseTime } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+// Opening hours: a start and an end, each its own picker with its own popup, in one labelled group. The end's popup
+// disables what would put it before the start; an end typed earlier marks the range invalid.
+export component TimeRangePickerHero() {
+  <div class="TimeRangePickerHero">
+    <span class="Label" id="time-range-picker-hero-label">Opening hours</span>
+    <TimeRangePickerRoot class="Range" aria-labelledby="time-range-picker-hero-label" locale="en-US" minuteStep={15} defaultValue={{ start: parseTime("09:00"), end: parseTime("17:30") }}>
+      <TimeRangePickerStart>
+        <TimePickerField class="Field" aria-label="Opens">
+          <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+          <TimePickerTrigger class="Trigger" aria-label="Choose opening time">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.2" />
+              <path d="M8 4.5V8l2.25 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </TimePickerTrigger>
+        </TimePickerField>
+        <TimePickerPopup class="Popup" sideOffset={6}>
+          <div class="Columns">
+            <TimePickerHours class="Column" />
+            <TimePickerMinutes class="Column" />
+            <TimePickerDayPeriod class="Column" />
+          </div>
+        </TimePickerPopup>
+      </TimeRangePickerStart>
+      <TimeRangePickerSeparator class="Separator">–</TimeRangePickerSeparator>
+      <TimeRangePickerEnd>
+        <TimePickerField class="Field" aria-label="Closes">
+          <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+          <TimePickerTrigger class="Trigger" aria-label="Choose closing time">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.2" />
+              <path d="M8 4.5V8l2.25 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+            </svg>
+          </TimePickerTrigger>
+        </TimePickerField>
+        <TimePickerPopup class="Popup" sideOffset={6}>
+          <div class="Columns">
+            <TimePickerHours class="Column" />
+            <TimePickerMinutes class="Column" />
+            <TimePickerDayPeriod class="Column" />
+          </div>
+        </TimePickerPopup>
+      </TimeRangePickerEnd>
+    </TimeRangePickerRoot>
+  </div>
+}

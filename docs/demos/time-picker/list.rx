@@ -1,0 +1,31 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerOptions } from "../../../src/time-picker/time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
+import { parseTime } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+// The one-list variant: whole times every 30 minutes, as scheduling UIs show them. A choice closes the popup.
+export component TimePickerList() {
+  <div class="TimePickerList">
+    <span class="Label" id="time-picker-list-label">Meeting</span>
+    <TimePickerRoot locale="en-US" min={parseTime("08:00")} max={parseTime("18:00")} defaultValue={parseTime("10:00")}>
+      <TimePickerField class="Field" aria-labelledby="time-picker-list-label">
+        <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+        <TimePickerTrigger class="Trigger">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <circle cx="8" cy="8" r="6.25" stroke="currentColor" stroke-width="1.2" />
+            <path d="M8 4.5V8l2.25 1.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" />
+          </svg>
+        </TimePickerTrigger>
+      </TimePickerField>
+      <TimePickerPopup class="Popup" sideOffset={6}>
+        <TimePickerOptions class="List" interval={30} />
+      </TimePickerPopup>
+    </TimePickerRoot>
+  </div>
+}

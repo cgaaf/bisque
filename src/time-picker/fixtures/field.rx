@@ -1,0 +1,68 @@
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../time-picker.rx"
+import { TimeFieldInput, TimeFieldSegment, timeField } from "../../time-field/time-field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { parseTime } from "../../internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+// A picker in a FieldRoot in a Form: labelled by FieldLabel, required, submitted once under the field's name.
+export default component Fixture() {
+  source submitted := ""
+  column = "height: 120px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
+  columns = "display: flex; gap: 4px"
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `start=${values.start}` }}>
+    <FieldRoot name="start">
+      <FieldLabel>Shift start</FieldLabel>
+      <TimePickerRoot locale="en-US" minuteStep={30} required min={parseTime("08:00")}>
+        <TimePickerField data-testid="start">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open start" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="start-popup">
+          <div style={columns}>
+            <TimePickerHours style={column} />
+            <TimePickerMinutes style={column} />
+            <TimePickerDayPeriod style={column} />
+          </div>
+        </TimePickerPopup>
+      </TimePickerRoot>
+      <FieldDescription data-testid="description">From 8:00 AM.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <TimePickerRoot locale="en-US" defaultValue={parseTime("12:00")}>
+        <TimePickerField>
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open locked" />
+        </TimePickerField>
+        <TimePickerPopup><TimePickerHours /></TimePickerPopup>
+      </TimePickerRoot>
+    </FieldRoot>
+    <FieldRoot name="wake">
+      <FieldLabel>Wake</FieldLabel>
+      <TimePickerRoot locale="en-US" defaultValue={parseTime("07:00")}>
+        <TimePickerField data-testid="wake">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+          <TimePickerTrigger aria-label="Open wake" />
+        </TimePickerField>
+        <TimePickerPopup data-testid="wake-popup">
+          <div style={columns}>
+            <TimePickerHours style={column} />
+            <TimePickerMinutes style={column} />
+            <TimePickerDayPeriod style={column} />
+          </div>
+        </TimePickerPopup>
+      </TimePickerRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <button type="reset">Reset</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

@@ -1,0 +1,19 @@
+// Generated from time-picker.d.rx by scripts/gen-dts.mjs. Do not edit.
+export type TimeUnit = import("./impl/time-picker.ts").TimeUnit;
+export type TimePickerOption = import("./impl/time-picker.ts").TimePickerOption;
+export type ColumnSettings = import("./impl/time-picker.ts").ColumnSettings;
+export declare function openingTime(granularity: "hour" | "minute" | "second" | undefined, minuteStep: number | undefined, secondStep: number | undefined): Temporal.PlainTime;
+export declare function isTwelveHour(locale: string | string[] | undefined, hourCycle: 12 | 24 | undefined): boolean;
+export declare function columnOptions(unit: TimeUnit, basis: Temporal.PlainTime, settings: ColumnSettings): TimePickerOption[];
+export declare function columnValue(time: Temporal.PlainTime, unit: TimeUnit): string;
+export declare function columnTarget(basis: Temporal.PlainTime, unit: TimeUnit, step: number | undefined): string;
+export declare function chooseInColumn(basis: Temporal.PlainTime, unit: TimeUnit, value: string, granularity: "hour" | "minute" | "second" | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): Temporal.PlainTime | undefined;
+export declare function intervalOptions(locale: string | string[] | undefined, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined, hourCycle: 12 | 24 | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): TimePickerOption[];
+export declare function intervalTarget(basis: Temporal.PlainTime, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined): string;
+export declare function focusColumns(popup: HTMLElement | undefined): void;
+export declare function focusAdjacentColumn(from: EventTarget | null, direction: number): boolean;
+export declare function focusLeft(popup: HTMLElement | undefined, trigger: HTMLElement | undefined, next: EventTarget | null): boolean;
+export declare function chosenOption(target: EventTarget | null): string | undefined;
+export declare function createLateFormReset(element: HTMLElement | undefined, formId: string | undefined, onReset: () => void): void;
+export declare function createTimeRangeValidity(start: HTMLInputElement | undefined, end: HTMLInputElement | undefined, startMessage: string, endMessage: string, key: string): void;
+export declare function rangeFieldValue(start: string, end: string): { start: string; end: string } | null;
