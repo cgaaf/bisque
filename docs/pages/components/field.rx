@@ -44,8 +44,8 @@ export default component Page() {
     <div class="note">
       <p>
         There is no Field Item part: put each checkbox or radio in its own <code>{"<label>"}</code>, and a{" "}
-        <a href="../checkbox-group/">CheckboxGroup</a> or <a href="../radio/">RadioGroup</a> in the field. Base UI's
-        render function on Validity is a context here, read with <code>use fieldValidity</code>.
+        <a href="../checkbox-group/">CheckboxGroup</a> or <a href="../radio/">RadioGroup</a> in the field. Validity's
+        state is a context, read with <code>use fieldValidity</code>.
       </p>
     </div>
 

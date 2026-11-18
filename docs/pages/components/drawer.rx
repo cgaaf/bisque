@@ -31,7 +31,7 @@ export default component Page() {
     <div class="note">
       <p>
         There is no Portal, Backdrop or Viewport part: position the <code>{"<dialog>"}</code> against its edge
-        yourself, and style <code>::backdrop</code>. Base UI's snap points, nested-drawer indent
+        yourself, and style <code>::backdrop</code>. Snap points, nested-drawer indent
         (<code>Provider</code>, <code>Indent</code>, <code>IndentBackground</code>), <code>SwipeArea</code> and
         virtual keyboard handling aren't implemented here.
       </p>

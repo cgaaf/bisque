@@ -62,8 +62,8 @@ export default component Page() {
         The popup stays in the document while it is closed (its items name the selected value and answer
         typeahead on the closed trigger), so there is no Portal part. There is no Positioner, List or Backdrop
         either: the popup is the positioned element and the listbox at once, and <code>::backdrop</code> styles
-        what is behind it. Base UI's <code>alignItemWithTrigger</code> mode, and the scroll arrows that come with
-        it, don't exist: the popup is placed beside the trigger like any anchored popup. There is no Label part;
+        what is behind it. There is no mode that lays the selected item over the trigger, and so no scroll
+        arrows: the popup is placed beside the trigger like any anchored popup. There is no Label part;
         put the select in a FieldRoot with a FieldLabel, or give the trigger an <code>aria-label</code>.
       </p>
     </div>

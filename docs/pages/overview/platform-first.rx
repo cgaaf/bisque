@@ -16,6 +16,28 @@ export default component Page() {
     </p>
     <Code file="overview/baseline.sh.txt" />
 
+    <h2 id="browsers">Supported browsers</h2>
+    <p>
+      The rule sets a floor: the oldest version of each browser that has every native feature the components
+      rely on. Below it, popups lose their placement against the trigger first.
+    </p>
+    <div class="table-scroll">
+      <table class="api-table">
+        <thead><tr><th>Browser</th><th>Minimum version</th><th>Set by</th></tr></thead>
+        <tbody>
+          <tr><td>Chrome, Edge</td><td>137</td><td><code>{"showPopover({ source })"}</code>, which anchors a popup to the element that opened it</td></tr>
+          <tr><td>Firefox</td><td>147</td><td>CSS anchor positioning</td></tr>
+          <tr><td>Safari, on macOS and iOS</td><td>26</td><td>CSS anchor positioning</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>
+      The other native features are older in every engine: <code>dialog.requestClose()</code> (Chrome 134,
+      Firefox 139, Safari 18.4), <code>::details-content</code> (Chrome 131, Firefox 143, Safari 18.4),{" "}
+      <code>popover</code> and <code>@starting-style</code>. The floor rises when a feature from the list below
+      reaches all three browsers and the library starts relying on it.
+    </p>
+
     <h2 id="native">What the browser does</h2>
     <div class="table-scroll">
       <table class="api-table">

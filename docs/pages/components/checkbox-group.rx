@@ -52,7 +52,7 @@ export default component Page() {
     <p>
       Give the group every value with <code>allValues</code> and add a box with <code>parent</code>. It is checked
       while all the boxes are, and indeterminate (matched by <code>:indeterminate</code>) while some are. Pressing it
-      cycles through all, none, and back to the selection the user had made, as Base UI's does. Once every box or
+      cycles through all, none, and back to the selection the user had made. Once every box or
       none is checked by hand, it toggles between all and none. The parent box has no name, so it submits nothing.
     </p>
     <Demo source="checkbox-group/parent"><CheckboxGroupParent /></Demo>

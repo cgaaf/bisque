@@ -33,7 +33,6 @@ export default component Page() {
       </p>
     </div>
     <Code file="scroll-area/native.css.txt" />
-    <p>The parts are the same as Base UI's.</p>
 
     <h2 id="examples">Examples</h2>
 

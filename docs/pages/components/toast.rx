@@ -36,8 +36,8 @@ export default component Page() {
     <div class="note">
       <p>
         There is no Portal part: the viewport is in the top layer already. There are no Positioner and Arrow
-        parts, because toasts anchored to an element aren't implemented. Base UI's <code>useToastManager()</code>{" "}
-        is <code>(use toast).manager</code> here.
+        parts, because toasts anchored to an element aren't implemented. To add toasts from anywhere, use the manager from{" "}
+        <code>(use toast).manager</code>.
       </p>
     </div>
 

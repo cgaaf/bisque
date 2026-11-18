@@ -37,7 +37,7 @@ export default component Page() {
     </p>
     <div class="note">
       <p>
-        Base UI has separate Radio and Radio Group pages; here both are in one family. As with{" "}
+        Radio and RadioGroup are documented together, as one family. As with{" "}
         <a href="../checkbox/">Checkbox</a>, an <code>{"<input>"}</code> can't have children, so{" "}
         <code>RadioRoot</code> renders its children after the radio: <code>RadioIndicator</code> is its next
         sibling, styled with <code>.Radio:checked + .Indicator</code>.

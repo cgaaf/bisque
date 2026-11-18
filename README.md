@@ -1,8 +1,8 @@
 # Bisque
 
 Headless, unstyled, accessible components for [ReactiveScript](https://reactivescript.dev/) (`.rx`), the
-language from the Solid team that compiles to Solid 2.0. [Base UI](https://base-ui.com) is the model: the same
-component families, ARIA and keyboard behaviour.
+language from the Solid team that compiles to Solid 2.0, with the component families, ARIA and keyboard
+behaviour you would expect from a headless library.
 
 Experimental, like ReactiveScript 0.3 itself: expect the API to change.
 
@@ -76,7 +76,7 @@ reports, from the Baseline project's data, which platform features qualify.
 
 - Exit animations for popovers in Firefox and Safari, which can't keep a closing top-layer element on screen.
   Dialogs, drawers and disclosures animate out everywhere.
-- Some Base UI features: detached triggers, Drawer snap points, NavigationMenu's shared morphing viewport,
+- Some features: detached triggers, Drawer snap points, NavigationMenu's shared morphing viewport,
   drag-to-select in menus.
 - Server rendering is untested.
 - The components are tested for roles, ARIA, focus and keyboard behaviour in three engines; they have not been

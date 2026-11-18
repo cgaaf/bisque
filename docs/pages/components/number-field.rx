@@ -30,7 +30,7 @@ export default component Page() {
     </p>
     <div class="note">
       <p>
-        The parts are the same as Base UI's. A stepper is left out of the tab order: the arrow keys in the input do
+        A stepper is left out of the tab order: the arrow keys in the input do
         what it does, and pressing it with a mouse keeps focus in the input.
       </p>
     </div>
