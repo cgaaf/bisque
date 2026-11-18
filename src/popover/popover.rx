@@ -101,7 +101,12 @@ export type PopoverPopupProps = {
 
 export fn popoverPopup(ref c: PopoverContext, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
   base = popoverPopupProps(c, "auto", side, align, sideOffset, alignOffset)
-  { ...base, role: "dialog", "aria-labelledby": c.titleId, "aria-describedby": c.descriptionId }
+  // Each read of the context is an equation of its own: the context is rebuilt whenever the popup opens or closes,
+  // and this object, reading it directly, was rebuilt with it, new but equal each time (UNSTABLE_MEMO_OUTPUT once a
+  // controlled popover had opened and closed twice).
+  titleId = c.titleId
+  descriptionId = c.descriptionId
+  { ...base, role: "dialog", "aria-labelledby": titleId, "aria-describedby": descriptionId }
 }
 
 export component PopoverPopup({ side = "bottom", align = "center", sideOffset = 0, alignOffset = 0, children, ...rest }: PopoverPopupProps) {

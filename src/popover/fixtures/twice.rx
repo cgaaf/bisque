@@ -1,0 +1,23 @@
+import { PopoverRoot, PopoverTrigger, PopoverPopup } from "../popover.rx"
+
+// The first popover has a controlled `open`; the second is uncontrolled and only reports its state to the app.
+// Opened and closed twice, the controlled one used to report UNSTABLE_MEMO_OUTPUT from PopoverPopup.
+export default component Fixture() {
+  source open := false
+  source seen := false
+  <main>
+    <PopoverRoot open={open} onOpenChange={(next) => { open := next }}>
+      <PopoverTrigger>Toggle</PopoverTrigger>
+      <PopoverPopup aria-label="Panel" data-testid="panel">
+        <button>Inside</button>
+      </PopoverPopup>
+    </PopoverRoot>
+    <PopoverRoot onOpenChange={(next) => { seen := next }}>
+      <PopoverTrigger>Reported</PopoverTrigger>
+      <PopoverPopup aria-label="Reported panel" data-testid="reported">
+        <button>Inside</button>
+      </PopoverPopup>
+    </PopoverRoot>
+    <output data-testid="seen">{seen ? "open" : "closed"}</output>
+  </main>
+}
