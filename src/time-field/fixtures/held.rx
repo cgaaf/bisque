@@ -1,0 +1,35 @@
+import { TimeFieldRoot, TimeFieldInput, TimeFieldSegment, timeField } from "../time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { save } from "../../test/slow-server.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while a prop of a time field is
+// computed from that write. The field's own state must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // A prop of the root that changes with the held write.
+    <TimeFieldRoot aria-label="Root prop" locale="en-US" defaultValue={parseTime("09:30")} max={step == 1 ? parseTime("18:00") : parseTime("17:00")}>
+      <TimeFieldInput><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+
+    // An attribute passed through to the input's element.
+    <TimeFieldRoot aria-label="Input attribute" locale="en-US" defaultValue={parseTime("09:30")}>
+      <TimeFieldInput class={step == 2 ? "second" : "first"}><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+  </main>
+}

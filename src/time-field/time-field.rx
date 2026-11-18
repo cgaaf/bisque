@@ -1,0 +1,165 @@
+// Time Field: a time of day entered through one spinbutton per segment (hour / minute / second / AM-PM, in the
+// locale's order with its literals), as React Aria's TimeField does; Base UI has none. ARIA: each editable segment is
+// a `spinbutton` with `aria-valuenow`/`-min`/`-max`/`-valuetext` and a label, inside a `group` labelled by the field.
+//
+// Why not `<input type="time">`: it is a segmented field in every engine, but its locale and hour cycle are the
+// browser's (no attribute sets either; it is as wide with `lang="de-DE"` as without); its partial input can't be read; `step` can add
+// seconds but not drop the minutes; Firefox has no selector to style its segments. It stays as the hidden input
+// that submits the value, and whose native `min`, `max` and `required` checks Field reads.
+//
+// Behaviour is in ../internal/segmented-field.rx, shared with Date Field; this file gives it the time's types. The
+// value is a `Temporal.PlainTime`, down to `granularity` (finer units are 0). `onValueChange` reports a time when
+// every segment is filled (the day period too, in 12-hour time; an hour typed before it counts as AM), and
+// `undefined` when a complete time becomes incomplete. A time outside `min`/`max` is kept, not clamped: the field is
+// invalid (`data-invalid`, and the hidden input's `rangeUnderflow`/`rangeOverflow` for Field). Hours wrap within
+// their cycle; there is no rollover into a day.
+//
+// Composing (a Time Picker, a Time Range Picker): give the field a controlled `value` (null for empty) and take
+// `onValueChange`; a value set from outside replaces a partial edit. A part placed inside the root reads
+// `use timeField` and calls `c.focus()` to give focus back to the field (the first empty segment, or the last). A
+// picker that keeps the Field to itself (`provide field = undefined` around the field) passes its validity and
+// description on with `invalid` and `describedBy`: each segment then gets them as `aria-invalid`/`data-invalid` and
+// `aria-describedby`, exactly as from a FieldRoot, the given values winning over a Field's. A
+// range is two roots inside the picker's own `role="group"`, each with its own `aria-label` ("Start time", "End
+// time"); each root is a group of its own. The props functions (`timeFieldRoot`, `timeFieldInput`,
+// `timeFieldSegment`) put the behaviour on any element.
+import { mergeProps, createId } from "../internal/props.js"
+import { parseTime, timeToString } from "../internal/date.js"
+import { SegmentedFieldState, segmentedFieldState, segmentedFieldRoot, segmentedFieldInput, segmentedFieldSegment } from "../internal/segmented-field.rx"
+import { field } from "../field/field.rx"
+import { DivProps, SpanProps, PartProps, PlainTime, TimeGranularity, FieldOptions, KeyedSegment } from "../internal/types.rx"
+
+export type TimeFieldContext = SegmentedFieldState & {
+  // The time the segments make; undefined while any segment is empty.
+  value: PlainTime | undefined
+}
+
+export context timeField: lane TimeFieldContext
+
+export type TimeFieldRootProps = {
+  // The time shown. `null` is controlled and empty; leaving it out lets the field hold its own value.
+  value?: PlainTime | null
+  defaultValue?: PlainTime
+  // Called with the time when every segment is filled, and with undefined when a complete time becomes incomplete.
+  onValueChange?: (value: PlainTime | undefined) => void
+  // The earliest time that is valid. A time before it is kept and marks the field invalid.
+  min?: PlainTime
+  // The latest time that is valid. A time after it is kept and marks the field invalid.
+  max?: PlainTime
+  // The locale whose segment order, literals, digits, day periods and hour cycle the field uses. Default: the browser's.
+  locale?: string | string[]
+  // The smallest segment shown. Default: "minute".
+  granularity?: TimeGranularity
+  // 12 or 24 overrides the locale's hour cycle.
+  hourCycle?: 12 | 24
+  // What an empty segment starts from when stepped with the arrow keys. Default: midnight.
+  placeholderValue?: PlainTime
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot), a hidden time input submits the value (`13:45`, or `13:45:00` down to
+  // seconds) with the form; nothing while it is incomplete.
+  name?: string
+  form?: string
+  // Marks the field invalid from outside, as an enclosing FieldRoot's state would (a picker that keeps the Field
+  // to itself passes its own). Given, it wins over the Field's; a time outside `min`/`max` is invalid either way.
+  invalid?: boolean
+  // The ids that describe the field, for each segment's `aria-describedby`, as an enclosing FieldRoot's description
+  // and error would. Given, it wins over the Field's.
+  describedBy?: string
+  // An empty segment's `aria-valuetext`, in the app's language. Default: "Empty".
+  emptyText?: string
+  // The validation message while some segments are filled and others not. Default: "Enter a complete time."
+  incompleteMessage?: string
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue" | "onChange">
+
+// An id or id list the consumer gave (`id`, `aria-labelledby`), or none.
+fn idRef(given: string | false | undefined): string | undefined => given == false || given == "" ? undefined : given
+
+export component TimeFieldRoot(props: TimeFieldRootProps) {
+  f = use field
+  // `value` and `disabled` are often read from an answer that can fail: that failure is the app's to show.
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenReadOnly = (props.readOnly ?? false) catch (e) => false
+  granularity = props.granularity ?? "minute"
+  controlled = givenValue == undefined ? undefined : givenValue == null ? "" : timeToString(givenValue, granularity)
+  defaultText = timeToString(props.defaultValue, granularity)
+  // Temporal props are held as their form strings: a prop set again to an equal time rebuilds nothing below.
+  minText = timeToString(props.min, "second")
+  maxText = timeToString(props.max, "second")
+  placeholderText = timeToString(props.placeholderValue, "second")
+  options: FieldOptions = { type: "time", locale: props.locale, granularity: granularity, hourCycle: props.hourCycle, placeholderValue: parseTime(placeholderText) }
+  isDisabled = givenDisabled || (f?.disabled ?? false)
+  isReadOnly = givenReadOnly
+  isRequired = props.required ?? false
+  generatedId = createId("time-field")
+  rootId: string = idRef(props.id) ?? generatedId
+  labelledBy = f?.labelId ?? idRef(props["aria-labelledby"]) ?? (props["aria-label"] != undefined ? rootId : undefined)
+
+  // The hidden input that submits the value, and whose validity Field reads.
+  source hidden: HTMLInputElement | undefined := undefined
+  action setHidden(element: HTMLInputElement) {
+    hidden := element
+    if (f) { f.setInput(element) }
+  }
+  // Called by the state in a change of its own, never in the one that updates the field.
+  action report(text: string) {
+    if (props.onValueChange) { props.onValueChange(parseTime(text)) }
+  }
+  state = segmentedFieldState(controlled, defaultText, options, isDisabled, isReadOnly, isRequired, minText, maxText, labelledBy, props.emptyText ?? "Empty", props.incompleteMessage ?? "Enter a complete time.", f, hidden, props.invalid, props.describedBy, report)
+  text = state.text
+  time = parseTime(text)
+  self = latest { ...state, value: time }
+
+  provide timeField = self
+
+  { value, defaultValue, onValueChange, min, max, locale, invalid, describedBy, granularity: _granularity, hourCycle, placeholderValue, disabled, readOnly, required, name, form, emptyText, incompleteMessage, id, children, ...rest } = props
+  inputName = (latest name) ?? f?.name
+  own = timeFieldRoot(self)
+  withId = { ...own, id: rootId }
+  merged = latest mergeProps(withId, rest)
+  <div {...merged}>{children}</div>
+  {if inputName != undefined || f != undefined {
+    <input type="time" hidden aria-hidden="true" tabindex="-1" name={inputName} form={form} min={minText == "" ? undefined : minText} max={maxText == "" ? undefined : maxText} step="any" value={self.text} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setHidden} />
+  }}
+}
+
+// The field's group: `role="group"`, named by FieldLabel or the root's `aria-label`.
+export fn timeFieldRoot(ref c: TimeFieldContext): PartProps {
+  own = segmentedFieldRoot(c)
+  own
+}
+
+// The box holding the segments. A press on its empty space focuses the first empty segment, or the last.
+export fn timeFieldInput(ref c: TimeFieldContext): PartProps {
+  own = segmentedFieldInput(c)
+  own
+}
+
+export component TimeFieldInput({ children, ...rest }: DivProps) {
+  c = use timeField
+  own = timeFieldInput(c)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// One segment of `c.segments`: a spinbutton (contenteditable, for the phone keyboard) or an `aria-hidden` literal.
+// A component that spreads this renders `segment.text` as the element's only content.
+export fn timeFieldSegment(ref c: TimeFieldContext, ref segment: KeyedSegment): PartProps {
+  own = segmentedFieldSegment(c, segment)
+  own
+}
+
+export type TimeFieldSegmentProps = {
+  // One entry of the context's `segments`: render one per entry, `for segment in c.segments`.
+  segment: KeyedSegment
+} & Omit<SpanProps, "children">
+
+export component TimeFieldSegment({ segment, ...rest }: TimeFieldSegmentProps) {
+  c = use timeField
+  own = timeFieldSegment(c, segment)
+  merged = latest mergeProps(own, rest)
+  <span {...merged}>{segment.text}</span>
+}

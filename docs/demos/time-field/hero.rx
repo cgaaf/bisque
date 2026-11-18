@@ -1,0 +1,18 @@
+import { TimeFieldRoot, TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
+import { parseTime } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+export component TimeFieldHero() {
+  <div class="TimeFieldHero">
+    <span class="Label" id="time-field-hero-label">Start time</span>
+    <TimeFieldRoot class="Field" aria-labelledby="time-field-hero-label" defaultValue={parseTime("09:30")}>
+      <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+  </div>
+}

@@ -1,0 +1,177 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { DateFieldHero } from "../../demos/date-field/hero.rx"
+import { DateFieldLocales } from "../../demos/date-field/locales.rx"
+import { DateFieldForm } from "../../demos/date-field/form.rx"
+import { DateFieldNative } from "../../demos/date-field/native.rx"
+
+export default component Page() {
+  <DocsPage title="Date Field" subtitle="A date typed or stepped one segment at a time, in the locale's order.">
+    <Demo source="date-field/hero"><DateFieldHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. The segments come from the field's context, so a small component
+      inside the root renders one <code>DateFieldSegment</code> per entry:
+    </p>
+    <Code file="date-field/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>{"<input type=\"date\">"}</code> is in every browser, and is a segmented field already. It wasn't
+      enough to build on. Tested in Chromium, Firefox and WebKit:
+    </p>
+    <ul>
+      <li>
+        Its locale is the browser's. With <code>lang="de-DE"</code> on the input, Chromium and Firefox still read
+        typed digits as month, day, year in an English browser. Nothing sets the order, the separators or the
+        digits for one field.
+      </li>
+      <li>
+        Its partial input can't be read. While a segment is empty, <code>value</code> is <code>""</code> and only{" "}
+        <code>validity.badInput</code> says that something was typed. Chromium and Firefox fire no{" "}
+        <code>input</code> event until the date is complete.
+      </li>
+      <li>
+        It ignores typed Arabic-Indic digits in all three engines.
+      </li>
+      <li>
+        Only Chromium and WebKit expose its segments to CSS (<code>::-webkit-datetime-edit-*</code>). Firefox has no
+        selector for them, and only Chromium has one for the picker button
+        (<code>::-webkit-calendar-picker-indicator</code>).
+      </li>
+    </ul>
+    <p>
+      So the segments are the library's: one <code>role="spinbutton"</code> per segment with{" "}
+      <code>aria-valuenow</code>, <code>aria-valuemin</code>, <code>aria-valuemax</code>,{" "}
+      <code>aria-valuetext</code> and a label, inside a <code>role="group"</code>, as in React Aria's DateField (Base
+      UI has no date field). The order, separators, digits and segment names come from <code>Intl</code> for the
+      field's <code>locale</code>, and the value is a <code>Temporal.PlainDate</code>. The native input stays as the
+      hidden input that submits the value, so the browser's own <code>min</code>, <code>max</code> and{" "}
+      <code>required</code> checks are what Field reads.
+    </p>
+    <p>
+      Each segment is a contenteditable <code>{"<span>"}</code> with <code>inputmode="numeric"</code>, chosen for
+      phones: a soft keyboard opens only for an editable element, and its characters arrive as{" "}
+      <code>beforeinput</code> events. In the three engines tested, a contenteditable span gets a cancellable{" "}
+      <code>beforeinput</code> for each typed character, and a focusable <code>{"<span tabindex>"}</code> gets only{" "}
+      <code>keydown</code>. The field cancels every edit the browser would make and applies the character to the
+      segment itself. The keys that move and step, and <kbd>Backspace</kbd>, are read from <code>keydown</code>:
+      WebKit sends no <code>beforeinput</code> for a <kbd>Backspace</kbd> with nothing before the caret. No phone
+      keyboard was tried.
+    </p>
+    <div class="note">
+      <p>
+        Temporal is not in Safari 27.2. The library uses the global <code>Temporal</code> and ships no polyfill: an
+        app loads one (<code>temporal-polyfill/global</code>) until Safari has it.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Typing and the keyboard</h3>
+    <p>
+      Digits fill the focused segment and move to the next one as soon as it can take no more: <kbd>1</kbd> in the
+      month waits for a second digit, <kbd>3</kbd> moves on. <kbd>↑</kbd> and <kbd>↓</kbd> step a segment and wrap
+      within it (an empty one starts from <code>placeholderValue</code>, today by default), <kbd>Page Up</kbd> and{" "}
+      <kbd>Page Down</kbd> step further, and <kbd>Home</kbd> and <kbd>End</kbd> go to a segment's ends.{" "}
+      <kbd>Backspace</kbd> removes a digit, then empties the segment, then moves back. <kbd>←</kbd> and{" "}
+      <kbd>→</kbd> move between segments, mirrored in right-to-left text, and every segment is a <kbd>Tab</kbd>{" "}
+      stop. Pasting an ISO date (<code>2026-11-17</code>) fills every segment. When the
+      month or year changes, the day is kept within the month: 31 January becomes 28 February.
+    </p>
+
+    <h3 id="labelling">Labelling it</h3>
+    <p>
+      Name the root as a group: <code>aria-label</code>, <code>aria-labelledby</code> pointing at visible text as
+      the hero does, or a <code>FieldLabel</code> inside a <code>FieldRoot</code>. Each segment is then announced
+      with the field's name and its own, “Event date month”, in the locale's words.{" "}
+      <code>emptyText</code> is what an empty segment says (“Empty” by default).
+    </p>
+
+    <h3 id="locales">Locales and digits</h3>
+    <p>
+      <code>locale</code> sets the segment order, the separators and the digits. Arabic-Indic digits are shown in{" "}
+      <code>ar-EG</code>, and typed digits are taken in the locale's numerals or in ASCII. In right-to-left text,
+      put <code>dir="rtl"</code> on an ancestor and <kbd>←</kbd> moves to the next segment.
+    </p>
+    <Demo source="date-field/locales"><DateFieldLocales /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the date yourself. <code>onValueChange</code>{" "}
+      receives a <code>Temporal.PlainDate</code> when every segment is filled and the day exists, and{" "}
+      <code>undefined</code> when a complete date becomes incomplete. Typing a year reports each year on the way
+      (2, 20, 202, 2026), as WebKit's own date input does. Pass <code>null</code> for a controlled,
+      empty field: leaving <code>value</code> out, or passing <code>undefined</code>, lets the field hold its own.
+    </p>
+    <p>
+      While segments are only partly filled the field has no date, and keeps what was typed until the value changes
+      from outside. A value set from outside, a form reset, or an optimistic save that fails replaces the partial
+      edit. An owner that keeps its value without ever taking the new one (a save that isn't optimistic, refused)
+      leaves the edit showing.
+    </p>
+
+    <h3 id="pickers">Inside a picker</h3>
+    <p>
+      A date picker puts a field and a calendar behind one value: give the field a controlled <code>value</code>{" "}
+      and <code>onValueChange</code>. A part placed inside the root can read <code>use dateField</code> and call{" "}
+      <code>focus()</code> to give focus back to the field (its first empty segment, or the last). A range is two
+      roots, each with its own <code>aria-label</code>, inside the picker's own <code>role="group"</code>.
+    </p>
+    <p>
+      A picker that keeps the Field wiring to itself passes it on to the field with <code>invalid</code> and{" "}
+      <code>describedBy</code> (the ids of its description and error). Each segment then gets{" "}
+      <code>aria-invalid</code>, <code>data-invalid</code> and <code>aria-describedby</code> from them, as it would
+      from an enclosing <code>FieldRoot</code>; given, they win over a Field's. A date outside <code>min</code> or{" "}
+      <code>max</code> is invalid either way.
+    </p>
+
+    <h3 id="validation">Bounds and validity</h3>
+    <p>
+      A date before <code>min</code> or after <code>max</code> is kept, not clamped: the field gets{" "}
+      <code>data-invalid</code> and its segments <code>aria-invalid</code>, and the hidden input reports{" "}
+      <code>rangeUnderflow</code> or <code>rangeOverflow</code>. A field with some segments filled and others not
+      is invalid too, with <code>incompleteMessage</code> as its error. In a <code>FieldRoot</code>, the field
+      validates as other controls do.
+    </p>
+    <Demo source="date-field/form"><DateFieldForm /></Demo>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      With a <code>name</code>, or inside a named <code>FieldRoot</code>, a hidden{" "}
+      <code>{"<input type=\"date\">"}</code> submits the ISO date (<code>2026-11-17</code>), and nothing while the
+      field is incomplete. A form reset puts the default back. A Form's <code>onFormSubmit</code> and Field's{" "}
+      <code>validate</code> receive the same ISO string.
+    </p>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      The field calls <code>onValueChange</code> in a change of its own, so a handler that saves, or writes
+      something a loading question reads, never holds the field: typing goes on while the request is out. Since a
+      change is reported on every complete date, a field that saves as it changes saves each year typed on the way;
+      save on submit, or from a picker's confirmation, where that matters. To stop changes while a save is out, pass{" "}
+      <code>readOnly={"{"}pending? setting{"}"}</code>: the focused segment keeps focus and ignores keys. A field
+      disabled the same way gives focus back to the segment when it is enabled again.
+    </p>
+
+    <h3 id="styling">Styling segments</h3>
+    <p>
+      A segment carries <code>data-type</code> (<code>month</code>, <code>day</code>, <code>year</code>, or{" "}
+      <code>literal</code> for a separator) and <code>data-placeholder</code> while it is empty. The input has{" "}
+      <code>data-focused</code> while a segment has focus, for the ring a native input would show. Segments set{" "}
+      <code>caret-color: transparent</code> inline: each shows its whole value, and a caret has nowhere useful to
+      be.
+    </p>
+
+    <h3 id="native">Styling only, without the library</h3>
+    <p>
+      If the browser's own locale is the right one and the value is only submitted with a form, a styled native
+      input needs no JavaScript at all. Its look stops where the browser's selectors do: Firefox can't style a
+      segment, and each engine draws its own picker.
+    </p>
+    <Demo source="date-field/native"><DateFieldNative /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="date-field" />
+  </DocsPage>
+}

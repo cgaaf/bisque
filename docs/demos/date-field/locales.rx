@@ -1,0 +1,34 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { parseDate } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+export component DateFieldLocales() {
+  <div class="DateFieldLocales">
+    <div class="Row">
+      <span class="Label">en-US</span>
+      <DateFieldRoot aria-label="Date, United States" locale="en-US" defaultValue={parseDate("2026-03-09", undefined)}>
+        <DateFieldInput class="Input"><Segments /></DateFieldInput>
+      </DateFieldRoot>
+    </div>
+    <div class="Row">
+      <span class="Label">de-DE</span>
+      <DateFieldRoot aria-label="Datum" locale="de-DE" defaultValue={parseDate("2026-03-09", undefined)}>
+        <DateFieldInput class="Input"><Segments /></DateFieldInput>
+      </DateFieldRoot>
+    </div>
+    <div class="Row">
+      <span class="Label">ar-EG</span>
+      <div dir="rtl">
+        <DateFieldRoot aria-label="التاريخ" locale="ar-EG" defaultValue={parseDate("2026-03-09", undefined)}>
+          <DateFieldInput class="Input"><Segments /></DateFieldInput>
+        </DateFieldRoot>
+      </div>
+    </div>
+  </div>
+}

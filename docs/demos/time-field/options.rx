@@ -1,0 +1,40 @@
+import { TimeFieldRoot, TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
+import { parseTime } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+export component TimeFieldOptions() {
+  <div class="TimeFieldOptions">
+    <div class="Row">
+      <span class="Label">en-US, seconds</span>
+      <TimeFieldRoot aria-label="Lap time" locale="en-US" granularity="second" defaultValue={parseTime("14:05:30")}>
+        <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+      </TimeFieldRoot>
+    </div>
+    <div class="Row">
+      <span class="Label">en-US, 24-hour</span>
+      <TimeFieldRoot aria-label="Departure" locale="en-US" hourCycle={24} defaultValue={parseTime("14:05")}>
+        <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+      </TimeFieldRoot>
+    </div>
+    <div class="Row">
+      <span class="Label">ko-KR</span>
+      <TimeFieldRoot aria-label="시간" locale="ko-KR" defaultValue={parseTime("14:05")}>
+        <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+      </TimeFieldRoot>
+    </div>
+    <div class="Row">
+      <span class="Label">ar-EG</span>
+      <div dir="rtl">
+        <TimeFieldRoot aria-label="الوقت" locale="ar-EG" defaultValue={parseTime("14:05")}>
+          <TimeFieldInput class="Input"><Segments /></TimeFieldInput>
+        </TimeFieldRoot>
+      </div>
+    </div>
+  </div>
+}

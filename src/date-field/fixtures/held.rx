@@ -1,0 +1,48 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../date-field.rx"
+import { parseDate } from "../../internal/date.js"
+import { save } from "../../test/slow-server.js"
+
+component Segments(props: { step: number }) {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} class={props.step == 2 ? "second" : "first"} />
+  }}
+}
+
+component PlainSegments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// date field is computed from that write. The field's own state (its segments, and what is being typed) must not
+// wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <DateFieldRoot aria-label="Root prop" locale="en-US" defaultValue={parseDate("2026-11-17", undefined)} max={step == 1 ? parseDate("2030-01-01", undefined) : parseDate("2029-01-01", undefined)}>
+      <DateFieldInput><PlainSegments /></DateFieldInput>
+    </DateFieldRoot>
+
+    // 2. An attribute passed through to the input's element.
+    <DateFieldRoot aria-label="Input attribute" locale="en-US" defaultValue={parseDate("2026-11-17", undefined)}>
+      <DateFieldInput class={step == 2 ? "second" : "first"}><PlainSegments /></DateFieldInput>
+    </DateFieldRoot>
+
+    // 3. An attribute passed through to each segment's element.
+    <DateFieldRoot aria-label="Segment attribute" locale="en-US" defaultValue={parseDate("2026-11-17", undefined)}>
+      <DateFieldInput><Segments step={step} /></DateFieldInput>
+    </DateFieldRoot>
+  </main>
+}

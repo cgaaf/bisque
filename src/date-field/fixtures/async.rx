@@ -1,0 +1,110 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../date-field.rx"
+import { parseDate } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+import { PlainDate } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// The form string a date is saved as; "" for none. The server stores strings (../../test/settings-server.ts).
+fn text(date: PlainDate | undefined): string => date == undefined ? "" : date.toString()
+fn dateOf(value: string): PlainDate | null => parseDate(value, undefined) ?? null
+fn stringValue(value: string): string => value
+
+// Date fields whose value is saved to a server, written as an app would. Each saves on every change.
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  due = await load("due", stringValue("2026-11-17")) -> "2026-11-17"
+  source dueError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source start := "2026-11-17"
+  source startError := ""
+  // Disabled while its save is out.
+  locked = await load("locked", stringValue("2026-11-17")) -> "2026-11-17"
+  // Read-only while its save is out.
+  frozen = await load("frozen", stringValue("2026-11-17")) -> "2026-11-17"
+  // Follows every change in the app's state, which a loading question reads.
+  source picked := "2026-11-17"
+  summary = await load(`summary-${picked}`, picked) -> "2026-11-17"
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := "2026-11-17"
+  preview = await load(`preview-${wanted}`, wanted) -> "2026-11-17"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <DateFieldRoot aria-label="Due" locale="en-US" value={dateOf(due)} onValueChange={(next) => {
+      let value = text(next)
+      guess due := value
+      onFlush(() => { dueError := "" })
+      affects due
+      try {
+        await save("due", value)
+        refresh due
+      } catch (e) {
+        dueError := "failed"
+      }
+    }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <output data-testid="due">{due}</output>
+    <output data-testid="due-saving">{pending? due ? "saving" : ""}</output>
+    <output data-testid="due-error">{dueError}</output>
+
+    <DateFieldRoot aria-label="Start" locale="en-US" value={dateOf(start)} onValueChange={(next) => {
+      let value = text(next)
+      onFlush(() => { startError := "" })
+      try {
+        await save("start", value)
+        start := value
+      } catch (e) {
+        startError := "failed"
+      }
+    }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <output data-testid="start">{start}</output>
+    <output data-testid="start-error">{startError}</output>
+
+    <DateFieldRoot aria-label="Locked" locale="en-US" value={dateOf(locked)} disabled={pending? locked} onValueChange={(next) => {
+      let value = text(next)
+      guess locked := value
+      affects locked
+      try {
+        await save("locked", value)
+        refresh locked
+      } catch (e) {
+      }
+    }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+
+    <DateFieldRoot aria-label="Frozen" locale="en-US" value={dateOf(frozen)} readOnly={pending? frozen} onValueChange={(next) => {
+      let value = text(next)
+      guess frozen := value
+      affects frozen
+      try {
+        await save("frozen", value)
+        refresh frozen
+      } catch (e) {
+      }
+    }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+
+    <DateFieldRoot aria-label="Picked" locale="en-US" value={dateOf(picked)} onValueChange={(next) => { picked := text(next) }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <output data-testid="summary">{summary}</output>
+    <output data-testid="summarizing">{pending? summary ? "loading" : ""}</output>
+
+    <DateFieldRoot aria-label="Preview" locale="en-US" defaultValue={dateOf(wanted) ?? undefined} onValueChange={(next) => { wanted := text(next) }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

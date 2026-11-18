@@ -1,0 +1,48 @@
+import { TimeFieldRoot, TimeFieldInput, TimeFieldSegment, timeField } from "../time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { PlainTime } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+fn show(time: PlainTime | undefined): string => time == undefined ? "none" : time.toString()
+
+export default component Fixture() {
+  source changes: string[] := []
+  // Boxed: a source seeded with a Temporal value breaks it (../../internal/date.d.rx).
+  source controlled := { time: parseTime("09:30") ?? null }
+  <main>
+    <form data-testid="form">
+      <TimeFieldRoot data-testid="us" aria-label="Start time" name="start" locale="en-US" onValueChange={(v) => { changes := [...changes, show(v)] }}>
+        <TimeFieldInput data-testid="us-input"><Segments /></TimeFieldInput>
+      </TimeFieldRoot>
+      <TimeFieldRoot data-testid="de" aria-label="Alarm" name="alarm" locale="de-DE" granularity="second" defaultValue={parseTime("07:05:09")} min={parseTime("06:00")} max={parseTime("22:00")}>
+        <TimeFieldInput><Segments /></TimeFieldInput>
+      </TimeFieldRoot>
+      <TimeFieldRoot data-testid="h24" aria-label="Forced 24" name="forced" locale="en-US" hourCycle={24} granularity="hour">
+        <TimeFieldInput><Segments /></TimeFieldInput>
+      </TimeFieldRoot>
+      <div dir="rtl">
+        <TimeFieldRoot data-testid="ar" aria-label="Arabic" name="arabic" locale="ar-EG">
+          <TimeFieldInput><Segments /></TimeFieldInput>
+        </TimeFieldRoot>
+      </div>
+      <button type="reset">Reset</button>
+    </form>
+    <TimeFieldRoot data-testid="controlled" aria-label="Controlled" locale="en-US" value={controlled.time} onValueChange={(v) => { controlled.time := v ?? null }}>
+      <TimeFieldInput><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+    <button onClick={() => { controlled.time := parseTime("18:15") ?? null }}>Set evening</button>
+    <button onClick={() => { controlled.time := null }}>Clear</button>
+    <output data-testid="controlled-value">{controlled.time == null ? "none" : controlled.time.toString()}</output>
+    <TimeFieldRoot data-testid="disabled" aria-label="Disabled" locale="en-US" disabled defaultValue={parseTime("10:00")}>
+      <TimeFieldInput><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <input aria-label="After" />
+  </main>
+}

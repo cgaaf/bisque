@@ -1,0 +1,20 @@
+// Generated from segmented-field.d.rx by scripts/gen-dts.mjs. Do not edit.
+export type KeyedSegment = import("./impl/segmented-field.ts").KeyedSegment;
+export declare function segmentList(values: import("./impl/date.ts").SegmentValues, options: import("./impl/date.ts").FieldOptions): KeyedSegment[];
+export declare function segmentsOfText(text: string, options: import("./impl/date.ts").FieldOptions): import("./impl/date.ts").SegmentValues;
+export declare function textOfSegments(values: import("./impl/date.ts").SegmentValues, options: import("./impl/date.ts").FieldOptions): string;
+export declare function isTextOutOfRange(text: string, min: string | undefined, max: string | undefined, options: import("./impl/date.ts").FieldOptions): boolean;
+export declare function boundText(bound: Temporal.PlainDate | Temporal.PlainTime | undefined, options: import("./impl/date.ts").FieldOptions): string | undefined;
+export declare function shownDigits(values: import("./impl/date.ts").SegmentValues, kind: import("./impl/date.ts").SegmentKind, options: import("./impl/date.ts").FieldOptions): string;
+export type SegmentDraft = import("./impl/segmented-field.ts").SegmentDraft;
+export declare function createDraft(current: string): [SegmentDraft | undefined, (draft: SegmentDraft | undefined) => void];
+export declare function hasAnySegment(values: import("./impl/date.ts").SegmentValues, options: import("./impl/date.ts").FieldOptions): boolean;
+export declare function textOfPaste(text: string | null | undefined, options: import("./impl/date.ts").FieldOptions): string | undefined;
+export declare function pastedText(event: ClipboardEvent): string | null;
+export declare function focusSegment(input: HTMLElement | undefined, from: HTMLElement | undefined, step: number): boolean;
+export declare function focusEntry(input: HTMLElement | undefined): void;
+export declare function focusFirst(input: HTMLElement | undefined): void;
+export declare function isRightToLeft(element: HTMLElement): boolean;
+export declare function isSegment(target: EventTarget | null): boolean;
+export declare function restoreText(element: HTMLElement, text: string): void;
+export declare function createIncompleteValidity(input: HTMLInputElement | undefined, message: string): void;

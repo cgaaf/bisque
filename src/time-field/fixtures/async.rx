@@ -1,0 +1,69 @@
+import { TimeFieldRoot, TimeFieldInput, TimeFieldSegment, timeField } from "../time-field.rx"
+import { parseTime } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+import { PlainTime } from "../../internal/types.rx"
+
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+// The form string a time is saved as (`09:30`); "" for none. The server stores strings.
+fn text(time: PlainTime | undefined): string => time == undefined ? "" : time.toString({ smallestUnit: "minute" })
+fn timeOf(value: string): PlainTime | null => parseTime(value) ?? null
+fn stringValue(value: string): string => value
+
+// Time fields whose value is saved to a server, written as an app would (../../test/settings-server.ts). The
+// segment behaviour is Date Field's (../../date-field/fixtures/async.rx has every case); these are the time's.
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  alarm = await load("alarm", stringValue("09:30")) -> "09:30"
+  source alarmError := ""
+  // Disabled while its save is out.
+  locked = await load("locked", stringValue("09:30")) -> "09:30"
+  // Follows every change in the app's state, which a loading question reads.
+  source picked := "09:30"
+  summary = await load(`summary-${picked}`, picked) -> "09:30"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <TimeFieldRoot aria-label="Alarm" locale="en-US" value={timeOf(alarm)} onValueChange={(next) => {
+      let value = text(next)
+      guess alarm := value
+      onFlush(() => { alarmError := "" })
+      affects alarm
+      try {
+        await save("alarm", value)
+        refresh alarm
+      } catch (e) {
+        alarmError := "failed"
+      }
+    }}>
+      <TimeFieldInput><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+    <output data-testid="alarm">{alarm}</output>
+    <output data-testid="alarm-saving">{pending? alarm ? "saving" : ""}</output>
+    <output data-testid="alarm-error">{alarmError}</output>
+
+    <TimeFieldRoot aria-label="Locked" locale="en-US" value={timeOf(locked)} disabled={pending? locked} onValueChange={(next) => {
+      let value = text(next)
+      guess locked := value
+      affects locked
+      try {
+        await save("locked", value)
+        refresh locked
+      } catch (e) {
+      }
+    }}>
+      <TimeFieldInput><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+
+    <TimeFieldRoot aria-label="Picked" locale="en-US" value={timeOf(picked)} onValueChange={(next) => { picked := text(next) }}>
+      <TimeFieldInput><Segments /></TimeFieldInput>
+    </TimeFieldRoot>
+    <output data-testid="summary">{summary}</output>
+    <output data-testid="summarizing">{pending? summary ? "loading" : ""}</output>
+    }}
+  </div>
+}

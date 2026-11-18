@@ -1,0 +1,18 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { parseDate } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+export component DateFieldHero() {
+  <div class="DateFieldHero">
+    <span class="Label" id="date-field-hero-label">Event date</span>
+    <DateFieldRoot class="Field" aria-labelledby="date-field-hero-label" defaultValue={parseDate("2026-11-17", undefined)}>
+      <DateFieldInput class="Input"><Segments /></DateFieldInput>
+    </DateFieldRoot>
+  </div>
+}

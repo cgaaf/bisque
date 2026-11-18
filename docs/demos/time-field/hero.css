@@ -1,0 +1,55 @@
+.TimeFieldHero {
+  display: grid;
+  justify-items: start;
+  gap: 0.375rem;
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Input {
+    display: inline-flex;
+    align-items: center;
+    height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    font-size: 0.9375rem;
+    font-variant-numeric: tabular-nums;
+    cursor: text;
+  }
+
+  /* A segment has focus: ring the whole input, as a native one would be. */
+  .Input[data-focused] {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  .Input[data-invalid] {
+    border-color: light-dark(#c4314b, #ff8a9a);
+  }
+
+  .Segment {
+    padding: 0.125rem 0.0625rem;
+    border-radius: 0.25rem;
+    outline: none;
+  }
+
+  /* Literals (the colon and the space) carry data-type="literal". */
+  .Segment[data-type="literal"] {
+    color: light-dark(#8a8a95, #75757f);
+    padding-inline: 0.0625rem;
+  }
+
+  .Segment[role="spinbutton"]:focus {
+    background: light-dark(#2f5bea, #8eabff);
+    color: light-dark(#fff, #0b0b0e);
+  }
+
+  /* An empty segment shows its placeholder dashes. */
+  .Segment[data-placeholder]:not(:focus) {
+    color: light-dark(#a0a0aa, #6e6e7a);
+  }
+}

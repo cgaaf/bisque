@@ -1,0 +1,48 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../date-field.rx"
+import { parseDate } from "../../internal/date.js"
+import { PlainDate } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+fn show(date: PlainDate | undefined): string => date == undefined ? "none" : date.toString()
+
+export default component Fixture() {
+  source changes: string[] := []
+  // Boxed: a source seeded with a Temporal value breaks it (../../internal/date.d.rx).
+  source controlled := { date: parseDate("2026-11-17", undefined) ?? null }
+  <main>
+    <form data-testid="form">
+      <DateFieldRoot data-testid="us" aria-label="Start date" name="start" locale="en-US" placeholderValue={parseDate("2026-11-17", undefined)} onValueChange={(v) => { changes := [...changes, show(v)] }}>
+        <DateFieldInput data-testid="us-input"><Segments /></DateFieldInput>
+      </DateFieldRoot>
+      <DateFieldRoot data-testid="gb" aria-label="Birthday" name="birthday" locale="en-GB" defaultValue={parseDate("2024-02-29", undefined)} min={parseDate("2000-01-01", undefined)} max={parseDate("2030-12-31", undefined)}>
+        <DateFieldInput><Segments /></DateFieldInput>
+      </DateFieldRoot>
+      <div dir="rtl">
+        <DateFieldRoot data-testid="ar" aria-label="Arabic" name="arabic" locale="ar-EG">
+          <DateFieldInput><Segments /></DateFieldInput>
+        </DateFieldRoot>
+      </div>
+      <button type="reset">Reset</button>
+    </form>
+    <DateFieldRoot data-testid="controlled" aria-label="Controlled" locale="en-US" value={controlled.date} onValueChange={(v) => { controlled.date := v ?? null }}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <button onClick={() => { controlled.date := parseDate("2030-01-05", undefined) ?? null }}>Set 2030</button>
+    <button onClick={() => { controlled.date := null }}>Clear</button>
+    <output data-testid="controlled-value">{controlled.date == null ? "none" : controlled.date.toString()}</output>
+    <DateFieldRoot data-testid="disabled" aria-label="Disabled" locale="en-US" disabled defaultValue={parseDate("2026-01-02", undefined)}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <DateFieldRoot data-testid="readonly" aria-label="Read only" locale="en-US" readOnly defaultValue={parseDate("2026-01-02", undefined)}>
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <input aria-label="After" />
+  </main>
+}

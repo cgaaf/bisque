@@ -1,0 +1,15 @@
+import { TimeFieldRoot, TimeFieldInput, TimeFieldSegment, timeField } from "./bisque/time-field/time-field.rx"
+
+// The segments come from the field's context, so they are rendered by a component inside the root.
+component Segments() {
+  c = use timeField
+  {for segment in c.segments {
+    <TimeFieldSegment segment={segment} />
+  }}
+}
+
+<TimeFieldRoot aria-label="Time">
+  <TimeFieldInput>
+    <Segments />
+  </TimeFieldInput>
+</TimeFieldRoot>

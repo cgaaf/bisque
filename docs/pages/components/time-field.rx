@@ -1,0 +1,118 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TimeFieldHero } from "../../demos/time-field/hero.rx"
+import { TimeFieldOptions } from "../../demos/time-field/options.rx"
+import { TimeFieldNative } from "../../demos/time-field/native.rx"
+
+export default component Page() {
+  <DocsPage title="Time Field" subtitle="A time of day typed or stepped one segment at a time, in the locale's hour cycle.">
+    <Demo source="time-field/hero"><TimeFieldHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. The segments come from the field's context, so a small component
+      inside the root renders one <code>TimeFieldSegment</code> per entry:
+    </p>
+    <Code file="time-field/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>{"<input type=\"time\">"}</code> is in every browser, and is a segmented field already. It wasn't
+      enough to build on. Tested in Chromium, Firefox and WebKit:
+    </p>
+    <ul>
+      <li>
+        Its locale and hour cycle are the browser's. No attribute sets the hour cycle, and in an English browser the
+        input is as wide with <code>lang="de-DE"</code> as without (it keeps its AM/PM segment) in all three
+        engines.
+      </li>
+      <li>
+        <code>step="1"</code> adds a seconds segment, but no <code>step</code> takes the minutes away: with{" "}
+        <code>step="3600"</code> the input is as wide as with the default in all three engines.
+      </li>
+      <li>
+        Its partial input can't be read: while a segment is empty, <code>value</code> is <code>""</code> and only{" "}
+        <code>validity.badInput</code> says something was typed.
+      </li>
+      <li>
+        Only Chromium and WebKit expose its segments to CSS (<code>::-webkit-datetime-edit-*</code>); Firefox has
+        no selector for them.
+      </li>
+    </ul>
+    <p>
+      So the segments are the library's, as in React Aria's TimeField (Base UI has no time field): one{" "}
+      <code>role="spinbutton"</code> per segment inside a <code>role="group"</code>, with the order, separators,
+      digits, day period names and hour cycle from <code>Intl</code> for the field's <code>locale</code>. The value
+      is a <code>Temporal.PlainTime</code>. The native input stays as the hidden input that submits the value, so
+      the browser's own <code>min</code>, <code>max</code> and <code>required</code> checks are what Field reads.
+      Each segment is a contenteditable <code>{"<span>"}</code>, chosen so that a phone can show its keyboard; the{" "}
+      <a href="../date-field/#platform">Date Field page</a> says why.
+    </p>
+    <div class="note">
+      <p>
+        Temporal is not in Safari 27.2. The library uses the global <code>Temporal</code> and ships no polyfill: an
+        app loads one (<code>temporal-polyfill/global</code>) until Safari has it.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Typing and the keyboard</h3>
+    <p>
+      The keys are Date Field's: digits fill a segment and move on when it is complete, <kbd>↑</kbd> and{" "}
+      <kbd>↓</kbd> step and wrap (an hour keeps its AM or PM; minutes and seconds step by 15 with{" "}
+      <kbd>Page Up</kbd> and <kbd>Page Down</kbd>), <kbd>Home</kbd> and <kbd>End</kbd> go to a segment's ends,{" "}
+      <kbd>Backspace</kbd> removes a digit, then empties the segment, then moves back, and <kbd>←</kbd>,{" "}
+      <kbd>→</kbd> and <kbd>Tab</kbd> move between segments. In the day period, <kbd>A</kbd> and <kbd>P</kbd> (or
+      the first letter of the locale's names) set it, and the arrows toggle it. Pasting <code>13:45</code> fills
+      every segment.
+    </p>
+
+    <h3 id="options">Granularity, hour cycle and locale</h3>
+    <p>
+      <code>granularity</code> is the smallest segment: <code>"hour"</code>, <code>"minute"</code> (the default) or{" "}
+      <code>"second"</code>. <code>hourCycle</code> of <code>12</code> or <code>24</code> overrides the locale's.{" "}
+      <code>locale</code> sets everything else, including where the day period goes: before the hour in Korean.
+    </p>
+    <Demo source="time-field/options"><TimeFieldOptions /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the time yourself. <code>onValueChange</code>{" "}
+      receives a <code>Temporal.PlainTime</code> when every segment is filled, down to the granularity (finer units
+      are 0), and <code>undefined</code> when a complete time becomes incomplete. In 12-hour time the day period is
+      a segment like the others: <kbd>1</kbd> <kbd>1</kbd> <kbd>4</kbd> <kbd>5</kbd> leaves the field incomplete
+      until AM or PM is chosen. Pass <code>null</code> for a controlled, empty field. Hours wrap within their cycle;
+      nothing rolls over into a day. The rest is as in{" "}
+      <a href="../date-field/#controlled">Date Field</a>, including how a partial edit lasts and how a picker
+      composes the field: a picker that keeps the Field to itself passes its validity and description ids on with{" "}
+      <code>invalid</code> and <code>describedBy</code>, which reach every segment and win over a Field's.
+    </p>
+
+    <h3 id="validation">Bounds, forms and validity</h3>
+    <p>
+      A time outside <code>min</code> and <code>max</code> is kept and marks the field invalid
+      (<code>data-invalid</code>, and <code>rangeUnderflow</code> or <code>rangeOverflow</code> on the hidden input).
+      With a <code>name</code>, or inside a named <code>FieldRoot</code>, a hidden{" "}
+      <code>{"<input type=\"time\">"}</code> submits <code>13:45</code>, or <code>13:45:00</code> down to seconds,
+      and nothing while the field is incomplete. A partly filled field is invalid with{" "}
+      <code>incompleteMessage</code>. A form reset puts the default back.
+    </p>
+
+    <h3 id="styling">Styling segments</h3>
+    <p>
+      A segment carries <code>data-type</code> (<code>hour</code>, <code>minute</code>, <code>second</code>,{" "}
+      <code>dayPeriod</code>, or <code>literal</code>) and <code>data-placeholder</code> while it is empty; the
+      input has <code>data-focused</code> while a segment has focus.
+    </p>
+
+    <h3 id="native">Styling only, without the library</h3>
+    <p>
+      If the browser's locale and hour cycle are the right ones and the value is only submitted with a form, a
+      styled native input needs no JavaScript. Firefox can't style its segments.
+    </p>
+    <Demo source="time-field/native"><TimeFieldNative /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="time-field" />
+  </DocsPage>
+}

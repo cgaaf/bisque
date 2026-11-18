@@ -1,0 +1,368 @@
+// The segmented field Date Field and Time Field share (src/date-field, src/time-field): one spinbutton per segment
+// (month / day / year; hour / minute / second / AM-PM), in the locale's order with its literals, inside a group.
+// Behaviour reference: React Aria's DateField and TimeField (useDateField, useDateSegment); Base UI has none.
+//
+// The two families differ only in their value's type and options, so everything else is here: the state
+// (`segmentedFieldState`, called by each family's Root, which provides it under the family's own context), and the
+// props of the root, the input and a segment. The value crosses this module as its form string (`2026-11-17`,
+// `13:45`, "" while empty or incomplete): plain, comparable with `==`, safe in a source, and what the hidden input
+// submits. Each family turns it into a Temporal value at its edge (parseDate / parseTime).
+//
+// What a field holds while it is edited is `SegmentValues` (numbers or undefined per segment), not the value: a
+// partly filled field has segments but no value. The edit (`draft`) is shown while the value is the one it made
+// (`key`) or the one it started from (`base`: an owner that hasn't taken the change yet, or keeps its value). A
+// value that becomes anything else (a controlled `value` set from outside, a picker's calendar, a form reset)
+// ends the edit, in the same flush (`createDraft`).
+//
+// Segments are contenteditable spans, chosen for phones: a soft keyboard opens only for an editable element, and its
+// characters arrive as `beforeinput` (its `keydown` reports "Unidentified"). Checked in Chromium, Firefox and WebKit
+// (not on a phone): a contenteditable span gets a cancellable `beforeinput` per typed character, and a focusable
+// span with `tabindex` gets `keydown` alone. Characters are read from `beforeinput`
+// (cancelled, so the element's text never changes); navigation, stepping and Backspace/Delete from `keydown`
+// (WebKit fires no `beforeinput` for a Backspace with nothing before the caret). A composition can't be cancelled,
+// so `input` puts the text back.
+import { createId, createRef } from "./props.js"
+import { incrementSegment, setSegment, backspaceSegment, typeIntoSegment } from "./date.js"
+import { segmentList, segmentsOfText, textOfSegments, hasAnySegment, shownDigits, createDraft, isTextOutOfRange, textOfPaste, pastedText, focusSegment, focusEntry, isRightToLeft, isSegment, restoreText, createIncompleteValidity } from "./segmented-field.js"
+import { createFormReset, setInputValue } from "./field.js"
+import { createFocusKeeper } from "./focus-keeper.js"
+import { FieldContext, fieldGroupProps, fieldStateAttributes } from "../field/field.rx"
+import { FieldOptions, SegmentValues, SegmentKind, KeyedSegment, PartProps } from "./types.rx"
+
+export type SegmentedFieldState = {
+  // The value as its form string; "" while empty or incomplete.
+  text: string
+  // The segments and literals to render, keyed (kind, or `literal-<index>`), so an element survives a value change.
+  segments: KeyedSegment[]
+  options: FieldOptions
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  // Out of [min, max], or invalid by the root's `invalid` when given, else by the Field around it.
+  invalid: boolean
+  // A segment has focus.
+  focused: boolean
+  // Some segments are filled and others not.
+  incomplete: boolean
+  // What names the field, for each segment's `aria-labelledby` (the segment's own label follows it).
+  labelledBy: string | undefined
+  // Each segment's `aria-describedby`: the root's `describedBy` when given, else the enclosing Field's.
+  describedBy: string | undefined
+  // A segment's `aria-valuetext` while it is empty.
+  emptyText: string
+  field: FieldContext | undefined
+  input: HTMLElement | undefined
+  setInput: (element: HTMLElement) => void
+  // Steps segment `kind` by `delta`, wrapping (an empty one takes the placeholder value's).
+  step: (kind: SegmentKind, delta: number) => void
+  // Sets segment `kind` to the value it shows (Home and End).
+  jump: (kind: SegmentKind, to: number) => void
+  // Removes the last digit of segment `kind`, or empties it.
+  erase: (kind: SegmentKind) => void
+  // Types a character into segment `kind`, moving focus on from `element` when the segment is complete.
+  type: (kind: SegmentKind, key: string, element: HTMLElement) => void
+  // Sets the whole value from a form string (a paste).
+  setText: (text: string) => void
+  segmentFocus: (kind: SegmentKind) => void
+  leave: () => void
+  // Focuses the first empty segment, or the last: for a picker giving focus back to its field.
+  focus: () => void
+}
+
+// The large step of PageUp/PageDown, per segment.
+fn largeStep(kind: SegmentKind): number => kind == "year" ? 5 : kind == "month" ? 2 : kind == "day" ? 7 : kind == "hour" ? 2 : kind == "dayPeriod" ? 1 : 15
+
+// The state of one field. Every value it takes is plain (strings, booleans, the options object), so a Temporal prop
+// that is set again to an equal value rebuilds nothing. `hidden` is the root's hidden input (the one Field reads),
+// when it renders one. `value` is the controlled form string (undefined: uncontrolled; "": controlled and empty),
+// `defaultText` the uncontrolled default's. `onChange` is called in a change of its own with the new form string.
+// `minText` and `maxText` bound it (form strings, as the hidden input's `min`/`max`); a value outside them is kept and
+// marked invalid. `givenInvalid` and `givenDescribedBy` are an outer composition's (a picker that keeps the Field to
+// itself): when given, they win over the Field's.
+export fn segmentedFieldState(ref value: string | undefined, ref defaultText: string, ref options: FieldOptions, ref disabled: boolean, ref readOnly: boolean, ref required: boolean, ref minText: string | undefined, ref maxText: string | undefined, ref labelledBy: string | undefined, ref emptyText: string, ref incompleteMessage: string, ref f: FieldContext | undefined, ref hidden: HTMLInputElement | undefined, ref givenInvalid: boolean | undefined, ref givenDescribedBy: string | undefined, ref onChange: ((text: string) => void)): SegmentedFieldState {
+  // What a form reset puts back.
+  initialText = peek(defaultText)
+  source held := peek(defaultText)
+  source buffer := ""
+  source active: string | undefined := undefined
+  source input: HTMLElement | undefined := undefined
+  current = latest (value ?? held)
+  [draft, setDraft] = createDraft(current)
+  shown = latest (draft != undefined ? draft.values : segmentsOfText(current, options))
+  segments key key = segmentList(shown, options)
+  incomplete = current == "" && hasAnySegment(shown, options)
+  outOfRange = isTextOutOfRange(current, minText, maxText, options)
+  fieldInvalid = f?.state.valid == false
+  invalid = outOfRange || (givenInvalid ?? fieldInvalid)
+  fieldDescribedBy = f?.describedBy
+  describedBy = givenDescribedBy ?? fieldDescribedBy
+  isFocused = active != undefined
+
+  effect (current) { if (f) { f.setValue($0) } }
+  _validity = createIncompleteValidity(hidden, incomplete ? incompleteMessage : "")
+  _reset = createFormReset(hidden ?? input, reset)
+
+  action edit(next: SegmentValues) {
+    let text = textOfSegments(next, options)
+    setDraft({ key: text, base: current, values: next })
+    if (text != current) {
+      held := text
+      let report = onChange
+      onFlush(() => { report(text) })
+    }
+  }
+  action step(kind: SegmentKind, delta: number) {
+    buffer := ""
+    edit(incrementSegment(shown, kind, delta, options))
+  }
+  action jump(kind: SegmentKind, to: number) {
+    buffer := ""
+    edit(setSegment(shown, kind, to, options))
+  }
+  // What is left of the segment is the start of what is typed next: 2024, Backspace, 0 is 2020.
+  action erase(kind: SegmentKind) {
+    let next = backspaceSegment(shown, kind, options)
+    buffer := shownDigits(next, kind, options)
+    edit(next)
+  }
+  action type(kind: SegmentKind, key: string, element: HTMLElement) {
+    let entry = typeIntoSegment(shown, kind, buffer, key, options)
+    buffer := entry.buffer
+    if (entry.values != shown) { edit(entry.values) }
+    if (entry.advance) { focusSegment(input, element, 1) }
+  }
+  action setText(text: string) {
+    buffer := ""
+    edit(segmentsOfText(text, options))
+  }
+  action segmentFocus(kind: SegmentKind) {
+    active := kind
+    buffer := ""
+  }
+  action leave() {
+    active := undefined
+    buffer := ""
+  }
+  action focus() { focusEntry(input) }
+  action setInput(element: HTMLElement) { input := element }
+  // The form has put the hidden input back to its default attribute (none): the field goes back to its default, or
+  // to the owner's value, and Field takes it as the value it starts from.
+  action reset() {
+    let next = value ?? initialText
+    setDraft(undefined)
+    buffer := ""
+    if (value == undefined && next != held) {
+      held := next
+      let report = onChange
+      onFlush(() => { report(next) })
+    }
+    setInputValue(hidden, next)
+    if (f) { f.reset(next) }
+  }
+
+  self = latest {
+    text: current,
+    segments: segments,
+    options: options,
+    disabled: disabled,
+    readOnly: readOnly,
+    required: required,
+    invalid: invalid,
+    focused: isFocused,
+    incomplete: incomplete,
+    labelledBy: labelledBy,
+    describedBy: describedBy,
+    emptyText: emptyText,
+    field: f,
+    input: input,
+    setInput: setInput,
+    step: step,
+    jump: jump,
+    erase: erase,
+    type: type,
+    setText: setText,
+    segmentFocus: segmentFocus,
+    leave: leave,
+    focus: focus,
+  }
+  self
+}
+
+// The state attributes every part carries.
+// Each field of the state is read into an equation of its own first, so the object is rebuilt only when one of them
+// changes, not whenever the state object is (UNSTABLE_MEMO_OUTPUT).
+fn segmentedFieldAttributes(ref c: SegmentedFieldState): PartProps {
+  fieldState = c.field?.state
+  isDisabled = c.disabled
+  isReadOnly = c.readOnly
+  isRequired = c.required
+  isInvalid = c.invalid
+  isFocused = c.focused
+  attrs = fieldStateAttributes(fieldState)
+  {
+    ...attrs,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-readonly": isReadOnly ? "" : undefined,
+    "data-required": isRequired ? "" : undefined,
+    "data-invalid": isInvalid ? "" : undefined,
+    "data-focused": isFocused ? "" : undefined,
+  }
+}
+
+// The field's group: what FieldLabel (or the root's own `aria-label`) names.
+export fn segmentedFieldRoot(ref c: SegmentedFieldState): PartProps {
+  fieldOf = c.field
+  isDisabled = c.disabled
+  isInvalid = c.invalid
+  group = fieldGroupProps(fieldOf)
+  state = segmentedFieldAttributes(c)
+  {
+    ...group,
+    ...state,
+    role: "group",
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "aria-invalid": isInvalid ? "true" : undefined,
+  }
+}
+
+// The box holding the segments. A press on its empty space, or on a literal, focuses the first empty segment (or
+// the last, when every one is filled), as a press on a native input's padding would focus it.
+export fn segmentedFieldInput(ref c: SegmentedFieldState): PartProps {
+  action writeInput(element: HTMLElement) { c.setInput(element) }
+  setInput = createRef(writeInput)
+  // Disabled while a segment had focus (`disabled={pending? setting}`), the segment takes focus back when re-enabled.
+  element = c.input
+  isDisabled = c.disabled
+  _focus = createFocusKeeper(element, isDisabled)
+  state = segmentedFieldAttributes(c)
+  action pointerDown(event: PointerEvent) {
+    if (event.defaultPrevented || event.button != 0 || c.disabled || isSegment(event.target)) { return }
+    event.preventDefault()
+    c.focus()
+  }
+  action focusOut(event: FocusEvent & { currentTarget: HTMLElement; relatedTarget: Node | null }) {
+    if (!event.currentTarget.contains(event.relatedTarget)) { c.leave() }
+  }
+  {
+    ...state,
+    ref: setInput,
+    onPointerDown: pointerDown,
+    onFocusOut: focusOut,
+  }
+}
+
+// One segment: an editable spinbutton, or a literal (`/`, `:`), which is hidden from assistive technology as the
+// spinbuttons' labels already say what each part is. The element renders `segment.text` as its only content.
+export fn segmentedFieldSegment(ref c: SegmentedFieldState, ref segment: KeyedSegment): PartProps {
+  state = segmentedFieldAttributes(c)
+  id = createId("segment")
+  isDisabled = c.disabled
+  isReadOnly = c.readOnly
+  isRequired = c.required
+  isInvalid = c.invalid
+  labelledBy = c.labelledBy
+  describedBy = c.describedBy
+  emptyText = c.emptyText
+  kind = segment.kind
+  value = segment.value
+  min = segment.min
+  max = segment.max
+  label = segment.label
+  valueText = segment.valueText
+  editable = segment.editable && !isDisabled && !isReadOnly
+  action erase(kind: SegmentKind, element: HTMLElement) {
+    if (segment.value == undefined) { focusSegment(c.input, element, -1) } else { c.erase(kind) }
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    let kind = segment.kind
+    if (kind == "literal" || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) { return }
+    let key = event.key
+    if (key == "ArrowLeft" || key == "ArrowRight") {
+      event.preventDefault()
+      let forward = (key == "ArrowRight") != isRightToLeft(event.currentTarget)
+      focusSegment(c.input, event.currentTarget, forward ? 1 : -1)
+      return
+    }
+    let handled = key == "ArrowUp" || key == "ArrowDown" || key == "PageUp" || key == "PageDown" || key == "Home" || key == "End" || key == "Backspace" || key == "Delete" || key == "Enter"
+    if (!handled) { return }
+    event.preventDefault()
+    if (c.disabled || c.readOnly) { return }
+    if (key == "ArrowUp") { c.step(kind, 1) }
+    else if (key == "ArrowDown") { c.step(kind, -1) }
+    else if (key == "PageUp") { c.step(kind, largeStep(kind)) }
+    else if (key == "PageDown") { c.step(kind, -largeStep(kind)) }
+    else if (key == "Home") { c.jump(kind, segment.min) }
+    else if (key == "End") { c.jump(kind, segment.max) }
+    else if (key == "Backspace" || key == "Delete") { erase(kind, event.currentTarget) }
+  }
+  // Every edit the browser would make is cancelled; typed characters (a soft keyboard's too) and a soft keyboard's
+  // Backspace are applied to the segment instead.
+  action beforeInput(event: InputEvent & { currentTarget: HTMLElement }) {
+    event.preventDefault()
+    let kind = segment.kind
+    if (kind == "literal" || c.disabled || c.readOnly) { return }
+    let inputType = event.inputType
+    if (inputType == "deleteContentBackward" || inputType == "deleteContentForward") {
+      erase(kind, event.currentTarget)
+      return
+    }
+    if (inputType != "insertText" && inputType != "insertReplacementText" && inputType != "insertCompositionText") { return }
+    let data = event.data ?? ""
+    let whole = data.length > 1 ? textOfPaste(data, c.options) : undefined
+    if (whole != undefined) {
+      c.setText(whole)
+    } else if (data.length > 0) {
+      c.type(kind, data.slice(-1), event.currentTarget)
+    }
+  }
+  action input(event: Event & { currentTarget: HTMLElement }) { restoreText(event.currentTarget, segment.text) }
+  // A pasted whole value (`2026-11-17`, `13:45`) fills every segment; anything else is ignored.
+  action paste(event: ClipboardEvent) {
+    event.preventDefault()
+    if (c.disabled || c.readOnly) { return }
+    let whole = textOfPaste(pastedText(event), c.options)
+    if (whole != undefined) { c.setText(whole) }
+  }
+  action focus() {
+    let kind = segment.kind
+    if (kind != "literal") { c.segmentFocus(kind) }
+  }
+  kind == "literal" ? {
+    "aria-hidden": "true",
+    "data-type": "literal",
+    "data-bisque-segment": "",
+  } : {
+    ...state,
+    role: "spinbutton",
+    "data-bisque-segment": "",
+    "data-type": kind,
+    "data-placeholder": value == undefined ? "" : undefined,
+    "aria-label": label,
+    id: id,
+    // The field's name, then the segment's own: "Start date, month".
+    "aria-labelledby": labelledBy != undefined ? `${labelledBy} ${id}` : undefined,
+    "aria-valuenow": value,
+    "aria-valuemin": min,
+    "aria-valuemax": max,
+    "aria-valuetext": valueText ?? emptyText,
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "aria-readonly": isReadOnly ? "true" : undefined,
+    "aria-required": isRequired ? "true" : undefined,
+    "aria-invalid": isInvalid ? "true" : undefined,
+    "aria-describedby": describedBy,
+    tabindex: isDisabled ? undefined : "0",
+    contenteditable: editable ? "true" : undefined,
+    spellcheck: "false",
+    autocorrect: "off",
+    autocapitalize: "off",
+    enterkeyhint: "next",
+    inputmode: kind == "dayPeriod" ? "text" : "numeric",
+    // The caret of an editable element has nowhere useful to be: the segment shows its whole value.
+    style: { "caret-color": "transparent" },
+    onKeyDown: keyDown,
+    onBeforeInput: beforeInput,
+    onInput: input,
+    onPaste: paste,
+    onFocus: focus,
+  }
+}

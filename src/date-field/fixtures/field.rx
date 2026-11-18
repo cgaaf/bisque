@@ -1,0 +1,48 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../date-field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { parseDate } from "../../internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+export default component Fixture() {
+  source submitted := ""
+  <div>
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `due=${values.due}` }}>
+    <FieldRoot name="due">
+      <FieldLabel>Due date</FieldLabel>
+      <DateFieldRoot data-testid="due" locale="en-US" required min={parseDate("2026-01-01", undefined)}>
+        <DateFieldInput><Segments /></DateFieldInput>
+      </DateFieldRoot>
+      <FieldDescription data-testid="description">When the invoice is due.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <DateFieldRoot data-testid="locked" locale="en-US" defaultValue={parseDate("2026-05-01", undefined)}>
+        <DateFieldInput><Segments /></DateFieldInput>
+      </DateFieldRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+    // An outer composition (a picker) gives the field its invalid state and description itself.
+    <p id="outside-hint">Outside hint</p>
+    <DateFieldRoot data-testid="outside" aria-label="Outside" locale="en-US" invalid describedBy="outside-hint">
+      <DateFieldInput><Segments /></DateFieldInput>
+    </DateFieldRoot>
+    // Inside a FieldRoot that is invalid, the outside values win over the Field's.
+    <FieldRoot invalid>
+      <FieldLabel>Overridden</FieldLabel>
+      <DateFieldRoot data-testid="overridden" locale="en-US" invalid={false} describedBy="outside-hint">
+        <DateFieldInput><Segments /></DateFieldInput>
+      </DateFieldRoot>
+      <FieldDescription>Field's own description.</FieldDescription>
+    </FieldRoot>
+  </div>
+}

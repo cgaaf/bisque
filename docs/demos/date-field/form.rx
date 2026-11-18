@@ -1,0 +1,29 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../../src/field/field.rx"
+import { Form } from "../../../src/form/form.rx"
+import { parseDate } from "../../../src/internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+export component DateFieldForm() {
+  source sent := ""
+  <div class="DateFieldForm">
+    <Form class="Form" onFormSubmit={(values) => { sent := `${values.checkIn}` }}>
+      <FieldRoot class="Field" name="checkIn">
+        <FieldLabel class="Label">Check-in</FieldLabel>
+        <DateFieldRoot required min={parseDate("2026-11-17", undefined)} max={parseDate("2027-11-16", undefined)}>
+          <DateFieldInput class="Input"><Segments /></DateFieldInput>
+        </DateFieldRoot>
+        <FieldDescription class="Description">Within the next year.</FieldDescription>
+        <FieldError class="Error" />
+      </FieldRoot>
+      <button class="Button" type="submit">Book</button>
+    </Form>
+    <output class="Sent">{sent == "" ? "" : `Submitted ${sent}`}</output>
+  </div>
+}

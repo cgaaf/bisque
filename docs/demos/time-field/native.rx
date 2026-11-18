@@ -1,0 +1,7 @@
+// No library: the browser's own time input, styled. Its segments, hour cycle and digits are the browser's.
+export component TimeFieldNative() {
+  <div class="TimeFieldNative">
+    <label class="Label" for="time-field-native">Start time</label>
+    <input class="Input" id="time-field-native" type="time" value="09:30" />
+  </div>
+}

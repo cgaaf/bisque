@@ -1,0 +1,23 @@
+// How .rx may use ./segmented-field.js (implemented in ./impl/segmented-field.ts): what Date Field and Time Field
+// share beyond the date core. Values cross as form strings (`2026-11-17`, `13:45`), which are plain and compare with
+// `==`; ./segmented-field.rx turns them into segments and back. A `ref` parameter is passed live. Bind every call.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./segmented-field.d.ts.
+export type KeyedSegment = import("./impl/segmented-field.ts").KeyedSegment
+export pure fn segmentList(values: import("./impl/date.ts").SegmentValues, options: import("./impl/date.ts").FieldOptions): KeyedSegment[]
+export pure fn segmentsOfText(text: string, options: import("./impl/date.ts").FieldOptions): import("./impl/date.ts").SegmentValues
+export pure fn textOfSegments(values: import("./impl/date.ts").SegmentValues, options: import("./impl/date.ts").FieldOptions): string
+export pure fn isTextOutOfRange(text: string, min: string | undefined, max: string | undefined, options: import("./impl/date.ts").FieldOptions): boolean
+export pure fn boundText(bound: Temporal.PlainDate | Temporal.PlainTime | undefined, options: import("./impl/date.ts").FieldOptions): string | undefined
+export pure fn shownDigits(values: import("./impl/date.ts").SegmentValues, kind: import("./impl/date.ts").SegmentKind, options: import("./impl/date.ts").FieldOptions): string
+export type SegmentDraft = import("./impl/segmented-field.ts").SegmentDraft
+export pure fn createDraft(ref current: string): [ref SegmentDraft | undefined, (draft: SegmentDraft | undefined) => void] instantiates
+export pure fn hasAnySegment(values: import("./impl/date.ts").SegmentValues, options: import("./impl/date.ts").FieldOptions): boolean
+export pure fn textOfPaste(text: string | null | undefined, options: import("./impl/date.ts").FieldOptions): string | undefined
+export fn pastedText(event: ClipboardEvent): string | null
+export fn focusSegment(input: HTMLElement | undefined, from: HTMLElement | undefined, step: number): boolean
+export fn focusEntry(input: HTMLElement | undefined): void
+export fn focusFirst(input: HTMLElement | undefined): void
+export fn isRightToLeft(element: HTMLElement): boolean
+export fn isSegment(target: EventTarget | null): boolean
+export fn restoreText(element: HTMLElement, text: string): void
+export pure fn createIncompleteValidity(ref input: HTMLInputElement | undefined, ref message: string) instantiates

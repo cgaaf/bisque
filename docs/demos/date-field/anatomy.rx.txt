@@ -1,0 +1,15 @@
+import { DateFieldRoot, DateFieldInput, DateFieldSegment, dateField } from "./bisque/date-field/date-field.rx"
+
+// The segments come from the field's context, so they are rendered by a component inside the root.
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+<DateFieldRoot aria-label="Date">
+  <DateFieldInput>
+    <Segments />
+  </DateFieldInput>
+</DateFieldRoot>

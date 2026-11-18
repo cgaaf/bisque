@@ -1,0 +1,7 @@
+// No library: the browser's own date input, styled. Its segments, order and digits are the browser's.
+export component DateFieldNative() {
+  <div class="DateFieldNative">
+    <label class="Label" for="date-field-native">Event date</label>
+    <input class="Input" id="date-field-native" type="date" value="2026-11-17" />
+  </div>
+}
