@@ -1,0 +1,13 @@
+// The trap ../date.d.rx warns about: a source seeded with a Temporal value. Mounted by ../impl/date.test.ts.
+import { parseDate } from "../date.js"
+
+component Bare() {
+  source date := parseDate("2026-11-17", undefined)
+  <p>{date == undefined ? "" : date.toString()}</p>
+}
+
+export default component Fixture() {
+  <div>
+    {errored fallback(e) { <p>failed: {e.message}</p> } { <Bare /> }}
+  </div>
+}

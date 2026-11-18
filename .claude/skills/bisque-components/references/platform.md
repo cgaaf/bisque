@@ -61,6 +61,16 @@ on the "not yet" list, because features move off it with each release.
   showing it again raises it (`createToastLayer`). It is still inert: toasts can't be pressed under a modal.
 - **Returning focus from a nested popover.** After Escape closes a nested popover, no engine puts focus back on
   the item that opened it. Menu does.
+- **Temporal** (`pnpm baseline temporal`: not in Safari 27.2; in the 27.3 beta). The date and time parts use it
+  anyway: values are `Temporal.PlainDate` / `PlainTime` / `PlainYearMonth`, and `src/internal/date.*` is the shared
+  core. `src/` uses the global `Temporal` and never imports a polyfill, so the library still has no runtime
+  dependency; an app loads one (`temporal-polyfill/global`, or `/full/global` for non-ISO calendars) until Safari
+  ships. The docs site does, from `docs/main.ts`, only when `globalThis.Temporal` is undefined (a separate chunk).
+  The browser tests load none: Playwright's Chromium, Firefox and WebKit all have it natively (its WebKit reports
+  Safari 27.2 yet has Temporal, so no test engine exercises the polyfill). `src/internal/impl/date.test.ts` runs
+  the core on the polyfill as well as on Node's own Temporal. `Intl.Locale#getWeekInfo` is in all three and gives
+  the first day of the week. `src/internal/date.d.rx` says how `.rx` must hold a Temporal value: never as a
+  source's seed.
 
 Always the library's: ARIA roles and relationships the elements don't imply, typeahead, `aria-activedescendant`
 lists, multi-thumb sliders, number parsing, toast queues and timers, and Field's label/description/error wiring.

@@ -1,0 +1,127 @@
+// How .rx may use ./date.js (implemented in ./impl/date.ts): the date and time core of calendar, range calendar,
+// date field, time field and the pickers. Every function is pure; each one's comment in ./impl/date.ts says what
+// it returns at its edges (undefined in, out of range, nothing found).
+//
+// VALUES. A date is a `Temporal.PlainDate`, a time a `Temporal.PlainTime`, a visible month a
+// `Temporal.PlainYearMonth`; types for them come from ../internal/types.rx (`PlainDate`, `PlainTime`,
+// `PlainYearMonth`, `DateRange`, `CalendarWeek`, `FieldSegment`, `SegmentValues` …), never from this module (a type
+// imported from a .js module leaves an import the bundler rejects). The library uses the global `Temporal` and
+// ships no polyfill; an app adds one until Safari ships Temporal. ZonedDateTime, PlainDateTime and durations are
+// out of scope: nothing here takes or returns them.
+//
+// WHAT .rx CAN DO WITH TEMPORAL (ReactiveScript 0.3.1, checked with rx-check, rx-tsc and in jsdom):
+// - Name the types: `Temporal.PlainDate` works in any type position, under the compiler and rx-tsc (which checks
+//   method arguments: `d.add({ dayz: 1 })` is TS2353). Prefer the aliases in types.rx.
+// - Call instance methods and read fields: `d.add({ days: 1 })`, `d.toPlainYearMonth()`, `m.add({ months: 1 })`,
+//   `d.day`, `d.dayOfWeek`, `d.toString()`, in equations, markup and actions.
+// - Not `Temporal` itself: `Temporal.PlainDate.from(…)` is UNBOUND. Construct with parseDate, parseTime,
+//   parseYearMonth, today, now; compare with the functions here, not static `compare`.
+// - Not `==`: it compiles to `===`, which compares object identity. Use isSameDay, isSameMonth, isSameTime,
+//   compareDates … for every comparison; `x == undefined` is fine (and use undefined, not null: `==` is strict).
+//
+// HOLDING A TEMPORAL VALUE IN STATE (the trap). `source x := e` puts an object seed in a store, and a store
+// proxy of a Temporal object breaks every method: "Method Temporal.PlainDate.prototype.toString called on
+// incompatible receiver". So:
+// - NEVER seed a source with a Temporal value: not `source d := today(…)`, not
+//   `source uncontrolled := peek(props.defaultValue)` (it works while the default is undefined and throws the
+//   moment an app passes one).
+// - DO box it in a plain object and read the field: `source held := { date: peek(props.defaultValue) }`,
+//   `current = props.value ?? held.date`, write `held.date := next` or `held := { date: next }`.
+//   A source seeded with `undefined` stays a plain signal and holds a Temporal value written later correctly, but
+//   the box works whatever the seed, so use the box.
+// - NEVER read a store that holds Temporal values whole through `latest` or `effect`: `latest held` and
+//   `effect (held)` copy the store field by field, and a Temporal object copies to `{}` (the effect then never
+//   fires again). Read the field: `latest held.date`, `effect (held.date) { … }`. The same goes for a list source
+//   of dates.
+// - Fine as they are: a Temporal value as a prop (`latest props.value` too), in an equation, in a `provide`d
+//   object read with `use`, in arrays and objects an equation returns (monthGrid), and in `for` rows over them.
+// - Every Temporal operation returns a new object, never identical to the last, so each equation below a
+//   recomputed date reruns (a focus move rebuilds the grid). That is cheap; losing DOM nodes is not: a plain
+//   `for` keeps rows by object identity, so every day's element would be replaced on each move (and focus with
+//   it). Key both levels with keyed equations, which keep a row whose `key` (the ISO string) is unchanged:
+//     weeks key key = monthGrid(visible, { locale: locale })
+//     {for week in weeks {
+//       days key key = week.days
+//       <tr>{for day in days { <td>…</td> }}</tr>
+//     }}
+//   Checked: the same cell element survives a move (../fixtures/date.rx, ../impl/date.test.ts).
+// - SegmentValues is plain numbers, so a source of it is safe: `source parts: SegmentValues := dateToSegments(…)`.
+//
+// Function-typed fields (`isDisabled` in DateConstraints) take a `fn` or a prop the app passed.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./date.d.ts.
+export type Locale = string | string[] | undefined
+export type DateRange = import("./impl/date.ts").DateRange
+export type DateConstraints = import("./impl/date.ts").DateConstraints
+export type CalendarWeek = import("./impl/date.ts").CalendarWeek
+export type MonthGridOptions = import("./impl/date.ts").MonthGridOptions
+export type WeekdayName = import("./impl/date.ts").WeekdayName
+export type CalendarOption = import("./impl/date.ts").CalendarOption
+export type WeekInfo = import("./impl/date.ts").WeekInfo
+export type DateMove = import("./impl/date.ts").DateMove
+export type MoveOptions = import("./impl/date.ts").MoveOptions
+export type TimeGranularity = import("./impl/date.ts").TimeGranularity
+export type HourCycle = import("./impl/date.ts").HourCycle
+export type SegmentKind = import("./impl/date.ts").SegmentKind
+export type SegmentValues = import("./impl/date.ts").SegmentValues
+export type FieldOptions = import("./impl/date.ts").FieldOptions
+export type FieldSegment = import("./impl/date.ts").FieldSegment
+export type SegmentEntry = import("./impl/date.ts").SegmentEntry
+export type TimeOption = import("./impl/date.ts").TimeOption
+export pure fn isSameDay(a: Temporal.PlainDate | undefined, b: Temporal.PlainDate | undefined): boolean
+export pure fn isSameMonth(a: Temporal.PlainDate | Temporal.PlainYearMonth | undefined, b: Temporal.PlainDate | Temporal.PlainYearMonth | undefined): boolean
+export pure fn isSameTime(a: Temporal.PlainTime | undefined, b: Temporal.PlainTime | undefined): boolean
+export pure fn compareDates(a: Temporal.PlainDate | undefined, b: Temporal.PlainDate | undefined): number
+export pure fn compareMonths(a: Temporal.PlainDate | Temporal.PlainYearMonth | undefined, b: Temporal.PlainDate | Temporal.PlainYearMonth | undefined): number
+export pure fn compareTimes(a: Temporal.PlainTime | undefined, b: Temporal.PlainTime | undefined): number
+export pure fn minDate(a: Temporal.PlainDate | undefined, b: Temporal.PlainDate | undefined): Temporal.PlainDate | undefined
+export pure fn maxDate(a: Temporal.PlainDate | undefined, b: Temporal.PlainDate | undefined): Temporal.PlainDate | undefined
+export pure fn clampDate(date: Temporal.PlainDate | undefined, min: Temporal.PlainDate | undefined, max: Temporal.PlainDate | undefined): Temporal.PlainDate | undefined
+export pure fn clampTime(time: Temporal.PlainTime | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): Temporal.PlainTime | undefined
+export pure fn isDateInRange(date: Temporal.PlainDate | undefined, min: Temporal.PlainDate | undefined, max: Temporal.PlainDate | undefined): boolean
+export pure fn isTimeInRange(time: Temporal.PlainTime | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): boolean
+export pure fn isMonthInRange(month: Temporal.PlainYearMonth | Temporal.PlainDate, min: Temporal.PlainDate | undefined, max: Temporal.PlainDate | undefined): boolean
+export pure fn isDateDisabled(date: Temporal.PlainDate | undefined, constraints: DateConstraints | undefined): boolean
+export pure fn today(timeZone: string | undefined, calendar: string | undefined): Temporal.PlainDate
+export pure fn now(timeZone: string | undefined, granularity: TimeGranularity | undefined): Temporal.PlainTime
+export pure fn weekInfo(locale: Locale): WeekInfo
+export pure fn isWeekend(date: Temporal.PlainDate, locale: Locale): boolean
+export pure fn monthGrid(month: Temporal.PlainYearMonth, options: MonthGridOptions | undefined): CalendarWeek[]
+export pure fn isoWeekNumber(date: Temporal.PlainDate): number
+export pure fn weekdayNames(locale: Locale, width: "narrow" | "short" | "long", firstDayOfWeek: number | undefined): WeekdayName[]
+export pure fn formatMonth(month: Temporal.PlainYearMonth | Temporal.PlainDate, locale: Locale): string
+export pure fn formatDayLabel(date: Temporal.PlainDate, locale: Locale): string
+export pure fn formatDayNumber(date: Temporal.PlainDate, locale: Locale): string
+export pure fn formatDate(date: Temporal.PlainDate | undefined, locale: Locale, style: "full" | "long" | "medium" | "short" | undefined): string
+export pure fn formatTime(time: Temporal.PlainTime | undefined, locale: Locale, granularity: TimeGranularity | undefined, hourCycle: 12 | 24 | undefined): string
+export pure fn monthOptions(visible: Temporal.PlainYearMonth, locale: Locale, min: Temporal.PlainDate | undefined, max: Temporal.PlainDate | undefined): CalendarOption[]
+export pure fn yearOptions(visible: Temporal.PlainYearMonth, locale: Locale, min: Temporal.PlainDate | undefined, max: Temporal.PlainDate | undefined): CalendarOption[]
+export pure fn dateMoveForKey(key: string, shiftKey: boolean, rtl: boolean): DateMove | undefined
+export pure fn moveDate(date: Temporal.PlainDate, move: DateMove, options: MoveOptions | undefined): Temporal.PlainDate
+export pure fn defaultFocusDate(month: Temporal.PlainYearMonth, selected: Temporal.PlainDate | undefined, todayDate: Temporal.PlainDate | undefined, constraints: DateConstraints | undefined): Temporal.PlainDate
+export pure fn normalizeRange(a: Temporal.PlainDate | undefined, b: Temporal.PlainDate | undefined): DateRange | undefined
+export pure fn isInRange(date: Temporal.PlainDate | undefined, range: DateRange | undefined): boolean
+export pure fn isRangeStart(date: Temporal.PlainDate | undefined, range: DateRange | undefined): boolean
+export pure fn isRangeEnd(date: Temporal.PlainDate | undefined, range: DateRange | undefined): boolean
+export pure fn previewRange(anchor: Temporal.PlainDate | undefined, hovered: Temporal.PlainDate | undefined, range: DateRange | undefined): DateRange | undefined
+export pure fn rangeHasDisabledDate(range: DateRange | undefined, constraints: DateConstraints | undefined): boolean
+export pure fn parseDate(text: string | null | undefined, calendar: string | undefined): Temporal.PlainDate | undefined
+export pure fn parseTime(text: string | null | undefined): Temporal.PlainTime | undefined
+export pure fn parseYearMonth(text: string | null | undefined): Temporal.PlainYearMonth | undefined
+export pure fn dateToString(date: Temporal.PlainDate | undefined): string
+export pure fn timeToString(time: Temporal.PlainTime | undefined, granularity: TimeGranularity | undefined): string
+export pure fn hourCycleOf(locale: Locale, override: 12 | 24 | undefined): HourCycle
+export pure fn hourOptions(locale: Locale, hourCycle: 12 | 24 | undefined, dayPeriod: number | undefined): TimeOption[]
+export pure fn minuteOptions(locale: Locale, step: number | undefined): TimeOption[]
+export pure fn secondOptions(locale: Locale, step: number | undefined): TimeOption[]
+export pure fn dayPeriodOptions(locale: Locale): TimeOption[]
+export pure fn withDayPeriod(time: Temporal.PlainTime | undefined, dayPeriod: number): Temporal.PlainTime | undefined
+export pure fn fieldSegments(values: SegmentValues, options: FieldOptions): FieldSegment[]
+export pure fn incrementSegment(values: SegmentValues, kind: SegmentKind, delta: number, options: FieldOptions): SegmentValues
+export pure fn setSegment(values: SegmentValues, kind: SegmentKind, value: number | undefined, options: FieldOptions): SegmentValues
+export pure fn clearSegment(values: SegmentValues, kind: SegmentKind): SegmentValues
+export pure fn backspaceSegment(values: SegmentValues, kind: SegmentKind, options: FieldOptions): SegmentValues
+export pure fn typeIntoSegment(values: SegmentValues, kind: SegmentKind, buffer: string, key: string, options: FieldOptions): SegmentEntry
+export pure fn dateToSegments(date: Temporal.PlainDate | undefined, calendar: string | undefined): SegmentValues
+export pure fn timeToSegments(time: Temporal.PlainTime | undefined): SegmentValues
+export pure fn segmentsToDate(values: SegmentValues, options: FieldOptions): Temporal.PlainDate | undefined
+export pure fn segmentsToTime(values: SegmentValues, options: FieldOptions): Temporal.PlainTime | undefined

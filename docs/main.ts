@@ -11,6 +11,14 @@ import.meta.glob("./demos/**/*.css", { eager: true });
 type Page = { default: (app: unknown) => unknown };
 const pages = import.meta.glob<Page>("./pages/**/*.rx");
 
+// The date and time parts use the global Temporal, which the library doesn't polyfill. Safari 27.2 lacks it, so
+// the site loads one there (and only there: it is a separate chunk) before any page runs. The full build carries
+// the non-ISO calendars the calendar demos use.
+if (globalThis.Temporal === undefined) {
+  // oxlint-disable-next-line import/no-unassigned-import -- the polyfill is loaded for its effect
+  await import("temporal-polyfill/full/global");
+}
+
 const path = pagePath();
 const load = pages[`./pages/${path === "" ? "index" : path}.rx`] ?? pages["./pages/not-found.rx"];
 const page = await load();

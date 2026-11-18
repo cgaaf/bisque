@@ -29,3 +29,40 @@ export type DetailsProps = import("./impl/types.ts").ElementProps<"details">
 export type SummaryProps = import("./impl/types.ts").ElementProps<"summary">
 export type HrProps = import("./impl/types.ts").ElementProps<"hr">
 export type Placement = import("./impl/native.ts").Placement
+
+// Dates and times (./date.d.rx says how .rx must hold them: never as a source's seed).
+export type PlainDate = Temporal.PlainDate
+export type PlainTime = Temporal.PlainTime
+export type PlainYearMonth = Temporal.PlainYearMonth
+export type DateRange = import("./impl/date.ts").DateRange
+export type DateConstraints = import("./impl/date.ts").DateConstraints
+export type CalendarDay = import("./impl/date.ts").CalendarDay
+export type CalendarWeek = import("./impl/date.ts").CalendarWeek
+export type CalendarOption = import("./impl/date.ts").CalendarOption
+export type WeekdayName = import("./impl/date.ts").WeekdayName
+export type DateMove = import("./impl/date.ts").DateMove
+export type TimeGranularity = import("./impl/date.ts").TimeGranularity
+export type HourCycle = import("./impl/date.ts").HourCycle
+export type SegmentKind = import("./impl/date.ts").SegmentKind
+export type SegmentValues = import("./impl/date.ts").SegmentValues
+export type FieldOptions = import("./impl/date.ts").FieldOptions
+export type FieldSegment = import("./impl/date.ts").FieldSegment
+export type SegmentEntry = import("./impl/date.ts").SegmentEntry
+export type TimeOption = import("./impl/date.ts").TimeOption
+
+// File Upload (./file-upload.d.rx).
+export type FileRejection = import("./impl/file-upload.ts").FileRejection
+export type FileRejectionReason = import("./impl/file-upload.ts").FileRejectionReason
+export type FileValidateResult = import("./impl/file-upload.ts").FileValidateResult
+
+// Calendar (a <table role="grid"> and native <select>s).
+export type TableProps = import("./impl/types.ts").ElementProps<"table">
+export type TableSectionProps = import("./impl/types.ts").ElementProps<"tbody">
+export type TableRowProps = import("./impl/types.ts").ElementProps<"tr">
+export type TableCellProps = import("./impl/types.ts").ElementProps<"td">
+export type TableHeaderCellProps = import("./impl/types.ts").ElementProps<"th">
+export type SelectElementProps = import("./impl/types.ts").ElementProps<"select">
+export type KeyedSegment = import("./impl/segmented-field.ts").KeyedSegment
+
+// Time Range Picker: the range it holds; either end may be missing while it is being chosen.
+export type TimeRange = { start: Temporal.PlainTime | undefined; end: Temporal.PlainTime | undefined }

@@ -11,6 +11,15 @@ import { OBSERVE } from "solid-js";
 import { attribution } from "solid-js/attribution";
 import { afterEach, beforeEach, expect } from "vitest";
 
+// `VITE_TEMPORAL=polyfill pnpm test:browser src/calendar` runs the tests on the Temporal polyfill instead of the
+// engine's own Temporal. Every test engine has Temporal natively, so this is the only way the path that a browser
+// without it takes (Safari 27.2) is exercised with the components.
+if (import.meta.env.VITE_TEMPORAL === "polyfill") {
+  delete (globalThis as { Temporal?: unknown }).Temporal;
+  // oxlint-disable-next-line import/no-unassigned-import -- the polyfill is loaded for its effect
+  await import("temporal-polyfill/full/global");
+}
+
 const DIAGNOSTIC = /^\[[A-Z][A-Z_]+\]/;
 // A scope over its time budget: how long a test takes depends on how busy the machine is (and Firefox's clock
 // counts whole milliseconds), so it says nothing reliable about the code in a test run.

@@ -1,0 +1,31 @@
+// How .rx holds and compares Temporal values (see ../date.d.rx). Mounted by ../impl/date.test.ts.
+import { parseDate, monthGrid, isSameDay, moveDate, formatDayLabel, isWeekend } from "../date.js"
+import { PlainDate } from "../types.rx"
+
+fn weekend(date: PlainDate): boolean => isWeekend(date, "en-US")
+
+component Days(props: { defaultValue?: PlainDate; value?: PlainDate; onValueChange: (date: PlainDate) => void }) {
+  source held := { date: peek(props.defaultValue) }
+  current = latest props.value ?? held.date
+  weeks key key = current == undefined ? [] : monthGrid(current.toPlainYearMonth(), { locale: "en-US" })
+  action pick(date: PlainDate) { held.date := date; props.onValueChange(date) }
+  action next() { if (current != undefined) { pick(moveDate(current, "next-day", { isDisabled: weekend })) } }
+  <div>
+    <p data-testid="label">{current == undefined ? "none" : formatDayLabel(current, "en-US")}</p>
+    <button onClick={next}>Next weekday</button>
+    {for week in weeks {
+      days key key = week.days
+      <p>{for day in days {
+        <span data-testid={day.key} data-selected={isSameDay(day.date, current) ? "" : undefined}>{day.date.day}</span>
+      }}</p>
+    }}
+  </div>
+}
+
+export default component Fixture() {
+  source picked: PlainDate | undefined := undefined
+  <div>
+    <Days defaultValue={parseDate("2026-11-20", undefined)} onValueChange={(date) => { picked := date }} />
+    <output>{picked == undefined ? "" : picked.toString()}</output>
+  </div>
+}
