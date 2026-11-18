@@ -1,0 +1,40 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput } from "../tags-input.rx"
+import { save } from "../../test/slow-server.js"
+
+// `tagClass` is passed to every tag's element.
+component Tags(props: { tagClass?: string }) {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag index={tag.index} data-testid="tag" class={props.tagClass}>
+      <TagsInputTagText />
+      <TagsInputTagRemove>×</TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// tags input is computed from that write. The input's own state (its tags, the highlight and the text being typed)
+// must not wait for the app's request. The cases: a prop of the root that reaches its context, and an attribute of
+// a tag, whose element carries its highlight. Attributes of the root, the control and the input were dropped: none
+// of those elements carries state that changes as tags are added, so they passed with or without `latest`.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="display: grid; gap: 8px; width: 360px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    <TagsInputRoot data-testid="root-prop" defaultValue={["a"]} required={step == 2}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Root prop" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="tag-attribute" defaultValue={["a"]}>
+      <TagsInputControl><Tags tagClass={step == 2 ? "second" : "first"} /><TagsInputInput aria-label="Tag attribute" /></TagsInputControl>
+    </TagsInputRoot>
+  </main>
+}

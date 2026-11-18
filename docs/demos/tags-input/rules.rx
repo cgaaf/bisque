@@ -1,0 +1,32 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput, TagsInputInvalidDetails } from "../../../src/tags-input/tags-input.rx"
+
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag class="Tag" index={tag.index}>
+      <TagsInputTagText />
+      <TagsInputTagRemove class="TagRemove">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+// A rough check: something, an @, something with a dot after it, and no spaces.
+fn looksLikeEmail(value: string): boolean => !value.includes(" ") && value.indexOf("@") > 0 && value.lastIndexOf(".") > value.indexOf("@") + 1
+
+fn explain(details: TagsInputInvalidDetails): string => details.reason == "duplicate" ? `${details.value} is already on the list.` : details.reason == "max" ? "Five recipients at most." : `${details.value} doesn't look like an email address.`
+
+export component TagsInputRules() {
+  source message := ""
+  <div class="TagsInputRules">
+    <label class="Label" for="recipients">Invite</label>
+    <TagsInputRoot max={5} validate={looksLikeEmail} addOnPaste addOnBlur delimiter=" " onValueInvalid={(details) => { message := explain(details) }} onValueChange={() => { message := "" }}>
+      <TagsInputControl class="Control">
+        <Tags />
+        <TagsInputInput class="Input" id="recipients" placeholder="name@example.com" />
+      </TagsInputControl>
+    </TagsInputRoot>
+    <p class="Message" aria-live="polite">{message}</p>
+  </div>
+}

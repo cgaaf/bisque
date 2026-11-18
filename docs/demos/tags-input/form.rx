@@ -1,0 +1,40 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput } from "../../../src/tags-input/tags-input.rx"
+import { FieldRoot, FieldLabel, FieldError } from "../../../src/field/field.rx"
+import { Form } from "../../../src/form/form.rx"
+
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag class="Tag" index={tag.index}>
+      <TagsInputTagText />
+      <TagsInputTagRemove class="TagRemove">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+fn listed(values: unknown): string => `${values}`
+
+export component TagsInputForm() {
+  source sent := ""
+  <div class="TagsInputForm">
+    <Form class="Form" onFormSubmit={(values) => { sent := listed(values.ingredients) }}>
+      <FieldRoot class="Field" name="ingredients">
+        <FieldLabel class="Label">Ingredients</FieldLabel>
+        <TagsInputRoot required>
+          <TagsInputControl class="Control">
+            <Tags />
+            <TagsInputInput class="Input" placeholder="flour, water, salt" />
+          </TagsInputControl>
+        </TagsInputRoot>
+        <FieldError class="Error" match="valueMissing">Add at least one ingredient.</FieldError>
+      </FieldRoot>
+      <div class="Actions">
+        <button class="Button" type="submit">Save</button>
+        <button class="Button" type="reset">Reset</button>
+      </div>
+      <output class="Sent">{sent == "" ? "" : `Sent: ${sent}`}</output>
+    </Form>
+  </div>
+}

@@ -1,0 +1,20 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput, TagsInputClear } from "./bisque/tags-input/tags-input.rx"
+
+// A tag per value, read from the context.
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag index={tag.index}>
+      <TagsInputTagText />
+      <TagsInputTagRemove />
+    </TagsInputTag>
+  }}
+}
+
+<TagsInputRoot>
+  <TagsInputControl>
+    <Tags />
+    <TagsInputInput />
+    <TagsInputClear />
+  </TagsInputControl>
+</TagsInputRoot>

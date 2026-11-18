@@ -1,0 +1,115 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TagsInputHero } from "../../demos/tags-input/hero.rx"
+import { TagsInputRules } from "../../demos/tags-input/rules.rx"
+import { TagsInputForm } from "../../demos/tags-input/form.rx"
+
+export default component Page() {
+  <DocsPage title="Tags Input" subtitle="A text input that turns what is typed into a list of removable tags.">
+    <Demo source="tags-input/hero"><TagsInputHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. The tags are rendered from the <code>tagsInput</code> context, one
+      {" "}<code>TagsInputTag</code> per entry of its <code>tags</code>:
+    </p>
+    <Code file="tags-input/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      There is no native tags input, and Base UI has none either; this family follows the tags inputs of Ark UI,
+      Bits UI and Melt UI, with React Aria's TagGroup as the guide for its keys. A plain text{" "}
+      <code>&lt;input&gt;</code> does most of the work:
+    </p>
+    <ul>
+      <li>Typing, the caret and selection, a <code>placeholder</code>, and paste from the clipboard.</li>
+      <li>IME composition events: the library adds nothing while a composition is in progress.</li>
+      <li><kbd>Enter</kbd> in an empty input submits the form, as in any other text field.</li>
+      <li>
+        Focus. It never leaves the input: a tag is highlighted, not focused, so a <code>FieldLabel</code> names the
+        input and the field's touched state follows it.
+      </li>
+      <li>
+        The <code>required</code> constraint: the input is natively <code>required</code> while there is no tag.
+      </li>
+    </ul>
+    <p>
+      The library adds the list: adding an entry on <kbd>Enter</kbd> or the delimiter, splitting what is pasted,
+      the rules an entry must pass, the keys that move between the input and the tags and remove them, the remove
+      and clear buttons, a polite live region that announces a highlighted or removed tag, and one hidden input per
+      tag for the form.
+    </p>
+    <div class="note">
+      <p>
+        There is no Label part: put the tags input in a <code>FieldRoot</code> with a <code>FieldLabel</code>, as the
+        demo above does, or give the input an <code>aria-label</code> or a <code>&lt;label for&gt;</code>. Editing a
+        tag in place (a double-click in Ark UI) isn't supported: remove it and type it again.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Keyboard</h3>
+    <p>
+      In the input, <kbd>Enter</kbd> adds what was typed, trimmed, and so does typing the <code>delimiter</code>
+      {" "}(a comma unless you pass another, or <code>null</code> for none). <kbd>Backspace</kbd> or{" "}
+      <kbd>ArrowLeft</kbd> with the caret at the start of the text highlights the last tag. With a tag
+      highlighted, <kbd>ArrowLeft</kbd> and <kbd>ArrowRight</kbd> move the highlight (past the last tag, back to
+      the text), <kbd>Home</kbd> goes to the first tag, <kbd>End</kbd> and <kbd>Escape</kbd> back to the text,
+      {" "}<kbd>Backspace</kbd> removes the tag and highlights the one before it, and <kbd>Delete</kbd> removes it and
+      highlights the one after. Typing drops the highlight. Otherwise the keys do what they do in any text input.
+    </p>
+    <p>
+      Style a highlighted tag with <code>[data-highlighted]</code>. Since focus stays in the input, put the focus
+      ring on <code>TagsInputControl</code> with <code>:focus-within</code>. A press on a tag highlights it, a press
+      on the control's empty space puts the caret in the input, and the remove buttons and the clear button work
+      without taking focus from the input, so none of them is in the tab order.
+    </p>
+
+    <h3 id="rules">Rules for an entry</h3>
+    <p>
+      An entry is refused when it is already a tag (unless <code>allowDuplicates</code>), when there are{" "}
+      <code>max</code> tags, or when <code>validate</code> returns false for it. A refused entry stays in the input
+      to be corrected, and <code>onValueInvalid</code> gets <code>{"{ value, reason }"}</code>, with the reason{" "}
+      <code>duplicate</code>, <code>max</code> or <code>invalid</code>, to show a message.
+    </p>
+    <p>
+      With <code>addOnPaste</code>, everything pasted is added at once, split at the delimiter and at line breaks;
+      without it, a paste is treated like typing, so the parts before a delimiter are added and the rest stays in
+      the input. <code>addOnBlur</code> adds what was typed when the input loses focus. The demo below takes up to
+      five email addresses separated by spaces, and does both.
+    </p>
+    <Demo source="tags-input/rules"><TagsInputRules /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      <code>value</code> and <code>onValueChange</code> hold the tags, a list of strings; <code>inputValue</code>{" "}
+      and <code>onInputValueChange</code> hold the text. The root calls your handlers in a change of their own, so a
+      handler that saves to a server never holds the tags or the input while its request is out: write the new
+      tags with <code>guess</code> to show them at once, or leave <code>value</code> alone until the server has
+      them. A refused save leaves the text empty, as the entry was accepted by the input; keep the text yourself
+      (in <code>inputValue</code>) if a failed save should put it back. With <code>disabled</code> while a save is
+      out, the input takes focus back when it is enabled again.
+    </p>
+
+    <h3 id="forms">Forms</h3>
+    <p>
+      With a <code>name</code>, or inside a <code>FieldRoot</code> that has one, each tag is submitted with the form
+      as its own entry, and a form reset puts the default tags back and empties the input. Inside a field the input
+      is labelled and described by it, and the field's value is the list of tags. <code>required</code> means at
+      least one tag: the input is natively <code>required</code> while there is none, so text typed but not yet
+      added counts as filled, and the form submits without it.
+    </p>
+    <Demo source="tags-input/form"><TagsInputForm /></Demo>
+
+    <h3 id="announcements">Announcements</h3>
+    <p>
+      The root renders a visually hidden <code>role="status"</code> region (the only style the family writes) and
+      puts a message in it when a tag is highlighted, removed, or all are cleared. The messages are English by
+      default; pass <code>messages</code> to change them. Each remove button is named "Remove" and its tag's value;
+      give it an <code>aria-label</code> of your own to change that.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="tags-input" />
+  </DocsPage>
+}

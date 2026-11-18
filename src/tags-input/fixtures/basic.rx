@@ -1,0 +1,31 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput, TagsInputClear } from "../tags-input.rx"
+
+// A tag per value, read from the context: how an app lists the tags.
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag index={tag.index} data-testid="tag">
+      <TagsInputTagText />
+      <TagsInputTagRemove>×</TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+export default component Fixture() {
+  source changes := ""
+  source refused := ""
+  source typed := ""
+  <form data-testid="form" onSubmit={(event) => { event.preventDefault() }}>
+    <TagsInputRoot data-testid="root" name="topics" defaultValue={["alpha", "beta"]} onValueChange={(next) => { changes := next.join("|") }} onValueInvalid={(details) => { refused := `${details.reason}:${details.value}` }} onInputValueChange={(text) => { typed := text }}>
+      <TagsInputControl data-testid="control" style="display: flex; gap: 4px; padding: 8px; width: 320px">
+        <Tags />
+        <TagsInputInput aria-label="Topics" />
+      </TagsInputControl>
+      <TagsInputClear>Clear</TagsInputClear>
+    </TagsInputRoot>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="refused">{refused}</output>
+    <output data-testid="typed">{typed}</output>
+    <button type="reset">Reset</button>
+  </form>
+}

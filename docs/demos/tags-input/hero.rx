@@ -1,0 +1,33 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput, TagsInputClear } from "../../../src/tags-input/tags-input.rx"
+import { FieldRoot, FieldLabel, FieldDescription } from "../../../src/field/field.rx"
+
+// A tag per value, read from the `tagsInput` context.
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag class="Tag" index={tag.index}>
+      <TagsInputTagText />
+      <TagsInputTagRemove class="TagRemove">
+        <svg width="10" height="10" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+      </TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+export component TagsInputHero() {
+  <div class="TagsInputHero">
+    <FieldRoot class="Field">
+      <FieldLabel class="Label">Topics</FieldLabel>
+      <TagsInputRoot defaultValue={["gardening", "bread"]}>
+        <TagsInputControl class="Control">
+          <Tags />
+          <TagsInputInput class="Input" placeholder="Add a topic" />
+          <TagsInputClear class="Clear" aria-label="Remove all topics">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 3l6 6M9 3 3 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /></svg>
+          </TagsInputClear>
+        </TagsInputControl>
+      </TagsInputRoot>
+      <FieldDescription class="Description">Press Enter or type a comma after each.</FieldDescription>
+    </FieldRoot>
+  </div>
+}

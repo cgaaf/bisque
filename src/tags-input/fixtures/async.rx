@@ -1,0 +1,100 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput } from "../tags-input.rx"
+import { save, load } from "../../test/settings-server.js"
+
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag index={tag.index} data-testid="tag">
+      <TagsInputTagText />
+      <TagsInputTagRemove>×</TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+// What a part inside the root reads: the root's own tags.
+component State() {
+  c = use tagsInput
+  <span data-testid="state">{c.value.join("|")}</span>
+}
+
+// `load` is typed by its fallback (../../test/settings-server.ts).
+fn list(value: string[]): string[] => value
+
+// Tags inputs whose tags are saved to a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  topics = await load("topics", list(["a"])) -> ["a"]
+  source topicsError := ""
+  // Not optimistic: the owner's tags change only once the server has them.
+  source labels: string[] := ["a"]
+  source labelsError := ""
+  // Optimistic, and disabled while its save is out.
+  colours = await load("colours", list([])) -> []
+  // Optimistic, and read-only while its save is out.
+  sizes = await load("sizes", list([])) -> []
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := ""
+  preview = await load(`preview-${wanted}`, wanted) -> ""
+  <div style="display: grid; gap: 8px; width: 360px">
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <TagsInputRoot data-testid="topics" value={topics} onValueChange={(next) => {
+      guess topics := next
+      onFlush(() => { topicsError := "" })
+      affects topics
+      try {
+        await save("topics", next)
+        refresh topics
+      } catch (e) {
+        topicsError := "failed"
+      }
+    }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Topics" /></TagsInputControl>
+    </TagsInputRoot>
+    <output data-testid="topics-saving">{pending? topics ? "saving" : ""}</output>
+    <output data-testid="topics-error">{topicsError}</output>
+
+    <TagsInputRoot data-testid="labels" value={labels} onValueChange={(next) => {
+      onFlush(() => { labelsError := "" })
+      try {
+        await save("labels", next)
+        labels := next
+      } catch (e) {
+        labelsError := "failed"
+      }
+    }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Labels" /></TagsInputControl>
+    </TagsInputRoot>
+    <output data-testid="labels-error">{labelsError}</output>
+
+    <TagsInputRoot data-testid="colours" value={colours} disabled={pending? colours} onValueChange={(next) => {
+      guess colours := next
+      affects colours
+      try {
+        await save("colours", next)
+        refresh colours
+      } catch (e) {
+      }
+    }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Colours" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="sizes" value={sizes} readOnly={pending? sizes} onValueChange={(next) => {
+      guess sizes := next
+      affects sizes
+      try {
+        await save("sizes", next)
+        refresh sizes
+      } catch (e) {
+      }
+    }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Sizes" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="preview-root" onValueChange={(next) => { wanted := next.join("|") }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Preview" /></TagsInputControl>
+      <State />
+    </TagsInputRoot>
+    <output data-testid="preview">{preview}</output>
+    }}
+  </div>
+}

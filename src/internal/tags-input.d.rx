@@ -1,0 +1,11 @@
+// How .rx may use ./tags-input.js (implemented in ./impl/tags-input.ts): TagsInput's text splitting, the rules an
+// entry must pass, and the input's caret. Types come from ./impl/tags-input.ts.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./tags-input.d.ts.
+export pure fn splitTyped(text: string, delimiter: string | null | undefined): { entries: string[]; rest: string }
+export pure fn splitPasted(text: string, delimiter: string | null | undefined): string[]
+export fn planEntries(entries: string[], current: string[], rules: import("./impl/tags-input.ts").TagsInputRules): import("./impl/tags-input.ts").TagsInputPlan
+export pure fn leftoverText(refused: import("./impl/tags-input.ts").TagsInputInvalidDetails[], rest: string, delimiter: string | null | undefined): string
+export pure fn withoutIndex(list: string[], index: number): string[]
+export fn caretAtStart(input: HTMLInputElement | undefined): boolean
+export fn textWithPaste(input: HTMLInputElement, pasted: string): string
+export fn pastedText(event: ClipboardEvent): string

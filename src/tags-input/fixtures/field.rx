@@ -1,0 +1,37 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput } from "../tags-input.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag index={tag.index} data-testid="tag">
+      <TagsInputTagText />
+      <TagsInputTagRemove>×</TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `topics=${values.topics}` }}>
+    <FieldRoot name="topics" data-testid="field">
+      <FieldLabel>Topics</FieldLabel>
+      <TagsInputRoot required data-testid="root">
+        <TagsInputControl><Tags /><TagsInputInput /></TagsInputControl>
+      </TagsInputRoot>
+      <FieldDescription data-testid="description">Press Enter after each.</FieldDescription>
+      <FieldError data-testid="error" match="valueMissing">Add a topic</FieldError>
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <TagsInputRoot defaultValue={["fixed"]}>
+        <TagsInputControl><Tags /><TagsInputInput /></TagsInputControl>
+      </TagsInputRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <button type="reset">Reset</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

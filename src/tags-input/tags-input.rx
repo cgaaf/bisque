@@ -1,0 +1,548 @@
+// A text input that turns what is typed into a list of removable tags: free text, no option list. Base UI has no
+// such component and the APG has no exact pattern; the behaviour follows the tags inputs of Ark UI, Bits UI and
+// Melt UI, with React Aria's TagGroup as the guide for the keys that move between and remove tags.
+//
+// Platform first: there is no native tags input. A plain `<input>` gives text entry, paste, IME composition,
+// caret movement, the form's Enter, and focus; the family adds the list, the keys between the input and the tags,
+// the splitting at a delimiter, and the form wiring (one hidden input per tag).
+//
+// Focus never leaves the input. A tag is *highlighted* (`data-highlighted`), not focused, and each highlight and
+// removal is announced through a polite live region the root renders. This is neither roving focus nor
+// `aria-activedescendant`: a focusable tag needs a role (option, row, gridcell) whose required container can't
+// also hold the text box, so it would need a list part around the tags alone; and `aria-activedescendant` on a
+// text box means an `aria-controls` to such a container as well. Keeping focus in the input is what Combobox
+// does too, and it keeps the input the one control a FieldLabel names, that blur, `addOnBlur` and Field's
+// touched state follow, and that the remove buttons (pressed without taking focus) leave alone.
+//
+// Keys, in the input. They are the browser's own unless a tag is highlighted or the caret is at the very start:
+//   - Enter adds the text as a tag (and is left to the form when the input is empty); typing or pasting the
+//     delimiter finishes an entry. Nothing is added while an IME composition is in progress.
+//   - Backspace with the caret at the start highlights the last tag; ArrowLeft there does the same.
+//   - With a tag highlighted: ArrowLeft/ArrowRight move the highlight (past the last tag, back to the text),
+//     Home goes to the first tag, End and Escape back to the text, Backspace removes the tag and highlights the
+//     one before it, Delete removes it and highlights the one after. Typing clears the highlight.
+// An entry that is refused (a duplicate, one past `max`, one `validate` rejects) stays in the input to be
+// corrected, and `onValueInvalid` says why.
+//
+// Not here: editing a tag in place (Ark's double-click edit), and right-to-left arrow keys (ArrowLeft always
+// moves toward the first tag).
+import { mergeProps, createRef } from "../internal/props.js"
+import { focusElement } from "../internal/dom.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
+import { createInputValue } from "../internal/listbox.js"
+import { createFormReset, setInputValue, sameValue, isEmptyView } from "../internal/field.js"
+import { splitTyped, splitPasted, planEntries, leftoverText, withoutIndex, caretAtStart, textWithPaste, pastedText } from "../internal/tags-input.js"
+import { field, FieldContext, fieldControlProps, fieldStateAttributes } from "../field/field.rx"
+import { DivProps, ButtonProps, SpanProps, InputProps, PartProps } from "../internal/types.rx"
+
+// Why an entry was refused: it is already a tag ("duplicate"), there are `max` tags ("max"), or `validate`
+// returned false ("invalid").
+export type TagsInputInvalidReason = import("../internal/impl/tags-input.ts").TagsInputInvalidReason
+export type TagsInputInvalidDetails = import("../internal/impl/tags-input.ts").TagsInputInvalidDetails
+// One tag: its position in the value, and the value there.
+export type TagsInputItem = { index: number; value: string }
+// What the live region says. Defaults: "<value>, press Backspace or Delete to remove" (just "<value>" when
+// read-only), "<value> removed", "All tags removed".
+export type TagsInputMessages = {
+  highlighted?: (value: string) => string
+  removed?: (value: string) => string
+  cleared?: string
+}
+
+export type TagsInputContext = {
+  value: string[]
+  // The value as rows, for `for tag in c.tags { <TagsInputTag index={tag.index}> … }`.
+  tags: TagsInputItem[]
+  // What the input shows.
+  inputValue: string
+  // The highlighted tag's index; undefined while the caret is in the text.
+  highlightedIndex: number | undefined
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  addOnPaste: boolean
+  field: FieldContext | undefined
+  setInput: (element: HTMLInputElement) => void
+  // The input's text changed; `composing` while an IME composition is in progress.
+  changeText: (text: string, composing: boolean) => void
+  // Enter: adds `text`.
+  submit: (text: string) => void
+  // A paste with `addOnPaste`: `text` is the input's text with the paste in it; every entry in it is added.
+  paste: (text: string) => void
+  // The input lost focus with `text` in it.
+  blurred: (text: string) => void
+  highlight: (index: number | undefined) => void
+  // Removes the tag at `index`, then highlights the one before it, the one after it, or none.
+  removeAt: (index: number, then: "previous" | "next" | "none") => void
+  clear: () => void
+  focusInput: () => void
+}
+
+export context tagsInput: lane TagsInputContext
+
+export type TagsInputRootProps = {
+  // The tags. Pass it with `onValueChange` to control them.
+  value?: string[]
+  defaultValue?: string[]
+  onValueChange?: (value: string[]) => void
+  // The input's text. Pass it with `onInputValueChange` to control it.
+  inputValue?: string
+  onInputValueChange?: (value: string) => void
+  // The most tags there may be; an entry past it is refused.
+  max?: number
+  // Whether the same text may be a tag twice. Default: false.
+  allowDuplicates?: boolean
+  // Typing or pasting it finishes an entry; null for none. Default: ",".
+  delimiter?: string | null
+  // Add what was typed when the input loses focus. Default: false.
+  addOnBlur?: boolean
+  // Add everything pasted at once, split at the delimiter and at line breaks, the last part included. Without it
+  // a paste is typed text: the parts before a delimiter are added and the rest stays. Default: false.
+  addOnPaste?: boolean
+  // Whether an entry may be a tag. Called synchronously as an entry is added: a plain function, not an action.
+  validate?: (value: string) => boolean
+  // Called for each refused entry, with the entry and why.
+  onValueInvalid?: (details: TagsInputInvalidDetails) => void
+  disabled?: boolean
+  readOnly?: boolean
+  // Whether at least one tag is needed for the form to be valid.
+  required?: boolean
+  // With a name (or inside a named FieldRoot) each tag is submitted with a <form>, one entry per tag.
+  name?: string
+  // What the live region announces.
+  messages?: TagsInputMessages
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue" | "onChange">
+
+fn indexed(values: string[]): TagsInputItem[] => values.map((value, index) => ({ index: index, value: value }))
+
+// The state attributes every part carries.
+fn tagsInputState(ref c: TagsInputContext): PartProps {
+  disabled = c.disabled
+  readOnly = c.readOnly
+  required = c.required
+  {
+    "data-disabled": disabled ? "" : undefined,
+    "data-readonly": readOnly ? "" : undefined,
+    "data-required": required ? "" : undefined,
+  }
+}
+
+// Visually hidden, still read: the live region's placement, written inline as the only style the family ships.
+fn hiddenStyle(): PartProps => ({ position: "absolute", width: "1px", height: "1px", margin: "-1px", padding: "0", border: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "white-space": "nowrap" })
+
+export component TagsInputRoot(props: TagsInputRootProps) {
+  f = use field
+  // Seeded with a copy: a write to a list source replaces its contents in place, which would change the
+  // consumer's array.
+  source uncontrolled: string[] := peek([...(props.defaultValue ?? [])])
+  source typed := ""
+  // What was typed into a controlled input, shown until `inputValue` has caught up with it (as Combobox).
+  source echo: string | undefined := undefined
+  source highlighted: number | undefined := undefined
+  source announcement := ""
+  source input: HTMLInputElement | undefined := undefined
+  source element: HTMLElement | undefined := undefined
+  // `value`, `disabled` and `readOnly` are often read from an answer that can fail (`value={saved}` with
+  // `saved = await load()`): a failure there is the app's to show, in its `errored` region, not the root's.
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
+  givenReadOnly = (latest props.readOnly ?? false) catch (e) => false
+  current = givenValue ?? uncontrolled
+  // What a form reset puts back.
+  initialValue = peek([...current])
+  // Keyed by position: a tag holds no focus or state of its own, so its row may take the next value's place.
+  tags key index = indexed(current)
+  inputText = echo ?? props.inputValue ?? typed
+  // A highlight past the end (the value shrank from outside) is no highlight.
+  activeIndex = highlighted != undefined && highlighted < current.length ? highlighted : undefined
+  isDisabled = givenDisabled || (f?.disabled ?? false)
+  isReadOnly = givenReadOnly
+  isRequired = latest props.required ?? false
+  delimiter = props.delimiter == undefined ? "," : props.delimiter
+  hiddenName = latest props.name ?? f?.name
+
+  effect (current) { if (f) { f.setValue($0) } }
+  _text = createInputValue(input, inputText)
+  _reset = createFormReset(element, reset)
+  // Disabled while it had focus (`disabled={pending? saved}`), the input takes focus back when it is enabled again.
+  _focus = createFocusKeeper(input, isDisabled)
+
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that updates the tags:
+  // a handler that saves holds its change until the answer lands, and the tags and the input would be held with it.
+  action notifyValue(next: string[]) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyInvalid(refused: TagsInputInvalidDetails[]) {
+    if (props.onValueInvalid && refused.length > 0) {
+      let report = props.onValueInvalid
+      onFlush(() => { refused.forEach((entry) => report(entry)) })
+    }
+  }
+  action endEcho(text: string) {
+    // Tested through a local: narrowing `echo` itself would type the write below as `string` (rx-tsc).
+    let shown = echo
+    if (shown == text) { echo := undefined }
+  }
+  action writeText(text: string) {
+    typed := text
+    if (props.onInputValueChange && text != inputText) {
+      let report = props.onInputValueChange
+      if (props.inputValue != undefined) { echo := text }
+      onFlush(() => {
+        report(text)
+        onSettled(() => { endEcho(text) })
+      })
+    }
+  }
+  action announce(text: string) {
+    // The same message twice in a row is made a change, so it is read again.
+    announcement := announcement == text ? text + " " : text
+  }
+  action commit(next: string[]) {
+    uncontrolled := next
+    notifyValue(next)
+  }
+  fn highlightMessage(value: string): string => props.messages?.highlighted ? props.messages.highlighted(value) : isReadOnly ? value : `${value}, press Backspace or Delete to remove`
+  // Adds `entries`; the input then shows the refused ones, then `rest` (what is still being typed).
+  action add(entries: string[], rest: string) {
+    if (isDisabled || isReadOnly) { return }
+    let plan = planEntries(entries, current, { allowDuplicates: props.allowDuplicates ?? false, max: props.max, validate: props.validate })
+    if (plan.next.length != current.length) { commit(plan.next) }
+    notifyInvalid(plan.refused)
+    let left = leftoverText(plan.refused, rest, delimiter)
+    writeText(left)
+    // Written to the element too: when the text left is what was there before the delimiter was typed, the
+    // equation hasn't changed and wouldn't write it.
+    setInputValue(input, left)
+  }
+  action changeText(text: string, composing: boolean) {
+    highlighted := undefined
+    if (isDisabled || isReadOnly) { return }
+    let parts = splitTyped(text, composing ? null : delimiter)
+    if (parts.entries.length == 0 && parts.rest == text) {
+      writeText(text)
+    } else {
+      add(parts.entries, parts.rest)
+    }
+  }
+  action submit(text: string) {
+    highlighted := undefined
+    add([text], "")
+  }
+  action paste(text: string) {
+    highlighted := undefined
+    add(splitPasted(text, delimiter), "")
+  }
+  action blurred(text: string) {
+    highlighted := undefined
+    if ((props.addOnBlur ?? false) && text.trim() != "") { add([text], "") }
+  }
+  action highlight(index: number | undefined) {
+    highlighted := index
+    if (index != undefined && index < current.length) { announce(highlightMessage(current[index])) }
+  }
+  action removeAt(index: number, then: "previous" | "next" | "none") {
+    if (isDisabled || isReadOnly || index < 0 || index >= current.length) { return }
+    let removed = current[index]
+    let next = withoutIndex(current, index)
+    commit(next)
+    let target: number | undefined = then == "previous" ? (index > 0 ? index - 1 : next.length > 0 ? 0 : undefined) : then == "next" ? (index < next.length ? index : undefined) : undefined
+    highlighted := target
+    let said = props.messages?.removed ? props.messages.removed(removed) : `${removed} removed`
+    announce(target != undefined ? `${said}. ${highlightMessage(next[target])}` : said)
+  }
+  action clear() {
+    if (isDisabled || isReadOnly) { return }
+    highlighted := undefined
+    if (current.length > 0) {
+      commit([])
+      announce(props.messages?.cleared ?? "All tags removed")
+    }
+    writeText("")
+    setInputValue(input, "")
+    focusElement(input)
+  }
+  action focusInput() { focusElement(input) }
+  // The browser has emptied the input. Uncontrolled, the default tags are the value again, reported once if they
+  // changed; controlled, the owner's value stands.
+  action reset() {
+    let next = givenValue ?? [...initialValue]
+    highlighted := undefined
+    if (givenValue == undefined && !sameValue(next, uncontrolled)) {
+      uncontrolled := next
+      notifyValue(next)
+    }
+    writeText("")
+    setInputValue(input, "")
+    if (f) { f.reset(next) }
+  }
+  // The visible input is the one whose constraints count, inside a field too: see `required` on TagsInputInput.
+  action writeInput(next: HTMLInputElement) {
+    input := next
+    if (f) { f.setInput(next) }
+  }
+  action writeElement(next: HTMLElement) { element := next }
+  setInput = createRef(writeInput)
+  setElement = createRef(writeElement)
+
+  self = {
+    value: current,
+    tags: tags,
+    inputValue: inputText,
+    highlightedIndex: activeIndex,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    addOnPaste: latest props.addOnPaste ?? false,
+    field: f,
+    setInput: setInput,
+    changeText: changeText,
+    submit: submit,
+    paste: paste,
+    blurred: blurred,
+    highlight: highlight,
+    removeAt: removeAt,
+    clear: clear,
+    focusInput: focusInput,
+  }
+
+  provide tagsInput = self
+
+  { value, defaultValue, onValueChange, inputValue, onInputValueChange, max, allowDuplicates, delimiter: _delimiter, addOnBlur, addOnPaste, validate, onValueInvalid, disabled, readOnly, required, name, messages, children, ...rest } = props
+  attrs = fieldStateAttributes(f?.state)
+  state = tagsInputState(self)
+  merged = latest mergeProps({ ...attrs, ...state, ref: setElement }, rest)
+  <div {...merged}>
+    {children}
+    <div role="status" aria-live="polite" aria-atomic="true" style={hiddenStyle()}>{announcement}</div>
+  </div>
+  {if hiddenName != undefined {
+    {for entry in current {
+      <input type="hidden" name={hiddenName} value={entry} disabled={isDisabled} />
+    }}
+  }}
+}
+
+// The box that holds the tags and the input. A press on the box itself (not on a tag or the input) puts the caret
+// in the input.
+export fn tagsInputControl(ref c: TagsInputContext): PartProps {
+  action mouseDown(event: MouseEvent & { currentTarget: HTMLElement }) {
+    if (event.defaultPrevented || event.button != 0 || event.target != event.currentTarget) { return }
+    event.preventDefault()
+    c.focusInput()
+  }
+  state = tagsInputState(c)
+  { ...state, onMouseDown: mouseDown }
+}
+
+export component TagsInputControl({ children, ...rest }: DivProps) {
+  c = use tagsInput
+  own = tagsInputControl(c)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// What a tag's parts read: its position, its value and whether it is highlighted.
+export type TagsInputTagContext = { index: number; value: string; highlighted: boolean }
+
+export context tagsInputTagState: lane TagsInputTagContext
+
+// One tag. A press on it highlights it and keeps the caret in the input.
+export fn tagsInputTag(ref c: TagsInputContext, ref index: number): PartProps {
+  action mouseDown(event: MouseEvent) {
+    // A press on its remove button is the button's.
+    if (event.defaultPrevented || event.button != 0 || c.disabled) { return }
+    event.preventDefault()
+    c.highlight(index)
+    c.focusInput()
+  }
+  highlighted = c.highlightedIndex == index
+  disabled = c.disabled
+  readOnly = c.readOnly
+  {
+    "data-highlighted": highlighted ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    "data-readonly": readOnly ? "" : undefined,
+    onMouseDown: mouseDown,
+  }
+}
+
+export type TagsInputTagProps = {
+  // The tag's position in the value: `tag.index` for each `tag` of the context's `tags`.
+  index: number
+} & DivProps
+
+export component TagsInputTag(props: TagsInputTagProps) {
+  c = use tagsInput
+  tagValue = c.value[props.index] ?? ""
+  isHighlighted = c.highlightedIndex == props.index
+  provide tagsInputTagState = { index: props.index, value: tagValue, highlighted: isHighlighted }
+  { index, children, ...rest } = props
+  own = tagsInputTag(c, index)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The tag's text: its value, unless given children.
+export component TagsInputTagText({ children, ...rest }: SpanProps) {
+  t = use tagsInputTagState
+  merged = latest mergeProps({ "data-highlighted": t.highlighted ? "" : undefined }, rest)
+  <span {...merged}>
+    {if isEmptyView(children) {
+      {t.value}
+    } else {
+      {children}
+    }}
+  </span>
+}
+
+// Removes its tag. Named "Remove <value>" unless given an `aria-label`. Not in the tab order (Backspace and
+// Delete remove a highlighted tag), and a press on it doesn't take focus from the input.
+export fn tagsInputTagRemove(ref c: TagsInputContext, ref index: number, ref value: string): PartProps {
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  action press() {
+    c.removeAt(index, "none")
+    c.focusInput()
+  }
+  inert = c.disabled || c.readOnly
+  {
+    type: "button",
+    tabindex: "-1",
+    "aria-label": `Remove ${value}`,
+    disabled: inert ? true : undefined,
+    onMouseDown: mouseDown,
+    onClick: press,
+  }
+}
+
+export component TagsInputTagRemove({ children, ...rest }: ButtonProps) {
+  c = use tagsInput
+  t = use tagsInputTagState
+  own = tagsInputTagRemove(c, t.index, t.value)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// Spread on an <input>. There is no `value` among these props: the root writes the input's text itself, to the
+// element the `ref` registers, and only when the text changes (createInputValue in ../internal/impl/listbox.ts).
+export fn tagsInputInput(ref c: TagsInputContext): PartProps {
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) { c.changeText(event.currentTarget.value, event.isComposing) }
+  // The composition's text is checked for the delimiter once it is final.
+  action compositionEnd(event: CompositionEvent & { currentTarget: HTMLInputElement }) { c.changeText(event.currentTarget.value, false) }
+  action paste(event: ClipboardEvent & { currentTarget: HTMLInputElement }) {
+    if (!c.addOnPaste || c.disabled || c.readOnly) { return }
+    event.preventDefault()
+    c.paste(textWithPaste(event.currentTarget, pastedText(event)))
+  }
+  action blur(event: FocusEvent & { currentTarget: HTMLInputElement }) { c.blurred(event.currentTarget.value) }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+    // keyCode 229: WebKit has sent the Enter that confirms a composition after `compositionend`.
+    if (event.defaultPrevented || event.isComposing || event.keyCode == 229) { return }
+    if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) { return }
+    let active = c.highlightedIndex
+    let count = c.value.length
+    if (event.key == "Enter") {
+      // Empty, Enter is the form's.
+      if (event.currentTarget.value.trim() != "" && !c.readOnly) {
+        event.preventDefault()
+        c.submit(event.currentTarget.value)
+      }
+    } else if (event.key == "Backspace" || event.key == "Delete") {
+      if (active != undefined) {
+        event.preventDefault()
+        c.removeAt(active, event.key == "Backspace" ? "previous" : "next")
+      } else if (event.key == "Backspace" && count > 0 && caretAtStart(event.currentTarget)) {
+        event.preventDefault()
+        c.highlight(count - 1)
+      }
+    } else if (event.key == "ArrowLeft") {
+      if (active != undefined) {
+        event.preventDefault()
+        c.highlight(active > 0 ? active - 1 : 0)
+      } else if (count > 0 && caretAtStart(event.currentTarget)) {
+        event.preventDefault()
+        c.highlight(count - 1)
+      }
+    } else if (event.key == "ArrowRight") {
+      if (active != undefined) {
+        event.preventDefault()
+        c.highlight(active < count - 1 ? active + 1 : undefined)
+      }
+    } else if (event.key == "Home") {
+      if (active != undefined) {
+        event.preventDefault()
+        c.highlight(0)
+      }
+    } else if (event.key == "End" || event.key == "Escape") {
+      if (active != undefined) {
+        event.preventDefault()
+        c.highlight(undefined)
+      }
+    }
+  }
+  base = fieldControlProps(c.field)
+  state = tagsInputState(c)
+  disabled = c.disabled
+  readOnly = c.readOnly
+  required = c.required
+  // `required` means at least one tag, so the input itself is natively `required` only while there is none: the
+  // constraint is then on the control the user can fill, and Enter still submits the form. (A hidden mirror input
+  // would be a second text field, and a form with two and no submit button gets no implicit submission.) Text
+  // typed but not yet added counts as filled: the form submits without it.
+  empty = c.value.length == 0
+  setInput = c.setInput
+  own = {
+    ...state,
+    type: "text",
+    autocomplete: "off",
+    "aria-required": required ? "true" : undefined,
+    required: required && empty ? true : undefined,
+    disabled: disabled ? true : undefined,
+    readonly: readOnly ? true : undefined,
+    ref: setInput,
+    onInput: input,
+    onCompositionEnd: compositionEnd,
+    onPaste: paste,
+    onBlur: blur,
+    onKeyDown: keyDown,
+  }
+  mergeProps(base, own)
+}
+
+export component TagsInputInput(props: Omit<InputProps, "value" | "type">) {
+  c = use tagsInput
+  own = tagsInputInput(c)
+  merged = latest mergeProps(own, props)
+  <input {...merged} />
+}
+
+// Removes every tag and the typed text, and puts the caret back in the input.
+export fn tagsInputClear(ref c: TagsInputContext): PartProps {
+  action mouseDown(event: MouseEvent) { event.preventDefault() }
+  action press() { c.clear() }
+  state = tagsInputState(c)
+  inert = c.disabled || c.readOnly
+  {
+    ...state,
+    type: "button",
+    tabindex: "-1",
+    disabled: inert ? true : undefined,
+    onMouseDown: mouseDown,
+    onClick: press,
+  }
+}
+
+// Rendered only while there is something to clear, unless `keepMounted`.
+export component TagsInputClear({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & ButtonProps) {
+  c = use tagsInput
+  own = tagsInputClear(c)
+  merged = latest mergeProps(own, rest)
+  shown = latest keepMounted || c.value.length > 0 || c.inputValue != ""
+  {if shown {
+    <button {...merged}>{children}</button>
+  }}
+}

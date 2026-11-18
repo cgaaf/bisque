@@ -1,0 +1,68 @@
+import { tagsInput, TagsInputRoot, TagsInputControl, TagsInputTag, TagsInputTagText, TagsInputTagRemove, TagsInputInput } from "../tags-input.rx"
+
+component Tags() {
+  c = use tagsInput
+  {for tag in c.tags {
+    <TagsInputTag index={tag.index} data-testid="tag">
+      <TagsInputTagText />
+      <TagsInputTagRemove>×</TagsInputTagRemove>
+    </TagsInputTag>
+  }}
+}
+
+fn short(value: string): boolean => value.length <= 6
+
+// The last root is controlled: the owner keeps the tags in lower case and the text in upper case.
+export default component Fixture() {
+  source refused := ""
+  source controlled: string[] := ["red"]
+  source text := ""
+  <main style="display: grid; gap: 8px; width: 360px">
+    <TagsInputRoot data-testid="limited" max={3} validate={short} defaultValue={["one"]} onValueInvalid={(details) => { refused := `${details.reason}:${details.value}` }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Limited" /></TagsInputControl>
+    </TagsInputRoot>
+    <output data-testid="refused">{refused}</output>
+
+    <TagsInputRoot data-testid="duplicates" allowDuplicates defaultValue={["x", "y", "x"]} messages={{ highlighted: (value) => `on ${value}`, removed: (value) => `gone ${value}` }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Duplicates" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="blur" addOnBlur>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Blur" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="paste" addOnPaste delimiter=";">
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Paste" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="typed-paste">
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Typed paste" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="no-delimiter" delimiter={null}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="No delimiter" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="disabled" disabled defaultValue={["a"]}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Disabled" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="readonly" readOnly defaultValue={["a", "b"]}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Read-only" /></TagsInputControl>
+    </TagsInputRoot>
+
+    <TagsInputRoot data-testid="controlled" value={controlled} onValueChange={(next) => { controlled := next.map((v) => v.toLowerCase()) }} inputValue={text} onInputValueChange={(next) => { text := next.toUpperCase() }}>
+      <TagsInputControl><Tags /><TagsInputInput aria-label="Controlled" /></TagsInputControl>
+    </TagsInputRoot>
+    <output data-testid="controlled-value">{controlled.join("|")}</output>
+    <output data-testid="controlled-text">{text}</output>
+    <button onClick={() => { controlled := ["blue"] }}>Set blue</button>
+    <textarea aria-label="Source" />
+
+    <form data-testid="native-form">
+      <TagsInputRoot data-testid="native" required name="needed">
+        <TagsInputControl><Tags /><TagsInputInput aria-label="Native required" /></TagsInputControl>
+      </TagsInputRoot>
+    </form>
+  </main>
+}
