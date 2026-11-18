@@ -1,7 +1,7 @@
 // The docs site's page frame and the pieces every page is built from. A page is a program under ./pages whose
 // default component wraps its content in <DocsPage>. The site's own chrome uses the library: Dialog for the
 // navigation on a small screen, Tabs for a demo's source files.
-import { highlight, prose, sourceOf, highlightedSourceOf, apiOf, navigation, neighbours, headings, href, setTitle, toggleTheme, copyText } from "./lib/site.js"
+import { prose, highlightedSourceOf, highlightedCode, copyCode, apiOf, navigation, neighbours, headings, href, setTitle, toggleTheme } from "./lib/site.js"
 import { TabsRoot, TabsList, TabsTab, TabsPanel } from "../src/tabs/tabs.rx"
 import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "../src/dialog/dialog.rx"
 
@@ -111,8 +111,6 @@ export component Demo(props: DemoProps) {
   name = path.split("/").pop()
   rx = highlightedSourceOf(peek(path + ".rx"))
   css = highlightedSourceOf(peek(path + ".css"))
-  rawRx = sourceOf(peek(path + ".rx"))
-  rawCss = sourceOf(peek(path + ".css"))
   source tab: string := "rx"
   source feedback := ""
   action choose(value: string) {
@@ -121,7 +119,7 @@ export component Demo(props: DemoProps) {
   }
   action copy() {
     try {
-      await copyText(tab == "css" ? rawCss : rawRx)
+      await copyCode(tab == "css" ? css : rx)
       feedback := "Copied"
     } catch (error) {
       feedback := "Select the source text and copy it manually."
@@ -160,7 +158,7 @@ export type InlineCodeProps = { code: string; lang?: string }
 
 // A short snippet written in the page itself.
 export component Snippet(props: InlineCodeProps) {
-  html = highlight(props.code, props.lang ?? "rx")
+  html = highlightedCode(peek(props.code), peek(props.lang ?? "rx"))
   <pre class="code code-block"><code translate="no" innerHTML={html} /></pre>
 }
 

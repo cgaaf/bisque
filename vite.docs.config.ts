@@ -4,6 +4,7 @@ import { copyFileSync, existsSync, globSync, mkdirSync, readFileSync } from "nod
 import { dirname, join, resolve } from "node:path";
 import { defineConfig, type Plugin } from "vite";
 import solid from "@solidjs/vite-plugin";
+import { highlight } from "./docs/lib/impl/highlight.ts";
 
 const root = resolve(import.meta.dirname, "docs");
 const outDir = resolve(import.meta.dirname, "dist/docs");
@@ -33,26 +34,32 @@ function staticRoutes(): Plugin {
 }
 
 /**
- * `import text from "./file.rx?text"`: a file's text as a string. Vite's own `?raw` can't be used for a demo's
- * source, because the ReactiveScript plugin compiles any `.rx` id whatever its query.
+ * `import html from "./file.rx?highlighted"`: a file highlighted as HTML, here and not in the browser, so a page
+ * is sent neither Shiki nor its grammars. A `.txt` snippet is highlighted as the language its name ends with
+ * before that (`anatomy.rx.txt`).
  */
-function sourceText(): Plugin {
-  const prefix = "\0bisque-text:";
+function highlightedSource(): Plugin {
+  const prefix = "\0bisque-highlighted:";
+  const query = "?highlighted";
   return {
-    name: "bisque-docs-source-text",
+    name: "bisque-docs-highlighted-source",
     enforce: "pre",
     resolveId(source, importer) {
-      if (!source.endsWith("?text") || !importer) return;
-      // The suffix keeps other plugins from treating the module as the kind of file it quotes.
-      return `${prefix}${resolve(dirname(importer), source.slice(0, -"?text".length))}.txt`;
+      if (!source.endsWith(query) || !importer) return;
+      // The suffix keeps other plugins from treating the module as the kind of file it quotes: the ReactiveScript
+      // plugin compiles any `.rx` id whatever its query.
+      return `${prefix}${resolve(dirname(importer), source.slice(0, -query.length))}.txt`;
     },
     load(id) {
       if (!id.startsWith(prefix)) return;
       const file = id.slice(prefix.length, -".txt".length);
       this.addWatchFile(file);
+      const name = file.replace(/\.txt$/, "");
+      const lang = name.endsWith(".css") ? "css" : name.endsWith(".rx") ? "rx" : "text";
+      const html = highlight(readFileSync(file, "utf8").trimEnd(), lang);
       // Rolldown gives a `.txt` id the "text" module type and would quote this module a second time, so the page
       // showed `export default "…"`. Saying it is JavaScript keeps the suffix's job without that.
-      return { code: `export default ${JSON.stringify(readFileSync(file, "utf8"))};`, moduleType: "js" };
+      return { code: `export default ${JSON.stringify(html)};`, moduleType: "js" };
     },
   };
 }
@@ -60,6 +67,6 @@ function sourceText(): Plugin {
 export default defineConfig({
   root,
   base: process.env.DOCS_BASE ?? "/",
-  plugins: [sourceText(), solid(), staticRoutes()],
+  plugins: [highlightedSource(), solid(), staticRoutes()],
   build: { outDir, emptyOutDir: true, target: "esnext" },
 });

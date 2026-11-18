@@ -2,13 +2,12 @@
 // An error here means the declaration and the implementation disagree: fix whichever is wrong.
 import type { Accessor } from "solid-js";
 
-type Implementation = typeof import("./impl/site.ts") & typeof import("./impl/highlight.ts");
+type Implementation = typeof import("./impl/site.ts");
 type Conforms<Actual extends Declared, Declared> = Actual;
 export type Checked = [
-  Conforms<Implementation["highlight"], (code: string, lang: string) => string>,
   Conforms<Implementation["prose"], (text: string) => string>,
-  Conforms<Implementation["sourceOf"], (path: string) => Accessor<string>>,
   Conforms<Implementation["highlightedSourceOf"], (path: string) => Accessor<string>>,
+  Conforms<Implementation["highlightedCode"], (code: string, lang: string) => Accessor<string>>,
   Conforms<Implementation["apiOf"], (family: string) => Accessor<any>>,
   Conforms<Implementation["navigation"], () => any>,
   Conforms<Implementation["pagePath"], () => string>,
@@ -17,5 +16,5 @@ export type Checked = [
   Conforms<Implementation["headings"], () => Accessor<any>>,
   Conforms<Implementation["setTitle"], (title: string) => void>,
   Conforms<Implementation["toggleTheme"], () => void>,
-  Conforms<Implementation["copyText"], (text: string) => Promise<void>>,
+  Conforms<Implementation["copyCode"], (html: string) => Promise<void>>,
 ];

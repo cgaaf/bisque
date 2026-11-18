@@ -1,12 +1,13 @@
 // Syntax highlighting for the two languages the docs show: ReactiveScript, with its own TextMate grammar
-// (rx.tmLanguage.json, vendored from the VS Code extension), and CSS. Shiki runs the grammars synchronously, so a
-// snippet is highlighted as it renders.
+// (rx.tmLanguage.json, vendored from the VS Code extension), and CSS, run by Shiki. The build does this
+// (vite.docs.config.ts, `?highlighted`), so a page is sent a file's HTML and not Shiki and its grammars. A page
+// must not import this module: site.ts loads it on demand for the one caller that highlights text at run time.
 import { createHighlighterCoreSync } from "shiki/core";
 import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
 import type { LanguageRegistration, ThemeRegistration } from "shiki/core";
 import tsx from "shiki/langs/tsx.mjs";
 import css from "shiki/langs/css.mjs";
-import rxGrammar from "./rx.tmLanguage.json";
+import rxGrammar from "./rx.tmLanguage.json" with { type: "json" };
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -68,9 +69,4 @@ export function highlight(code: string, lang: string): string {
         .join(""),
     )
     .join("\n");
-}
-
-/** A sentence from the source as HTML: escaped, with `backticked` words as inline code. */
-export function prose(text: string): string {
-  return escape(text).replace(/`([^`]+)`/g, '<code translate="no">$1</code>');
 }

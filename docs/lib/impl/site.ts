@@ -1,7 +1,6 @@
 // What the docs' pages need from the browser and the build: the route, the navigation, demo sources and the
 // generated API records (both loaded on demand), the page's headings, the theme and the clipboard.
 import { createSignal, onCleanup, type Accessor } from "solid-js";
-import { highlight } from "./highlight.ts";
 
 const BASE = import.meta.env.BASE_URL;
 
@@ -129,8 +128,16 @@ export function neighbours(): { previous: NavItem | undefined; next: NavItem | u
   return { previous: index > 0 ? all[index - 1] : undefined, next: index >= 0 ? all[index + 1] : all[0] };
 }
 
-const rawSources = import.meta.glob<string>("../../demos/**/*.{rx,css,txt}", {
-  query: "?text",
+const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+
+/** A sentence from the source as HTML: escaped, with `backticked` words as inline code. */
+export function prose(text: string): string {
+  return escape(text).replace(/`([^`]+)`/g, '<code translate="no">$1</code>');
+}
+
+// The files under docs/demos, each as the HTML the build highlighted it to (vite.docs.config.ts).
+const highlightedSources = import.meta.glob<string>("../../demos/**/*.{rx,css,txt}", {
+  query: "?highlighted",
   import: "default",
 });
 
@@ -148,17 +155,27 @@ function lazy<T>(initial: T, load: (() => Promise<T>) | undefined): Accessor<T> 
   return () => box().value;
 }
 
-/** The text of a file under docs/demos ("popover/hero.rx"), "" until it has loaded. */
-export function sourceOf(path: string): Accessor<string> {
-  return lazy("", rawSources[`../../demos/${path}`]);
+/** A file under docs/demos ("popover/hero.rx") highlighted as HTML, "" until it has loaded. */
+export function highlightedSourceOf(path: string): Accessor<string> {
+  return lazy("", highlightedSources[`../../demos/${path}`]);
 }
 
-/** The same, highlighted as HTML. A `.txt` snippet is highlighted as the language its name ends with before it. */
-export function highlightedSourceOf(path: string): Accessor<string> {
-  const load = rawSources[`../../demos/${path}`];
-  const name = path.replace(/\.txt$/, "");
-  const lang = name.endsWith(".css") ? "css" : name.endsWith(".rx") ? "rx" : "text";
-  return lazy("", load && (() => load().then((text) => highlight(text.trimEnd(), lang))));
+/**
+ * Puts the text of highlighted HTML on the clipboard: a demo's source as the page shows it. Nothing is awaited
+ * before the write, which Safari only allows while the click that asked for it is being handled.
+ */
+export async function copyCode(html: string): Promise<void> {
+  const holder = document.createElement("template");
+  holder.innerHTML = html;
+  await navigator.clipboard.writeText(holder.content.textContent);
+}
+
+/**
+ * Text written in a page, highlighted as HTML. The highlighter is fetched for it, so the text shows plain until
+ * that arrives; a file under docs/demos is highlighted by the build instead (`highlightedSourceOf`).
+ */
+export function highlightedCode(code: string, lang: string): Accessor<string> {
+  return lazy(escape(code), () => import("./highlight.ts").then(({ highlight }) => highlight(code, lang)));
 }
 
 type Api = { family: string; parts: unknown[] };
@@ -225,8 +242,4 @@ export function toggleTheme(): void {
 export function syncThemeColor(): void {
   const color = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
   document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
-}
-
-export async function copyText(text: string): Promise<void> {
-  await navigator.clipboard.writeText(text);
 }
