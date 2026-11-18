@@ -1,0 +1,38 @@
+/* Styling only, with scroll-driven animations: each section is a wrapping element with its own timeline name,
+   and a link is "on" while its section covers a 1px line at the top of the scrollport. No aria-current, no
+   onActiveChange, nothing for flat headings without a wrapper, and one rule per section. */
+.page {
+  timeline-scope: --install, --usage;
+}
+
+section {
+  view-timeline-inset: 0px calc(100% - 1px);
+}
+
+#install {
+  view-timeline-name: --install;
+}
+
+#usage {
+  view-timeline-name: --usage;
+}
+
+@keyframes on {
+  from,
+  to {
+    font-weight: 600;
+  }
+}
+
+nav a {
+  animation: on linear none;
+  animation-range: cover;
+}
+
+nav a[href="#install"] {
+  animation-timeline: --install;
+}
+
+nav a[href="#usage"] {
+  animation-timeline: --usage;
+}

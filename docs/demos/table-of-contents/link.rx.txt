@@ -1,0 +1,9 @@
+import { tableOfContents, tableOfContentsLink } from "./bisque/table-of-contents/table-of-contents.rx"
+
+// A link of your own: the props function marks it, and the root handles its click as it does any
+// <a href="#…"> inside it.
+component SectionLink(props: { href: string; children: View }) {
+  c = use tableOfContents
+  own = tableOfContentsLink(c, props.href)
+  <a class="section-link" {...own} href={props.href}>{props.children}</a>
+}

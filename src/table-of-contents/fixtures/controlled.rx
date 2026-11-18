@@ -1,0 +1,32 @@
+import { TableOfContentsRoot, TableOfContentsLink } from "../table-of-contents.rx"
+
+// The owner holds the active id and moves it only from its own button; the scroll position is reported. Two
+// can't reach the top of the box: at its end, the position names Three.
+export default component Fixture() {
+  source box: HTMLElement | undefined := undefined
+  source active := "c-one"
+  source reported: string := "none"
+  action setBox(element: HTMLElement) { box := element }
+  action report(id: string | undefined) { reported := id ?? "undefined" }
+  <style>
+    :global(.controlled h2) { height: 30px; margin: 0; }
+    :global(.controlled .box) { height: 200px; overflow: auto; }
+  </style>
+  <div class="controlled">
+    <output data-testid="reported">{reported}</output>
+    <button type="button" onClick={() => { active := "c-three" }}>Mark three</button>
+    <TableOfContentsRoot aria-label="Sections" container={box} activeId={active} onActiveChange={report}>
+      <TableOfContentsLink href="#c-one">One</TableOfContentsLink>
+      <a href="#c-two" data-testid="plain">Two (a plain link)</a>
+      <TableOfContentsLink href="#c-three">Three</TableOfContentsLink>
+    </TableOfContentsRoot>
+    <div class="box" data-testid="box" ref={setBox}>
+      <h2 id="c-one">One</h2>
+      <div style="height: 300px"></div>
+      <h2 id="c-two">Two</h2>
+      <div style="height: 50px"></div>
+      <h2 id="c-three">Three</h2>
+      <div style="height: 50px"></div>
+    </div>
+  </div>
+}

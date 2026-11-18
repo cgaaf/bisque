@@ -1,0 +1,134 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TableOfContentsHero } from "../../demos/table-of-contents/hero.rx"
+import { TableOfContentsCurrent } from "../../demos/table-of-contents/current.rx"
+
+export default component Page() {
+  <DocsPage title="Table of Contents" subtitle="A list of links to a document's sections that marks the one being read.">
+    <Demo source="table-of-contents/hero"><TableOfContentsHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. The lists and items are ordinary <code>{"<ul>"}</code> and{" "}
+      <code>{"<li>"}</code>; a nested level is a list inside an item:
+    </p>
+    <Code file="table-of-contents/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Almost all of it. The root is a <code>{"<nav>"}</code> landmark and every link is a real fragment link,{" "}
+      <code>{"<a href=\"#install\">"}</code>, so without any script it scrolls to its heading, updates the URL and
+      the history, and works with the browser's back button. The browser also provides:
+    </p>
+    <ul>
+      <li><code>scroll-margin-top</code> on the headings, to keep the one a link jumps to clear of a sticky header.</li>
+      <li><code>scroll-behavior: smooth</code> on the scroll container, to animate the jump.</li>
+      <li><code>:target</code>, to style the heading the URL names.</li>
+      <li><code>:has()</code>, to style the items around the active link at every level of a nested list.</li>
+    </ul>
+    <p>
+      What the browser can't tell you everywhere is which section is in view. CSS has a selector for exactly that,{" "}
+      <code>:target-current</code> with <code>scroll-target-group</code>, but it ships only in Chrome: Firefox and
+      Safari lack it. Scroll-driven animations (<code>view-timeline</code>) are in all three engines and can colour
+      a link while its section crosses a line, but only for sections wrapped in an element of their own, with a
+      CSS rule per section, nothing at the end of the page, and no state a screen reader hears. So the library
+      adds:
+    </p>
+    <ul>
+      <li>
+        The active section, from the scroll position of the page or of a scroll container, kept current as the
+        content resizes and as headings come and go.
+      </li>
+      <li>
+        <code>aria-current="location"</code> and <code>data-active</code> on the link to it. ARIA 1.2 defines{" "}
+        <code>location</code> as the current location within a context; <code>page</code> would name the current
+        page of a set.
+      </li>
+      <li>A clicked link becoming active at once, and staying active through the scroll it starts.</li>
+      <li>The active link's position and size for an indicator.</li>
+    </ul>
+    <p>
+      There are no List or Item parts: they would render a <code>{"<ul>"}</code> and an <code>{"<li>"}</code> with
+      nothing to add. The library ships no styles, and smooth scrolling is the page's CSS.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="active-section">Which section is active</h3>
+    <p>
+      A heading counts as reached once its top has come up to a line <code>offset</code> pixels below the top of
+      the scroll container. The active section is the last one reached, so:
+    </p>
+    <ul>
+      <li>With several headings on screen, the lowest of those past the line wins, not the first one visible.</li>
+      <li>A section taller than the screen stays active after its heading has scrolled away.</li>
+      <li>
+        At the very end of the page, the last section is active even if its heading can't scroll up to the line.
+      </li>
+      <li>Before the first heading reaches the line (an introduction), no link is marked.</li>
+    </ul>
+    <p>
+      A click on a link, or <kbd>Enter</kbd> on it, makes it active at once. The headings a smooth scroll passes on
+      the way don't take over, and neither does where the scroll ends: a section near the end of the page that
+      can't reach the line stays marked until you scroll again.
+    </p>
+
+    <h3 id="page">The page, a sticky header and smooth scrolling</h3>
+    <p>
+      By default the root follows the page's own scroll. Give it <code>offset</code> for a sticky header, and give
+      the headings a <code>scroll-margin-top</code> no larger than the offset, so a heading a link jumps to counts
+      as reached. Ask for smooth scrolling on the scroll container, and leave it out for readers who prefer less
+      motion:
+    </p>
+    <Code file="table-of-contents/page.css.txt" />
+
+    <h3 id="container">A scroll container</h3>
+    <p>
+      Pass the element that scrolls as <code>container</code>, as the first demo does. The offset is measured from
+      that element's top. A fragment link brings its heading into view in every scrolling ancestor, so if the
+      container isn't fully on screen, the page scrolls too.
+    </p>
+
+    <h3 id="nested">Nested levels and the indicator</h3>
+    <p>
+      Nested headings are a list inside the item of their parent. Every link is followed, whatever its level, and
+      the items around the active link are <code>{"li:has([aria-current])"}</code>. <code>TableOfContentsIndicator</code>{" "}
+      goes inside the root and carries the active link's box as CSS variables, measured against the root:{" "}
+      <code>--active-link-top</code>, <code>--active-link-left</code>, <code>--active-link-width</code> and{" "}
+      <code>--active-link-height</code>. Give the root <code>position: relative</code> and transition the variables
+      to make it slide.
+    </p>
+
+    <h3 id="current">Following the active section</h3>
+    <p>
+      <code>onActiveChange</code> is called with each new active id (<code>undefined</code> before the first
+      heading), so the page can show where the reader is. Pass <code>activeId</code> as well to decide which link
+      is marked yourself.
+    </p>
+    <Demo source="table-of-contents/current"><TableOfContentsCurrent /></Demo>
+
+    <h3 id="dynamic">Lists built from the content</h3>
+    <p>
+      The root follows the targets of the fragment links inside it, read from the document, so a list rendered
+      from headings that load later needs nothing more: a link whose heading isn't there yet is skipped until it
+      arrives, and a heading that is removed or renamed is dropped without waiting for a scroll.
+    </p>
+
+    <h3 id="links">Links of your own</h3>
+    <p>
+      Any <code>{"<a href=\"#…\">"}</code> inside the root counts as an item when it is clicked. To mark a link of
+      your own as well, spread <code>tableOfContentsLink</code> on it:
+    </p>
+    <Code file="table-of-contents/link.rx.txt" />
+
+    <h3 id="css-only">Styling only, without the library</h3>
+    <p>
+      If all you need is to colour the link of the section on screen, and your sections are wrapped in elements of
+      their own, scroll-driven animations can do it in CSS. This was checked in Chrome and Safari; Firefox ships it
+      from version 159. It sets no <code>aria-current</code> and calls nothing:
+    </p>
+    <Code file="table-of-contents/css-only.css.txt" />
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="table-of-contents" />
+  </DocsPage>
+}

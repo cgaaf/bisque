@@ -1,0 +1,25 @@
+/* The usual case: the page scrolls under a sticky header 64px tall, and the root has offset={72}. */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Where a heading a link jumps to comes to rest: below the header, and no lower than the offset line. */
+h2[id],
+h3[id] {
+  scroll-margin-top: 72px;
+}
+
+/* Style the active link, and the items around it at every level. */
+nav a[aria-current] {
+  font-weight: 600;
+}
+
+nav li:has([aria-current]) > a {
+  color: CanvasText;
+}

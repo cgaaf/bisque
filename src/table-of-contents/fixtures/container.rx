@@ -1,0 +1,38 @@
+import { TableOfContentsRoot, TableOfContentsLink } from "../table-of-contents.rx"
+
+// The sections scroll inside a 240px box with smooth scrolling; the list sits outside it.
+export default component Fixture() {
+  source box: HTMLElement | undefined := undefined
+  source reported: string := "none"
+  action setBox(element: HTMLElement) { box := element }
+  action report(id: string | undefined) { reported := id ?? "undefined" }
+  <style>
+    :global(.nested h2) { height: 30px; margin: 0; }
+    :global(.nested .box) { height: 240px; overflow: auto; scroll-behavior: smooth; position: relative; }
+    :global(.nested a) { display: block; }
+  </style>
+  <div class="nested">
+    <output data-testid="reported">{reported}</output>
+    <TableOfContentsRoot aria-label="Sections" container={box} onActiveChange={report}>
+      <ul>
+        <li><TableOfContentsLink href="#n-one">One</TableOfContentsLink></li>
+        <li><TableOfContentsLink href="#n-two">Two</TableOfContentsLink></li>
+        <li><TableOfContentsLink href="#n-three">Three</TableOfContentsLink></li>
+        <li><TableOfContentsLink href="#n-four">Four</TableOfContentsLink></li>
+        <li><TableOfContentsLink href="#n-five">Five</TableOfContentsLink></li>
+      </ul>
+    </TableOfContentsRoot>
+    <div class="box" data-testid="box" ref={setBox}>
+      <h2 id="n-one">One</h2>
+      <div style="height: 400px"></div>
+      <h2 id="n-two">Two</h2>
+      <div style="height: 400px"></div>
+      <h2 id="n-three">Three</h2>
+      <div style="height: 400px"></div>
+      <h2 id="n-four">Four</h2>
+      <div style="height: 100px"></div>
+      <h2 id="n-five">Five</h2>
+      <div style="height: 60px"></div>
+    </div>
+  </div>
+}

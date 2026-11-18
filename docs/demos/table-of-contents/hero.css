@@ -1,0 +1,134 @@
+.TableOfContentsHero {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 1rem;
+  width: min(34rem, 100%);
+  font-size: 0.875rem;
+
+  /* The indicator is placed against the root. */
+  .Root {
+    position: relative;
+    align-self: start;
+  }
+
+  .Title {
+    margin: 0 0 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .List {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-left: 1px solid light-dark(#e4e4ea, #2a2a31);
+  }
+
+  /* A nested list is just a list inside an item: indent it. */
+  .List .List {
+    border-left: 0;
+    padding-left: 0.75rem;
+  }
+
+  .Link {
+    display: block;
+    padding: 0.25rem 0 0.25rem 0.75rem;
+    color: light-dark(#63636e, #9a9aa6);
+    text-decoration: none;
+    border-radius: 0.25rem;
+  }
+
+  .Link:hover,
+  .Link[aria-current] {
+    color: light-dark(#18181b, #f4f4f5);
+  }
+
+  /* The item around the active link, at any level: the platform's :has(), no attribute needed. */
+  li:has([aria-current]) > .Link {
+    font-weight: 500;
+  }
+
+  .Link:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -2px;
+  }
+
+  /* The active link's box arrives as CSS variables relative to the root; the transition makes it slide. */
+  .Indicator {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 2px;
+    height: var(--active-link-height);
+    translate: 0 var(--active-link-top);
+    background: light-dark(#18181b, #f4f4f5);
+    transition: translate 200ms ease;
+  }
+
+  .Article {
+    position: relative;
+    height: 18rem;
+    overflow-y: auto;
+    padding: 0 1rem 1rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+    line-height: 1.5;
+    /* The jump from a link animates; left out for readers who ask for less motion. */
+    scroll-behavior: smooth;
+
+    p {
+      margin: 0.5rem 0;
+      color: light-dark(#3f3f46, #c4c4cc);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .Article {
+      scroll-behavior: auto;
+    }
+
+    .Indicator {
+      transition: none;
+    }
+  }
+
+  /* A sticky header 44px tall. The root's offset={56} puts the line where a heading counts as reached just below it. */
+  .Header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    height: 44px;
+    margin: 0 -1rem;
+    padding: 0 1rem;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid light-dark(#e4e4ea, #2a2a31);
+    background: light-dark(#fff, #16161a);
+    font-weight: 600;
+  }
+
+  .Heading {
+    margin: 1rem 0 0.25rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    /* Keeps a heading a link jumps to clear of the header. No more than the offset, so it then counts as reached. */
+    scroll-margin-top: 52px;
+  }
+
+  h4.Heading {
+    font-size: 0.875rem;
+  }
+
+  /* The heading the URL names. */
+  .Heading:target {
+    text-decoration: underline 2px light-dark(#2f5bea, #8eabff);
+    text-underline-offset: 4px;
+  }
+
+  @media (width < 30rem) {
+    grid-template-columns: 6.5rem minmax(0, 1fr);
+    gap: 0.5rem;
+  }
+}

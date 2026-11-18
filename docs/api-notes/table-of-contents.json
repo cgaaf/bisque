@@ -1,0 +1,29 @@
+{
+  "TableOfContentsRoot": {
+    "description": "A `<nav>` that follows which section of the document is being read and marks the link to it. The sections are the targets of the fragment links inside it. Label it with `aria-label`.",
+    "props": {
+      "activeId": "The id of the section to mark. Pass it with `onActiveChange` to decide which link is marked yourself.",
+      "onActiveChange": "Called with the id of the new active section when the scroll position names another one or a link is clicked; `undefined` before the first heading reaches the line.",
+      "offset": "How far below the top of the scroll container a heading counts as reached, in px: the height of a sticky header. Keep the headings' `scroll-margin-top` no larger.",
+      "container": "The element that scrolls the sections. Without it, the page's own scroll is followed."
+    }
+  },
+  "TableOfContentsLink": {
+    "description": "A fragment link to one section. It carries `aria-current=\"location\"` while its section is active; clicking it makes it active at once.",
+    "props": {
+      "href": "`#` and the id of the section's heading: `\"#install\"`."
+    },
+    "dataAttributes": {
+      "data-active": "Present while the link's section is active."
+    }
+  },
+  "TableOfContentsIndicator": {
+    "description": "A decorative element that follows the active link, placed with CSS variables measured against the root. Place it inside the root and give the root `position: relative`. It is rendered only while a link is active.",
+    "cssVariables": {
+      "--active-link-top": "The active link's top edge, from the root's padding box.",
+      "--active-link-left": "The active link's left edge, from the root's padding box.",
+      "--active-link-width": "The active link's width.",
+      "--active-link-height": "The active link's height."
+    }
+  }
+}

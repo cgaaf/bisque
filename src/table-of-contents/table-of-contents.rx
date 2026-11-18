@@ -1,0 +1,110 @@
+// Table of Contents: an "On this page" list of links to a document's sections that marks the one being read
+// (scroll spy). Base UI has no such component; the parts follow Ark UI's and Melt UI's table of contents, and the
+// ARIA is a `<nav>` landmark of ordinary links with `aria-current="location"` (WAI-ARIA 1.2: "the current
+// location within an environment or context") on the link to the section in view.
+//
+// The platform does most of it: a fragment link scrolls to its heading and updates the URL without script,
+// `scroll-margin-top` keeps the heading clear of a sticky header, `scroll-behavior: smooth` animates the jump,
+// `:target` styles the heading, and `:has()` styles the list items around the active link. What no engine does
+// for every case is know which section is in view (`:target-current` / `scroll-target-group` are Chrome only);
+// that is `createTableOfContents` in ../internal/impl/table-of-contents.ts. There is no List or Item part: they
+// would be a `<ul>` and an `<li>` with nothing to add, and nesting is just a list inside an item.
+import { mergeProps, createRef } from "../internal/props.js"
+import { targetId, createTableOfContents, createActiveLinkRect } from "../internal/table-of-contents.js"
+import { NavProps, AnchorProps, SpanProps, PartProps } from "../internal/types.rx"
+
+// The active link's box inside the root, in px (see TableOfContentsIndicator).
+export type TableOfContentsRect = { top: number; left: number; width: number; height: number }
+
+export type TableOfContentsContext = {
+  // The id of the section being read: the `activeId` prop, else the one the scroll position names.
+  activeId: string | undefined
+  rect: TableOfContentsRect | undefined
+}
+
+export context tableOfContents: TableOfContentsContext
+
+export type TableOfContentsRootProps = {
+  // The active section's id. Pass it with `onActiveChange` to control which link is marked.
+  activeId?: string
+  onActiveChange?: (id: string | undefined) => void
+  // How far below the top of the scroll container a heading counts as reached, in px: a sticky header's height.
+  offset?: number
+  // The element that scrolls the sections. Default: the viewport.
+  container?: HTMLElement
+  children?: View
+} & Omit<NavProps, "children">
+
+// The sections followed are the targets of the fragment links inside the root (`href="#id"`), read from the DOM,
+// so a list rendered from content that arrives later needs nothing more.
+export component TableOfContentsRoot(props: TableOfContentsRootProps) {
+  source nav: HTMLElement | undefined := undefined
+  action writeNav(element: HTMLElement) { nav := element }
+  setNav = createRef(writeNav)
+  // Called from a scroll frame or the click itself, never inside a change of the component's own.
+  action report(id: string | undefined) {
+    if (props.onActiveChange) {
+      let notify = props.onActiveChange
+      notify(id)
+    }
+  }
+  spied = createTableOfContents(nav, props.container, props.offset ?? 0, report)
+  current = props.activeId ?? spied
+  rect = createActiveLinkRect(nav, current)
+
+  provide tableOfContents = { activeId: current, rect: rect }
+
+  { activeId, onActiveChange, offset, container, children, ...rest } = props
+  own = { ref: setNav }
+  merged = latest mergeProps(own, rest)
+  <nav {...merged}>{children}</nav>
+}
+
+// A link to one section, `href="#id"`. Clicking it (or Enter) makes it active at once, before and while the page
+// scrolls; that is handled by the root, so any `<a href="#id">` inside the root behaves the same, and this
+// function only marks the active one.
+export fn tableOfContentsLink(ref c: TableOfContentsContext, ref href: string | undefined): PartProps {
+  isActive = c.activeId != undefined && targetId(href) == c.activeId
+  {
+    "aria-current": isActive ? "location" : undefined,
+    "data-active": isActive ? "" : undefined,
+  }
+}
+
+export type TableOfContentsLinkProps = {
+  // The section's fragment, `#` and its id: `"#install"`.
+  href?: string
+} & Omit<AnchorProps, "href">
+
+export component TableOfContentsLink(props: TableOfContentsLinkProps) {
+  c = use tableOfContents
+  own = tableOfContentsLink(c, latest props.href)
+  merged = latest mergeProps(own, props)
+  <a {...merged}>{props.children}</a>
+}
+
+// Follows the active link. Its position and size are CSS variables relative to the root (give the root
+// `position: relative`): `--active-link-top`, `--active-link-left`, `--active-link-width`, `--active-link-height`.
+// Hidden until the active link has a size. Place it inside the root.
+export fn tableOfContentsIndicator(ref c: TableOfContentsContext): PartProps {
+  r = c.rect
+  {
+    "aria-hidden": "true",
+    hidden: r == undefined || r.width == 0 || r.height == 0 ? true : undefined,
+    style: r == undefined ? undefined : {
+      "--active-link-top": `${r.top}px`,
+      "--active-link-left": `${r.left}px`,
+      "--active-link-width": `${r.width}px`,
+      "--active-link-height": `${r.height}px`,
+    },
+  }
+}
+
+export component TableOfContentsIndicator(props: SpanProps) {
+  c = use tableOfContents
+  own = tableOfContentsIndicator(c)
+  merged = latest mergeProps(own, props)
+  {if c.activeId != undefined {
+    <span {...merged} />
+  }}
+}

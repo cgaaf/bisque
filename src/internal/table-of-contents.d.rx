@@ -1,0 +1,7 @@
+// How .rx may use ./table-of-contents.js (implemented in ./impl/table-of-contents.ts): scroll spy for a table of
+// contents. A `ref` parameter is passed live; the others are read once. Bind every call.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./table-of-contents.d.ts.
+export pure fn targetId(href: string | undefined): string | undefined
+export pure fn createScrollSpy(ref ids: string[], ref container: HTMLElement | undefined, ref offset: number, onChange: (id: string | undefined) => void): [ref string | undefined, (id: string) => void]
+export pure fn createTableOfContents(ref nav: HTMLElement | undefined, ref container: HTMLElement | undefined, ref offset: number, onChange: (id: string | undefined) => void): ref string | undefined
+export pure fn createActiveLinkRect(ref nav: HTMLElement | undefined, ref activeId: string | undefined): ref { top: number; left: number; width: number; height: number } | undefined

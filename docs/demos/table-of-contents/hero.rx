@@ -1,0 +1,43 @@
+import { TableOfContentsRoot, TableOfContentsLink, TableOfContentsIndicator } from "../../../src/table-of-contents/table-of-contents.rx"
+
+export component TableOfContentsHero() {
+  source article: HTMLElement | undefined := undefined
+  action setArticle(element: HTMLElement) { article := element }
+  <div class="TableOfContentsHero">
+    <TableOfContentsRoot class="Root" aria-label="On this page" container={article} offset={56}>
+      <p class="Title">On this page</p>
+      <ul class="List">
+        <li><TableOfContentsLink class="Link" href="#toc-hero-water">Water</TableOfContentsLink></li>
+        <li>
+          <TableOfContentsLink class="Link" href="#toc-hero-leaves">Leaves</TableOfContentsLink>
+          <ul class="List">
+            <li><TableOfContentsLink class="Link" href="#toc-hero-measuring">Measuring</TableOfContentsLink></li>
+            <li><TableOfContentsLink class="Link" href="#toc-hero-storing">Storing</TableOfContentsLink></li>
+          </ul>
+        </li>
+        <li><TableOfContentsLink class="Link" href="#toc-hero-steeping">Steeping</TableOfContentsLink></li>
+        <li><TableOfContentsLink class="Link" href="#toc-hero-serving">Serving</TableOfContentsLink></li>
+      </ul>
+      <TableOfContentsIndicator class="Indicator" />
+    </TableOfContentsRoot>
+    <div class="Article" ref={setArticle}>
+      <header class="Header">Brewing guide</header>
+      <p>A short guide to making a better pot, from the kettle to the cup.</p>
+      <h3 class="Heading" id="toc-hero-water">Water</h3>
+      <p>Soft water lets the flavour through. If the kettle scales up quickly, try filtered water for a week and compare.</p>
+      <p>Green teas want water well below boiling, around 75 to 80 degrees. Hotter water draws out bitterness quickly.</p>
+      <h3 class="Heading" id="toc-hero-leaves">Leaves</h3>
+      <p>Whole leaves give a rounder cup than broken ones, and they can be steeped more than once.</p>
+      <h4 class="Heading" id="toc-hero-measuring">Measuring</h4>
+      <p>Measure by weight rather than by spoon: large, open leaves fill a spoon with far less tea than small, rolled ones.</p>
+      <h4 class="Heading" id="toc-hero-storing">Storing</h4>
+      <p>Store leaves away from light, heat and strong smells, in a container that closes well.</p>
+      <h3 class="Heading" id="toc-hero-steeping">Steeping</h3>
+      <p>Black teas take water just off the boil and three to five minutes. Taste at three, then decide.</p>
+      <p>Oolongs reward several short infusions. Start at thirty seconds and add ten for each round after.</p>
+      <p>Warm the pot first. A cold pot takes the heat out of the water before the leaves have had a chance to open.</p>
+      <h3 class="Heading" id="toc-hero-serving">Serving</h3>
+      <p>Pour all of it out once it is ready, so the last cup isn't stewed.</p>
+    </div>
+  </div>
+}

@@ -1,0 +1,50 @@
+import { TableOfContentsRoot, TableOfContentsLink, TableOfContentsIndicator } from "../table-of-contents.rx"
+
+// The viewport scrolls, under a fixed 40px header: an intro, three headings close together, a section taller than
+// the viewport, and two short sections at the end that can't reach the top.
+export default component Fixture() {
+  source reported: string := "none"
+  source calls := 0
+  action report(id: string | undefined) {
+    reported := id ?? "undefined"
+    calls := calls + 1
+  }
+  <style>
+    :global(.page h2) { height: 30px; margin: 0; scroll-margin-top: 40px; }
+    :global(.page .toc) { position: fixed; top: 40px; right: 0; width: 120px; background: white; z-index: 1; }
+    :global(.page .toc ul) { margin: 0; padding: 0; list-style: none; }
+    :global(.page .toc a) { display: block; height: 20px; }
+  </style>
+  <div class="page">
+    <header style="position: fixed; top: 0; left: 0; right: 0; height: 40px; background: white; z-index: 1">
+      <output data-testid="reported">{reported}</output> <output data-testid="calls">{calls}</output>
+    </header>
+    <TableOfContentsRoot class="toc" aria-label="On this page" offset={40} onActiveChange={report} style="position: fixed">
+      <ul>
+        <li><TableOfContentsLink href="#alpha">Alpha</TableOfContentsLink></li>
+        <li>
+          <TableOfContentsLink href="#beta">Beta</TableOfContentsLink>
+          <ul>
+            <li><TableOfContentsLink href="#gamma">Gamma</TableOfContentsLink></li>
+          </ul>
+        </li>
+        <li><TableOfContentsLink href="#delta">Delta</TableOfContentsLink></li>
+        <li><TableOfContentsLink href="#epsilon">Epsilon</TableOfContentsLink></li>
+      </ul>
+      <TableOfContentsIndicator data-testid="indicator" />
+    </TableOfContentsRoot>
+    <main style="padding-top: 40px">
+      <p style="height: 100px; margin: 0">Intro</p>
+      <h2 id="alpha">Alpha</h2>
+      <div style="height: 100px"></div>
+      <h2 id="beta">Beta</h2>
+      <div style="height: 60px"></div>
+      <h2 id="gamma">Gamma</h2>
+      <div style="height: 1500px"></div>
+      <h2 id="delta">Delta</h2>
+      <div style="height: 300px"></div>
+      <h2 id="epsilon">Epsilon</h2>
+      <div style="height: 100px"></div>
+    </main>
+  </div>
+}

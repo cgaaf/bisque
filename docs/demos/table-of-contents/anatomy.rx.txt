@@ -1,0 +1,13 @@
+import { TableOfContentsRoot, TableOfContentsLink, TableOfContentsIndicator } from "./bisque/table-of-contents/table-of-contents.rx"
+
+<TableOfContentsRoot aria-label="On this page">
+  <ul>
+    <li>
+      <TableOfContentsLink href="#install" />
+      <ul>
+        <li><TableOfContentsLink href="#requirements" /></li>
+      </ul>
+    </li>
+  </ul>
+  <TableOfContentsIndicator />
+</TableOfContentsRoot>
