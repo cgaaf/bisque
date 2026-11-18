@@ -1,0 +1,31 @@
+import { SortableRoot, SortableItem, SortableHandle, SortableDragDetails } from "../sortable.rx"
+
+fn describe(kind: string, d: SortableDragDetails): string => `${kind} ${d.id} ${d.from.list}:${d.from.index}>${d.to.list}:${d.to.index} ${d.reason}`
+
+// A controlled vertical list with handles, the third item disabled; every callback is logged.
+export default component Fixture() {
+  source order: string[] := ["apple", "banana", "cherry", "date", "elder"]
+  source log: string[] := []
+  source changes := 0
+  source clicks := 0
+  listStyle = "list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px"
+  itemStyle = "display: flex; height: 30px; margin: 0; translate: var(--sortable-x) var(--sortable-y)"
+  <main style="width: 240px; padding: 8px">
+    <SortableRoot onClick={() => { clicks := clicks + 1 }} aria-label="Fruit" data-testid="list" style={listStyle} value={order} onValueChange={(next) => { order := next; changes := changes + 1 }}
+      onSortStart={(d) => { log := [...log, describe("start", d)] }}
+      onSortMove={(d) => { log := [...log, describe("over", d)] }}
+      onSortEnd={(d) => { log := [...log, describe("end", d)] }}
+      onSortCancel={(d) => { log := [...log, describe("cancel", d)] }}>
+      {for id in order {
+        <SortableItem id={id} disabled={id == "cherry"} data-testid={id} style={itemStyle}>
+          <SortableHandle aria-label={`Move ${id}`}>⋮</SortableHandle>
+          <span>{id}</span>
+        </SortableItem>
+      }}
+    </SortableRoot>
+    <output data-testid="order">{order.join(",")}</output>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="clicks">{clicks}</output>
+    <output data-testid="log">{log.join("|")}</output>
+  </main>
+}

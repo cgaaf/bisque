@@ -1,0 +1,18 @@
+import { SortableRoot, SortableItem, SortableHandle } from "../sortable.rx"
+
+// A long list that scrolls inside its own box: dragging near the box's edge scrolls it.
+export default component Fixture() {
+  source order: string[] := ["i0", "i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "i9", "i10", "i11"]
+  listStyle = "list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; width: 180px; height: 136px; overflow: auto"
+  itemStyle = "display: flex; flex-shrink: 0; height: 30px; margin: 0; translate: var(--sortable-x) var(--sortable-y)"
+  <main style="padding: 8px">
+    <SortableRoot aria-label="Long" data-testid="list" style={listStyle} value={order} onValueChange={(next) => { order := next }}>
+      {for id in order {
+        <SortableItem id={id} style={itemStyle}>
+          <SortableHandle aria-label={`Move ${id}`}>=</SortableHandle>{id}
+        </SortableItem>
+      }}
+    </SortableRoot>
+    <output data-testid="order">{order.join(",")}</output>
+  </main>
+}

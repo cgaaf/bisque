@@ -1,0 +1,12 @@
+// How .rx may use ./sortable.js (implemented in ./impl/sortable.ts): drag and drop reordering and its order maths.
+// A `ref` parameter is passed live; the others are read once. The drag state is an object whose fields track.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./sortable.d.ts.
+export pure fn moveInOrder(order: string[], id: string, index: number): string[]
+export pure fn moveInLists(lists: Record<string, string[]>, id: string, list: string, index: number): Record<string, string[]>
+export pure fn createOrderCache(): import("./impl/sortable.ts").OrderCache instantiates
+export pure fn cachedOrder(cache: import("./impl/sortable.ts").OrderCache, order: string[]): string[]
+export pure fn sameOrder(a: string[] | undefined, b: string[] | undefined): boolean
+export pure fn sameLists(a: Record<string, string[]> | undefined, b: Record<string, string[]> | undefined): boolean
+export pure fn copyLists(lists: Record<string, string[]> | undefined): Record<string, string[]>
+export pure fn sortableMessages(messages: Partial<import("./impl/sortable.ts").SortableMessages> | undefined): import("./impl/sortable.ts").SortableMessages
+export pure fn createSortable(ref container: HTMLElement | undefined, ref options: { disabled: boolean; messages: import("./impl/sortable.ts").SortableMessages }, onStart: (details: import("./impl/sortable.ts").SortableDragDetails) => void, onOver: (details: import("./impl/sortable.ts").SortableDragDetails) => void, onDrop: (details: import("./impl/sortable.ts").SortableDragDetails) => void, onCancel: (details: import("./impl/sortable.ts").SortableDragDetails) => void, announce: (text: string) => void): import("./impl/sortable.ts").SortableDragState instantiates

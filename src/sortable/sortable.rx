@@ -1,0 +1,436 @@
+// Sortable: reordering the items of a list by drag and drop, and moving items between lists that share a group.
+//
+// Base UI has no such component. The behaviour follows React Aria's drag and drop model for its reorderable
+// ListBox and GridList (Space or Enter on a handle picks an item up, the arrow keys move it, Space or Enter drops
+// it, Escape cancels and puts it back, and each step is announced through a live region) and the WAI-ARIA
+// Authoring Practices' advice on rearrangeable lists: a keyboard path for every pointer action, and no
+// `aria-grabbed`/`aria-dropeffect` (deprecated). dnd-kit's sortable preset is the model for leaving the
+// animation to CSS: nothing is cloned, and the items are moved with transforms the consumer writes.
+//
+// Out of scope: dragging arbitrary things onto arbitrary drop targets, and data in or out of the page (files, text,
+// another window). That is the HTML Drag and Drop API (`draggable`, `DataTransfer`, `dragover`/`drop`), which the
+// browser already provides; use it directly.
+//
+// What the platform does, measured in Chromium, Firefox and WebKit (`sortable.platform.browser.test.ts`):
+// - Native drag and drop runs from a mouse in all three, but once `dragstart` fires the page gets no more pointer
+//   events (Chromium and Firefox send `pointercancel`, WebKit stops sending them), so code can't follow the pointer,
+//   only react to `dragover` where it is. It has no keyboard path, and its drag image is the browser's, not the
+//   element. The pointer path is therefore pointer events with pointer capture, as Slider's is.
+// - Moving the focused row in the DOM (what a keyed list does when the order changes) blurs it in all three. So
+//   the DOM doesn't move during a drag: the dragged item and the items it passes are offset through CSS variables,
+//   and the order changes once, on drop, after which the handle is focused again by its item's id.
+// - Same-document View Transitions run in all three; they aren't used. The offsets are CSS variables, so the
+//   consumer's CSS animates the drag (`translate: var(--sortable-x) var(--sortable-y)`, with a `transition` on the
+//   items that make way), and nothing has to follow the pointer but the item itself. How a view transition behaves
+//   under a moving pointer was not measured.
+// - Without a guard, a mouse drag selects the text it passes over in all three: a press that may become a drag stops
+//   `selectstart` (and `dragstart`, for an image or link inside an item) until its release.
+// Not measured: real touch input (the long press is tested with dispatched events). A Handle has
+// `touch-action: none`; an item that is its own handle starts a touch drag after a long press and keeps the page
+// from scrolling from then on, so a swipe over the list still scrolls it.
+//
+// Not done: a wrapping grid (items are measured along one axis per list).
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createSortable, createOrderCache, cachedOrder, sortableMessages, moveInOrder, moveInLists, sameOrder, sameLists, copyLists } from "../internal/sortable.js"
+import { DivProps, ListProps, ListItemProps, ButtonProps, PartProps } from "../internal/types.rx"
+
+export type SortableOrientation = "vertical" | "horizontal"
+// Where an item was and where it is going: `list` is the list's `listId` (`""` for a list in no group) and `index`
+// its place in that list's order. `reason` says whether a pointer or the keyboard moved it.
+export type SortableDragDetails = import("../internal/impl/sortable.ts").SortableDragDetails
+// The texts announced while an item is moved, and the handle's instructions and role description.
+export type SortableMessages = import("../internal/impl/sortable.ts").SortableMessages
+export type SortableMessageDetails = import("../internal/impl/sortable.ts").SortableMessageDetails
+export type SortableDragState = import("../internal/impl/sortable.ts").SortableDragState
+// A group's value: each list's order, by `listId`.
+export type SortableLists = Record<string, string[]>
+
+fn ignoreElement(element: HTMLElement): void => undefined
+fn ignore(): void => undefined
+
+// What a list reads from the group around it. `present` is false outside a group.
+export type SortableGroupContext = {
+  present: boolean
+  lists: SortableLists
+  disabled: boolean
+  drag: SortableDragState
+  messages: SortableMessages
+  instructionsId: string
+  setElement: (element: HTMLElement) => void
+}
+
+export context sortableGroupScope: lane SortableGroupContext = {
+  present: false,
+  lists: {},
+  disabled: false,
+  drag: { active: undefined, reason: undefined, source: undefined, over: undefined, index: -1, x: 0, y: 0, offsets: {}, target: undefined, side: undefined },
+  messages: sortableMessages(undefined),
+  instructionsId: "",
+  setElement: ignoreElement,
+}
+
+export type SortableContext = {
+  // The list's order as shown: the ids of its items. Render the items from it when the order isn't controlled.
+  value: string[]
+  listId: string
+  orientation: SortableOrientation
+  disabled: boolean
+  // The drag in progress, in this list or another of its group.
+  drag: SortableDragState
+  messages: SortableMessages
+  // The id of the hidden element with the keyboard instructions, for a handle's `aria-describedby`.
+  instructionsId: string
+  setElement: (element: HTMLElement) => void
+}
+
+export context sortable: lane SortableContext
+
+export type SortableItemContext = {
+  id: string
+  disabled: boolean
+  dragging: boolean
+  setHandle: (element: HTMLElement) => void
+}
+
+export context sortableItemScope: lane SortableItemContext = { id: "", disabled: false, dragging: false, setHandle: ignoreElement }
+
+// The hidden elements a list (or a group) needs beside it: the keyboard instructions its handles are described by,
+// and the live region its moves are announced in. Beside the list, not in it (a `<ul>` holds only items), and not
+// at the end of the body, where a modal dialog around the list would make it inert.
+component SortableAnnouncer(props: { instructionsId: string; instructions: string; message: string }) {
+  <div style={{ position: "absolute", width: "1px", height: "1px", margin: "-1px", padding: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "white-space": "nowrap", border: "0" }}>
+    <div id={props.instructionsId} hidden>{props.instructions}</div>
+    <div aria-live="assertive" aria-atomic="true" data-bisque-sortable-announcer="">{props.message}</div>
+  </div>
+}
+
+export type SortableGroupProps = {
+  // Each list's order, by the lists' `listId`.
+  value?: SortableLists
+  defaultValue?: SortableLists
+  // Called when a drop changes an order, with every list's new order and where the item went.
+  onValueChange?: (value: SortableLists, details: SortableDragDetails) => void
+  // Nothing in the group can be dragged. Default: false.
+  disabled?: boolean
+  // The announced texts, over the English defaults. In a group, the group's are used, not the lists'.
+  messages?: Partial<SortableMessages>
+  onSortStart?: (details: SortableDragDetails) => void
+  // The place the dragged item would land changed.
+  onSortMove?: (details: SortableDragDetails) => void
+  // The item was dropped, whether or not the order changed.
+  onSortEnd?: (details: SortableDragDetails) => void
+  // The drag was called off (Escape, or focus left the handle) and nothing moved.
+  onSortCancel?: (details: SortableDragDetails) => void
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue">
+
+// The element that holds a group's lists: the area a drag between them happens in.
+export fn sortableGroup(ref g: SortableGroupContext): PartProps {
+  // Each value read from the context first, so the object is rebuilt only when one of them changes, not whenever
+  // the context does (a drop changes it more than once with the same content).
+  dragging = g.drag.active != undefined
+  isDisabled = g.disabled
+  setElement = g.setElement
+  {
+    "data-bisque-sortable-group": "",
+    "data-dragging": dragging ? "" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    ref: setElement,
+  }
+}
+
+// Lists that share a group: an item can be dragged from one into another. The group owns every list's order;
+// give each SortableRoot inside it a `listId`.
+export component SortableGroup(props: SortableGroupProps) {
+  source uncontrolled: SortableLists := peek(copyLists(props.defaultValue))
+  // The order this group moved to on a drop and shows until its owner's `onValueChange` has run (see Slider).
+  source draft: SortableLists | undefined := undefined
+  source element: HTMLElement | undefined := undefined
+  source message := ""
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  lists = draft ?? givenValue ?? uncontrolled
+  texts = sortableMessages(latest props.messages)
+  instructionsId = createId("sortable-instructions")
+
+  action writeElement(el: HTMLElement) { element := el }
+  setElement = createRef(writeElement)
+  action announce(text: string) { message := text }
+  action endDraft(next: SortableLists) {
+    let shown = draft
+    if (shown != undefined && sameLists(shown, next)) { draft := undefined }
+  }
+  // The owner's handlers are called in a change of their own (`onFlush`): one that saves must not hold the group.
+  action dropped(details: SortableDragDetails) {
+    let next = moveInLists(lists, details.id, details.to.list, details.to.index)
+    let change = props.onValueChange
+    let report = props.onSortEnd
+    if (sameLists(next, lists)) {
+      if (report) { onFlush(() => { report(details) }) }
+      return
+    }
+    draft := copyLists(next)
+    uncontrolled := copyLists(next)
+    onFlush(() => {
+      if (change) { change(next, details) }
+      if (report) { report(details) }
+      onFlush(() => { endDraft(next) })
+    })
+  }
+  action started(details: SortableDragDetails) {
+    if (props.onSortStart) {
+      let report = props.onSortStart
+      onFlush(() => { report(details) })
+    }
+  }
+  action overed(details: SortableDragDetails) {
+    if (props.onSortMove) {
+      let report = props.onSortMove
+      onFlush(() => { report(details) })
+    }
+  }
+  action cancelled(details: SortableDragDetails) {
+    if (props.onSortCancel) {
+      let report = props.onSortCancel
+      onFlush(() => { report(details) })
+    }
+  }
+
+  drag = createSortable(element, { disabled: givenDisabled, messages: texts }, started, overed, dropped, cancelled, announce)
+
+  self = {
+    present: true,
+    lists: lists,
+    disabled: givenDisabled,
+    drag: drag,
+    messages: texts,
+    instructionsId: instructionsId,
+    setElement: setElement,
+  }
+  provide sortableGroupScope = self
+
+  { value, defaultValue, onValueChange, disabled, messages, onSortStart, onSortMove, onSortEnd, onSortCancel, children, ...rest } = props
+  own = sortableGroup(self)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>
+    {children}
+    <SortableAnnouncer instructionsId={instructionsId} instructions={texts.instructions} message={message} />
+  </div>
+}
+
+export type SortableRootProps = {
+  // The order: the ids of the items. Render the items from it, in this order.
+  value?: string[]
+  defaultValue?: string[]
+  // Called when a drop changes the order, with the new order and where the item went.
+  onValueChange?: (value: string[], details: SortableDragDetails) => void
+  // In a SortableGroup: which of the group's lists this is. Default: "".
+  listId?: string
+  // Default: "vertical".
+  orientation?: SortableOrientation
+  // Nothing in the list can be dragged, and nothing can be dropped into it. Default: false.
+  disabled?: boolean
+  // The announced texts, over the English defaults.
+  messages?: Partial<SortableMessages>
+  onSortStart?: (details: SortableDragDetails) => void
+  onSortMove?: (details: SortableDragDetails) => void
+  onSortEnd?: (details: SortableDragDetails) => void
+  onSortCancel?: (details: SortableDragDetails) => void
+  children?: View
+} & Omit<ListProps, "children" | "defaultValue">
+
+// The list's element. `data-dragging` (`pointer` or `keyboard`) while one of its items is dragged,
+// `data-drop-target` while a dragged item would land in it.
+export fn sortableRoot(ref c: SortableContext): PartProps {
+  listId = c.listId
+  orientation = c.orientation
+  isDisabled = c.disabled
+  setElement = c.setElement
+  dragging = c.drag.active != undefined && c.drag.source == listId
+  target = c.drag.active != undefined && c.drag.over == listId
+  reason = c.drag.reason
+  {
+    "data-bisque-sortable-list": listId,
+    "data-orientation": orientation,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-dragging": dragging ? reason : undefined,
+    "data-drop-target": target ? "" : undefined,
+    ref: setElement,
+  }
+}
+
+// One list. It owns its order, or, in a SortableGroup, shows the group's order for its `listId`.
+export component SortableRoot(props: SortableRootProps) {
+  g = use sortableGroupScope
+  source uncontrolled: string[] := peek([...(props.defaultValue ?? [])])
+  // The order this list moved to on a drop and shows until its owner's `onValueChange` has run: an owner that
+  // saves before writing `value` shows the old order meanwhile, an optimistic one its guess (see Slider's draft).
+  source draft: string[] | undefined := undefined
+  source element: HTMLElement | undefined := undefined
+  source message := ""
+  listId = props.listId ?? ""
+  givenValue = props.value catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  ownOrder = draft ?? givenValue ?? uncontrolled
+  // The same array while the order's content is the same (a drop changes it several times with equal content).
+  orderCache = createOrderCache()
+  order = cachedOrder(orderCache, g.present ? (g.lists[listId] ?? []) : ownOrder)
+  isDisabled = g.disabled || givenDisabled
+  axis = props.orientation ?? "vertical"
+  ownTexts = sortableMessages(latest props.messages)
+  texts = g.present ? g.messages : ownTexts
+  ownInstructions = createId("sortable-instructions")
+  instructionsId = g.present ? g.instructionsId : ownInstructions
+
+  action writeElement(el: HTMLElement) { element := el }
+  setElement = createRef(writeElement)
+  action announce(text: string) { message := text }
+  action endDraft(next: string[]) {
+    let shown = draft
+    if (shown != undefined && sameOrder(shown, next)) { draft := undefined }
+  }
+  action dropped(details: SortableDragDetails) {
+    let next = moveInOrder(ownOrder, details.id, details.to.index)
+    let change = props.onValueChange
+    let report = props.onSortEnd
+    if (sameOrder(next, ownOrder)) {
+      if (report) { onFlush(() => { report(details) }) }
+      return
+    }
+    draft := [...next]
+    uncontrolled := [...next]
+    onFlush(() => {
+      if (change) { change(next, details) }
+      if (report) { report(details) }
+      onFlush(() => { endDraft(next) })
+    })
+  }
+  action started(details: SortableDragDetails) {
+    if (props.onSortStart) {
+      let report = props.onSortStart
+      onFlush(() => { report(details) })
+    }
+  }
+  action overed(details: SortableDragDetails) {
+    if (props.onSortMove) {
+      let report = props.onSortMove
+      onFlush(() => { report(details) })
+    }
+  }
+  action cancelled(details: SortableDragDetails) {
+    if (props.onSortCancel) {
+      let report = props.onSortCancel
+      onFlush(() => { report(details) })
+    }
+  }
+
+  // In a group the group's element runs the drag, across all its lists.
+  ownDrag = createSortable(g.present ? undefined : element, { disabled: isDisabled, messages: ownTexts }, started, overed, dropped, cancelled, announce)
+  drag = g.present ? g.drag : ownDrag
+
+  self = {
+    value: order,
+    listId: listId,
+    orientation: axis,
+    disabled: isDisabled,
+    drag: drag,
+    messages: texts,
+    instructionsId: instructionsId,
+    setElement: setElement,
+  }
+  provide sortable = self
+
+  { value, defaultValue, onValueChange, listId: _listId, orientation, disabled, messages, onSortStart, onSortMove, onSortEnd, onSortCancel, children, ...rest } = props
+  own = sortableRoot(self)
+  merged = latest mergeProps(own, rest)
+  <ul {...merged}>{children}</ul>
+  if !g.present {
+    <SortableAnnouncer instructionsId={instructionsId} instructions={ownTexts.instructions} message={message} />
+  }
+}
+
+export type SortableItemProps = {
+  // The item's id in the list's order. Unique across a group.
+  id: string
+  // This item can't be dragged (it still makes way for others). Default: false.
+  disabled?: boolean
+  children?: View
+} & Omit<ListItemProps, "children" | "id">
+
+// An item. It follows the pointer while dragged and makes way for the dragged item: its offset is in
+// `--sortable-x` and `--sortable-y` (`0px` at rest), for the consumer's `translate`. Without a SortableHandle inside
+// it, the item is its own handle: it takes focus and the presses and keys that drag it.
+export fn sortableItem(ref c: SortableContext, ref id: string, ref disabled: boolean, ref handled: boolean): PartProps {
+  isActive = c.drag.active == id
+  reason = isActive ? c.drag.reason : undefined
+  // Numbers and a flag, not the offset object: a displaced item keeps its offset while the drag goes on elsewhere.
+  shifted = !isActive && c.drag.offsets[id] != undefined
+  x = isActive ? c.drag.x : (c.drag.offsets[id]?.x ?? 0)
+  y = isActive ? c.drag.y : (c.drag.offsets[id]?.y ?? 0)
+  dropSide = c.drag.target == id ? c.drag.side : undefined
+  ownHandle = !handled
+  orientation = c.orientation
+  roleDescription = ownHandle ? c.messages.roleDescription : undefined
+  describedBy = ownHandle ? c.instructionsId : undefined
+  {
+    "data-bisque-sortable-item": id,
+    "data-orientation": orientation,
+    "data-dragging": isActive ? reason : undefined,
+    "data-shifted": shifted ? "" : undefined,
+    "data-drop-target": dropSide,
+    "data-disabled": disabled ? "" : undefined,
+    "data-bisque-sortable-handle": ownHandle ? "" : undefined,
+    tabindex: ownHandle ? "0" : undefined,
+    "aria-roledescription": roleDescription,
+    "aria-describedby": describedBy,
+    "aria-disabled": ownHandle && disabled ? "true" : undefined,
+    style: { "--sortable-x": `${x}px`, "--sortable-y": `${y}px` },
+  }
+}
+
+export component SortableItem(props: SortableItemProps) {
+  c = use sortable
+  source handled: boolean := false
+  action registerHandle(element: HTMLElement) { handled := true }
+  givenDisabled = latest props.disabled ?? false
+  isDisabled = c.disabled || givenDisabled
+  itemId = props.id
+  dragging = c.drag.active == itemId
+  provide sortableItemScope = { id: itemId, disabled: isDisabled, dragging: dragging, setHandle: registerHandle }
+  { id, disabled, children, ...rest } = props
+  own = sortableItem(c, id, isDisabled, handled)
+  merged = latest mergeProps(own, rest)
+  <li {...merged}>{children}</li>
+}
+
+// What drags its item: a `<button>` with `touch-action: none`, described by the keyboard instructions and
+// announced with the messages' `roleDescription`. `aria-pressed` while its item is dragged. Disabled with its
+// item or list.
+export fn sortableHandle(ref c: SortableContext, ref item: SortableItemContext, ref setHandle: ((element: HTMLElement) => void)): PartProps {
+  dragging = item.dragging
+  isDisabled = item.disabled
+  roleDescription = c.messages.roleDescription
+  describedBy = c.instructionsId
+  {
+    type: "button",
+    "data-bisque-sortable-handle": "",
+    "data-dragging": dragging ? "" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    disabled: isDisabled ? true : undefined,
+    "aria-roledescription": roleDescription,
+    "aria-describedby": describedBy,
+    "aria-pressed": dragging ? "true" : undefined,
+    style: { "touch-action": "none" },
+    ref: setHandle,
+  }
+}
+
+export component SortableHandle({ children, ...rest }: ButtonProps) {
+  c = use sortable
+  item = use sortableItemScope
+  action writeHandle(element: HTMLElement) { item.setHandle(element) }
+  setHandle = createRef(writeHandle)
+  own = sortableHandle(c, item, setHandle)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}

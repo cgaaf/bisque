@@ -1,0 +1,34 @@
+import { SortableGroup, SortableRoot, SortableItem, SortableHandle, SortableLists } from "../../../src/sortable/sortable.rx"
+
+component Card(props: { id: string }) {
+  <SortableItem class="Card" id={props.id}>
+    <SortableHandle class="Handle" aria-label={`Move ${props.id}`}>⠿</SortableHandle>
+    {props.id}
+  </SortableItem>
+}
+
+export component SortableBoard() {
+  source lists: SortableLists := { todo: ["Draft the brief", "Pick a palette", "Write the copy"], doing: ["Sketch the logo"], done: [] }
+  <div class="SortableBoard">
+    <SortableGroup class="Board" value={lists} onValueChange={(next) => { lists := next }}>
+      <section class="Column">
+        <h3 class="Title" id="board-todo">To do</h3>
+        <SortableRoot class="List" listId="todo" aria-labelledby="board-todo">
+          {for id in lists.todo { <Card id={id} /> }}
+        </SortableRoot>
+      </section>
+      <section class="Column">
+        <h3 class="Title" id="board-doing">Doing</h3>
+        <SortableRoot class="List" listId="doing" aria-labelledby="board-doing">
+          {for id in lists.doing { <Card id={id} /> }}
+        </SortableRoot>
+      </section>
+      <section class="Column">
+        <h3 class="Title" id="board-done">Done</h3>
+        <SortableRoot class="List" listId="done" aria-labelledby="board-done">
+          {for id in lists.done { <Card id={id} /> }}
+        </SortableRoot>
+      </section>
+    </SortableGroup>
+  </div>
+}

@@ -1,0 +1,75 @@
+.SortableHero {
+  width: 18rem;
+
+  .List {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The parts set --sortable-x and --sortable-y: where the dragged item has been carried, and how far the
+     others step aside. The item applies them. */
+  .Item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 0.5rem 0.375rem;
+    border: 1px solid light-dark(#e4e4e8, #2a2a31);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #1c1c21);
+    font-size: 0.875rem;
+    translate: var(--sortable-x) var(--sortable-y);
+  }
+
+  /* Only the items making way animate: the dragged one follows the pointer as it is. At the drop both
+     attributes go, as the order changes, so nothing animates back. */
+  .Item[data-shifted] {
+    transition: translate 180ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .Item[data-dragging] {
+    position: relative;
+    z-index: 1;
+    box-shadow: 0 8px 24px -8px rgb(0 0 0 / 0.35);
+  }
+
+  /* From the keyboard the dragged item steps from slot to slot: let it glide too. */
+  .Item[data-dragging="keyboard"] {
+    transition: translate 180ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  .Handle {
+    display: grid;
+    place-items: center;
+    width: 1.5rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: light-dark(#8a8a96, #6e6e7a);
+    cursor: grab;
+    fill: currentColor;
+  }
+
+  .Handle:hover {
+    background: light-dark(#f2f2f5, #26262c);
+  }
+
+  .Handle:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+
+  .Handle[data-dragging] {
+    cursor: grabbing;
+    color: light-dark(#26262c, #e4e4e8);
+  }
+
+  .Text {
+    flex: 1;
+  }
+}

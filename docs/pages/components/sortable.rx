@@ -1,0 +1,134 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { SortableHero } from "../../demos/sortable/hero.rx"
+import { SortableTags } from "../../demos/sortable/tags.rx"
+import { SortableBoard } from "../../demos/sortable/board.rx"
+import { SortableIndicator } from "../../demos/sortable/indicator.rx"
+import { SortableSaving } from "../../demos/sortable/saving.rx"
+
+export default component Page() {
+  <DocsPage title="Sortable" subtitle="A list whose items can be reordered by drag and drop, with the pointer or the keyboard.">
+    <Demo source="sortable/hero"><SortableHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="sortable/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Less than for most families. All three engines ship the HTML Drag and Drop API (<code>draggable</code>,{" "}
+      <code>dragstart</code>, <code>dragover</code>, <code>drop</code>), and it was tried first. Measured in
+      Chromium, Firefox and WebKit, a mouse drag of a <code>draggable</code> element does reach a drop target, but
+      once <code>dragstart</code> fires the page gets no more pointer events for that pointer (Chromium and Firefox
+      send <code>pointercancel</code>, WebKit stops sending them), so the list can only react to{" "}
+      <code>dragover</code> wherever the pointer happens to be. The drag image is the browser's, not the element, and
+      there is no keyboard path at all. So the pointer path is the library's: pointer events with pointer capture, as
+      Slider's drag is.
+    </p>
+    <p>
+      The browser does provide the rest of what the drag stands on: <code>touch-action</code> on the handle so a touch
+      drags instead of scrolling, the <code>{"<button>"}</code> that makes a handle focusable and pressable, and the
+      CSS that animates the drag. Moving an element in the DOM blurs it in every engine if it has focus, so nothing
+      moves in the DOM while an item is dragged: the dragged item and the items that make way for it are offset
+      through two CSS variables, and the order changes once, on the drop. The handle you were using keeps focus
+      through that change, and through an order that goes back because your server refused it.
+    </p>
+    <p>
+      Same-document View Transitions also run in all three, and aren't used: with the offsets in CSS variables, your
+      CSS animates the drag (<code>translate: var(--sortable-x) var(--sortable-y)</code> on the items and a{" "}
+      <code>transition</code> on the ones making way), and only the dragged item has to follow the pointer.
+    </p>
+    <p>
+      Without help, a mouse drag selects the text it passes over, in all three engines. While a press may become a
+      drag, the list stops text selection, and the native drag of an image or link inside an item, until the
+      release: there is no need for <code>user-select: none</code>.
+    </p>
+    <p>
+      The library adds the order and its changes, the measuring that says where an item would land, scrolling a list
+      that scrolls while the pointer is held near its edge, the keyboard path, the announcements, and moving items
+      between lists.
+    </p>
+    <div class="note">
+      <p>
+        Base UI has no such component. The keyboard and screen reader behaviour follows React Aria's drag and drop
+        for reorderable lists and the WAI-ARIA Authoring Practices: a keyboard way to do everything a pointer does,
+        every step announced, and none of the deprecated <code>aria-grabbed</code> or <code>aria-dropeffect</code>.
+        Sortable reorders and moves items between lists on one page. Dragging other things onto drop targets, or
+        data in or out of the page (files, text, another window), is what the native API above does well: use{" "}
+        <code>draggable</code> and <code>DataTransfer</code> for that. A list that wraps onto several rows (a grid)
+        isn't supported: each list is measured along one axis. Touch input hasn't been tried on a real device: the long
+        press is tested with dispatched events.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">From the keyboard</h3>
+    <p>
+      Tab to a handle and press <kbd>Space</kbd> or <kbd>Enter</kbd> to pick its item up. The arrow keys along the
+      list move it one place, <kbd>Home</kbd> and <kbd>End</kbd> to either end; <kbd>Space</kbd> or{" "}
+      <kbd>Enter</kbd> drops it, and <kbd>Escape</kbd> puts it back where it was. Moving focus away mid-drag cancels
+      it too. Each step is announced in an assertive live region beside the list: "Picked up Order paper, position 4
+      of 5", "Order paper moved to position 2 of 5", "Dropped…", "Cancelled…". Handles carry{" "}
+      <code>aria-roledescription="sortable"</code>, an <code>aria-describedby</code> that points at those
+      instructions, and <code>aria-pressed</code> while their item is dragged.
+    </p>
+    <p>
+      To translate the texts, pass <code>messages</code>: any of <code>pickedUp</code>, <code>moved</code>,{" "}
+      <code>dropped</code> and <code>cancelled</code> (functions of the item's <code>label</code>,{" "}
+      <code>position</code>, <code>total</code> and <code>listLabel</code>), <code>instructions</code> and{" "}
+      <code>roleDescription</code>. An item's label is its <code>aria-label</code>, else its text without the
+      handle's and its buttons'; the messages also get its <code>id</code>, to look a better name up yourself.
+    </p>
+
+    <h3 id="whole-item">The whole item as the handle</h3>
+    <p>
+      Leave <code>SortableHandle</code> out and the item is its own handle: it takes focus, is described by the
+      instructions, and a press anywhere on it drags, except a press or a key on a control inside it. A touch drags
+      after a long press, so a swipe across the list still scrolls it; a handle, with its{" "}
+      <code>touch-action: none</code>, drags at once. This list is horizontal, so the left and right arrows move a
+      tag (in a right-to-left page, the other way round).
+    </p>
+    <Demo source="sortable/tags"><SortableTags /></Demo>
+    <p>
+      It is also uncontrolled. The root can't reorder children it was given, so an uncontrolled list renders its items
+      from the order in its context: the <code>Tags</code> component reads <code>use sortable</code> and loops over{" "}
+      <code>value</code>.
+    </p>
+
+    <h3 id="groups">Moving items between lists</h3>
+    <p>
+      Put the lists in a <code>SortableGroup</code> and give each root a <code>listId</code>. The group owns every
+      list's order, as an object from list id to item ids, and an item can be dragged into another list, or moved
+      there from the keyboard with the arrows across the lists. The root under the pointer has{" "}
+      <code>data-drop-target</code>; give an empty list a <code>min-height</code> so it can be dropped into.
+    </p>
+    <Demo source="sortable/board"><SortableBoard /></Demo>
+
+    <h3 id="styling">Styling the drag</h3>
+    <p>
+      The items carry their offset in <code>--sortable-x</code> and <code>--sortable-y</code>, <code>0px</code> at
+      rest. The dragged item has <code>data-dragging</code> (<code>pointer</code> or <code>keyboard</code>) and the
+      items making way have <code>data-shifted</code>. Transition only those: the attributes go in the same change
+      as the order, so at the drop nothing animates back, and a pointer drag is followed without lag. Raise the
+      dragged item with <code>position: relative</code> and a <code>z-index</code>; in a group it stays in its own
+      list's element until the drop, so don't clip the lists.
+    </p>
+    <p>
+      For a drop indicator instead of a gap, leave the offsets unused and draw a line on the item with{" "}
+      <code>data-drop-target</code>: <code>before</code> it, or <code>after</code> it at the end of the list.
+    </p>
+    <Demo source="sortable/indicator"><SortableIndicator /></Demo>
+
+    <h3 id="saving">Saving to a server</h3>
+    <p>
+      <code>onValueChange</code> is called once per drop, never while an item is carried, so it can save. It is called
+      in a change of its own: a handler that waits for its server never holds the list, which can be dragged again at
+      once. Write it as an action with a <code>guess</code> and the new order shows at once and goes back by itself if
+      the save fails; without a guess the list shows your order until you write the new one.
+    </p>
+    <Demo source="sortable/saving"><SortableSaving /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="sortable" />
+  </DocsPage>
+}

@@ -1,0 +1,38 @@
+import { SortableRoot, SortableItem, sortable, SortableDragDetails } from "../sortable.rx"
+
+// The items of an uncontrolled list come from the list's own order, read from its context.
+component Chips() {
+  c = use sortable
+  chipStyle = "display: flex; align-items: center; width: 60px; height: 30px; margin: 0; translate: var(--sortable-x) var(--sortable-y)"
+  {for id in c.value {
+    <SortableItem id={id} data-testid={id} style={chipStyle}>
+      {id}
+      <button data-testid={`remove-${id}`} style={{ width: "16px", height: "16px", padding: "0" }}>x</button>
+    </SortableItem>
+  }}
+}
+
+// Horizontal lists whose items are their own handles: one uncontrolled, one disabled.
+export default component Fixture() {
+  source order := ""
+  source disabledOrder := ""
+  source rtlOrder := ""
+  listStyle = "list-style: none; margin: 0; padding: 0; display: flex; gap: 6px"
+  <main style="padding: 8px">
+    <SortableRoot aria-label="Tags" data-testid="tags" orientation="horizontal" style={listStyle} defaultValue={["red", "green", "blue", "gold"]}
+      onValueChange={(next, details) => { order := `${next.join(",")} ${details.reason}` }}>
+      <Chips />
+    </SortableRoot>
+    <output data-testid="order">{order}</output>
+    <SortableRoot aria-label="Locked" data-testid="locked" orientation="horizontal" disabled style={listStyle} defaultValue={["one", "two", "three"]}
+      onValueChange={(next) => { disabledOrder := next.join(",") }}>
+      <Chips />
+    </SortableRoot>
+    <output data-testid="locked-order">{disabledOrder}</output>
+    <SortableRoot aria-label="Right to left" data-testid="rtl" dir="rtl" messages={{ roleDescription: "reorderable", pickedUp: (d) => `Holding ${d.label}, ${d.position}/${d.total}` }} orientation="horizontal" style={listStyle} defaultValue={["alef", "bet", "gimel"]}
+      onValueChange={(next) => { rtlOrder := next.join(",") }}>
+      <Chips />
+    </SortableRoot>
+    <output data-testid="rtl-order">{rtlOrder}</output>
+  </main>
+}

@@ -1,0 +1,15 @@
+import { SortableRoot, SortableItem, SortableHandle } from "../../../src/sortable/sortable.rx"
+
+export component SortableIndicator() {
+  source order: string[] := ["Introduction", "Getting started", "Configuration", "Deployment"]
+  <div class="SortableIndicator">
+    <SortableRoot class="List" aria-label="Chapters" value={order} onValueChange={(next) => { order := next }}>
+      {for chapter in order {
+        <SortableItem class="Item" id={chapter}>
+          <SortableHandle class="Handle" aria-label={`Move ${chapter}`}>⠿</SortableHandle>
+          {chapter}
+        </SortableItem>
+      }}
+    </SortableRoot>
+  </div>
+}

@@ -1,0 +1,17 @@
+import { SortableRoot, SortableItem, sortable } from "../../../src/sortable/sortable.rx"
+
+// An uncontrolled list renders its items from its own order, read from the context.
+component Tags() {
+  c = use sortable
+  {for tag in c.value {
+    <SortableItem class="Tag" id={tag}>{tag}</SortableItem>
+  }}
+}
+
+export component SortableTags() {
+  <div class="SortableTags">
+    <SortableRoot class="List" aria-label="Tags" orientation="horizontal" defaultValue={["design", "research", "writing", "review"]}>
+      <Tags />
+    </SortableRoot>
+  </div>
+}

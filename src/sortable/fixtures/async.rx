@@ -1,0 +1,55 @@
+import { SortableRoot, SortableItem, SortableHandle } from "../sortable.rx"
+import { save } from "../../test/slow-server.js"
+
+// Lists whose order is saved to a server (../../test/slow-server.ts), as an app would write them.
+export default component Fixture() {
+  // Optimistic: shows the new order at once, and goes back if the server refuses it.
+  source guessed: string[] = ["one", "two", "three"]
+  source guessError := ""
+  // Not optimistic: the order changes only once the server has it.
+  source saved: string[] := ["one", "two", "three"]
+  source saveError := ""
+  listStyle = "list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; width: 160px"
+  itemStyle = "display: flex; height: 30px; margin: 0; translate: var(--sortable-x) var(--sortable-y)"
+  <main style="padding: 8px; display: flex; gap: 20px">
+    <div>
+      <SortableRoot aria-label="Guessed" data-testid="guessed" style={listStyle} value={guessed} onValueChange={(next) => {
+        guess guessed := next
+        onFlush(() => { guessError := "" })
+        try {
+          await save("guessed")
+          guessed := next
+        } catch (e) {
+          guessError := "refused"
+        }
+      }}>
+        {for id in guessed {
+          <SortableItem id={id} style={itemStyle}>
+            <SortableHandle aria-label={`Move ${id} (guessed)`}>=</SortableHandle>{id}
+          </SortableItem>
+        }}
+      </SortableRoot>
+      <output data-testid="guessed-order">{guessed.join(",")}</output>
+      <output data-testid="guessed-error">{guessError}</output>
+    </div>
+    <div>
+      <SortableRoot aria-label="Saved" data-testid="saved" style={listStyle} value={saved} onValueChange={(next) => {
+        onFlush(() => { saveError := "" })
+        try {
+          await save("saved")
+          saved := next
+        } catch (e) {
+          saveError := "refused"
+        }
+      }}>
+        {for id in saved {
+          <SortableItem id={id} style={itemStyle}>
+            <SortableHandle aria-label={`Move ${id} (saved)`}>=</SortableHandle>{id}
+          </SortableItem>
+        }}
+      </SortableRoot>
+      <output data-testid="saved-order">{saved.join(",")}</output>
+      <output data-testid="saved-error">{saveError}</output>
+    </div>
+  </main>
+}

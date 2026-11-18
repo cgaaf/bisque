@@ -1,0 +1,21 @@
+import { SortableRoot, SortableItem, SortableHandle } from "../../../src/sortable/sortable.rx"
+
+export component SortableHero() {
+  source order: string[] := ["Water the plants", "Book the venue", "Reply to the survey", "Order paper", "Back up the laptop"]
+  <div class="SortableHero">
+    <SortableRoot class="List" aria-label="Errands" value={order} onValueChange={(next) => { order := next }}>
+      {for task in order {
+        <SortableItem class="Item" id={task}>
+          <SortableHandle class="Handle" aria-label={`Move ${task}`}>
+            <svg width="12" height="16" viewBox="0 0 12 16" aria-hidden="true">
+              <circle cx="3" cy="3" r="1.5" /><circle cx="9" cy="3" r="1.5" />
+              <circle cx="3" cy="8" r="1.5" /><circle cx="9" cy="8" r="1.5" />
+              <circle cx="3" cy="13" r="1.5" /><circle cx="9" cy="13" r="1.5" />
+            </svg>
+          </SortableHandle>
+          <span class="Text">{task}</span>
+        </SortableItem>
+      }}
+    </SortableRoot>
+  </div>
+}

@@ -1,0 +1,46 @@
+import { SortableGroup, SortableRoot, SortableItem, SortableHandle, SortableLists, SortableDragDetails } from "../sortable.rx"
+
+fn describe(kind: string, d: SortableDragDetails): string => `${kind} ${d.id} ${d.from.list}:${d.from.index}>${d.to.list}:${d.to.index} ${d.reason}`
+
+// Three lists side by side in one group, controlled; an item can move between the first two. The third is disabled.
+export default component Fixture() {
+  source lists: SortableLists := { todo: ["write", "test", "ship"], done: ["plan"], later: ["idea"] }
+  source log: string[] := []
+  listStyle = "list-style: none; margin: 0; padding: 4px; display: flex; flex-direction: column; gap: 4px; width: 100px; min-height: 120px"
+  itemStyle = "display: flex; height: 30px; margin: 0; translate: var(--sortable-x) var(--sortable-y)"
+  <main style="padding: 8px">
+    <SortableGroup data-testid="group" style={{ display: "flex", gap: "20px" }} value={lists}
+      onValueChange={(next) => { lists := next }}
+      onSortMove={(d) => { log := [...log, describe("over", d)] }}
+      onSortEnd={(d) => { log := [...log, describe("end", d)] }}>
+      <SortableRoot listId="todo" aria-label="To do" data-testid="todo" style={listStyle}>
+        {for id in lists.todo {
+          <SortableItem id={id} data-testid={id} style={itemStyle}>
+            <SortableHandle aria-label={`Move ${id}`}>=</SortableHandle>
+            <span>{id}</span>
+          </SortableItem>
+        }}
+      </SortableRoot>
+      <SortableRoot listId="done" aria-label="Done" data-testid="done" style={listStyle}>
+        {for id in lists.done {
+          <SortableItem id={id} data-testid={id} style={itemStyle}>
+            <SortableHandle aria-label={`Move ${id}`}>=</SortableHandle>
+            <span>{id}</span>
+          </SortableItem>
+        }}
+      </SortableRoot>
+      <SortableRoot listId="later" aria-label="Later" data-testid="later" disabled style={listStyle}>
+        {for id in lists.later {
+          <SortableItem id={id} data-testid={id} style={itemStyle}>
+            <SortableHandle aria-label={`Move ${id}`}>=</SortableHandle>
+            <span>{id}</span>
+          </SortableItem>
+        }}
+      </SortableRoot>
+    </SortableGroup>
+    <output data-testid="todo-order">{lists.todo.join(",")}</output>
+    <output data-testid="done-order">{lists.done.join(",")}</output>
+    <output data-testid="later-order">{lists.later.join(",")}</output>
+    <output data-testid="log">{log.join("|")}</output>
+  </main>
+}

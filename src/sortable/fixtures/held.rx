@@ -1,0 +1,51 @@
+import { SortableGroup, SortableRoot, SortableItem, SortableHandle, sortable } from "../sortable.rx"
+import { save } from "../../test/slow-server.js"
+
+component Rows(props: { label: string; handleClass: string; itemClass: string }) {
+  c = use sortable
+  itemStyle = "display: flex; height: 30px; margin: 0; translate: var(--sortable-x) var(--sortable-y)"
+  {for id in c.value {
+    <SortableItem id={id} class={props.itemClass} style={itemStyle}>
+      <SortableHandle class={props.handleClass} aria-label={`Move ${id} (${props.label})`}>=</SortableHandle>{id}
+    </SortableItem>
+  }}
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// list is computed from that write. Picking up, moving and dropping an item must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+  listStyle = "list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; width: 180px"
+
+  <main style="padding: 8px">
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // 1. An attribute passed through to the root's element.
+    <SortableRoot data-testid="root-attribute" class={step == 2 ? "second" : "first"} style={listStyle} defaultValue={["a", "b", "c"]}>
+      <Rows label="root attribute" handleClass="" itemClass="" />
+    </SortableRoot>
+    // 2. A prop of the root that reaches its context: the announced texts.
+    <SortableRoot data-testid="root-prop" messages={{ roleDescription: step == 1 ? "sortable" : "reorderable" }} style={listStyle} defaultValue={["a", "b", "c"]}>
+      <Rows label="root prop" handleClass="" itemClass="" />
+    </SortableRoot>
+    // 3. An attribute passed through to each item's element.
+    <SortableRoot data-testid="item-attribute" style={listStyle} defaultValue={["a", "b", "c"]}>
+      <Rows label="item attribute" handleClass="" itemClass={step == 2 ? "second" : "first"} />
+    </SortableRoot>
+    // 4. An attribute passed through to each handle.
+    <SortableRoot data-testid="handle-attribute" style={listStyle} defaultValue={["a", "b", "c"]}>
+      <Rows label="handle attribute" handleClass={step == 2 ? "second" : "first"} itemClass="" />
+    </SortableRoot>
+    // 5. A prop of a group that reaches its context.
+    <SortableGroup data-testid="group-prop" messages={{ roleDescription: step == 1 ? "sortable" : "reorderable" }} defaultValue={{ only: ["a", "b", "c"] }}>
+      <SortableRoot listId="only" data-testid="group-list" style={listStyle}>
+        <Rows label="group prop" handleClass="" itemClass="" />
+      </SortableRoot>
+    </SortableGroup>
+  </main>
+}

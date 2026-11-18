@@ -1,0 +1,35 @@
+import { SortableRoot, SortableItem, SortableHandle } from "../../../src/sortable/sortable.rx"
+import { loadSetting, saveSetting, dropNetwork, messageOf } from "../../lib/settings-server.js"
+
+fn ids(value: string[]): string[] => value
+
+export component SortableSaving() {
+  // What the server holds. `-> […]` is shown until the first answer.
+  order = await loadSetting("sortable-order", ids(["Inbox", "Projects", "Archive", "Trash"])) -> ["Inbox", "Projects", "Archive", "Trash"]
+  source failure := ""
+  <div class="SortableSaving">
+    {errored fallback(e) { <p class="Error">{messageOf(e)}</p> } {
+      <SortableRoot class="List" aria-label="Folders" value={order} onValueChange={(next) => {
+        // Show the new order at once; it goes back by itself if the save fails.
+        guess order := next
+        onFlush(() => { failure := "" })
+        affects order
+        try {
+          await saveSetting("sortable-order", next)
+          refresh order
+        } catch (error) {
+          failure := messageOf(error)
+        }
+      }}>
+        {for folder in order {
+          <SortableItem class="Item" id={folder}>
+            <SortableHandle class="Handle" aria-label={`Move ${folder}`}>⠿</SortableHandle>
+            {folder}
+          </SortableItem>
+        }}
+      </SortableRoot>
+      <p class="Status" aria-live="polite">{pending? order ? "Saving…" : failure}</p>
+      <button class="Drop" onClick={() => { dropNetwork() }}>Fail the next save</button>
+    }}
+  </div>
+}

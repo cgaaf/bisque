@@ -1,0 +1,11 @@
+import { SortableGroup, SortableRoot, SortableItem, SortableHandle } from "./bisque/sortable/sortable.rx"
+
+<SortableGroup>                  // only to move items between lists
+  <SortableRoot value={order} onValueChange={(next) => { order := next }}>
+    {for id in order {
+      <SortableItem id={id}>
+        <SortableHandle />       // optional: without it the whole item is the handle
+      </SortableItem>
+    }}
+  </SortableRoot>
+</SortableGroup>
