@@ -1,0 +1,21 @@
+import { MeterRoot, MeterLabel, MeterTrack, MeterIndicator, meter, meterValue } from "../../../src/meter/meter.rx"
+
+// An average isn't a choice, so it isn't a radio group: it is a measurement in a known range, which is a meter.
+// The track is a row of five star-shaped holes and the indicator's width (the part sets it, 90% here) fills them.
+component Value() {
+  c = use meter
+  own = meterValue()
+  <span class="Value" {...own}>{c.formatted} · 128 reviews</span>
+}
+
+export component RecipeRatingAverage() {
+  <div class="RecipeRatingAverage">
+    <MeterRoot class="Meter" value={4.5} max={5} format={{ maximumFractionDigits: 1 }} getAriaValueText={(formatted, value) => `${formatted} out of 5`}>
+      <MeterLabel class="Label">Average rating</MeterLabel>
+      <MeterTrack class="Track">
+        <MeterIndicator class="Indicator" />
+      </MeterTrack>
+      <Value />
+    </MeterRoot>
+  </div>
+}

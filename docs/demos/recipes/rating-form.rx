@@ -1,0 +1,30 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../../../src/radio/radio.rx"
+
+// A plain <form>: the checked radio is submitted under the group's name, `required` stops a submit with none
+// checked, and a reset puts the default back.
+export component RecipeRatingForm() {
+  source rating := ""
+  source sent := ""
+  <form class="RecipeRatingForm" onSubmit={(event) => {
+    event.preventDefault()
+    sent := rating
+  }} onReset={() => { sent := "" }}>
+    <div class="Caption" id="rating-form-caption">Rate this recipe</div>
+    <RadioGroup class="Stars" aria-labelledby="rating-form-caption" name="rating" required onValueChange={(value) => { rating := value }}>
+      {for n in [1, 2, 3, 4, 5] {
+        <span class="Item">
+          <RadioRoot class="Radio" value={`${n}`} aria-label={n == 1 ? "1 star" : `${n} stars`}>
+            <RadioIndicator class="Star">
+              <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.5l-5.87 3.08 1.12-6.54L2.5 9.41l6.56-.95z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+            </RadioIndicator>
+          </RadioRoot>
+        </span>
+      }}
+    </RadioGroup>
+    <div class="Actions">
+      <button class="Button" type="reset">Clear</button>
+      <button class="Button Primary" type="submit">Send rating</button>
+    </div>
+    <p class="Sent" role="status">{sent == "" ? "" : `Sent rating=${sent}`}</p>
+  </form>
+}

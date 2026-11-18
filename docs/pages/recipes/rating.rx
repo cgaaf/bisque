@@ -1,0 +1,98 @@
+import { DocsPage, Demo } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { RecipeRatingHero } from "../../demos/recipes/rating-hero.rx"
+import { RecipeRatingForm } from "../../demos/recipes/rating-form.rx"
+import { RecipeRatingStates } from "../../demos/recipes/rating-states.rx"
+import { RecipeRatingAverage } from "../../demos/recipes/rating-average.rx"
+
+export default component Page() {
+  <DocsPage title="Rating" subtitle="A star rating is a radio group with five options. This recipe is the CSS that draws it.">
+    <Demo source="recipes/rating-hero"><RecipeRatingHero /></Demo>
+
+    <h2 id="why">Why this isn't a component</h2>
+    <p>
+      A part earns its place in the library when it supplies state, keyboard behaviour or ARIA that the browser
+      doesn't. Choosing one value from five ordered ones is what radio buttons do, and five native radios that
+      share a <code>name</code> already give:
+    </p>
+    <ul>
+      <li>
+        one Tab stop for the group, on the checked radio, else the first (Safari, like for every radio, skips
+        it on Tab unless "Press Tab to highlight each item" is on; Option-Tab reaches it);
+      </li>
+      <li>the arrow keys to move between the radios and check them, and Space to check the focused one;</li>
+      <li>the checked value submitted with the form under the group's name, <code>required</code>, and reset;</li>
+      <li><code>:checked</code>, <code>:focus-visible</code>, <code>:disabled</code> and{" "}<code>:user-invalid</code> to style from.</li>
+    </ul>
+    <p>
+      <a href={href("components/radio")}>Radio Group</a> adds the rest: the group's role and label, a controlled
+      value, <code>readOnly</code>, and the Field wiring. What remains for a Rating part would be stars, which are
+      styling. So the stars are a recipe: <code>RadioGroup</code> and five <code>RadioRoot</code>s, each with an{" "}
+      <code>aria-label</code> ("1 star", "2 stars"…) because the star beside it is decoration.
+    </p>
+    <p>
+      The fill is one selector. The stars are in the document in the order they are seen, so the stars to fill
+      are the checked one and every one before it: <code>{".Item:has(:checked)"}</code> and{" "}
+      <code>{".Item:has(~ .Item :checked)"}</code>. The hover preview is the same pair with{" "}
+      <code>:hover</code>, inside <code>@media (hover: hover)</code> so a tap doesn't leave a preview behind.
+      The older trick of writing the radios in reverse and flipping them with <code>row-reverse</code> isn't
+      needed now that <code>:has()</code> works in every engine, and it made the DOM order, which the arrow keys
+      and screen readers follow, the reverse of what is seen.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="form">In a form</h3>
+    <p>
+      The group submits the checked star's value under its <code>name</code>. With <code>required</code>, a
+      submit with no star checked is stopped by the browser, and the radios match <code>:user-invalid</code>{" "}
+      from then on. A reset button clears the group, or puts back its <code>defaultValue</code>.
+    </p>
+    <Demo source="recipes/rating-form"><RecipeRatingForm /></Demo>
+
+    <h3 id="states">Read-only, disabled and right to left</h3>
+    <p>
+      A read-only group keeps its radios focusable, so the value can be reached and heard, but a click or an
+      arrow key checks nothing. A disabled group's radios are native-disabled: out of the tab order and inert. In
+      both, the group still matches <code>:hover</code>, so the preview rule leaves out{" "}
+      <code>[data-readonly]</code> and <code>[data-disabled]</code>. In a right-to-left page the flex row runs
+      from the right and the fill follows DOM order, so it fills from the right with no extra CSS. The arrow keys
+      are the browser's here and they disagree: in Chrome and Firefox the Left arrow moves to the next star, the
+      one to its left, while Safari moves to the previous one, to its right.
+    </p>
+    <Demo source="recipes/rating-states"><RecipeRatingStates /></Demo>
+
+    <h3 id="average">Showing an average</h3>
+    <p>
+      An average such as 4.5 isn't a choice, so it isn't a radio group. It is a measurement within a known range,
+      which is what <a href={href("components/meter")}>Meter</a> is for: <code>max={"{5}"}</code>, a{" "}
+      <code>format</code> that shows one decimal instead of the default percentage, and{" "}
+      <code>getAriaValueText</code> for "4.5 out of 5". The track is five stars cut out with a CSS mask, and the
+      indicator, whose width the part sets to the value's share of the range, fills them. An element with{" "}
+      <code>role="img"</code> and an <code>aria-label</code> would also do, if the number needn't be exposed as a
+      value. The native <code>{"<meter>"}</code> element is no help here: its bar can't be drawn as stars the
+      same way in every engine.
+    </p>
+    <Demo source="recipes/rating-average"><RecipeRatingAverage /></Demo>
+
+    <h2 id="styled-library">What a styled library would add</h2>
+    <p>Two things people expect from a rating aren't in this recipe, because radios don't do them:</p>
+    <ul>
+      <li>
+        <strong>Half stars.</strong> A radio is one value, so half-star input is ten radios, 0.5 to 5, each
+        drawn as the left or right half of a star (two half-width items per star, or a clip on alternate
+        items). The fill selector is unchanged.
+      </li>
+      <li>
+        <strong>Clearing by clicking the checked star again.</strong> A checked radio can't be unchecked by the
+        user: clicking it again does nothing. A styled library would offer a sixth "No rating" radio (visible or
+        not) or a separate clear button. A form reset already clears a group with no default, as the example
+        above shows.
+      </li>
+    </ul>
+    <p>
+      It would also ship the star artwork, sizes, and labels per value ("Poor" to "Excellent") shown on hover or
+      focus. None of that needs new behaviour from this library.
+    </p>
+  </DocsPage>
+}

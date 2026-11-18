@@ -1,0 +1,97 @@
+import { DocsPage, Demo } from "../../shell.rx"
+import { href } from "../../lib/site.js"
+import { RecipeStepsHero } from "../../demos/recipes/steps-hero.rx"
+import { RecipeStepsVertical } from "../../demos/recipes/steps-vertical.rx"
+import { RecipeStepsWizard } from "../../demos/recipes/steps-wizard.rx"
+
+export default component Page() {
+  <DocsPage title="Steps" subtitle="A progress list for a flow in several steps: an ordered list, one attribute and some CSS.">
+    <Demo source="recipes/steps-hero"><RecipeStepsHero /></Demo>
+
+    <h2 id="why">Why this isn't a component</h2>
+    <p>
+      A part earns its place in the library when it supplies state, keyboard behaviour or ARIA that the browser
+      doesn't. A step indicator has none of them to supply. It isn't interactive, so it has no keys. Its state,
+      which step the user is on, belongs to the flow it describes, not to the indicator. And its semantics are
+      already in HTML and ARIA:
+    </p>
+    <ul>
+      <li>an <code>{"<ol>"}</code>, because the steps have an order, with an <code>aria-label</code> naming it;</li>
+      <li><code>aria-current="step"</code> on the step the user is on, which ARIA defines for exactly this;</li>
+      <li>
+        <code>data-complete</code> and <code>data-upcoming</code> on the others. These are only for styling and
+        you write them. A done step also gets a visually hidden ", done" in its title, since the tick is drawn.
+      </li>
+    </ul>
+    <p>
+      The numbers are a CSS counter (<code>counter-reset</code> on the list, <code>counter-increment</code> on
+      each item, <code>counter(step)</code> in the marker's <code>::before</code>), and the line to the next step
+      is the item's <code>::after</code>. The marker is <code>aria-hidden</code>: the list already tells a screen
+      reader which item of how many this is.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="vertical">Vertical</h3>
+    <p>
+      The same markup as a column, with a line of detail under each title. Only the grid changes: the marker
+      in the first column and the connector under it.
+    </p>
+    <Demo source="recipes/steps-vertical"><RecipeStepsVertical /></Demo>
+
+    <h3 id="wizard">Heading a form</h3>
+    <p>
+      The steps head a form whose panels are shown one at a time. The state is one number in the demo, and the
+      list's attributes and each panel's <code>hidden</code> are read from it. The rest is the browser's:
+    </p>
+    <ul>
+      <li>
+        It is one <code>{"<form>"}</code>, and each panel is a <code>{"<fieldset>"}</code>. Next is the form's
+        submit button, and the submit handler moves to the next step until the last. So the browser checks the
+        visible panel's fields before every step, and Enter in a field moves on.
+      </li>
+      <li>
+        A panel not reached yet is <code>disabled</code> as well as <code>hidden</code>, so its{" "}
+        <code>required</code> fields don't stop the earlier steps. A panel already passed is only hidden: its
+        fields were valid when it was left, and the last submit sends them all.
+      </li>
+      <li>
+        The panels stay in the document, so going Back finds what was typed. Next and Back are the same two
+        buttons on every step, so focus stays where it was; Back uses <code>aria-disabled</code> on the first step
+        rather than <code>disabled</code>, which would drop focus to the page.
+      </li>
+    </ul>
+    <Demo source="recipes/steps-wizard"><RecipeStepsWizard /></Demo>
+
+    <h3 id="tabs">Why not Tabs?</h3>
+    <p>
+      Steps above panels look like <a href={href("components/tabs")}>Tabs</a>, and for some flows they are. If
+      every step can be opened at any time, or any step already visited can be reopened from the list, the steps
+      are tabs: the user picks a panel, and the arrow keys and roles Tabs provides are right. Disable the tabs
+      not yet reached and keep the panels mounted (<code>keepMounted</code>) to keep their values.
+    </p>
+    <p>
+      A linear wizard is different. Its order is the point: the next step opens only when the current one is
+      complete, by Next, after its fields are checked. A tab list says the opposite, that each panel is a
+      choice the user can make now, and a step list that can be focused and arrowed through invites jumping
+      ahead. There the list is a picture of progress, and the controls are Next and Back.
+    </p>
+
+    <h2 id="styled-library">What a styled library would add</h2>
+    <ul>
+      <li>
+        <strong>Linear gating as a rule</strong>, not a pattern each app repeats: a step can't be entered until
+        the ones before it are complete, whatever the URL or the history says.
+      </li>
+      <li>
+        <strong>Validation per step</strong> with <a href={href("components/form")}>Form</a> and{" "}
+        <a href={href("components/field")}>Field</a>: each panel's fields validated, and their errors shown,
+        before Next, including checks the server makes.
+      </li>
+      <li>
+        <strong>Links on completed steps</strong>, so a done step in the list reopens its panel, and a choice of
+        where focus goes when the panel changes (the panel's heading is the usual answer).
+      </li>
+    </ul>
+  </DocsPage>
+}

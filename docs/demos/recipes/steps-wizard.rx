@@ -1,0 +1,67 @@
+import { Input } from "../../../src/input/input.rx"
+import { RadioGroup, RadioRoot, RadioIndicator } from "../../../src/radio/radio.rx"
+
+// One form, one panel shown at a time. Next is the form's submit button, so the browser checks the fields of the
+// visible panel before each step, and Enter in a field moves on too. A panel not reached yet is `disabled` as
+// well as hidden, which leaves its `required` fields out of that check; a panel already passed is only hidden,
+// so the last submit sends every field.
+export component RecipeStepsWizard() {
+  source step := 0
+  source name := ""
+  source email := ""
+  source delivery := "standard"
+  source placed: boolean := false
+  steps = [{ index: 0, title: "Contact" }, { index: 1, title: "Delivery" }, { index: 2, title: "Confirm" }]
+  last = steps.length - 1
+  <form class="RecipeStepsWizard" aria-labelledby="wizard-heading" onSubmit={(event) => {
+    event.preventDefault()
+    if (step < last) { step := step + 1 } else { placed := true }
+  }}>
+    <h3 class="Heading" id="wizard-heading">Order a sample box</h3>
+    <ol class="Steps" aria-label="Progress">
+      {for s in steps {
+        <li class="Step" data-complete={s.index < step || placed ? "" : undefined} aria-current={s.index == step && !placed ? "step" : undefined} data-upcoming={s.index > step ? "" : undefined}>
+          <span class="Marker" aria-hidden="true" />
+          <span class="Title">{s.title}{if s.index < step || placed { <span class="VisuallyHidden">, done</span> }}</span>
+        </li>
+      }}
+    </ol>
+
+    <fieldset class="Panel" hidden={step != 0}>
+      <legend class="Legend">Contact</legend>
+      <label class="Field">
+        <span class="Label">Name</span>
+        <Input class="Input" name="name" required autocomplete="name" value={name} onValueChange={(next) => { name := next }} />
+      </label>
+      <label class="Field">
+        <span class="Label">Email</span>
+        <Input class="Input" name="email" type="email" required autocomplete="email" value={email} onValueChange={(next) => { email := next }} />
+      </label>
+    </fieldset>
+
+    <fieldset class="Panel" hidden={step != 1} disabled={step < 1}>
+      <legend class="Legend">Delivery</legend>
+      <RadioGroup class="Options" aria-label="Delivery" name="delivery" value={delivery} onValueChange={(next) => { delivery := next }}>
+        <label class="Option"><RadioRoot class="Radio" value="standard"><RadioIndicator class="Dot" /></RadioRoot>Standard, 3–5 days</label>
+        <label class="Option"><RadioRoot class="Radio" value="express"><RadioIndicator class="Dot" /></RadioRoot>Express, next day</label>
+      </RadioGroup>
+    </fieldset>
+
+    <fieldset class="Panel" hidden={step != 2} disabled={step < 2}>
+      <legend class="Legend">Confirm</legend>
+      <dl class="Summary">
+        <dt>Name</dt><dd>{name}</dd>
+        <dt>Email</dt><dd>{email}</dd>
+        <dt>Delivery</dt><dd>{delivery == "express" ? "Express" : "Standard"}</dd>
+      </dl>
+    </fieldset>
+
+    <div class="Actions">
+      <button class="Button" type="button" aria-disabled={step == 0 || placed ? "true" : undefined} onClick={() => {
+        if (step > 0 && !placed) { step := step - 1 }
+      }}>Back</button>
+      <button class="Button Primary" type="submit" aria-disabled={placed ? "true" : undefined}>{step == last ? "Place order" : "Next"}</button>
+    </div>
+    <p class="Placed" role="status">{placed ? `Order placed for ${name}.` : ""}</p>
+  </form>
+}

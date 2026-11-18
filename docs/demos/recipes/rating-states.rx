@@ -1,0 +1,28 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../../../src/radio/radio.rx"
+
+// The same five radios, read-only, disabled and right to left. The CSS follows DOM order, so in a right-to-left
+// page the stars fill from the right.
+component Stars(props: { label: string; value: string; readOnly?: boolean; disabled?: boolean; dir?: "ltr" | "rtl" }) {
+  <div class="Row" dir={props.dir}>
+    <span class="Label">{props.label}</span>
+    <RadioGroup class="Stars" aria-label={props.label} defaultValue={props.value} readOnly={props.readOnly} disabled={props.disabled}>
+      {for n in [1, 2, 3, 4, 5] {
+        <span class="Item">
+          <RadioRoot class="Radio" value={`${n}`} aria-label={n == 1 ? "1 star" : `${n} stars`}>
+            <RadioIndicator class="Star">
+              <svg viewBox="0 0 24 24" width="24" height="24"><path d="M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.5l-5.87 3.08 1.12-6.54L2.5 9.41l6.56-.95z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+            </RadioIndicator>
+          </RadioRoot>
+        </span>
+      }}
+    </RadioGroup>
+  </div>
+}
+
+export component RecipeRatingStates() {
+  <div class="RecipeRatingStates">
+    <Stars label="Read-only" value="4" readOnly />
+    <Stars label="Disabled" value="2" disabled />
+    <Stars label="Right to left" value="3" dir="rtl" />
+  </div>
+}

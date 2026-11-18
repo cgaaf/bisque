@@ -1,0 +1,84 @@
+.RecipeRatingStates {
+  display: grid;
+  gap: 0.75rem;
+
+  .Row {
+    display: grid;
+    grid-template-columns: 7.5rem auto;
+    align-items: center;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  /* No gap between the items: the pointer never falls between two stars, so the hover preview doesn't flicker. */
+  .Stars {
+    display: flex;
+  }
+
+  .Item {
+    display: grid;
+    padding: 0.125rem;
+  }
+
+  /* The radio is a native <input type="radio"> stretched over the star: it takes the clicks and draws the focus
+     ring. `appearance: none` removes the browser's circle. */
+  .Radio {
+    appearance: none;
+    grid-area: 1 / 1;
+    margin: 0;
+    border-radius: 0.25rem;
+    cursor: pointer;
+  }
+
+  .Radio:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+
+  .Star {
+    grid-area: 1 / 1;
+    display: grid;
+    color: light-dark(#d4d4dc, #3a3a43);
+    pointer-events: none;
+    transition: color 120ms;
+  }
+
+  /* Filled: the checked star and every star before it. DOM order is visual order, so `:has(~ …)` finds the stars
+     that come before the checked one. */
+  .Item:has(:checked) .Star,
+  .Item:has(~ .Item :checked) .Star {
+    color: light-dark(#e09a0b, #f5b83d);
+  }
+
+  /* The hover preview, for a pointer that can hover: the hovered star and the ones before it, whatever is checked.
+     A disabled or read-only group still matches `:hover`, so the preview leaves those out. */
+  @media (hover: hover) {
+    .Stars:not([data-disabled], [data-readonly]):hover {
+      .Item .Star {
+        color: light-dark(#d4d4dc, #3a3a43);
+      }
+
+      .Item:hover .Star,
+      .Item:has(~ .Item:hover) .Star {
+        color: light-dark(#f0b94d, #c99032);
+      }
+    }
+  }
+
+  /* Read-only: focusable, but a click or an arrow key checks nothing (RadioGroup cancels the click). */
+  .Stars[data-readonly] .Radio {
+    cursor: default;
+  }
+
+  /* Disabled: the radios are native-disabled, so they leave the tab order and ignore the pointer. */
+  .Stars[data-disabled] {
+    opacity: 0.45;
+  }
+
+  .Stars[data-disabled] .Radio {
+    cursor: not-allowed;
+  }
+}

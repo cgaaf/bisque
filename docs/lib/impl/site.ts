@@ -25,22 +25,30 @@ const COMPONENTS = [
   "autocomplete",
   "avatar",
   "button",
+  "calendar",
   "checkbox",
   "checkbox-group",
   "collapsible",
   "combobox",
   "context-menu",
+  "date-field",
+  "date-picker",
+  "date-range-picker",
   "dialog",
   "drawer",
   "field",
   "fieldset",
+  "file-upload",
   "form",
   "input",
+  "listbox",
   "menu",
   "menubar",
   "meter",
   "navigation-menu",
   "number-field",
+  "otp-field",
+  "pagination",
   "popover",
   "preview-card",
   "progress",
@@ -49,8 +57,15 @@ const COMPONENTS = [
   "select",
   "separator",
   "slider",
+  "sortable",
+  "splitter",
   "switch",
+  "table-of-contents",
   "tabs",
+  "tags-input",
+  "time-field",
+  "time-picker",
+  "time-range-picker",
   "toast",
   "toggle",
   "toggle-group",
@@ -58,10 +73,13 @@ const COMPONENTS = [
   "tooltip",
 ];
 
+// Words that aren't written with only their first letter capital.
+const WORDS: Record<string, string> = { otp: "OTP", of: "of" };
+
 const titled = (slug: string) =>
   slug
     .split("-")
-    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .map((word) => WORDS[word] ?? word[0].toUpperCase() + word.slice(1))
     .join(" ");
 
 const GROUPS: { title: string; pages: [title: string, path: string][] }[] = [
@@ -82,6 +100,15 @@ const GROUPS: { title: string; pages: [title: string, path: string][] }[] = [
       ["Composition", "handbook/composition"],
       ["Forms", "handbook/forms"],
       ["Working with a server", "handbook/server-data"],
+    ],
+  },
+  {
+    // Things that are not component families here, because the platform already supplies their behaviour: how to
+    // compose them from what exists.
+    title: "Recipes",
+    pages: [
+      ["Rating", "recipes/rating"],
+      ["Steps", "recipes/steps"],
     ],
   },
   { title: "Components", pages: COMPONENTS.map((slug) => [titled(slug), `components/${slug}`]) },

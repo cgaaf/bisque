@@ -1,0 +1,20 @@
+import { RadioGroup, RadioRoot, RadioIndicator } from "../../../src/radio/radio.rx"
+
+// Five radios that share a name: one Tab stop, the arrow keys, Space and `:checked` all come from the browser.
+// Each radio is named by its own `aria-label`; the star beside it is decoration.
+export component RecipeRatingHero() {
+  <div class="RecipeRatingHero">
+    <div class="Caption" id="rating-hero-caption">How was your stay?</div>
+    <RadioGroup class="Stars" aria-labelledby="rating-hero-caption" name="stay" defaultValue="3">
+      {for n in [1, 2, 3, 4, 5] {
+        <span class="Item">
+          <RadioRoot class="Radio" value={`${n}`} aria-label={n == 1 ? "1 star" : `${n} stars`}>
+            <RadioIndicator class="Star">
+              <svg viewBox="0 0 24 24" width="28" height="28"><path d="M12 2.5l2.94 5.96 6.56.95-4.75 4.63 1.12 6.54L12 17.5l-5.87 3.08 1.12-6.54L2.5 9.41l6.56-.95z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" /></svg>
+            </RadioIndicator>
+          </RadioRoot>
+        </span>
+      }}
+    </RadioGroup>
+  </div>
+}

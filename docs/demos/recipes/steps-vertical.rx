@@ -1,0 +1,22 @@
+// The same list laid out as a column, each step with a line of detail beside its marker.
+export component RecipeStepsVertical() {
+  <div class="RecipeStepsVertical">
+    <ol class="Steps" aria-label="Set up your workspace">
+      <li class="Step" data-complete>
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Create the workspace<span class="VisuallyHidden">, done</span></span>
+        <span class="Detail">Named “Harbor Studio”.</span>
+      </li>
+      <li class="Step" aria-current="step">
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Invite your team</span>
+        <span class="Detail">Add people by email, or share a link.</span>
+      </li>
+      <li class="Step" data-upcoming>
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Connect a repository</span>
+        <span class="Detail">Pick one now or later from settings.</span>
+      </li>
+    </ol>
+  </div>
+}

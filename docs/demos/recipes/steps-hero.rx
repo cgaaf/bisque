@@ -1,0 +1,24 @@
+// A list in order, the current item marked `aria-current="step"`. The other states are attributes you write;
+// the numbers are a CSS counter and the connector is the item's `::after`.
+export component RecipeStepsHero() {
+  <div class="RecipeStepsHero">
+    <ol class="Steps" aria-label="Checkout">
+      <li class="Step" data-complete>
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Cart<span class="VisuallyHidden">, done</span></span>
+      </li>
+      <li class="Step" data-complete>
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Shipping<span class="VisuallyHidden">, done</span></span>
+      </li>
+      <li class="Step" aria-current="step">
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Payment</span>
+      </li>
+      <li class="Step" data-upcoming>
+        <span class="Marker" aria-hidden="true" />
+        <span class="Title">Review</span>
+      </li>
+    </ol>
+  </div>
+}
