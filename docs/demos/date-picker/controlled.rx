@@ -1,0 +1,57 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../../../src/date-picker/date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+import { today } from "../../../src/internal/date.js"
+import { PlainDate } from "../../../src/internal/types.rx"
+
+// The segments come from the field's context, so they are rendered by a component inside the field.
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+component CalendarIcon() {
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <rect x="2" y="3" width="12" height="11" rx="1.5" />
+    <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+  </svg>
+}
+
+// The calendar's header and grid, inside the picker's calendar.
+component Month() {
+  <div class="Header">
+    <CalendarPreviousMonth class="Nav">‹</CalendarPreviousMonth>
+    <CalendarMonthLabel class="MonthLabel" />
+    <CalendarNextMonth class="Nav">›</CalendarNextMonth>
+  </div>
+  <CalendarGrid class="Grid">
+    <CalendarGridHeader class="Head" format="narrow" />
+    <CalendarGridBody class="Body" />
+  </CalendarGrid>
+}
+
+export component DatePickerControlled() {
+  // Boxed: a source seeded with a Temporal value breaks its methods.
+  source chosen: { date: PlainDate | null } := { date: null }
+  source open := false
+  <div class="DatePickerControlled">
+    <span class="Label" id="date-picker-controlled-label">Reminder</span>
+    <DatePickerRoot value={chosen.date} onValueChange={(date) => { chosen := { date: date ?? null } }} open={open} onOpenChange={(next) => { open := next }}>
+      <DatePickerGroup class="Group" aria-labelledby="date-picker-controlled-label">
+        <DateFieldInput class="Input"><Segments /></DateFieldInput>
+        <DatePickerTrigger class="Trigger"><CalendarIcon /></DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup class="Popup">
+        <DatePickerCalendar><Month /></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+    <div class="Controls">
+      <button class="Chip" onClick={() => { chosen := { date: today(undefined, undefined).add({ days: 7 }) } }}>In a week</button>
+      <button class="Chip" onClick={() => { chosen := { date: null } }}>Clear</button>
+      <button class="Chip" onClick={() => { open := true }}>Open the calendar</button>
+    </div>
+    <output class="Value">{chosen.date == null ? "No date" : chosen.date.toString()}{open ? " (open)" : ""}</output>
+  </div>
+}

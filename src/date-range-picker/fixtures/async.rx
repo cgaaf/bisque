@@ -1,0 +1,101 @@
+import { DateRangePickerRoot, DateRangePickerGroup, DateRangePickerStart, DateRangePickerSeparator, DateRangePickerEnd, DateRangePickerTrigger, DateRangePickerPopup, DateRangePickerCalendar } from "../date-range-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+import { DateRange } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// The parts of one picker, named `label`, under the Root above. Today is pinned to 2030-05-15.
+component Parts(props: { label: string; id: string }) {
+  <DateRangePickerGroup data-testid={props.id} aria-label={props.label}>
+    <DateRangePickerStart><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+    <DateRangePickerSeparator>–</DateRangePickerSeparator>
+    <DateRangePickerEnd><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+    <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+  </DateRangePickerGroup>
+  <DateRangePickerPopup data-testid={`${props.id}-popup`}>
+    <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+  </DateRangePickerPopup>
+}
+
+// The form string a range is saved as, "start/end"; "" for none. The server stores strings.
+fn text(range: DateRange | undefined): string => range == undefined ? "" : `${range.start.toString()}/${range.end.toString()}`
+fn rangeOf(value: string): DateRange | null => value == "" ? null : { start: parseDate(value.split("/")[0], undefined) ?? today(undefined, undefined), end: parseDate(value.split("/")[1], undefined) ?? today(undefined, undefined) }
+fn stringValue(value: string): string => value
+
+// Range pickers whose value is saved to a server, written as an app would. Each saves on every change.
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  stay = await load("stay", stringValue("2030-05-08/2030-05-10")) -> "2030-05-08/2030-05-10"
+  source stayError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source trip := "2030-05-08/2030-05-10"
+  source tripError := ""
+  // Disabled while its save is out.
+  locked = await load("locked", stringValue("2030-05-08/2030-05-10")) -> "2030-05-08/2030-05-10"
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := "2030-05-08/2030-05-10"
+  preview = await load(`preview-${wanted}`, wanted) -> "2030-05-08/2030-05-10"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <DateRangePickerRoot locale="en-US" value={rangeOf(stay)} onValueChange={(next) => {
+      let value = text(next)
+      guess stay := value
+      onFlush(() => { stayError := "" })
+      affects stay
+      try {
+        await save("stay", value)
+        refresh stay
+      } catch (e) {
+        stayError := "failed"
+      }
+    }}>
+      <Parts label="Stay" id="stay-root" />
+    </DateRangePickerRoot>
+    <output data-testid="stay">{stay}</output>
+    <output data-testid="stay-saving">{pending? stay ? "saving" : ""}</output>
+    <output data-testid="stay-error">{stayError}</output>
+
+    <DateRangePickerRoot locale="en-US" value={rangeOf(trip)} onValueChange={(next) => {
+      let value = text(next)
+      onFlush(() => { tripError := "" })
+      try {
+        await save("trip", value)
+        trip := value
+      } catch (e) {
+        tripError := "failed"
+      }
+    }}>
+      <Parts label="Trip" id="trip-root" />
+    </DateRangePickerRoot>
+    <output data-testid="trip">{trip}</output>
+    <output data-testid="trip-error">{tripError}</output>
+
+    <DateRangePickerRoot locale="en-US" value={rangeOf(locked)} disabled={pending? locked} onValueChange={(next) => {
+      let value = text(next)
+      guess locked := value
+      affects locked
+      try {
+        await save("locked", value)
+        refresh locked
+      } catch (e) {
+      }
+    }}>
+      <Parts label="Locked" id="locked-root" />
+    </DateRangePickerRoot>
+
+    <DateRangePickerRoot locale="en-US" defaultValue={rangeOf(wanted) ?? undefined} onValueChange={(next) => { wanted := text(next) }}>
+      <Parts label="Preview" id="preview-root" />
+    </DateRangePickerRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

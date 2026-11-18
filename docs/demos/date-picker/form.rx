@@ -1,0 +1,59 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../../../src/date-picker/date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../../src/field/field.rx"
+import { Form } from "../../../src/form/form.rx"
+import { today } from "../../../src/internal/date.js"
+
+// The segments come from the field's context, so they are rendered by a component inside the field.
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+component CalendarIcon() {
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <rect x="2" y="3" width="12" height="11" rx="1.5" />
+    <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+  </svg>
+}
+
+// The calendar's header and grid, inside the picker's calendar.
+component Month() {
+  <div class="Header">
+    <CalendarPreviousMonth class="Nav">‹</CalendarPreviousMonth>
+    <CalendarMonthLabel class="MonthLabel" />
+    <CalendarNextMonth class="Nav">›</CalendarNextMonth>
+  </div>
+  <CalendarGrid class="Grid">
+    <CalendarGridHeader class="Head" format="narrow" />
+    <CalendarGridBody class="Body" />
+  </CalendarGrid>
+}
+
+export component DatePickerForm() {
+  source sent := ""
+  start = today(undefined, undefined)
+  <div class="DatePickerForm">
+    <Form class="Form" onFormSubmit={(values) => { sent := `${values.renewal}` }}>
+      <FieldRoot class="Field" name="renewal">
+        <FieldLabel class="Label">Renewal date</FieldLabel>
+        <DatePickerRoot required min={start} max={start.add({ years: 1 })}>
+          <DatePickerGroup class="Group">
+            <DateFieldInput class="Input"><Segments /></DateFieldInput>
+            <DatePickerTrigger class="Trigger"><CalendarIcon /></DatePickerTrigger>
+          </DatePickerGroup>
+          <DatePickerPopup class="Popup">
+            <DatePickerCalendar><Month /></DatePickerCalendar>
+          </DatePickerPopup>
+        </DatePickerRoot>
+        <FieldDescription class="Description">Within the next year.</FieldDescription>
+        <FieldError class="Error" />
+      </FieldRoot>
+      <button class="Button" type="submit">Save</button>
+    </Form>
+    <output class="Sent">{sent == "" ? "" : `Submitted ${sent}`}</output>
+  </div>
+}

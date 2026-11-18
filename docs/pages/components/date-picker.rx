@@ -1,0 +1,118 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { DatePickerHero } from "../../demos/date-picker/hero.rx"
+import { DatePickerConstraints } from "../../demos/date-picker/constraints.rx"
+import { DatePickerControlled } from "../../demos/date-picker/controlled.rx"
+import { DatePickerForm } from "../../demos/date-picker/form.rx"
+
+export default component Page() {
+  <DocsPage title="Date Picker" subtitle="A date field with a calendar in a popup, behind one value.">
+    <Demo source="date-picker/hero"><DatePickerHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      A date picker is a <a href="../date-field/">Date Field</a>, a button, and a <a href="../calendar/">Calendar</a>{" "}
+      in a <a href="../popover/">Popover</a>. Its parts are thin wrappers that give each of those the picker's value
+      and options, so <code>min</code>, <code>locale</code> and the rest are written once, on the root. The segments
+      and the calendar's grid are the Date Field's and the Calendar's own parts, used inside the picker's. To choose a
+      range, see <a href="../date-range-picker/">Date Range Picker</a>.
+    </p>
+    <Code file="date-picker/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>{"<input type=\"date\">"}</code> has a picker of its own, and it isn't used. The{" "}
+      <a href="../date-field/">Date Field</a> page lists what was measured: the field takes the browser's locale,
+      not the page's, and what is typed can't be read until the date is complete. The{" "}
+      <a href="../calendar/">Calendar</a> page adds that the browser's picker can't be styled, shown inline, shown as
+      several months, or used for a range. The native input is still there, hidden: it submits the value, and its{" "}
+      <code>min</code>, <code>max</code> and <code>required</code> checks are what a form and a Field read.
+    </p>
+    <p>The popup is a native <code>popover</code>, opened by a button with <code>popovertarget</code>. The browser gives:</p>
+    <ul>
+      <li>The top layer, with no portal and no <code>z-index</code>.</li>
+      <li>Closing on <kbd>Escape</kbd> and on a press outside. A press on the button toggles it instead.</li>
+      <li>Focus order: the popup comes after the button when tabbing.</li>
+      <li>
+        Placement with CSS anchor positioning. The group is the anchor (<code>anchor-name</code>), so the popup lines
+        up with the field, not with the small button, and flips when it doesn't fit.
+      </li>
+    </ul>
+    <p>
+      It is not a modal <code>{"<dialog>"}</code>. It has <code>role="dialog"</code> and the picker's label, as React
+      Aria's date picker does, but focus isn't trapped, and Tab can leave it while it stays open.
+    </p>
+    <p>
+      The library adds the shared value, focus on the chosen day when the popup opens (today when none is chosen),
+      closing on a choice, and focus back on the button. A browser puts focus back by itself only when the button had
+      it before the popup opened, and WebKit doesn't focus a button that is pressed, so the picker does it. The
+      library also adds the labels: the group is named by its <code>FieldLabel</code> or <code>aria-label</code>,
+      and the button is named "Calendar" plus that name. It keeps the calendar's month in step with what is typed,
+      and handles validity.
+    </p>
+    <div class="note">
+      <p>
+        Only the picker submits the value and takes part in a Field. The Date Field and the Calendar inside it would
+        each register with an enclosing <code>FieldRoot</code> and submit the value themselves, so the picker hides
+        the Field from them.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Keyboard and focus</h3>
+    <p>
+      The button opens the popup, and focus moves to the chosen day, or to today. In the grid the keys are the
+      Calendar's: arrows, <kbd>Home</kbd>, <kbd>End</kbd>, <kbd>PageUp</kbd> and <kbd>PageDown</kbd>.{" "}
+      <kbd>Enter</kbd> chooses a day, closes the popup and puts focus back on the button. <kbd>Escape</kbd> or a press
+      outside closes it without a choice. Pass <code>closeOnSelect={"{"}false{"}"}</code> on the root to keep it open.
+      A disabled or read-only picker's button is disabled, so the popup can't open.
+    </p>
+
+    <h3 id="typing">Typing a date</h3>
+    <p>
+      The field reports a date for every digit that completes one, so typing a year reports 0002, 0020, 0202 and
+      then 2026, as the Date Field does. The picker passes each one to <code>onValueChange</code>. The calendar's
+      selection follows every value. Its month turns only to a complete date inside <code>min</code> and{" "}
+      <code>max</code> that isn't already shown, so it ends up on the last one. <code>onValueChange</code> gets{" "}
+      <code>undefined</code> when the field is emptied or only partly filled.
+    </p>
+
+    <h3 id="constraints">Limits and unavailable days</h3>
+    <p>
+      <code>min</code>, <code>max</code> and <code>isDateUnavailable</code> go to the field and the calendar. In the
+      calendar, days outside the limits are disabled and unavailable days can't be chosen. A date like that can still
+      be typed. It is kept as typed, never corrected, and the picker is invalid: the group has{" "}
+      <code>data-invalid</code> and <code>aria-invalid</code>. A date outside the limits fails the hidden input's own{" "}
+      <code>rangeUnderflow</code> or <code>rangeOverflow</code>. An unavailable day, or a date only partly typed, gets
+      a custom message (<code>unavailableMessage</code>, <code>incompleteMessage</code>).
+    </p>
+    <Demo source="date-picker/constraints"><DatePickerConstraints /></Demo>
+
+    <h3 id="controlled">Controlled value and open state</h3>
+    <p>
+      Pass <code>value</code> with <code>onValueChange</code>, and <code>open</code> with{" "}
+      <code>onOpenChange</code>. <code>value={"{"}null{"}"}</code> is a controlled picker with no date. Write{" "}
+      <code>value={"{"}date ?? null{"}"}</code>, because an <code>undefined</code> value lets the picker hold its
+      own. A date set from outside replaces a partial edit. A day picked in the calendar shows once the owner has
+      it, as with a controlled Calendar. Handlers are called in a change of their own, so a handler that saves to a
+      server never holds the picker.
+    </p>
+    <Demo source="date-picker/controlled"><DatePickerControlled /></Demo>
+    <p>
+      A controlled <code>open</code> is the popup's state: the browser's popover follows it, and an owner that keeps{" "}
+      <code>open</code> true through <kbd>Escape</kbd> or a press outside has the popup shown again.
+    </p>
+
+    <h3 id="forms">Forms and fields</h3>
+    <p>
+      With a <code>name</code>, or inside a named <code>FieldRoot</code>, the picker submits one ISO date (
+      <code>2026-11-17</code>), or an empty string while it has no complete date. A form reset puts the default value
+      back. Inside a <code>FieldRoot</code>, the field's label names the group and the popup. The field's description
+      and error describe the group, and the field validates the picker's value with the checks above.
+    </p>
+    <Demo source="date-picker/form"><DatePickerForm /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="date-picker" />
+  </DocsPage>
+}

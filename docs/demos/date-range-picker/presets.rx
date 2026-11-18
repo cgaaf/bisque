@@ -1,0 +1,63 @@
+import { DateRangePickerRoot, DateRangePickerGroup, DateRangePickerStart, DateRangePickerSeparator, DateRangePickerEnd, DateRangePickerTrigger, DateRangePickerPopup, DateRangePickerCalendar } from "../../../src/date-range-picker/date-range-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+import { today } from "../../../src/internal/date.js"
+import { DateRange } from "../../../src/internal/types.rx"
+
+// The segments come from the field's context, so they are rendered by a component inside the field.
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+component CalendarIcon() {
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <rect x="2" y="3" width="12" height="11" rx="1.5" />
+    <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+  </svg>
+}
+
+// Two months side by side, each with its label: the previous and next buttons turn both.
+component TwoMonths() {
+  <div class="Header">
+    <CalendarPreviousMonth class="Nav">‹</CalendarPreviousMonth>
+    <CalendarMonthLabel class="MonthLabel" />
+    <CalendarMonthLabel class="MonthLabel" offset={1} />
+    <CalendarNextMonth class="Nav">›</CalendarNextMonth>
+  </div>
+  <div class="Months">
+    <CalendarGrid class="Grid"><CalendarGridHeader class="Head" format="narrow" /><CalendarGridBody class="Body" /></CalendarGrid>
+    <CalendarGrid class="Grid" offset={1}><CalendarGridHeader class="Head" format="narrow" /><CalendarGridBody class="Body" /></CalendarGrid>
+  </div>
+}
+
+fn lastDays(count: number): DateRange => ({ start: today(undefined, undefined).subtract({ days: count - 1 }), end: today(undefined, undefined) })
+fn show(range: DateRange | null): string => range == null ? "No range" : `${range.start.toString()} to ${range.end.toString()}`
+
+// A preset is a button that sets the controlled value; the calendar shows two months side by side.
+export component DateRangePickerPresets() {
+  // Boxed: a source seeded with a Temporal value breaks its methods.
+  source chosen: { range: DateRange | null } := { range: lastDays(7) }
+  <div class="DateRangePickerPresets">
+    <span class="Label" id="date-range-picker-presets-label">Report period</span>
+    <DateRangePickerRoot value={chosen.range} onValueChange={(range) => { chosen := { range: range ?? null } }}>
+      <DateRangePickerGroup class="Group" aria-labelledby="date-range-picker-presets-label">
+        <DateRangePickerStart class="Input"><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+        <DateRangePickerSeparator class="Separator">–</DateRangePickerSeparator>
+        <DateRangePickerEnd class="Input"><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+        <DateRangePickerTrigger class="Trigger"><CalendarIcon /></DateRangePickerTrigger>
+      </DateRangePickerGroup>
+      <DateRangePickerPopup class="Popup">
+        <DateRangePickerCalendar numberOfMonths={2}><TwoMonths /></DateRangePickerCalendar>
+      </DateRangePickerPopup>
+    </DateRangePickerRoot>
+    <div class="Controls">
+      <button class="Chip" onClick={() => { chosen := { range: lastDays(7) } }}>Last 7 days</button>
+      <button class="Chip" onClick={() => { chosen := { range: lastDays(30) } }}>Last 30 days</button>
+      <button class="Chip" onClick={() => { chosen := { range: null } }}>Clear</button>
+    </div>
+    <output class="Value">{show(chosen.range)}</output>
+  </div>
+}

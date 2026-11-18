@@ -1,0 +1,455 @@
+// Date Picker: a Date Field, a button, and a Calendar in a Popover, behind one value. Base UI has none; behaviour and
+// ARIA follow React Aria's DatePicker (a `group` holding the field and the button, the button named "Calendar" plus
+// the picker's label with `aria-haspopup="dialog"`, the popup a dialog named by the picker's label) and the WAI-ARIA
+// Authoring Practices "Date Picker Dialog" example (picking a day closes the dialog and puts focus back on the
+// button; Escape closes it).
+//
+// It is a composition, not a new widget: the parts are thin wrappers around ../date-field/date-field.rx and
+// ../calendar/calendar.rx that give each the shared state, and the trigger and popup use the Popover family's own
+// popup state (../internal/popover.rx), so the consumer states `min`, `max`, `locale` and the rest once, on the Root. The segments and the calendar's grid are those families' own
+// parts, used inside the picker's: `DateFieldInput` and `DateFieldSegment` inside DatePickerGroup, `CalendarGrid`,
+// `CalendarDay` and the rest inside DatePickerCalendar. Wrapping them again would add a second name for each and
+// nothing else.
+//
+// PLATFORM. `<input type="date">` has a picker of its own, but it takes its locale from the browser, can't be styled
+// or shown as a range, and its partial input can't be read (Date Field's and Calendar's source comments say what
+// was measured). The popup is a native `popover="auto"` (top layer, Escape, light dismiss, the button exempt from
+// light dismiss through `popovertarget`), placed under the group with CSS anchor positioning (`anchor-name` on the
+// group, `position-anchor` on the popup). It is a dialog by role only, as React Aria's is: a non-modal popover, so
+// focus isn't trapped and Tab leaves it.
+//
+// WHO OWNS WHAT. The value is the Root's: the field and the calendar are both controlled by it. Form submission
+// and Field are the Root's too, through one hidden `type="date"` input (its native `min`, `max` and `required`
+// are what Field and the browser check): the field and the calendar inside the picker are kept from seeing an
+// enclosing FieldRoot (`provide field = undefined`), since each would otherwise register its own input, value and
+// name with it and submit the value a second (and third) time. An unavailable day, or a partly typed date, is a
+// custom validity message on that input. A FieldLabel names the group, and Field's error describes it.
+//
+// TYPING. Date Field reports a value on every digit (typing a year reports 0002, 0020, 0202, 2026) and has no
+// commit event. The picker passes each one on (`onValueChange`), as the field does; the calendar's selection follows
+// every value, and its visible month follows a complete value inside [min, max] that isn't on the page already, so
+// it settles on the last. A typed date outside [min, max] or unavailable is kept and marks the picker invalid,
+// never corrected.
+//
+// OPENING AND CLOSING. Opening moves focus to the selected day, else today (the calendar's `autoFocus`). Picking a
+// day closes the popup (unless `closeOnSelect` is false) and focuses the button: an engine restores focus itself
+// only when focus was inside the popup and the button had it before (WebKit doesn't focus a pressed button), so the
+// part does it. Escape and a press outside close it as the browser does; when that leaves focus on the closed popup
+// (WebKit, after a press opened it), the part moves it to the button. A disabled or read-only picker's button is
+// disabled, so the popup can't open. A form reset applies the picker's value after the field's and the calendar's
+// own reset handlers have run.
+//
+// The popup's state is `createPopoverState` (../internal/popover.rx), held by the Root, as Select does; the trigger
+// and popup spread its props. A controlled `open` goes straight to it: an owner that keeps `open` true through
+// Escape or a press outside has the popup shown again. Not a PopoverRoot: the picker's own context
+// carries the popup's state, so its parts need no second context.
+import { mergeProps, createId } from "../internal/props.js"
+import { focusElement, createKeptFocus } from "../internal/dom.js"
+import { parseDate, dateToString, isDateInRange } from "../internal/date.js"
+import { isVisible, pageFor } from "../internal/calendar.js"
+import { createFormReset, setInputValue } from "../internal/field.js"
+import { createIncompleteValidity } from "../internal/segmented-field.js"
+import { mergeOuterProps, createFocusReturn, afterOtherResets } from "../internal/date-picker.js"
+import { DateFieldRoot, dateField } from "../date-field/date-field.rx"
+import { CalendarRoot, calendar } from "../calendar/calendar.rx"
+import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
+import { field, FieldContext, fieldGroupProps } from "../field/field.rx"
+import { DivProps, ButtonProps, PartProps, PlainDate } from "../internal/types.rx"
+
+// What the parts both pickers share read (DatePickerGroup's props, the trigger's and the popup's): the Date Range
+// Picker's context has these fields too.
+export type DatePickerShared = {
+  min: PlainDate | undefined
+  max: PlainDate | undefined
+  isDateUnavailable: ((date: PlainDate) => boolean) | undefined
+  locale: string | string[] | undefined
+  firstDayOfWeek: number | undefined
+  placeholderValue: PlainDate | undefined
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  closeOnSelect: boolean
+  // Whether the popup is open.
+  open: boolean
+  // The popup's state (../internal/popover.rx): open, the trigger and popup elements, `setOpen`.
+  popover: PopoverState
+  // The value is outside [min, max], unavailable or incomplete, or the Field says so.
+  invalid: boolean
+  // What names the picker (FieldLabel's id, the group's `aria-labelledby`, or the group's own id when it has an
+  // `aria-label`): the trigger, the popup and the calendar are named by it too.
+  labelledBy: string | undefined
+  // The group's `anchor-name`, the popup's `position-anchor`.
+  anchorName: string
+  // The enclosing FieldRoot's context, which only the Root and the group use.
+  field: FieldContext | undefined
+  // `<count>:<ISO date>` of the last typed date the calendar's page should show.
+  follow: string
+  setLabelledBy: (id: string | undefined) => void
+}
+
+export type DatePickerContext = DatePickerShared & {
+  // The date chosen or typed; undefined while the field is empty or incomplete.
+  value: PlainDate | undefined
+  // Some segments are filled and others not.
+  incomplete: boolean
+  // The value is a day `isDateUnavailable` refuses.
+  unavailable: boolean
+  // The field reported a value.
+  type: (value: PlainDate | undefined) => void
+  // The calendar selected a day.
+  select: (value: PlainDate) => void
+  setIncomplete: (incomplete: boolean) => void
+}
+
+export context datePicker: lane DatePickerContext
+
+export type DatePickerRootProps = {
+  // The date. `null` is controlled and empty; leaving it out lets the picker hold its own value.
+  value?: PlainDate | null
+  defaultValue?: PlainDate
+  // Called with each date the field makes (each digit typed into a year too) or the calendar selects, and with
+  // undefined when the field becomes empty or incomplete.
+  onValueChange?: (value: PlainDate | undefined) => void
+  open?: boolean
+  // Default: false.
+  defaultOpen?: boolean
+  // Called when the popup opens or closes.
+  onOpenChange?: (open: boolean) => void
+  // The earliest valid date: earlier days can't be picked, and a typed one is kept and invalid.
+  min?: PlainDate
+  // The latest valid date: later days can't be picked, and a typed one is kept and invalid.
+  max?: PlainDate
+  // Days that can't be picked (booked, closed). A typed one is kept and invalid.
+  isDateUnavailable?: (date: PlainDate) => boolean
+  // The locale of the field's segments and the calendar's names. Default: the browser's.
+  locale?: string | string[]
+  // 1 (Monday) to 7 (Sunday). Default: the locale's.
+  firstDayOfWeek?: number
+  // What an empty segment starts from when stepped with the arrow keys. Default: today.
+  placeholderValue?: PlainDate
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot), a hidden date input submits the ISO date (`2026-11-17`); nothing
+  // while it is empty or incomplete.
+  name?: string
+  form?: string
+  // Whether picking a day closes the popup. Default: true.
+  closeOnSelect?: boolean
+  // The validation message while some segments are filled and others not. Default: "Enter a complete date."
+  incompleteMessage?: string
+  // The validation message for a day `isDateUnavailable` refuses. Default: "This date is unavailable."
+  unavailableMessage?: string
+  children?: View
+}
+
+// An id or id list the consumer gave (`id`, `aria-labelledby`), or none.
+fn idRef(given: string | false | undefined): string | undefined => given == false || given == "" ? undefined : given
+
+export component DatePickerRoot(props: DatePickerRootProps) {
+  f = use field
+  // Temporal values are boxed (../internal/date.d.rx): a source seeded with one breaks its methods.
+  source held: { date: PlainDate | undefined } := { date: peek(props.defaultValue) }
+  source incomplete: boolean := false
+  source labelledBy: string | undefined := undefined
+  source follow: string := ""
+  source followCount: number := 0
+  source input: HTMLInputElement | undefined := undefined
+
+  // `value` and `disabled` are often read from an answer that can fail: that failure is the app's to show.
+  given = props.value catch (e) => undefined
+  isControlled = given != undefined
+  current = isControlled ? given ?? undefined : held.date
+  text = dateToString(current)
+  isDisabled = ((props.disabled ?? false) catch (e) => false) || (f?.disabled ?? false)
+  isReadOnly = (props.readOnly ?? false) catch (e) => false
+  // What the app supplies is read through `latest`: an equation that read a prop the app holds in an action beside
+  // the picker's own state would hold that state too (an action then reads the held value, ../../.claude/skills/
+  // bisque-components/references/language-notes.md, "Actions, holds and components").
+  low = latest props.min
+  high = latest props.max
+  loc = latest props.locale
+  firstDay = latest props.firstDayOfWeek
+  placeholder = latest props.placeholderValue
+  isRequired = latest props.required ?? false
+  closes = latest props.closeOnSelect ?? true
+  check = latest props.isDateUnavailable
+  isUnavailable = current != undefined && check != undefined && check(current)
+  outOfRange = current != undefined && !isDateInRange(current, low, high)
+  isInvalid = outOfRange || isUnavailable || incomplete || f?.state.valid == false
+  pickerId = createId("date-picker")
+  anchorName = `--${pickerId}`
+
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that updates the
+  // picker: a handler that saves holds its change until the answer lands, and the picker would be held with it.
+  action change(next: PlainDate | undefined) {
+    if (dateToString(next) == text) { return }
+    held.date := next
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action type(next: PlainDate | undefined) {
+    change(next)
+    if (next != undefined && isDateInRange(next, low, high)) {
+      let count = followCount + 1
+      followCount := count
+      follow := `${count}:${dateToString(next)}`
+    }
+  }
+  action select(next: PlainDate) { change(next) }
+  action setIncomplete(next: boolean) { incomplete := next }
+  action setLabelledBy(id: string | undefined) { labelledBy := id }
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  // The popup's state is the Popover family's own (../internal/popover.rx, as Select uses it), not a PopoverRoot: a
+  // controlled `open` goes straight to it, so the browser's popover follows it, and a close the owner refuses is
+  // shown again.
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
+  // Content that loads or fails inside the open popup replaces what had focus: focus stays in the popup.
+  _kept = createKeptFocus(state.popup, state.open)
+
+  // Forms and Field.
+  inputName = props.name ?? f?.name
+  initial = peek(text)
+  action setInput(element: HTMLInputElement) {
+    input := element
+    if (f) { f.setInput(element) }
+  }
+  _validity = createIncompleteValidity(input, incomplete ? (latest props.incompleteMessage) ?? "Enter a complete date." : isUnavailable ? (latest props.unavailableMessage) ?? "This date is unavailable." : "")
+  effect (text) { if (f) { f.setValue($0) } }
+  // The form has put the hidden input back to its default attribute (none): the picker goes back to its default,
+  // or to the owner's value, and Field takes it as the value it starts from.
+  action reset() { afterOtherResets(applyReset) }
+  action applyReset() {
+    let next = isControlled ? text : initial
+    if (!isControlled && next != text) { change(parseDate(next, undefined)) }
+    setInputValue(input, next)
+    if (f) { f.reset(next) }
+  }
+  _reset = createFormReset(input, reset)
+
+  self = latest {
+    value: current,
+    min: low,
+    max: high,
+    isDateUnavailable: check,
+    locale: loc,
+    firstDayOfWeek: firstDay,
+    placeholderValue: placeholder,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    closeOnSelect: closes,
+    open: state.open,
+    popover: state,
+    invalid: isInvalid,
+    incomplete: incomplete,
+    unavailable: isUnavailable,
+    labelledBy: labelledBy,
+    anchorName: anchorName,
+    field: f,
+    follow: follow,
+    type: type,
+    select: select,
+    setIncomplete: setIncomplete,
+    setLabelledBy: setLabelledBy,
+  }
+
+  provide datePicker = self
+
+  {props.children}
+  {if inputName != undefined || f != undefined {
+    <input type="date" hidden aria-hidden="true" tabindex="-1" name={inputName} form={props.form} min={low == undefined ? undefined : dateToString(low)} max={high == undefined ? undefined : dateToString(high)} step="any" value={text} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setInput} />
+  }}
+}
+
+// Reports a field's partial state to its picker, from inside the field's root. For the pickers' own use.
+export component DatePickerFieldState(props: { onIncomplete: (incomplete: boolean) => void }) {
+  c = use dateField
+  action report(incomplete: boolean) { props.onIncomplete(incomplete) }
+  effect (c.incomplete) { report($0) }
+  {""}
+}
+
+// The group's own props: the field's `role="group"` is Date Field's; these add the Field's labelling and state,
+// the picker's invalid state and the anchor the popup is placed against.
+export fn datePickerGroup(ref p: DatePickerShared, ref id: string): PartProps {
+  inField = fieldGroupProps(p.field)
+  isInvalid = p.invalid
+  anchor = p.anchorName
+  {
+    ...inField,
+    id: id,
+    "aria-invalid": isInvalid ? "true" : undefined,
+    "data-invalid": isInvalid ? "" : undefined,
+    style: { "anchor-name": anchor },
+  }
+}
+
+// The date field and the trigger, in one `role="group"`: Date Field's root, given the picker's value and options.
+// Put a DateFieldInput (with its DateFieldSegments) and a DatePickerTrigger inside. Name it with a FieldLabel,
+// `aria-label` or `aria-labelledby`.
+export component DatePickerGroup(props: DivProps) {
+  p = use datePicker
+  generatedId = createId("date-picker-group")
+  groupId: string = idRef(props.id) ?? generatedId
+  labelledBy = p.field?.labelId ?? idRef(props["aria-labelledby"]) ?? (props["aria-label"] != undefined ? groupId : undefined)
+  effect (labelledBy) { p.setLabelledBy($0) }
+  // The field inside is not the Field's control: the picker is.
+  provide field = undefined
+  // `children` is read only as `props.children`, below the field's provision: destructured or merged, it would be
+  // built first and find no `dateField` (mergeOuterProps leaves it out).
+  { id: _id, ...rest } = props
+  own = datePickerGroup(p, groupId)
+  merged = latest mergeOuterProps(own, rest)
+  // Each field of the context through an equation of its own: the context is a new object whenever any field
+  // changes (the popup opening), and a prop read from it directly would be read again each time, which rebuilds
+  // the field's options and segments, new but equal (UNSTABLE_MEMO_OUTPUT).
+  value = p.value ?? null
+  onType = p.type
+  onIncomplete = p.setIncomplete
+  low = p.min
+  high = p.max
+  loc = p.locale
+  placeholder = p.placeholderValue
+  isDisabled = p.disabled
+  isReadOnly = p.readOnly
+  isRequired = p.required
+  // The field doesn't see the FieldRoot, so the picker gives its segments the Field's description and error ids and
+  // its invalid state: an unavailable day, or the Field's verdict (a date outside min/max the field marks itself; a
+  // partial one counts once the Field has validated it, as for a Date Field on its own).
+  segmentsInvalid = p.unavailable || p.field?.state.valid == false
+  describedBy = p.field?.describedBy
+  <DateFieldRoot {...merged} value={value} onValueChange={onType} min={low} max={high} locale={loc} placeholderValue={placeholder} disabled={isDisabled} readOnly={isReadOnly} required={isRequired} invalid={segmentsInvalid} describedBy={describedBy}>
+    {props.children}
+    <DatePickerFieldState onIncomplete={onIncomplete} />
+  </DateFieldRoot>
+}
+
+// Spread on a <button>: `popovertarget` opens and closes the popup (it only works on a button). Named "Calendar" and
+// by the picker's label, disabled with the picker or while it is read-only.
+export fn datePickerTrigger(ref p: DatePickerShared, ref id: string): PartProps {
+  pop = p.popover
+  base = popoverTriggerProps(pop)
+  isDisabled = p.disabled || p.readOnly
+  name = p.labelledBy
+  own = latest {
+    ...base,
+    id: id,
+    "aria-label": "Calendar",
+    "aria-labelledby": name != undefined ? `${id} ${name}` : undefined,
+    "aria-haspopup": "dialog",
+    disabled: isDisabled ? true : undefined,
+  }
+  own
+}
+
+// The button that opens the popup. Pass `aria-label` to translate "Calendar".
+export component DatePickerTrigger({ id, children, ...rest }: ButtonProps) {
+  p = use datePicker
+  generatedId = createId("date-picker-trigger")
+  triggerId: string = idRef(id) ?? generatedId
+  own = datePickerTrigger(p, triggerId)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export type DatePickerPopupProps = {
+  // Which side of the group it sits on; the browser flips it when it doesn't fit. Default: "bottom".
+  side?: "top" | "bottom" | "left" | "right"
+  // Which edge of the group it lines up with. Default: "start".
+  align?: "start" | "center" | "end"
+  // Gap between group and popup, in pixels. Default: 0.
+  sideOffset?: number
+  alignOffset?: number
+} & DivProps
+
+// The popup's props: a `popover="auto"` element with `role="dialog"`, named by the picker's label, and placed
+// against the group (`position-anchor`), not the trigger.
+export fn datePickerPopup(ref p: DatePickerShared, ref side: "top" | "bottom" | "left" | "right", ref align: "start" | "center" | "end", ref sideOffset: number, ref alignOffset: number): PartProps {
+  pop = p.popover
+  base = popoverPopupProps(pop, "auto", side, align, sideOffset, alignOffset)
+  name = p.labelledBy
+  anchor = p.anchorName
+  own = { role: "dialog", "aria-labelledby": name, style: { "position-anchor": anchor } }
+  merged = latest mergeProps(base, own)
+  merged
+}
+
+// The popover holding the calendar. Style it with `:popover-open` and `@starting-style`.
+export component DatePickerPopup({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: DatePickerPopupProps) {
+  p = use datePicker
+  pop = p.popover
+  // Focus left on the closed popup goes back to the trigger (WebKit, after a press opened it).
+  _focus = createFocusReturn(pop.popup, pop.trigger, pop.open)
+  own = datePickerPopup(p, side, align, sideOffset, alignOffset)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// Turns the calendar's page to a date typed into a field (`follow`, `<count>:<ISO date>`), from inside the
+// calendar's root. For the pickers' own use.
+export component DatePickerMonthFollower(props: { follow: string }) {
+  c = use calendar
+  action show(follow: string) {
+    let date = parseDate(follow.slice(follow.indexOf(":") + 1), undefined)
+    let count = c.months.length
+    if (date != undefined && !isVisible(date, c.month, count)) { c.setMonth(pageFor(date, c.month, count)) }
+  }
+  effect (props.follow) { if ($0 != "") { show($0) } }
+  {""}
+}
+
+export type DatePickerCalendarProps = {
+  // How many months are shown side by side. Default: 1.
+  numberOfMonths?: number
+  // Always six rows. Default: false.
+  fixedWeeks?: boolean
+  // The day marked as today. Default: today in `timeZone`.
+  today?: PlainDate
+  // The time zone "today" is in. Default: the system's.
+  timeZone?: string
+  // A column of ISO week numbers. Default: false.
+  showWeekNumbers?: boolean
+  weekNumberLabel?: string
+} & Omit<DivProps, "defaultValue" | "onChange">
+
+// Calendar's root, given the picker's value and options. Put Calendar's own parts inside (CalendarGrid,
+// CalendarGridBody, CalendarPreviousMonth…). Opening the popup focuses the selected day, else today; picking a day
+// closes the popup and focuses the trigger, unless the Root's `closeOnSelect` is false.
+export component DatePickerCalendar(props: DatePickerCalendarProps) {
+  p = use datePicker
+  pop = p.popover
+  // Focus goes to the trigger first, so it leaves the popup before it closes, in every engine.
+  action done(date: PlainDate) {
+    if (!p.closeOnSelect) { return }
+    focusElement(pop.trigger)
+    pop.setOpen(false)
+  }
+  // The calendar submits nothing and is not the Field's control: the picker is.
+  provide field = undefined
+  named = props["aria-label"] != undefined || props["aria-labelledby"] != undefined
+  // Each field of the context through an equation of its own (DatePickerGroup says why).
+  name = named ? undefined : p.labelledBy
+  value = p.value ?? null
+  onSelect = p.select
+  low = p.min
+  high = p.max
+  check = p.isDateUnavailable
+  loc = p.locale
+  firstDay = p.firstDayOfWeek
+  isDisabled = p.disabled
+  isReadOnly = p.readOnly
+  isOpen = pop.open
+  follow = p.follow
+  <CalendarRoot aria-labelledby={name} {...props} value={value} onValueChange={onSelect} onSelectionComplete={done} min={low} max={high} isDateUnavailable={check} locale={loc} firstDayOfWeek={firstDay} disabled={isDisabled} readOnly={isReadOnly} autoFocus={isOpen}>
+    {props.children}
+    <DatePickerMonthFollower follow={follow} />
+  </CalendarRoot>
+}

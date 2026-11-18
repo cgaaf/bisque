@@ -1,0 +1,31 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "./bisque/date-picker/date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "./bisque/date-field/date-field.rx"
+import { CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "./bisque/calendar/calendar.rx"
+
+// The segments come from the field's context, so they are rendered by a component inside the group.
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+<DatePickerRoot>
+  <DatePickerGroup aria-label="Date">
+    <DateFieldInput>
+      <Segments />
+    </DateFieldInput>
+    <DatePickerTrigger />
+  </DatePickerGroup>
+  <DatePickerPopup>
+    <DatePickerCalendar>
+      <CalendarPreviousMonth />
+      <CalendarMonthLabel />
+      <CalendarNextMonth />
+      <CalendarGrid>
+        <CalendarGridHeader />
+        <CalendarGridBody />
+      </CalendarGrid>
+    </DatePickerCalendar>
+  </DatePickerPopup>
+</DatePickerRoot>

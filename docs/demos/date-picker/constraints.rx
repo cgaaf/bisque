@@ -1,0 +1,53 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../../../src/date-picker/date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../../src/date-field/date-field.rx"
+import { CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+import { today } from "../../../src/internal/date.js"
+import { PlainDate } from "../../../src/internal/types.rx"
+
+// The segments come from the field's context, so they are rendered by a component inside the field.
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment class="Segment" segment={segment} />
+  }}
+}
+
+component CalendarIcon() {
+  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+    <rect x="2" y="3" width="12" height="11" rx="1.5" />
+    <path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" />
+  </svg>
+}
+
+// The calendar's header and grid, inside the picker's calendar.
+component Month() {
+  <div class="Header">
+    <CalendarPreviousMonth class="Nav">‹</CalendarPreviousMonth>
+    <CalendarMonthLabel class="MonthLabel" />
+    <CalendarNextMonth class="Nav">›</CalendarNextMonth>
+  </div>
+  <CalendarGrid class="Grid">
+    <CalendarGridHeader class="Head" format="narrow" />
+    <CalendarGridBody class="Body" />
+  </CalendarGrid>
+}
+
+// Closed at weekends.
+fn closed(date: PlainDate): boolean => date.dayOfWeek >= 6
+
+export component DatePickerConstraints() {
+  // Bookable from tomorrow, for the next eight weeks.
+  start = today(undefined, undefined)
+  <div class="DatePickerConstraints">
+    <span class="Label" id="date-picker-constraints-label">Collection day</span>
+    <DatePickerRoot locale="en-GB" min={start.add({ days: 1 })} max={start.add({ weeks: 8 })} isDateUnavailable={closed}>
+      <DatePickerGroup class="Group" aria-labelledby="date-picker-constraints-label">
+        <DateFieldInput class="Input"><Segments /></DateFieldInput>
+        <DatePickerTrigger class="Trigger"><CalendarIcon /></DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup class="Popup">
+        <DatePickerCalendar><Month /></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+  </div>
+}

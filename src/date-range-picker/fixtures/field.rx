@@ -1,0 +1,41 @@
+import { DateRangePickerRoot, DateRangePickerGroup, DateRangePickerStart, DateRangePickerSeparator, DateRangePickerEnd, DateRangePickerTrigger, DateRangePickerPopup, DateRangePickerCalendar } from "../date-range-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { parseDate } from "../../internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// The Field's value for a range: `{ start, end }` ISO strings, or null.
+fn describe(trip: any): string => trip == null ? "null" : `trip=${trip.start}/${trip.end}`
+
+// A required range picker in a named Field inside a Form, with a max.
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := describe(values.trip) }}>
+    <FieldRoot name="trip">
+      <FieldLabel>Trip</FieldLabel>
+      <DateRangePickerRoot locale="en-US" required max={parseDate("2030-12-31", undefined)}>
+        <DateRangePickerGroup data-testid="trip">
+          <DateRangePickerStart data-testid="start"><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+          <DateRangePickerSeparator>–</DateRangePickerSeparator>
+          <DateRangePickerEnd data-testid="end"><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+          <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+        </DateRangePickerGroup>
+        <DateRangePickerPopup data-testid="popup">
+          <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+        </DateRangePickerPopup>
+      </DateRangePickerRoot>
+      <FieldDescription data-testid="description">Arrival and departure.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

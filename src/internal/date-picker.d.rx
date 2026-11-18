@@ -1,0 +1,6 @@
+// How .rx may use ./date-picker.js (implemented in ./impl/date-picker.ts), shared by the Date Picker and the Date
+// Range Picker. One declaration per line: scripts/gen-dts.mjs turns this file into ./date-picker.d.ts.
+export pure fn mergeOuterProps(internal: any, external: any): any
+export pure fn createRangeValidity(ref start: HTMLInputElement | undefined, ref end: HTMLInputElement | undefined, ref startMessage: string, ref endMessage: string, ref key: string) instantiates
+export pure fn createFocusReturn(ref popup: HTMLElement | undefined, ref trigger: HTMLElement | undefined, ref open: boolean) instantiates
+export fn afterOtherResets(run: (() => void)): void

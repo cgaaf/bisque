@@ -1,0 +1,76 @@
+{
+  "DatePickerRoot": {
+    "description": "Holds the picker's value and open state, and provides them, with the options given here once, to the field, the trigger, the popup and the calendar. It renders no element of its own, only the Popover underneath and, with a name or inside a FieldRoot, the hidden date input that submits the value and that a Field validates.",
+    "props": {
+      "value": "The date, a `Temporal.PlainDate`. Pass it with `onValueChange` to control the picker; `null` is a controlled picker with no date (`undefined` leaves it uncontrolled, so write `date ?? null`). A date set from outside replaces a partial edit. It may be read from an answer that is loading or guessed over; one that fails is left to the app's `errored` region.",
+      "defaultValue": "The date at first, when the picker isn't controlled. A form reset puts it back.",
+      "onValueChange": "Called with each date the field makes (each digit typed into a year too: 0002, 0020, 0202, 2026) or the calendar picks, and with undefined when the field is emptied or only partly filled. It is called in a change of its own, so it may be an action that saves.",
+      "open": "Whether the popup is open. Pass it with `onOpenChange` to control it: the browser's popover follows it, and an owner that keeps it true through Escape or a press outside has the popup shown again.",
+      "defaultOpen": "Whether the popup is open at first, when it isn't controlled.",
+      "onOpenChange": "Called when the popup opens or closes, by the trigger, Escape, a press outside, a pick or a controlled `open`.",
+      "disabled": "Disables the field's segments and the trigger, so the popup can't open, and the hidden input.",
+      "readOnly": "The segments take focus but not edits, and the trigger is disabled, so the popup can't open.",
+      "required": "The hidden input is `required`: a date must be given for a form or a FieldRoot to be valid.",
+      "form": "The id of the form the hidden input belongs to, when it isn't inside it.",
+      "incompleteMessage": "The hidden input's validation message while the field is partly filled.",
+      "unavailableMessage": "The hidden input's validation message for a date `isDateUnavailable` refuses."
+    },
+    "defaults": {
+      "incompleteMessage": "\"Enter a complete date.\"",
+      "unavailableMessage": "\"This date is unavailable.\""
+    }
+  },
+  "DatePickerGroup": {
+    "description": "The date field and the trigger in one `role=\"group\"`: the Date Field's root, given the picker's value and options. Put a DateFieldInput with its DateFieldSegments and a DatePickerTrigger inside. Name it with a FieldLabel, `aria-label` or `aria-labelledby`; the segments, the trigger, the popup and the calendar are named by the same label. It is the anchor the popup is placed against (`anchor-name`).",
+    "element": "div",
+    "dataAttributes": {
+      "data-invalid": "Present while the date is outside min/max, unavailable or partly typed, or the Field is invalid.",
+      "data-disabled": "Present when the picker is disabled.",
+      "data-focused": "Present while a segment has focus."
+    }
+  },
+  "DatePickerTrigger": {
+    "description": "The button that opens and closes the popup: the native `popovertarget`. It is named \"Calendar\" and the picker's label (pass `aria-label` to translate \"Calendar\"), has `aria-haspopup=\"dialog\"`, and is disabled while the picker is disabled or read-only. Picking a day puts focus back on it."
+  },
+  "DatePickerPopup": {
+    "description": "The native `popover` holding the calendar, with `role=\"dialog\"`, named by the picker's label. It is placed under the group with CSS anchor positioning, and the browser flips it when it doesn't fit. Style it with `:popover-open` and `@starting-style`.",
+    "props": {
+      "side": "Which side of the group it sits on; the browser flips it when it doesn't fit.",
+      "align": "Which edge of the group it lines up with.",
+      "sideOffset": "The gap between the group and the popup, in pixels.",
+      "alignOffset": "Moves the popup along the group's edge, in pixels, when `align` isn't \"center\"."
+    }
+  },
+  "DatePickerCalendar": {
+    "description": "The Calendar's root, given the picker's value and options. Put the Calendar's own parts inside (CalendarGrid, CalendarGridBody, CalendarPreviousMonth…). Opening the popup focuses the chosen day, else today; picking a day closes the popup and focuses the trigger, unless the root's `closeOnSelect` is false. The calendar submits nothing and isn't a Field's control: the picker is. It takes the Calendar's display props.",
+    "props": {
+      "numberOfMonths": "How many months are shown side by side, each in a CalendarGrid with its `offset`.",
+      "fixedWeeks": "Always six rows of days, so the grid's height doesn't change from month to month.",
+      "today": "The day marked as today. Default: today in `timeZone`.",
+      "timeZone": "The time zone in which \"today\" is read.",
+      "showWeekNumbers": "CalendarGridHeader and CalendarGridBody add a first column of ISO week numbers.",
+      "weekNumberLabel": "The week number column's name, and the start of each week number's accessible name."
+    },
+    "defaults": {
+      "today": null
+    },
+    "dataAttributes": {
+      "data-disabled": "Present when the picker is disabled.",
+      "data-readonly": "Present when the picker is read-only.",
+      "data-invalid": null,
+      "data-valid": null,
+      "data-touched": null,
+      "data-dirty": null,
+      "data-filled": null,
+      "data-focused": null,
+      "data-pending": null,
+      "data-range": null
+    }
+  },
+  "DatePickerFieldState": {
+    "hidden": true
+  },
+  "DatePickerMonthFollower": {
+    "hidden": true
+  }
+}

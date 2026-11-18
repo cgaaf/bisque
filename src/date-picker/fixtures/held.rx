@@ -1,0 +1,61 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate } from "../../internal/date.js"
+import { save } from "../../test/slow-server.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// picker is computed from that write. The picker's own state (open, the day picked, what is typed) must not wait
+// for the app's request. Today is pinned to 2030-05-15.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <DatePickerRoot locale="en-US" defaultValue={parseDate("2030-05-08", undefined)} max={step == 1 ? parseDate("2031-01-01", undefined) : parseDate("2030-12-31", undefined)}>
+      <DatePickerGroup aria-label="Root prop">
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup>
+        <DatePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+
+    // 2. An attribute of the group.
+    <DatePickerRoot locale="en-US" defaultValue={parseDate("2030-05-08", undefined)}>
+      <DatePickerGroup aria-label="Group attribute" class={step == 2 ? "second" : "first"}>
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup>
+        <DatePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+
+    // 3. An attribute of the trigger, the popup and a prop of the calendar.
+    <DatePickerRoot locale="en-US" defaultValue={parseDate("2030-05-08", undefined)}>
+      <DatePickerGroup aria-label="Popup attribute">
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger class={step == 2 ? "second" : "first"}>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup class={step == 2 ? "second" : "first"}>
+        <DatePickerCalendar today={parseDate("2030-05-15", undefined)} fixedWeeks={step == 2}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+  </main>
+}

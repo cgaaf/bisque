@@ -1,0 +1,425 @@
+// Date Range Picker: two Date Fields (start and end) in one group, a button, and a Range Calendar in a Popover,
+// behind one value. Base UI has none; behaviour and ARIA follow React Aria's DateRangePicker (one `group` named by
+// the label, holding a start and an end field, each its own group named "Start date" / "End date", and the button;
+// the popup a dialog named by the label) and the WAI-ARIA Authoring Practices "Date Picker Dialog" example for
+// the popup's keyboard and focus. It is ../date-picker/date-picker.rx with a range: read that file's header for
+// what the platform gives, who owns the value and the form, and how opening and closing work. What differs:
+//
+// VALUE. A `DateRange` (`{ start, end }`), reported when both fields are complete, and undefined while either is
+// empty or incomplete. The picker holds each side while the other is still being typed, so a controlled value
+// that stays null while the start is typed (or becomes null as one side is emptied) doesn't empty the other field;
+// a controlled value that changes to something other than what the picker has replaces both fields. So a "Clear"
+// that sets null while one side is partly typed leaves that side as typed. A range picked in the calendar of a controlled picker shows once the owner has it, as a controlled
+// Calendar does; what is typed shows at once, as Date Field keeps a partial edit.
+//
+// A START AFTER THE END is invalid, not swapped, as in React Aria: the range is reported as typed (so the field shows
+// what was typed), the group is `data-invalid`, the start input gets `rangeOrderMessage`, and the calendar shows no
+// range. Picking in the calendar always gives an ordered range.
+//
+// FORMS. Two hidden `type="date"` inputs submit `<name>-start` and `<name>-end` (or `startName` / `endName`), as
+// RangeCalendarRoot's do, each with the native `min`, `max` and `required`. Inside a FieldRoot the field's value is
+// `{ start, end }` ISO strings (null until both are complete), as RangeCalendarRoot gives it, and Field reads the
+// start input, whose validity also carries the end's problem (an end beyond `max`, an end that is unavailable or
+// incomplete), so the field is invalid when either side is.
+//
+// Presets ("Last 7 days"), two months side by side and a month/year select are composition: a button that sets
+// `value`, `numberOfMonths={2}` on the calendar, Calendar's selects.
+import { mergeProps, createId } from "../internal/props.js"
+import { focusElement, createKeptFocus } from "../internal/dom.js"
+import { parseDate, dateToString, isDateInRange, compareDates } from "../internal/date.js"
+import { createFormReset, setInputValue } from "../internal/field.js"
+import { mergeOuterProps, createRangeValidity, createFocusReturn, afterOtherResets } from "../internal/date-picker.js"
+import { DateFieldRoot } from "../date-field/date-field.rx"
+import { RangeCalendarRoot } from "../calendar/calendar.rx"
+import { createPopoverState } from "../internal/popover.rx"
+import { field } from "../field/field.rx"
+import { DatePickerShared, DatePickerFieldState, DatePickerMonthFollower, datePickerGroup, datePickerTrigger, datePickerPopup, DatePickerPopupProps, DatePickerCalendarProps } from "../date-picker/date-picker.rx"
+import { DivProps, SpanProps, ButtonProps, PartProps, PlainDate, DateRange } from "../internal/types.rx"
+
+export type DateRangePickerContext = DatePickerShared & {
+  // The range, when both fields are complete (its start may be after its end: then it is invalid).
+  value: DateRange | undefined
+  // What each field shows.
+  start: PlainDate | undefined
+  end: PlainDate | undefined
+  // The start is after the end.
+  reversed: boolean
+  startIncomplete: boolean
+  endIncomplete: boolean
+  // A field's date is one `isDateUnavailable` refuses.
+  startUnavailable: boolean
+  endUnavailable: boolean
+  // The fields reported a value.
+  typeStart: (value: PlainDate | undefined) => void
+  typeEnd: (value: PlainDate | undefined) => void
+  // The calendar completed a range.
+  select: (value: DateRange) => void
+  setStartIncomplete: (incomplete: boolean) => void
+  setEndIncomplete: (incomplete: boolean) => void
+}
+
+export context dateRangePicker: lane DateRangePickerContext
+
+export type DateRangePickerRootProps = {
+  // The range. `null` is controlled and empty; leaving it out lets the picker hold its own value.
+  value?: DateRange | null
+  defaultValue?: DateRange
+  // Called with the range whenever both fields are complete and either changes (each digit typed into a year
+  // too), or the calendar completes one; with undefined when a complete range becomes incomplete.
+  onValueChange?: (value: DateRange | undefined) => void
+  open?: boolean
+  // Default: false.
+  defaultOpen?: boolean
+  // Called when the popup opens or closes.
+  onOpenChange?: (open: boolean) => void
+  // The earliest valid date: earlier days can't be picked, and a typed one is kept and invalid.
+  min?: PlainDate
+  // The latest valid date: later days can't be picked, and a typed one is kept and invalid.
+  max?: PlainDate
+  // Days that can't be picked, nor be inside a picked range. A typed one is kept and invalid.
+  isDateUnavailable?: (date: PlainDate) => boolean
+  // The locale of the fields' segments and the calendar's names. Default: the browser's.
+  locale?: string | string[]
+  // 1 (Monday) to 7 (Sunday). Default: the locale's.
+  firstDayOfWeek?: number
+  // What an empty segment starts from when stepped with the arrow keys. Default: today.
+  placeholderValue?: PlainDate
+  disabled?: boolean
+  readOnly?: boolean
+  // Both dates are required.
+  required?: boolean
+  // Submits the range as `<name>-start` and `<name>-end` (ISO dates), as RangeCalendarRoot does.
+  name?: string
+  // The start date's name with a form. Default: `<name>-start`.
+  startName?: string
+  // The end date's name with a form. Default: `<name>-end`.
+  endName?: string
+  form?: string
+  // Whether completing a range in the calendar closes the popup. Default: true.
+  closeOnSelect?: boolean
+  // The validation message while a field is partly filled. Default: "Enter a complete date."
+  incompleteMessage?: string
+  // The validation message for a day `isDateUnavailable` refuses. Default: "This date is unavailable."
+  unavailableMessage?: string
+  // The validation message for a start after the end. Default: "The end date is before the start date."
+  rangeOrderMessage?: string
+  children?: View
+}
+
+fn idRef(given: string | false | undefined): string | undefined => given == false || given == "" ? undefined : given
+fn rangeKey(start: PlainDate | undefined, end: PlainDate | undefined): string => start == undefined || end == undefined ? "" : `${dateToString(start)}/${dateToString(end)}`
+fn rangeOf(start: PlainDate | undefined, end: PlainDate | undefined): DateRange | undefined => start == undefined || end == undefined ? undefined : { start: start, end: end }
+fn refused(date: PlainDate | undefined, check: ((date: PlainDate) => boolean) | undefined): boolean => date != undefined && check != undefined && check(date)
+
+export component DateRangePickerRoot(props: DateRangePickerRootProps) {
+  f = use field
+  // Temporal values are boxed (../internal/date.d.rx): a source seeded with one breaks its methods.
+  // `value` and `disabled` are often read from an answer that can fail: that failure is the app's to show.
+  given = props.value catch (e) => undefined
+  source sides: { start: PlainDate | undefined; end: PlainDate | undefined } := { start: peek(given?.start ?? props.defaultValue?.start), end: peek(given?.end ?? props.defaultValue?.end) }
+  source startIncomplete: boolean := false
+  source endIncomplete: boolean := false
+  source labelledBy: string | undefined := undefined
+  source follow: string := ""
+  source followCount: number := 0
+  source startInput: HTMLInputElement | undefined := undefined
+  source endInput: HTMLInputElement | undefined := undefined
+
+  isControlled = given != undefined
+  // A controlled value that changes replaces both sides.
+  // Read through equations: an action that reads `given` directly is taken to read `props.value` uncaught
+  // (UNCAUGHT_ACTION_FAILURE for an app whose value comes from a request).
+  ownerStart = given?.start
+  ownerEnd = given?.end
+  givenKey = isControlled ? `=${rangeKey(ownerStart, ownerEnd)}` : ""
+  // An owner's value equal to what the picker has (an echo of what it just reported, null while a side is
+  // incomplete) is not a change from outside: the side still being typed is kept.
+  action adopt(given: string) {
+    if (given == "" || rangeKey(ownerStart, ownerEnd) == key) { return }
+    sides := { start: ownerStart, end: ownerEnd }
+  }
+  effect (givenKey) { adopt($0) }
+
+  // Read through `latest`: the actions below read the sides, and a plain read would give them the value held by an
+  // app action still waiting on a prop it passes (the start typed over, in the held test).
+  start = latest sides.start
+  end = latest sides.end
+  key = rangeKey(start, end)
+  current = rangeOf(start, end)
+  isReversed = start != undefined && end != undefined && compareDates(start, end) > 0
+  isDisabled = ((props.disabled ?? false) catch (e) => false) || (f?.disabled ?? false)
+  isReadOnly = (props.readOnly ?? false) catch (e) => false
+  // What the app supplies is read through `latest`: an equation that read a prop the app holds in an action beside
+  // the picker's own state would hold that state too (an action then reads the held value, ../../.claude/skills/
+  // bisque-components/references/language-notes.md, "Actions, holds and components").
+  low = latest props.min
+  high = latest props.max
+  loc = latest props.locale
+  firstDay = latest props.firstDayOfWeek
+  placeholder = latest props.placeholderValue
+  isRequired = latest props.required ?? false
+  closes = latest props.closeOnSelect ?? true
+  check = latest props.isDateUnavailable
+  startRefused = refused(start, check)
+  endRefused = refused(end, check)
+  outOfRange = (start != undefined && !isDateInRange(start, low, high)) || (end != undefined && !isDateInRange(end, low, high))
+  isInvalid = outOfRange || startRefused || endRefused || isReversed || startIncomplete || endIncomplete || f?.state.valid == false
+  pickerId = createId("date-range-picker")
+  anchorName = `--${pickerId}`
+
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that updates the
+  // picker: a handler that saves holds its change until the answer lands, and the picker would be held with it.
+  // `keep`: the sides take the change now. A pick in the calendar of a controlled picker waits for the owner, as a
+  // controlled Calendar does; what is typed is kept at once, as Date Field keeps a partial edit.
+  action change(nextStart: PlainDate | undefined, nextEnd: PlainDate | undefined, keep: boolean) {
+    if (keep) { sides := { start: nextStart, end: nextEnd } }
+    let nextKey = rangeKey(nextStart, nextEnd)
+    if (nextKey == key) { return }
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      let range = rangeOf(nextStart, nextEnd)
+      onFlush(() => { report(range) })
+    }
+  }
+  action followTo(date: PlainDate | undefined) {
+    if (date == undefined || !isDateInRange(date, low, high)) { return }
+    let count = followCount + 1
+    followCount := count
+    follow := `${count}:${dateToString(date)}`
+  }
+  action typeStart(next: PlainDate | undefined) {
+    change(next, end, true)
+    followTo(next)
+  }
+  action typeEnd(next: PlainDate | undefined) {
+    change(start, next, true)
+    followTo(next)
+  }
+  action select(range: DateRange) { change(range.start, range.end, !isControlled) }
+  action setStartIncomplete(next: boolean) { startIncomplete := next }
+  action setEndIncomplete(next: boolean) { endIncomplete := next }
+  action setLabelledBy(id: string | undefined) { labelledBy := id }
+  action notifyOpen(next: boolean) {
+    if (props.onOpenChange) {
+      let report = props.onOpenChange
+      onFlush(() => { report(next) })
+    }
+  }
+  // The popup's state is the Popover family's own (DatePickerRoot says why).
+  state = createPopoverState(props.open, peek(props.defaultOpen ?? false), notifyOpen)
+  _kept = createKeptFocus(state.popup, state.open)
+
+  // Forms and Field.
+  baseName = props.name ?? f?.name
+  startName = props.startName ?? (baseName == undefined ? undefined : `${baseName}-start`)
+  endName = props.endName ?? (baseName == undefined ? undefined : `${baseName}-end`)
+  hasInputs = startName != undefined || endName != undefined || f != undefined
+  startText = dateToString(start)
+  endText = dateToString(end)
+  minText = low == undefined ? undefined : dateToString(low)
+  maxText = high == undefined ? undefined : dateToString(high)
+  initialStart = peek(startText)
+  initialEnd = peek(endText)
+  action setStartInput(element: HTMLInputElement) {
+    startInput := element
+    if (f) { f.setInput(element) }
+  }
+  action setEndInput(element: HTMLInputElement) { endInput := element }
+  incompleteText = (latest props.incompleteMessage) ?? "Enter a complete date."
+  unavailableText = (latest props.unavailableMessage) ?? "This date is unavailable."
+  startMessage = startIncomplete ? incompleteText : startRefused ? unavailableText : isReversed ? (latest props.rangeOrderMessage) ?? "The end date is before the start date." : ""
+  endMessage = endIncomplete ? incompleteText : endRefused ? unavailableText : ""
+  _validity = createRangeValidity(startInput, endInput, startMessage, endMessage, `${startText}/${endText}/${minText ?? ""}/${maxText ?? ""}/${isRequired}`)
+  fieldValue = key == "" ? null : { start: startText, end: endText }
+  effect (fieldValue) { if (f) { f.setValue($0) } }
+  // The form has put the hidden inputs back to their default attribute (none): the picker goes back to its
+  // default, or to the owner's value, and Field takes it as the value it starts from.
+  action reset() { afterOtherResets(applyReset) }
+  action applyReset() {
+    let nextStart = isControlled ? ownerStart : parseDate(initialStart, undefined)
+    let nextEnd = isControlled ? ownerEnd : parseDate(initialEnd, undefined)
+    change(nextStart, nextEnd, true)
+    setInputValue(startInput, dateToString(nextStart))
+    setInputValue(endInput, dateToString(nextEnd))
+    if (f) { f.reset(nextStart == undefined || nextEnd == undefined ? null : { start: dateToString(nextStart), end: dateToString(nextEnd) }) }
+  }
+  _reset = createFormReset(startInput, reset)
+
+  self = latest {
+    value: current,
+    start: start,
+    end: end,
+    reversed: isReversed,
+    startIncomplete: startIncomplete,
+    endIncomplete: endIncomplete,
+    startUnavailable: startRefused,
+    endUnavailable: endRefused,
+    min: low,
+    max: high,
+    isDateUnavailable: check,
+    locale: loc,
+    firstDayOfWeek: firstDay,
+    placeholderValue: placeholder,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    closeOnSelect: closes,
+    open: state.open,
+    popover: state,
+    invalid: isInvalid,
+    labelledBy: labelledBy,
+    anchorName: anchorName,
+    field: f,
+    follow: follow,
+    setLabelledBy: setLabelledBy,
+    typeStart: typeStart,
+    typeEnd: typeEnd,
+    select: select,
+    setStartIncomplete: setStartIncomplete,
+    setEndIncomplete: setEndIncomplete,
+  }
+
+  provide dateRangePicker = self
+
+  {props.children}
+  {if hasInputs {
+    <input type="date" hidden aria-hidden="true" tabindex="-1" name={startName} form={props.form} min={minText} max={maxText} step="any" value={startText} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setStartInput} />
+    <input type="date" hidden aria-hidden="true" tabindex="-1" name={endName} form={props.form} min={minText} max={maxText} step="any" value={endText} disabled={isDisabled} readonly={isReadOnly} required={isRequired} ref={setEndInput} />
+  }}
+}
+
+// The start field, the separator, the end field and the trigger, in one `role="group"` named by a FieldLabel,
+// `aria-label` or `aria-labelledby`. It carries the Field's state, the picker's `data-invalid`, and the anchor the
+// popup is placed against.
+export component DateRangePickerGroup({ id, children, ...rest }: DivProps) {
+  p = use dateRangePicker
+  generatedId = createId("date-range-picker-group")
+  groupId: string = idRef(id) ?? generatedId
+  labelledBy = p.field?.labelId ?? idRef(rest["aria-labelledby"]) ?? (rest["aria-label"] != undefined ? groupId : undefined)
+  effect (labelledBy) { p.setLabelledBy($0) }
+  own = datePickerGroup(p, groupId)
+  isDisabled = p.disabled
+  withRole = { ...own, role: "group", "data-disabled": isDisabled ? "" : undefined }
+  merged = latest mergeProps(withRole, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type DateRangePickerFieldProps = DivProps
+
+// One side of the range: Date Field's root, given that side's value and the picker's options. Put a DateFieldInput
+// (with its DateFieldSegments) inside. It is a group of its own, named "Start date" / "End date" (pass `aria-label`
+// to translate).
+component DateRangePickerSide(props: DateRangePickerFieldProps & { side: "start" | "end" }) {
+  p = use dateRangePicker
+  // The field inside is not the Field's control: the picker is.
+  provide field = undefined
+  // `children` is read only as `props.children`, below the field's provision (DatePickerGroup says why).
+  { side: _side, ...rest } = props
+  isStart = props.side == "start"
+  own = { "aria-label": isStart ? "Start date" : "End date" }
+  merged = latest mergeOuterProps(own, rest)
+  // Each field of the context through an equation of its own (DatePickerGroup says why).
+  value = (isStart ? p.start : p.end) ?? null
+  onType = isStart ? p.typeStart : p.typeEnd
+  onIncomplete = isStart ? p.setStartIncomplete : p.setEndIncomplete
+  low = p.min
+  high = p.max
+  loc = p.locale
+  placeholder = p.placeholderValue
+  isDisabled = p.disabled
+  isReadOnly = p.readOnly
+  isRequired = p.required
+  // The field doesn't see the FieldRoot, so the picker gives it the Field's description and error ids and the side's
+  // own invalid state (the group shows the picker's): unavailable, part of a reversed range, or the Field's verdict.
+  // A date outside min/max the field marks itself; a partial one counts once the Field has validated it.
+  isInvalid = (isStart ? p.startUnavailable : p.endUnavailable) || p.reversed || p.field?.state.valid == false
+  describedBy = p.field?.describedBy
+  <DateFieldRoot {...merged} invalid={isInvalid} describedBy={describedBy} value={value} onValueChange={onType} min={low} max={high} locale={loc} placeholderValue={placeholder} disabled={isDisabled} readOnly={isReadOnly} required={isRequired}>
+    {props.children}
+    <DatePickerFieldState onIncomplete={onIncomplete} />
+  </DateFieldRoot>
+}
+
+export component DateRangePickerStart(props: DateRangePickerFieldProps) {
+  <DateRangePickerSide {...props} side="start">{props.children}</DateRangePickerSide>
+}
+
+export component DateRangePickerEnd(props: DateRangePickerFieldProps) {
+  <DateRangePickerSide {...props} side="end">{props.children}</DateRangePickerSide>
+}
+
+// Between the fields: hidden from assistive technology, which hears "Start date" and "End date". Shows "–" unless
+// given children.
+export fn dateRangePickerSeparator(): PartProps {
+  { "aria-hidden": "true" }
+}
+
+export component DateRangePickerSeparator({ children, ...rest }: SpanProps) {
+  own = dateRangePickerSeparator()
+  merged = latest mergeProps(own, rest)
+  <span {...merged}>{children}</span>
+}
+
+// The button that opens the popup (`popovertarget`), named "Calendar" and by the picker's label.
+export component DateRangePickerTrigger({ id, children, ...rest }: ButtonProps) {
+  p = use dateRangePicker
+  generatedId = createId("date-range-picker-trigger")
+  triggerId: string = idRef(id) ?? generatedId
+  own = datePickerTrigger(p, triggerId)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export type DateRangePickerPopupProps = DatePickerPopupProps
+
+// The popover holding the calendar: `role="dialog"`, named by the picker's label, placed under the group.
+export component DateRangePickerPopup({ side = "bottom", align = "start", sideOffset = 0, alignOffset = 0, children, ...rest }: DateRangePickerPopupProps) {
+  p = use dateRangePicker
+  pop = p.popover
+  // Focus left on the closed popup goes back to the trigger (WebKit, after a press opened it).
+  _focus = createFocusReturn(pop.popup, pop.trigger, pop.open)
+  own = datePickerPopup(p, side, align, sideOffset, alignOffset)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type DateRangePickerCalendarProps = {
+  // Allows a range across unavailable days. Default: false.
+  allowsNonContiguousRanges?: boolean
+} & DatePickerCalendarProps
+
+// Range Calendar's root, given the picker's range and options. Put Calendar's own parts inside. Opening the popup
+// focuses the range's start, else today, and drops a range left half-chosen; completing a range closes the popup
+// and focuses the trigger, unless the Root's `closeOnSelect` is false. While a range is under way, the first Escape
+// cancels it and the second closes the popup.
+export component DateRangePickerCalendar(props: DateRangePickerCalendarProps) {
+  p = use dateRangePicker
+  pop = p.popover
+  // Focus goes to the trigger first, so it leaves the popup before it closes, in every engine.
+  action done(range: DateRange) {
+    if (!p.closeOnSelect) { return }
+    focusElement(pop.trigger)
+    pop.setOpen(false)
+  }
+  // The calendar submits nothing and is not the Field's control: the picker is.
+  provide field = undefined
+  named = props["aria-label"] != undefined || props["aria-labelledby"] != undefined
+  // Each field of the context through an equation of its own (DatePickerGroup says why).
+  name = named ? undefined : p.labelledBy
+  // A reversed range is invalid and not shown.
+  value = p.reversed ? null : p.value ?? null
+  onSelect = p.select
+  low = p.min
+  high = p.max
+  check = p.isDateUnavailable
+  loc = p.locale
+  firstDay = p.firstDayOfWeek
+  isDisabled = p.disabled
+  isReadOnly = p.readOnly
+  isOpen = pop.open
+  follow = p.follow
+  <RangeCalendarRoot aria-labelledby={name} {...props} value={value} onValueChange={onSelect} onSelectionComplete={done} min={low} max={high} isDateUnavailable={check} locale={loc} firstDayOfWeek={firstDay} disabled={isDisabled} readOnly={isReadOnly} autoFocus={isOpen}>
+    {props.children}
+    <DatePickerMonthFollower follow={follow} />
+  </RangeCalendarRoot>
+}

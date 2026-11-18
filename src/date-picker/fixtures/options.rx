@@ -1,0 +1,69 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate } from "../../internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// A controlled picker (value and open), a disabled one, a read-only one, and one that stays open on a pick.
+export default component Fixture() {
+  // Boxed: a source seeded with a Temporal value breaks it (../../internal/date.d.rx).
+  source chosen := { date: parseDate("2030-05-08", undefined) ?? null }
+  source open := false
+  // An owner that refuses to close while `keep` is set.
+  source keep := false
+  <main>
+    <DatePickerRoot locale="en-US" value={chosen.date} onValueChange={(v) => { chosen.date := v ?? null }} open={open} onOpenChange={(next) => { if (next || !keep) { open := next } }}>
+      <DatePickerGroup data-testid="controlled" aria-label="Controlled">
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup data-testid="controlled-popup">
+        <DatePickerCalendar today={parseDate("2030-05-15", undefined)}>
+          <CalendarGrid><CalendarGridBody /></CalendarGrid>
+        </DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+    <button onClick={() => { chosen.date := parseDate("2030-07-04", undefined) ?? null }}>Set July 4</button>
+    <button onClick={() => { chosen.date := null }}>Clear</button>
+    <button onClick={() => { open := !open }}>Toggle from outside</button>
+    <button onClick={() => { keep := true }}>Keep open</button>
+    <output data-testid="chosen">{chosen.date == null ? "none" : chosen.date.toString()}</output>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+
+    <DatePickerRoot locale="en-US" disabled defaultValue={parseDate("2030-05-08", undefined)}>
+      <DatePickerGroup data-testid="disabled" aria-label="Disabled">
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup data-testid="disabled-popup">
+        <DatePickerCalendar><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+
+    <DatePickerRoot locale="en-US" readOnly defaultValue={parseDate("2030-05-08", undefined)}>
+      <DatePickerGroup data-testid="readonly" aria-label="Read only">
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup data-testid="readonly-popup">
+        <DatePickerCalendar><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+
+    <DatePickerRoot locale="en-US" closeOnSelect={false} defaultValue={parseDate("2030-05-08", undefined)}>
+      <DatePickerGroup data-testid="stays" aria-label="Stays open">
+        <DateFieldInput><Segments /></DateFieldInput>
+        <DatePickerTrigger>▾</DatePickerTrigger>
+      </DatePickerGroup>
+      <DatePickerPopup data-testid="stays-popup">
+        <DatePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+      </DatePickerPopup>
+    </DatePickerRoot>
+  </main>
+}

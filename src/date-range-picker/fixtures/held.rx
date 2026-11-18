@@ -1,0 +1,70 @@
+import { DateRangePickerRoot, DateRangePickerGroup, DateRangePickerStart, DateRangePickerSeparator, DateRangePickerEnd, DateRangePickerTrigger, DateRangePickerPopup, DateRangePickerCalendar } from "../date-range-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { save } from "../../test/slow-server.js"
+import { DateRange } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+fn range(start: string, end: string): DateRange => ({ start: parseDate(start, undefined) ?? today(undefined, undefined), end: parseDate(end, undefined) ?? today(undefined, undefined) })
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// range picker is computed from that write. The picker's own state (open, the range picked, what is typed) must not
+// wait for the app's request. Today is pinned to 2030-05-15.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <DateRangePickerRoot locale="en-US" defaultValue={range("2030-05-08", "2030-05-10")} max={step == 1 ? parseDate("2031-01-01", undefined) : parseDate("2030-12-31", undefined)}>
+      <DateRangePickerGroup aria-label="Root prop">
+        <DateRangePickerStart><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+        <DateRangePickerSeparator>–</DateRangePickerSeparator>
+        <DateRangePickerEnd><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+        <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+      </DateRangePickerGroup>
+      <DateRangePickerPopup>
+        <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+      </DateRangePickerPopup>
+    </DateRangePickerRoot>
+
+    // 2. Attributes of the group and of a field.
+    <DateRangePickerRoot locale="en-US" defaultValue={range("2030-05-08", "2030-05-10")}>
+      <DateRangePickerGroup aria-label="Group attribute" class={step == 2 ? "second" : "first"}>
+        <DateRangePickerStart class={step == 2 ? "second" : "first"}><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+        <DateRangePickerSeparator class={step == 2 ? "second" : "first"}>–</DateRangePickerSeparator>
+        <DateRangePickerEnd><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+        <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+      </DateRangePickerGroup>
+      <DateRangePickerPopup>
+        <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+      </DateRangePickerPopup>
+    </DateRangePickerRoot>
+
+    // 3. Attributes of the trigger and the popup, and a prop of the calendar.
+    <DateRangePickerRoot locale="en-US" defaultValue={range("2030-05-08", "2030-05-10")}>
+      <DateRangePickerGroup aria-label="Popup attribute">
+        <DateRangePickerStart><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+        <DateRangePickerSeparator>–</DateRangePickerSeparator>
+        <DateRangePickerEnd><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+        <DateRangePickerTrigger class={step == 2 ? "second" : "first"}>▾</DateRangePickerTrigger>
+      </DateRangePickerGroup>
+      <DateRangePickerPopup class={step == 2 ? "second" : "first"}>
+        <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)} fixedWeeks={step == 2}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+      </DateRangePickerPopup>
+    </DateRangePickerRoot>
+  </main>
+}

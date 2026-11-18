@@ -1,0 +1,36 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { parseDate } from "../../internal/date.js"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// A required picker in a named Field inside a Form, with a min and an unavailable day.
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `due=${values.due}` }}>
+    <FieldRoot name="due">
+      <FieldLabel>Due date</FieldLabel>
+      <DatePickerRoot locale="en-US" required min={parseDate("2030-01-01", undefined)} isDateUnavailable={(date) => date.day == 13}>
+        <DatePickerGroup data-testid="due">
+          <DateFieldInput><Segments /></DateFieldInput>
+          <DatePickerTrigger>▾</DatePickerTrigger>
+        </DatePickerGroup>
+        <DatePickerPopup data-testid="popup">
+          <DatePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+        </DatePickerPopup>
+      </DatePickerRoot>
+      <FieldDescription data-testid="description">When the invoice is due.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

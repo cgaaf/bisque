@@ -1,0 +1,99 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+import { PlainDate } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// The parts of one picker, named `label`, under the Root above. Today is pinned to 2030-05-15.
+component Parts(props: { label: string; id: string }) {
+  <DatePickerGroup data-testid={props.id} aria-label={props.label}>
+    <DateFieldInput><Segments /></DateFieldInput>
+    <DatePickerTrigger>▾</DatePickerTrigger>
+  </DatePickerGroup>
+  <DatePickerPopup data-testid={`${props.id}-popup`}>
+    <DatePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+  </DatePickerPopup>
+}
+
+// The form string a date is saved as; "" for none. The server stores strings (../../test/settings-server.ts).
+fn text(date: PlainDate | undefined): string => date == undefined ? "" : date.toString()
+fn dateOf(value: string): PlainDate | null => parseDate(value, undefined) ?? null
+fn stringValue(value: string): string => value
+
+// Date pickers whose value is saved to a server, written as an app would. Each saves on every change.
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  due = await load("due", stringValue("2030-05-09")) -> "2030-05-09"
+  source dueError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source start := "2030-05-09"
+  source startError := ""
+  // Disabled while its save is out.
+  locked = await load("locked", stringValue("2030-05-09")) -> "2030-05-09"
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := "2030-05-09"
+  preview = await load(`preview-${wanted}`, wanted) -> "2030-05-09"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <DatePickerRoot locale="en-US" value={dateOf(due)} onValueChange={(next) => {
+      let value = text(next)
+      guess due := value
+      onFlush(() => { dueError := "" })
+      affects due
+      try {
+        await save("due", value)
+        refresh due
+      } catch (e) {
+        dueError := "failed"
+      }
+    }}>
+      <Parts label="Due" id="due-root" />
+    </DatePickerRoot>
+    <output data-testid="due">{due}</output>
+    <output data-testid="due-saving">{pending? due ? "saving" : ""}</output>
+    <output data-testid="due-error">{dueError}</output>
+
+    <DatePickerRoot locale="en-US" value={dateOf(start)} onValueChange={(next) => {
+      let value = text(next)
+      onFlush(() => { startError := "" })
+      try {
+        await save("start", value)
+        start := value
+      } catch (e) {
+        startError := "failed"
+      }
+    }}>
+      <Parts label="Start" id="start-root" />
+    </DatePickerRoot>
+    <output data-testid="start">{start}</output>
+    <output data-testid="start-error">{startError}</output>
+
+    <DatePickerRoot locale="en-US" value={dateOf(locked)} disabled={pending? locked} onValueChange={(next) => {
+      let value = text(next)
+      guess locked := value
+      affects locked
+      try {
+        await save("locked", value)
+        refresh locked
+      } catch (e) {
+      }
+    }}>
+      <Parts label="Locked" id="locked-root" />
+    </DatePickerRoot>
+
+    <DatePickerRoot locale="en-US" defaultValue={dateOf(wanted) ?? undefined} onValueChange={(next) => { wanted := text(next) }}>
+      <Parts label="Preview" id="preview-root" />
+    </DatePickerRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

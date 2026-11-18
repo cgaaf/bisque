@@ -1,0 +1,58 @@
+import { DateRangePickerRoot, DateRangePickerGroup, DateRangePickerStart, DateRangePickerSeparator, DateRangePickerEnd, DateRangePickerTrigger, DateRangePickerPopup, DateRangePickerCalendar } from "../date-range-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { DateRange } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+// The parts of one picker, named `label`, under the Root above. Today is pinned to 2030-05-15.
+component Parts(props: { label: string; id: string }) {
+  <DateRangePickerGroup data-testid={props.id} aria-label={props.label}>
+    <DateRangePickerStart><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+    <DateRangePickerSeparator>–</DateRangePickerSeparator>
+    <DateRangePickerEnd><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+    <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+  </DateRangePickerGroup>
+  <DateRangePickerPopup data-testid={`${props.id}-popup`}>
+    <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+  </DateRangePickerPopup>
+}
+
+fn range(start: string, end: string): DateRange => ({ start: parseDate(start, undefined) ?? today(undefined, undefined), end: parseDate(end, undefined) ?? today(undefined, undefined) })
+fn show(value: DateRange | null): string => value == null ? "none" : `${value.start.toString()}/${value.end.toString()}`
+
+// A controlled picker (value and open), a disabled one, a read-only one, and one that stays open on a pick.
+export default component Fixture() {
+  // Boxed: a source seeded with a Temporal value breaks it (../../internal/date.d.rx).
+  source chosen: { range: DateRange | null } := { range: range("2030-05-08", "2030-05-10") }
+  source open := false
+  // An owner that refuses to close while `keep` is set.
+  source keep := false
+  <main>
+    <DateRangePickerRoot locale="en-US" value={chosen.range} onValueChange={(v) => { chosen := { range: v ?? null } }} open={open} onOpenChange={(next) => { if (next || !keep) { open := next } }}>
+      <Parts label="Controlled" id="controlled" />
+    </DateRangePickerRoot>
+    <button onClick={() => { chosen.range := range("2030-07-01", "2030-07-04") }}>Set July</button>
+    <button onClick={() => { chosen.range := null }}>Clear</button>
+    <button onClick={() => { open := !open }}>Toggle from outside</button>
+    <button onClick={() => { keep := true }}>Keep open</button>
+    <output data-testid="chosen">{show(chosen.range)}</output>
+    <output data-testid="open">{open ? "open" : "closed"}</output>
+
+    <DateRangePickerRoot locale="en-US" disabled defaultValue={range("2030-05-08", "2030-05-10")}>
+      <Parts label="Disabled" id="disabled" />
+    </DateRangePickerRoot>
+    <DateRangePickerRoot locale="en-US" readOnly defaultValue={range("2030-05-08", "2030-05-10")}>
+      <Parts label="Read only" id="readonly" />
+    </DateRangePickerRoot>
+    <DateRangePickerRoot locale="en-US" closeOnSelect={false} defaultValue={range("2030-05-08", "2030-05-10")}>
+      <Parts label="Stays open" id="stays" />
+    </DateRangePickerRoot>
+  </main>
+}

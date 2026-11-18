@@ -1,0 +1,51 @@
+import { DatePickerRoot, DatePickerGroup, DatePickerTrigger, DatePickerPopup, DatePickerCalendar } from "../date-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate } from "../../internal/date.js"
+import { PlainDate } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+fn show(date: PlainDate | undefined): string => date == undefined ? "none" : date.toString()
+
+// An uncontrolled picker in a form, today pinned to 2030-05-15, with min/max and an unavailable day.
+export default component Fixture() {
+  source changes: string[] := []
+  source opens: string[] := []
+  <main>
+    <form data-testid="form">
+      <DatePickerRoot name="due" locale="en-US" min={parseDate("2030-01-01", undefined)} max={parseDate("2030-12-31", undefined)} isDateUnavailable={(date) => date.day == 13} placeholderValue={parseDate("2030-05-15", undefined)} onValueChange={(v) => { changes := [...changes, show(v)] }} onOpenChange={(open) => { opens := [...opens, open ? "open" : "closed"] }}>
+        <DatePickerGroup data-testid="group" aria-label="Due date">
+          <DateFieldInput data-testid="input"><Segments /></DateFieldInput>
+          <DatePickerTrigger>▾</DatePickerTrigger>
+        </DatePickerGroup>
+        <DatePickerPopup data-testid="popup">
+          <DatePickerCalendar today={parseDate("2030-05-15", undefined)}>
+            <CalendarPreviousMonth />
+            <CalendarMonthLabel data-testid="label" />
+            <CalendarNextMonth />
+            <CalendarGrid><CalendarGridBody /></CalendarGrid>
+          </DatePickerCalendar>
+        </DatePickerPopup>
+      </DatePickerRoot>
+      <DatePickerRoot name="start" locale="en-US" defaultValue={parseDate("2030-05-08", undefined)}>
+        <DatePickerGroup data-testid="start" aria-label="Start date">
+          <DateFieldInput><Segments /></DateFieldInput>
+          <DatePickerTrigger>▾</DatePickerTrigger>
+        </DatePickerGroup>
+        <DatePickerPopup data-testid="start-popup">
+          <DatePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DatePickerCalendar>
+        </DatePickerPopup>
+      </DatePickerRoot>
+      <button type="reset">Reset</button>
+    </form>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <output data-testid="opens">{opens.join(" ")}</output>
+    <input aria-label="After" />
+  </main>
+}

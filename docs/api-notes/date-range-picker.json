@@ -1,0 +1,82 @@
+{
+  "DateRangePickerRoot": {
+    "description": "Holds the picker's range and open state, and provides them, with the options given here once, to the two fields, the trigger, the popup and the calendar. It renders no element of its own, only the Popover underneath and, with a name or inside a FieldRoot, the two hidden date inputs that submit the range.",
+    "props": {
+      "value": "The range, `{ start, end }` (`Temporal.PlainDate`s). Pass it with `onValueChange` to control the picker; `null` is a controlled picker with no range. A range that changes replaces both fields; while it stays the same, a side being typed is kept.",
+      "defaultValue": "The range at first, when the picker isn't controlled. A form reset puts it back.",
+      "onValueChange": "Called with the range when both fields are complete and either changes (each digit typed into a year too), or the calendar completes one, and with undefined when a complete range becomes incomplete. A start after the end is reported as typed, and is invalid. It is called in a change of its own, so it may be an action that saves.",
+      "open": "Whether the popup is open. Pass it with `onOpenChange` to control it: the browser's popover follows it, and an owner that keeps it true through Escape or a press outside has the popup shown again.",
+      "defaultOpen": "Whether the popup is open at first, when it isn't controlled.",
+      "onOpenChange": "Called when the popup opens or closes.",
+      "disabled": "Disables both fields' segments, the trigger, so the popup can't open, and the hidden inputs.",
+      "readOnly": "The segments take focus but not edits, and the trigger is disabled.",
+      "form": "The id of the form the hidden inputs belong to, when they aren't inside it.",
+      "incompleteMessage": "The validation message while a field is partly filled.",
+      "unavailableMessage": "The validation message for a date `isDateUnavailable` refuses.",
+      "rangeOrderMessage": "The start input's validation message while the start is after the end."
+    },
+    "defaults": {
+      "incompleteMessage": "\"Enter a complete date.\"",
+      "unavailableMessage": "\"This date is unavailable.\"",
+      "rangeOrderMessage": "\"The end date is before the start date.\""
+    }
+  },
+  "DateRangePickerGroup": {
+    "description": "The start field, the separator, the end field and the trigger in one `role=\"group\"`. Name it with a FieldLabel, `aria-label` or `aria-labelledby`; the trigger, the popup and the calendar are named by the same label. It is the anchor the popup is placed against (`anchor-name`).",
+    "dataAttributes": {
+      "data-invalid": "Present while either date is outside min/max, unavailable or partly typed, the start is after the end, or the Field is invalid.",
+      "data-disabled": "Inside a FieldRoot: present when the field is disabled.",
+      "data-focused": "Inside a FieldRoot: present while focus is in the group."
+    }
+  },
+  "DateRangePickerStart": {
+    "description": "The start date: the Date Field's root, given the range's start and the picker's options. Put a DateFieldInput with its DateFieldSegments inside. A group of its own, named \"Start date\" (pass `aria-label` to translate). It has `data-invalid` while the start is partly typed, unavailable or after the end.",
+    "element": "div"
+  },
+  "DateRangePickerEnd": {
+    "description": "The end date: the Date Field's root, given the range's end and the picker's options. A group of its own, named \"End date\" (pass `aria-label` to translate). It has `data-invalid` while the end is partly typed, unavailable or before the start.",
+    "element": "div"
+  },
+  "DateRangePickerSeparator": {
+    "description": "What sits between the two fields, hidden from assistive technology (which hears \"Start date\" and \"End date\"). It shows its children."
+  },
+  "DateRangePickerTrigger": {
+    "description": "The button that opens and closes the popup: the native `popovertarget`. It is named \"Calendar\" and the picker's label, has `aria-haspopup=\"dialog\"`, and is disabled while the picker is disabled or read-only. Completing a range puts focus back on it."
+  },
+  "DateRangePickerPopup": {
+    "description": "The native `popover` holding the calendar, with `role=\"dialog\"`, named by the picker's label, placed under the group with CSS anchor positioning.",
+    "props": {
+      "side": "Which side of the group it sits on; the browser flips it when it doesn't fit.",
+      "align": "Which edge of the group it lines up with.",
+      "sideOffset": "The gap between the group and the popup, in pixels.",
+      "alignOffset": "Moves the popup along the group's edge, in pixels, when `align` isn't \"center\"."
+    }
+  },
+  "DateRangePickerCalendar": {
+    "description": "The range Calendar's root, given the picker's range and options. Put the Calendar's own parts inside. Opening the popup focuses the range's start, else today, and drops a range left half-chosen; completing a range closes the popup and focuses the trigger, unless the root's `closeOnSelect` is false. While a range is under way, the first Escape cancels it and the second closes the popup. A start after the end shows no range.",
+    "props": {
+      "allowsNonContiguousRanges": "Lets a range include unavailable days.",
+      "numberOfMonths": "How many months are shown side by side, each in a CalendarGrid with its `offset`.",
+      "fixedWeeks": "Always six rows of days.",
+      "today": "The day marked as today. Default: today in `timeZone`.",
+      "timeZone": "The time zone in which \"today\" is read.",
+      "showWeekNumbers": "CalendarGridHeader and CalendarGridBody add a first column of ISO week numbers.",
+      "weekNumberLabel": "The week number column's name, and the start of each week number's accessible name."
+    },
+    "defaults": {
+      "today": null
+    },
+    "dataAttributes": {
+      "data-disabled": "Present when the picker is disabled.",
+      "data-readonly": "Present when the picker is read-only.",
+      "data-pending": "Present while a range is under way: its first day has been pressed.",
+      "data-range": "Always present: the calendar picks a range.",
+      "data-invalid": null,
+      "data-valid": null,
+      "data-touched": null,
+      "data-dirty": null,
+      "data-filled": null,
+      "data-focused": null
+    }
+  }
+}

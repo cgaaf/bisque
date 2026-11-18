@@ -1,0 +1,49 @@
+import { DateRangePickerRoot, DateRangePickerGroup, DateRangePickerStart, DateRangePickerSeparator, DateRangePickerEnd, DateRangePickerTrigger, DateRangePickerPopup, DateRangePickerCalendar } from "../date-range-picker.rx"
+import { DateFieldInput, DateFieldSegment, dateField } from "../../date-field/date-field.rx"
+import { CalendarMonthLabel, CalendarGrid, CalendarGridBody } from "../../calendar/calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { DateRange } from "../../internal/types.rx"
+
+component Segments() {
+  c = use dateField
+  {for segment in c.segments {
+    <DateFieldSegment segment={segment} />
+  }}
+}
+
+fn show(range: DateRange | undefined): string => range == undefined ? "none" : `${range.start.toString()}/${range.end.toString()}`
+
+// An uncontrolled range picker in a form, today pinned to 2030-05-15, with min/max and an unavailable day (the 13th).
+export default component Fixture() {
+  source changes: string[] := []
+  <main>
+    <form data-testid="form">
+      <DateRangePickerRoot name="stay" locale="en-US" min={parseDate("2030-01-01", undefined)} max={parseDate("2030-12-31", undefined)} isDateUnavailable={(date) => date.day == 13} placeholderValue={parseDate("2030-05-15", undefined)} onValueChange={(v) => { changes := [...changes, show(v)] }}>
+        <DateRangePickerGroup data-testid="group" aria-label="Stay">
+          <DateRangePickerStart data-testid="start"><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+          <DateRangePickerSeparator>–</DateRangePickerSeparator>
+          <DateRangePickerEnd data-testid="end"><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+          <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+        </DateRangePickerGroup>
+        <DateRangePickerPopup data-testid="popup">
+          <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}>
+            <CalendarMonthLabel data-testid="label" />
+            <CalendarGrid><CalendarGridBody /></CalendarGrid>
+          </DateRangePickerCalendar>
+        </DateRangePickerPopup>
+      </DateRangePickerRoot>
+      <DateRangePickerRoot name="trip" locale="en-US" defaultValue={{ start: parseDate("2030-05-08", undefined) ?? today(undefined, undefined), end: parseDate("2030-05-10", undefined) ?? today(undefined, undefined) }}>
+        <DateRangePickerGroup data-testid="trip" aria-label="Trip">
+          <DateRangePickerStart><DateFieldInput><Segments /></DateFieldInput></DateRangePickerStart>
+          <DateRangePickerEnd><DateFieldInput><Segments /></DateFieldInput></DateRangePickerEnd>
+          <DateRangePickerTrigger>▾</DateRangePickerTrigger>
+        </DateRangePickerGroup>
+        <DateRangePickerPopup>
+          <DateRangePickerCalendar today={parseDate("2030-05-15", undefined)}><CalendarGrid><CalendarGridBody /></CalendarGrid></DateRangePickerCalendar>
+        </DateRangePickerPopup>
+      </DateRangePickerRoot>
+      <button type="reset">Reset</button>
+    </form>
+    <output data-testid="changes">{changes.join(" ")}</output>
+  </main>
+}

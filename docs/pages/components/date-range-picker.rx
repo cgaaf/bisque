@@ -1,0 +1,81 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { DateRangePickerHero } from "../../demos/date-range-picker/hero.rx"
+import { DateRangePickerConstraints } from "../../demos/date-range-picker/constraints.rx"
+import { DateRangePickerPresets } from "../../demos/date-range-picker/presets.rx"
+import { DateRangePickerForm } from "../../demos/date-range-picker/form.rx"
+
+export default component Page() {
+  <DocsPage title="Date Range Picker" subtitle="Two date fields with a range calendar in a popup, behind one range.">
+    <Demo source="date-range-picker/hero"><DateRangePickerHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      A start and an end <a href="../date-field/">Date Field</a> in one group, a button, and a range{" "}
+      <a href="../calendar/">Calendar</a> in a <a href="../popover/">Popover</a>. It works like the{" "}
+      <a href="../date-picker/">Date Picker</a>, with a range for its value. The segments and the calendar's grid are
+      the Date Field's and the Calendar's own parts.
+    </p>
+    <Code file="date-range-picker/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The same as for the <a href="../date-picker/#platform">Date Picker</a>. The popup is a native{" "}
+      <code>popover</code> placed under the group with CSS anchor positioning. The browser's own date picker isn't
+      used: the <a href="../calendar/">Calendar</a> page notes that it can't choose a range at all. The library adds
+      the shared range, focus on the range's start when the popup opens, closing when a range is complete, focus
+      back on the button, the labels, and validity.
+    </p>
+    <p>
+      The group is one <code>role="group"</code>, named by its <code>FieldLabel</code> or <code>aria-label</code>.
+      Inside it, each field is a group of its own, named "Start date" and "End date" (pass <code>aria-label</code>{" "}
+      to translate). The separator is hidden from assistive technology.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="choosing">Choosing a range</h3>
+    <p>
+      In the calendar, the first press sets the start and the second completes the range, which closes the popup
+      and puts focus back on the button. While a range is under way, the first <kbd>Escape</kbd> cancels it and the
+      second closes the popup. Typing works on each field. The range is reported once both fields are complete, and
+      the picker holds one side while the other is still being typed. A controlled value that stays{" "}
+      <code>null</code> while the start is typed doesn't empty the start field.
+    </p>
+    <p>
+      A start after the end is invalid, as in React Aria. The range is not swapped: it is reported as typed, the
+      group has <code>data-invalid</code>, the start input gets <code>rangeOrderMessage</code>, and the calendar
+      shows no range. A range chosen in the calendar is always in order.
+    </p>
+
+    <h3 id="constraints">Limits and unavailable days</h3>
+    <p>
+      <code>min</code>, <code>max</code> and <code>isDateUnavailable</code> work as in the Date Picker. In the
+      calendar, a range can't include an unavailable day unless the calendar has{" "}
+      <code>allowsNonContiguousRanges</code>. A date like that can still be typed into either field. It is kept as
+      typed, and the picker is invalid.
+    </p>
+    <Demo source="date-range-picker/constraints"><DateRangePickerConstraints /></Demo>
+
+    <h3 id="presets">Presets and two months</h3>
+    <p>
+      Presets aren't a part. A preset is a button that sets the controlled <code>value</code>. Two months side by
+      side are the Calendar's <code>numberOfMonths</code> with a grid and a label for each <code>offset</code>.
+    </p>
+    <Demo source="date-range-picker/presets"><DateRangePickerPresets /></Demo>
+
+    <h3 id="forms">Forms and fields</h3>
+    <p>
+      With a <code>name</code>, the picker submits two ISO dates, <code>{"<name>-start"}</code> and{" "}
+      <code>{"<name>-end"}</code>, as the range Calendar does, unless <code>startName</code> and{" "}
+      <code>endName</code> name them. Each hidden input has the native <code>min</code>, <code>max</code> and{" "}
+      <code>required</code>. Inside a <code>FieldRoot</code>, the field's value is <code>{"{ start, end }"}</code>{" "}
+      (null until both dates are complete). A Field reads one input, the start's, so that input also carries the
+      end's problem: an end after <code>max</code>, or an end that is unavailable or partly typed. The field is then
+      invalid when either side is.
+    </p>
+    <Demo source="date-range-picker/form"><DateRangePickerForm /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="date-range-picker" />
+  </DocsPage>
+}
