@@ -94,7 +94,7 @@ export component NavigationMenuRoot(props: NavigationMenuRootProps) {
   }
 
   { value, defaultValue, onValueChange, orientation, delay, closeDelay, children, ...rest } = props
-  merged = latest mergeProps({ "aria-orientation": dir, "data-orientation": dir }, rest)
+  merged = latest mergeProps({ "data-orientation": dir }, rest)
   <nav {...merged}>{children}</nav>
 }
 

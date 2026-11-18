@@ -50,7 +50,7 @@
   /* The week number column, a row header in each row. */
   .Grid [data-week-number] {
     width: 2rem;
-    color: light-dark(#9a9aa5, #6e6e7a);
+    color: light-dark(#666671, #a5a5b1);
     font-size: 0.6875rem;
     font-weight: 500;
   }
@@ -89,7 +89,7 @@
 
   /* `isDateUnavailable`: still focusable (and announced as unavailable), but can't be chosen. */
   .Body button[data-unavailable] {
-    color: light-dark(#9a9aa5, #6e6e7a);
+    color: light-dark(#666671, #a5a5b1);
     text-decoration: line-through;
     cursor: not-allowed;
   }

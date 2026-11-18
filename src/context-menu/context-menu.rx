@@ -68,6 +68,7 @@ export fn contextMenuTrigger(ref c: MenuContext, ref setElement: ElementRef, ref
   {
     "data-popup-open": c.open ? "" : undefined,
     "data-disabled": c.disabled ? "" : undefined,
+    tabindex: c.disabled ? undefined : 0,
     ref: setElement,
     onContextMenu: contextMenu,
     onPointerDown: pointerDown,
@@ -92,8 +93,23 @@ export fn contextMenuAnchor(ref c: MenuContext, ref point: ContextMenuPoint): Pa
   }
 }
 
-// The area that opens the menu. It isn't focusable itself: the keyboard key works from whatever has focus in it.
-export component ContextMenuTrigger({ children, ...rest }: DivProps) {
+type TriggerActions = { openAt: (button: HTMLElement) => void }
+context triggerActions: lane TriggerActions
+
+// A single-press alternative inside the trigger area.
+export component ContextMenuButton({ children, ...rest }: ButtonProps) {
+  c = use menu
+  trigger = use triggerActions
+  action click(event: MouseEvent & { currentTarget: HTMLButtonElement }) {
+    if (!event.defaultPrevented && !c.disabled) { trigger.openAt(event.currentTarget) }
+  }
+  merged = latest mergeProps({ type: "button", disabled: c.disabled, "aria-haspopup": "menu", "aria-expanded": c.open ? "true" : "false", "aria-controls": c.popupId, onClick: click }, rest)
+  <button {...merged}>{children}</button>
+}
+
+// The context-menu key works from the focusable area or any focused descendant.
+export component ContextMenuTrigger(props: DivProps) {
+  { children, ...rest } = props
   c = use menu
   source element: HTMLElement | undefined := undefined
   source point: ContextMenuPoint := { x: 0, y: 0, width: 0, height: 0 }
@@ -107,11 +123,17 @@ export component ContextMenuTrigger({ children, ...rest }: DivProps) {
     point := { x: x, y: y, width: 10, height: 10 }
     afterRelease(open)
   }
+  action openAt(button: HTMLElement) {
+    let corner = elementCorner(button)
+    place({ x: corner.x, y: corner.y, width: 0, height: 0 })
+    c.openWith("first-item")
+  }
+  provide triggerActions = { openAt: openAt }
   _longPress = createLongPress(!c.disabled, element, 500, longPress)
   own = contextMenuTrigger(c, setElement, place)
   anchor = contextMenuAnchor(c, point)
   merged = latest mergeProps(own, rest)
-  <div {...merged}><span {...anchor} />{children}</div>
+  <div {...merged}><span {...anchor} />{props.children}</div>
 }
 
 // The menu. Default: below the point and starting at it (`side="bottom"`, `align="start"`).

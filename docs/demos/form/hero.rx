@@ -22,12 +22,12 @@ export component FormHero() {
     }}>
       <FieldRoot class="Field" name="email">
         <FieldLabel class="Label">Email</FieldLabel>
-        <Input class="Input" type="email" required />
+        <Input class="Input" type="email" autocomplete="email" spellcheck={false} required />
         <FieldError class="Error" />
       </FieldRoot>
       <FieldRoot class="Field" name="username" validate={(value) => `${value}`.includes(" ") ? "Use letters and digits, no spaces" : null}>
         <FieldLabel class="Label">Username</FieldLabel>
-        <Input class="Input" required minlength={3} />
+        <Input class="Input" autocomplete="username" spellcheck={false} required minlength={3} />
         <FieldDescription class="Description">Try “studio”, or “offline” for a failed request.</FieldDescription>
         <FieldError class="Error" />
       </FieldRoot>

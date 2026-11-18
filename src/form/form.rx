@@ -18,6 +18,7 @@ export type FormContext = {
   validationMode: FormValidationMode
   // True once a submit was attempted: an "onSubmit" field validates on every change from then on.
   submitted: boolean
+  submitting: boolean
   // The errors the last `onFormSubmit` resolved to, and the values it was sent.
   answer: FormAnswer
   // A field whose value changed retires the form's error for its name.
@@ -113,6 +114,7 @@ export component Form(props: FormRootProps) {
     errors: errors,
     validationMode: props.validationMode ?? "onSubmit",
     submitted: submitted,
+    submitting: submission.pending,
     answer: submission.answer,
     clearError: clearError,
   }

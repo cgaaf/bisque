@@ -6,7 +6,7 @@ import { SpanProps, ImageProps, PartProps } from "../internal/types.rx"
 export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error"
 
 // Where AvatarImage reports how it is loading (../internal/impl/image-loading.ts).
-export type AvatarImageSlot = { add: (status: any) => void; remove: (status: any) => void }
+export type AvatarImageSlot = { add: (status: any) => void; remove: (status: any) => void; root: () => HTMLElement | undefined; setRoot: (element: HTMLElement) => void }
 
 export type AvatarContext = {
   // How the image is doing: the fallback shows until it is "loaded". "idle" while there is no AvatarImage.
@@ -23,7 +23,8 @@ export component AvatarRoot(props: SpanProps) {
   [status, slot] = createImageSlot()
   provide avatar = { imageLoadingStatus: status, slot: slot }
   { children, ...rest } = props
-  <span {...rest}>{children}</span>
+  merged = latest mergeProps({ ref: slot.setRoot }, rest)
+  <span {...merged}>{children}</span>
 }
 
 export type AvatarImageProps = {
@@ -38,7 +39,10 @@ export type AvatarImageProps = {
 // It animates in and out with `data-starting-style` and `data-ending-style`.
 export component AvatarImage({ src, srcset, crossorigin, referrerpolicy, onLoadingStatusChange, ...rest }: AvatarImageProps) {
   c = use avatar
-  status = createImageLoadingStatus(latest src, latest srcset, latest crossorigin, latest referrerpolicy, peek(c.slot))
+  loadMode = rest.loading == "lazy" ? "lazy" : "eager"
+  priority = rest.fetchpriority == "high" ? "high" : rest.fetchpriority == "low" ? "low" : "auto"
+  sizes = rest.sizes ? `${rest.sizes}` : undefined
+  status = createImageLoadingStatus(latest src, latest srcset, latest crossorigin, latest referrerpolicy, peek(c.slot), loadMode, priority, sizes)
   effect (status) {
     if ($0 != "idle" && onLoadingStatusChange) { onLoadingStatusChange($0) }
   }

@@ -21,7 +21,7 @@ export component TableOfContentsCurrent() {
       }}
     </TableOfContentsRoot>
     <p class="Status">Reading: <strong>{current ? current.title : "the introduction"}</strong></p>
-    <div class="Article" ref={setArticle}>
+    <div class="Article" tabindex="0" ref={setArticle}>
       <p>Notes for a day on the ridge path, from the car park and back again before dark.</p>
       <h3 class="Heading" id="toc-current-route">Route</h3>
       <p>Follow the stream up through the woods, then take the left fork where the path leaves the trees.</p>

@@ -17,5 +17,5 @@ export type Checked = [
   Conforms<Implementation["headings"], () => Accessor<any>>,
   Conforms<Implementation["setTitle"], (title: string) => void>,
   Conforms<Implementation["toggleTheme"], () => void>,
-  Conforms<Implementation["copyText"], (text: string) => void>,
+  Conforms<Implementation["copyText"], (text: string) => Promise<void>>,
 ];

@@ -5,7 +5,7 @@ export component AccordionHero() {
     <AccordionRoot class="Accordion" defaultValue={["shipping"]}>
       <AccordionItem class="Item" value="shipping">
         <AccordionTrigger class="Trigger">
-          <h3 class="Heading">How long does shipping take?</h3>
+          <h2 class="Heading">How long does shipping take?</h2>
           <svg class="Icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
@@ -16,7 +16,7 @@ export component AccordionHero() {
       </AccordionItem>
       <AccordionItem class="Item" value="returns">
         <AccordionTrigger class="Trigger">
-          <h3 class="Heading">Can I return an order?</h3>
+          <h2 class="Heading">Can I return an order?</h2>
           <svg class="Icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>
@@ -27,7 +27,7 @@ export component AccordionHero() {
       </AccordionItem>
       <AccordionItem class="Item" value="gift">
         <AccordionTrigger class="Trigger">
-          <h3 class="Heading">Do you offer gift wrapping?</h3>
+          <h2 class="Heading">Do you offer gift wrapping?</h2>
           <svg class="Icon" width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
             <path d="M2.5 4.5 6 8l3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
           </svg>

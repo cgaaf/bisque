@@ -15,6 +15,7 @@ fn show(time: PlainTime | undefined): string => time == undefined ? "none" : tim
 // The one-list variant: whole times every 30 minutes, those outside 09:00–17:00 disabled.
 export default component Fixture() {
   source changes: string[] := []
+  source interval := 30
   list = "height: 160px; overflow-y: auto; overflow-x: hidden; font-size: 12px"
   <main>
     <form data-testid="form">
@@ -24,10 +25,11 @@ export default component Fixture() {
           <TimePickerTrigger aria-label="Open meeting" />
         </TimePickerField>
         <TimePickerPopup data-testid="popup">
-          <TimePickerOptions interval={30} style={list} />
+          <TimePickerOptions interval={interval} style={list} />
         </TimePickerPopup>
       </TimePickerRoot>
     </form>
+    <button type="button" onClick={() => { interval := 1 }}>Every minute</button>
     <output data-testid="changes">{changes.join(" ")}</output>
   </main>
 }

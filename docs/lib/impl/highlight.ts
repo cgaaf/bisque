@@ -1,60 +1,76 @@
-// A small syntax highlighter for the two languages the docs show: ReactiveScript (close enough to TSX) and CSS.
-// It marks comments, strings, keywords, tags, attributes and numbers; nothing here parses.
+// Syntax highlighting for the two languages the docs show: ReactiveScript, with its own TextMate grammar
+// (rx.tmLanguage.json, vendored from the VS Code extension), and CSS. Shiki runs the grammars synchronously, so a
+// snippet is highlighted as it renders.
+import { createHighlighterCoreSync } from "shiki/core";
+import { createJavaScriptRegexEngine } from "shiki/engine/javascript";
+import type { LanguageRegistration, ThemeRegistration } from "shiki/core";
+import tsx from "shiki/langs/tsx.mjs";
+import css from "shiki/langs/css.mjs";
+import rxGrammar from "./rx.tmLanguage.json";
 
 const escape = (text: string) => text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
-type Rule = [kind: string, pattern: RegExp];
-
-const RX: Rule[] = [
-  ["comment", /\/\/[^\n]*|\/\*[\s\S]*?\*\//y],
-  ["string", /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'|`(?:[^`\\]|\\.)*`/y],
-  ["tag", /<\/?[A-Za-z][\w.]*|\/?>/y],
-  [
+/** The scopes each `tok-…` class in site.css colours. A more specific scope wins over a shorter one. */
+const KINDS: Record<string, string[]> = {
+  comment: ["comment", "punctuation.definition.comment"],
+  string: ["string", "punctuation.definition.string"],
+  keyword: [
     "keyword",
-    /\b(?:import|from|export|default|component|source|action|effect|fn|context|provide|use|type|if|else|for|in|return|let|const|peek|pure|await|true|false|undefined|null)\b/y,
+    "storage",
+    "keyword.operator.assignment.write.rx",
+    "constant.language.import-export-all",
   ],
-  ["attr", /[A-Za-z_][\w-]*(?==)/y],
-  ["number", /\b\d[\d.]*\b/y],
-  ["operator", /:=/y],
-];
+  operator: ["keyword.operator", "keyword.operator.expression", "keyword.operator.new"],
+  tag: ["entity.name.tag", "support.class.component", "entity.other.attribute-name.class.css"],
+  attr: ["entity.other.attribute-name", "support.type.property-name", "variable.css"],
+  number: ["constant.numeric", "constant.language", "keyword.other.unit", "constant.other.color"],
+  function: ["entity.name.function", "support.function"],
+  type: ["entity.name.type", "support.type", "entity.other.inherited-class"],
+};
 
-const CSS: Rule[] = [
-  ["comment", /\/\*[\s\S]*?\*\//y],
-  ["string", /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/y],
-  ["keyword", /@[\w-]+/y],
-  ["attr", /--[\w-]+|[a-z-]+(?=\s*:[^:\n{]*[;\n}])/y],
-  ["tag", /[.#&][\w-]+|::?[\w-]+(?:\([^)]*\))?|\[[^\]]*\]/y],
-  ["number", /-?\b\d[\d.]*(?:px|rem|em|ms|s|%|deg|fr|vh|vw|dvh)?\b/y],
-];
+// Each kind's colour is a marker that `highlight` turns back into a class, so the colours stay in site.css and
+// follow the theme toggle.
+const theme: ThemeRegistration = {
+  name: "bisque-docs",
+  type: "light",
+  fg: "",
+  bg: "",
+  settings: Object.entries(KINDS).map(([kind, scope]) => ({
+    scope,
+    settings: { foreground: `var(--tok-${kind})` },
+  })),
+};
 
-/** `code` as HTML: escaped, with a `<span class="tok-…">` around each token it recognises. */
+/** The vendored grammar is a TextMate grammar; JSON's inferred type is too loose to say so. */
+function isGrammar(value: unknown): value is LanguageRegistration {
+  return typeof value === "object" && value !== null && "scopeName" in value && "patterns" in value;
+}
+const rx: unknown = { ...rxGrammar, name: "rx", embeddedLangs: ["tsx", "css"] };
+if (!isGrammar(rx)) throw new Error("rx.tmLanguage.json is not a TextMate grammar");
+
+const highlighter = createHighlighterCoreSync({
+  engine: createJavaScriptRegexEngine(),
+  themes: [theme],
+  langs: [tsx, css, rx],
+});
+
+/** `code` as HTML: escaped, with a `<span class="tok-…">` around each token the grammar names. */
 export function highlight(code: string, lang: string): string {
-  const rules = lang === "css" ? CSS : lang === "rx" ? RX : [];
-  let html = "";
-  let plain = "";
-  let index = 0;
-  scan: while (index < code.length) {
-    for (const [kind, pattern] of rules) {
-      pattern.lastIndex = index;
-      const match = pattern.exec(code);
-      if (match && match[0].length > 0) {
-        html += `${escape(plain)}<span class="tok-${kind}">${escape(match[0])}</span>`;
-        plain = "";
-        index += match[0].length;
-        continue scan;
-      }
-    }
-    // An identifier is consumed whole, so a keyword inside one (`information`) isn't marked.
-    const word = /[A-Za-z_$][\w$-]*/y;
-    word.lastIndex = index;
-    const skipped = word.exec(code)?.[0] ?? code[index];
-    plain += skipped;
-    index += skipped.length;
-  }
-  return html + escape(plain);
+  if (lang !== "rx" && lang !== "css") return escape(code);
+  const { tokens } = highlighter.codeToTokens(code, { lang, theme: "bisque-docs" });
+  return tokens
+    .map((line) =>
+      line
+        .map(({ content, color }) => {
+          const kind = color?.match(/^var\(--tok-(\w+)\)$/)?.[1];
+          return kind ? `<span class="tok-${kind}">${escape(content)}</span>` : escape(content);
+        })
+        .join(""),
+    )
+    .join("\n");
 }
 
 /** A sentence from the source as HTML: escaped, with `backticked` words as inline code. */
 export function prose(text: string): string {
-  return escape(text).replace(/`([^`]+)`/g, "<code>$1</code>");
+  return escape(text).replace(/`([^`]+)`/g, '<code translate="no">$1</code>');
 }

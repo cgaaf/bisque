@@ -3,7 +3,7 @@
     "description": "Holds the picture's loading status and shares it with the image and fallback inside it. Size and shape the avatar on this element. Avatars in a list that comes from a server can be removed by a new answer at any time."
   },
   "AvatarImage": {
-    "description": "The picture. Its source is loaded off-screen first, and the `<img>` is added only once it has loaded, so a broken image never shows.",
+    "description": "The picture. Its source is loaded off-screen first, and the `<img>` is added only once it has loaded, so a broken image never shows. With `loading=\"lazy\"`, the request starts when the avatar approaches the viewport.",
     "props": {
       "src": "The picture's URL. Without `src` or `srcset` the fallback shows.",
       "srcset": "Candidate sources for the picture, as on an `<img>`.",

@@ -24,4 +24,5 @@ export type Checked = [
   Conforms<Implementation["createLateFormReset"], (element: Accessor<HTMLElement | undefined>, formId: Accessor<string | undefined>, onReset: () => void) => void>,
   Conforms<Implementation["createTimeRangeValidity"], (start: Accessor<HTMLInputElement | undefined>, end: Accessor<HTMLInputElement | undefined>, startMessage: Accessor<string>, endMessage: Accessor<string>, key: Accessor<string>) => void>,
   Conforms<Implementation["rangeFieldValue"], (start: string, end: string) => { start: string; end: string } | null>,
+  Conforms<Implementation["createTimeOptionWindow"], (element: Accessor<HTMLElement | undefined>, options: Accessor<TimePickerOption[]>, selected: Accessor<string | null>, target: Accessor<string>, disabled: Accessor<boolean>) => void>,
 ];

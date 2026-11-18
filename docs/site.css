@@ -17,6 +17,9 @@
   --tok-tag: #2f5bea;
   --tok-attr: #8a5a00;
   --tok-number: #a8480d;
+  --tok-operator: #6f6f7b;
+  --tok-function: #6b3fc4;
+  --tok-type: #0b6f86;
   --header-height: 3.25rem;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -39,6 +42,9 @@
     --tok-tag: #8eabff;
     --tok-attr: #e3b765;
     --tok-number: #f0a36b;
+    --tok-operator: #9a9aa6;
+    --tok-function: #c4a8ff;
+    --tok-type: #7fd0e2;
   }
 }
 
@@ -59,6 +65,9 @@
   --tok-tag: #8eabff;
   --tok-attr: #e3b765;
   --tok-number: #f0a36b;
+  --tok-operator: #9a9aa6;
+  --tok-function: #c4a8ff;
+  --tok-type: #7fd0e2;
 }
 
 :root[data-theme="light"] {
@@ -117,6 +126,21 @@ body {
   letter-spacing: -0.01em;
   color: var(--text);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* The brand symbol keeps its own clay colours in both themes; docs/public/favicon.svg is the same drawing. */
+.logo-mark {
+  flex: none;
+  width: 1.5rem;
+  height: 1.5rem;
+  fill: light-dark(#e3aa82, #f0c3a0);
+}
+
+.logo-shade {
+  fill: light-dark(#c98159, #d0936b);
 }
 
 .logo-note {
@@ -147,6 +171,18 @@ body {
 
 .icon-button:hover {
   background: var(--bg-subtle);
+}
+
+.skip-link {
+  position: fixed;
+  inset: 0.5rem auto auto 0.5rem;
+  z-index: 100;
+  padding: 0.5rem;
+  color: var(--text);
+  background: var(--bg);
+}
+.skip-link:not(:focus) {
+  transform: translateY(-200%);
 }
 
 :focus-visible {
@@ -431,9 +467,17 @@ kbd {
 .tok-string {
   color: var(--tok-string);
 }
-.tok-keyword,
-.tok-operator {
+.tok-keyword {
   color: var(--tok-keyword);
+}
+.tok-operator {
+  color: var(--tok-operator);
+}
+.tok-function {
+  color: var(--tok-function);
+}
+.tok-type {
+  color: var(--tok-type);
 }
 .tok-tag {
   color: var(--tok-tag);
@@ -705,6 +749,6 @@ article > .card-grid .card:hover {
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+    animation: none !important;
   }
 }

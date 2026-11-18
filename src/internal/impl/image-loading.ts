@@ -7,6 +7,8 @@ export type ImageLoadingStatus = "idle" | "loading" | "loaded" | "error";
 export type ImageSlot = {
   add: (status: Accessor<ImageLoadingStatus>) => void;
   remove: (status: Accessor<ImageLoadingStatus>) => void;
+  root: Accessor<HTMLElement | undefined>;
+  setRoot: (element: HTMLElement) => void;
 };
 
 /**
@@ -24,7 +26,10 @@ export function createImageSlot(): [Accessor<ImageLoadingStatus>, ImageSlot] {
     const list = images();
     return list.length === 0 ? "idle" : list[list.length - 1]();
   });
+  const [root, setRoot] = createSignal<HTMLElement>();
   const slot: ImageSlot = {
+    root,
+    setRoot,
     add: (image) => setImages((list) => [...list, image]),
     remove: (image) => setImages((list) => list.filter((other) => other !== image)),
   };
@@ -54,6 +59,9 @@ export function createImageLoadingStatus(
   crossOrigin: Accessor<string | undefined>,
   referrerPolicy: Accessor<string | undefined>,
   slot: ImageSlot | undefined,
+  loading: Accessor<string | undefined>,
+  fetchPriority: Accessor<string | undefined>,
+  imageSizes: Accessor<string | undefined>,
 ): Accessor<ImageLoadingStatus> {
   const [outcome, setOutcome] = createSignal<{ source: Source; status: ImageLoadingStatus } | undefined>(
     undefined,
@@ -69,27 +77,54 @@ export function createImageLoadingStatus(
     return known && sameSource(known.source, next) ? known.status : "loading";
   });
   createEffect(
-    () => source(),
-    (next) => {
+    () => ({
+      next: source(),
+      lazy: loading() === "lazy",
+      root: loading() === "lazy" ? slot?.root() : undefined,
+      priority: fetchPriority(),
+      sizes: imageSizes(),
+    }),
+    ({ next, lazy, root, priority, sizes }) => {
       if (!next.src && !next.srcset) return;
       let live = true;
-      const image = new window.Image();
-      const settle = (value: ImageLoadingStatus) => {
-        if (live) setOutcome({ source: next, status: value });
-      };
-      image.addEventListener("load", () => settle("loaded"));
-      image.addEventListener("error", () => settle("error"));
-      if (next.referrerPolicy) image.referrerPolicy = next.referrerPolicy;
-      image.crossOrigin = (next.crossOrigin ?? null) as HTMLImageElement["crossOrigin"];
-      if (next.srcset) image.srcset = next.srcset;
-      if (next.src) image.src = next.src;
-      // A cached image is complete at once and fires no load event in some browsers. Recorded after this flush.
-      if (image.complete) {
-        const value = image.naturalWidth > 0 ? "loaded" : "error";
-        queueMicrotask(() => settle(value));
+      function load() {
+        const image = new window.Image();
+        const settle = (value: ImageLoadingStatus) => {
+          if (live) setOutcome({ source: next, status: value });
+        };
+        image.addEventListener("load", () => settle("loaded"));
+        image.addEventListener("error", () => settle("error"));
+        if (next.referrerPolicy) image.referrerPolicy = next.referrerPolicy;
+        image.crossOrigin = (next.crossOrigin ?? null) as HTMLImageElement["crossOrigin"];
+        if (priority === "high" || priority === "low") image.fetchPriority = priority;
+        if (sizes) image.sizes = sizes;
+        if (next.srcset) image.srcset = next.srcset;
+        if (next.src) image.src = next.src;
+        // A cached image is complete at once and fires no load event in some browsers. Recorded after this flush.
+        if (image.complete) {
+          const value = image.naturalWidth > 0 ? "loaded" : "error";
+          queueMicrotask(() => settle(value));
+        }
+      }
+      if (lazy && !root) return;
+      let observer: IntersectionObserver | undefined;
+      if (lazy && root && typeof IntersectionObserver !== "undefined") {
+        observer = new IntersectionObserver(
+          (entries) => {
+            if (live && entries.some((entry) => entry.isIntersecting)) {
+              observer?.disconnect();
+              load();
+            }
+          },
+          { rootMargin: "200px" },
+        );
+        observer.observe(root);
+      } else {
+        load();
       }
       return () => {
         live = false;
+        observer?.disconnect();
       };
     },
   );

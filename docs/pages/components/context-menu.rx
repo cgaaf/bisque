@@ -41,7 +41,7 @@ export default component Page() {
       while it is open moves it there. On a touch screen, a finger resting still for half a second opens it at
       the finger once the finger lifts; moving the finger cancels it. The keyboard's context-menu key and{" "}
       <kbd>Shift</kbd>+<kbd>F10</kbd> open it on its first item, below the element that has focus in the area. The
-      area itself isn't focusable, so the keys work only from something focusable inside it.
+      area itself is focusable. Put a <code>ContextMenuButton</code> inside for a single-click or tap alternative.
     </p>
 
     <h3 id="items">Items and submenus</h3>

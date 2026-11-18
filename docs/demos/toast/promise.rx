@@ -46,7 +46,7 @@ export component ToastPromise() {
   <div class="ToastPromise">
     <ToastProvider>
       <PublishButton />
-      <ToastViewport class="Viewport">
+      <ToastViewport class="Viewport" aria-label="Request notifications">
         <Toasts />
       </ToastViewport>
     </ToastProvider>

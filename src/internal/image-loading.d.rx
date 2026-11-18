@@ -1,6 +1,6 @@
 // How .rx may use ./image-loading.js (implemented in ./impl/image-loading.ts): the avatar's image and fallback.
 // One declaration per line: scripts/gen-dts.mjs turns this file into ./image-loading.d.ts.
-export type ImageSlot = { add: (status: any) => void; remove: (status: any) => void }
+export type ImageSlot = { add: (status: any) => void; remove: (status: any) => void; root: () => HTMLElement | undefined; setRoot: (element: HTMLElement) => void }
 export pure fn createImageSlot(): [ref "idle" | "loading" | "loaded" | "error", ImageSlot]
-export pure fn createImageLoadingStatus(ref src: string | undefined, ref srcset: string | undefined, ref crossOrigin: string | undefined, ref referrerPolicy: string | undefined, slot: ImageSlot | undefined): ref "idle" | "loading" | "loaded" | "error"
+export pure fn createImageLoadingStatus(ref src: string | undefined, ref srcset: string | undefined, ref crossOrigin: string | undefined, ref referrerPolicy: string | undefined, slot: ImageSlot | undefined, ref loading: string | undefined, ref priority: string | undefined, ref sizes: string | undefined): ref "idle" | "loading" | "loaded" | "error"
 export pure fn createDelayPassed(ref delay: number): ref boolean

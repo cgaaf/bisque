@@ -201,8 +201,8 @@ test("the form submits one ISO date per picker, and reset puts each default back
     ["start", "2030-05-09"],
   ]);
   await user.click(getByRole("button", { name: "Reset" }));
-  await expect.poll(() => text(group)).toBe("––/––/––––");
-  expect(text(start)).toBe("5/8/2030");
+  // Each picker restores its value in its own task after the native reset.
+  await expect.poll(() => [text(group), text(start)]).toEqual(["––/––/––––", "5/8/2030"]);
   expect([...new FormData(form).entries()]).toEqual([
     ["due", ""],
     ["start", "2030-05-08"],

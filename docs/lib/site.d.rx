@@ -12,4 +12,4 @@ export pure fn neighbours(): any
 export pure fn headings(): ref any
 export fn setTitle(title: string): void
 export fn toggleTheme(): void
-export fn copyText(text: string): void
+export fn copyText(text: string): Promise<void>

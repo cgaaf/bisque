@@ -162,7 +162,7 @@ Renders no element of its own. The AM/PM column, in the locale's words. Renders 
 
 ## TimePickerOptions
 
-Renders `<div>`. The other popup design: one listbox of whole times every `interval` minutes from midnight (09:00, 09:30 …), those outside `min` and `max` disabled. Any choice (a click, Enter or Space) sets the whole time and closes the popup. Named "Times" unless given `aria-label`.
+Renders `<div>`. The other popup design: one listbox of whole times every `interval` minutes from midnight (09:00, 09:30 …), those outside `min` and `max` disabled. Any choice (a click, Enter or Space) sets the whole time and closes the popup. Long interval lists render nearby groups of options as you scroll. Home, End, arrow keys and typeahead still reach the whole list. Named "Times" unless given `aria-label`.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |

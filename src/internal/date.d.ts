@@ -40,6 +40,7 @@ export declare function isoWeekNumber(date: Temporal.PlainDate): number;
 export declare function weekdayNames(locale: Locale, width: "narrow" | "short" | "long", firstDayOfWeek: number | undefined): WeekdayName[];
 export declare function formatMonth(month: Temporal.PlainYearMonth | Temporal.PlainDate, locale: Locale): string;
 export declare function formatDayLabel(date: Temporal.PlainDate, locale: Locale): string;
+export declare function formatWeekNumber(week: number, locale: string | string[] | undefined): string;
 export declare function formatDayNumber(date: Temporal.PlainDate, locale: Locale): string;
 export declare function formatDate(date: Temporal.PlainDate | undefined, locale: Locale, style: "full" | "long" | "medium" | "short" | undefined): string;
 export declare function formatTime(time: Temporal.PlainTime | undefined, locale: Locale, granularity: TimeGranularity | undefined, hourCycle: 12 | 24 | undefined): string;

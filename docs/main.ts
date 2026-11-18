@@ -1,7 +1,7 @@
 // The docs site's one entry. Every page is its own ReactiveScript program under ./pages, loaded on demand: the
 // URL's path picks the file. Links between pages are plain <a> elements, so each navigation is a page load.
 import { createApp } from "@reactivescript/runtime";
-import { pagePath } from "./lib/impl/site.ts";
+import { pagePath, syncThemeColor } from "./lib/impl/site.ts";
 // oxlint-disable-next-line import/no-unassigned-import -- a stylesheet is imported for its effect
 import "./site.css";
 
@@ -19,6 +19,8 @@ if (globalThis.Temporal === undefined) {
   await import("temporal-polyfill/full/global");
 }
 
+syncThemeColor();
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncThemeColor);
 const path = pagePath();
 const load = pages[`./pages/${path === "" ? "index" : path}.rx`] ?? pages["./pages/not-found.rx"];
 const page = await load();

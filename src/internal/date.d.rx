@@ -90,6 +90,7 @@ export pure fn isoWeekNumber(date: Temporal.PlainDate): number
 export pure fn weekdayNames(locale: Locale, width: "narrow" | "short" | "long", firstDayOfWeek: number | undefined): WeekdayName[]
 export pure fn formatMonth(month: Temporal.PlainYearMonth | Temporal.PlainDate, locale: Locale): string
 export pure fn formatDayLabel(date: Temporal.PlainDate, locale: Locale): string
+export pure fn formatWeekNumber(week: number, locale: string | string[] | undefined): string
 export pure fn formatDayNumber(date: Temporal.PlainDate, locale: Locale): string
 export pure fn formatDate(date: Temporal.PlainDate | undefined, locale: Locale, style: "full" | "long" | "medium" | "short" | undefined): string
 export pure fn formatTime(time: Temporal.PlainTime | undefined, locale: Locale, granularity: TimeGranularity | undefined, hourCycle: 12 | 24 | undefined): string

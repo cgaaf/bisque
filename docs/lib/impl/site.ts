@@ -214,6 +214,7 @@ export function toggleTheme(): void {
     ? rootElement.dataset.theme === "dark"
     : matchMedia("(prefers-color-scheme: dark)").matches;
   rootElement.dataset.theme = dark ? "light" : "dark";
+  syncThemeColor();
   try {
     localStorage.setItem("bisque-theme", rootElement.dataset.theme);
   } catch {
@@ -221,6 +222,11 @@ export function toggleTheme(): void {
   }
 }
 
-export function copyText(text: string): void {
-  void navigator.clipboard?.writeText(text);
+export function syncThemeColor(): void {
+  const color = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", color);
+}
+
+export async function copyText(text: string): Promise<void> {
+  await navigator.clipboard.writeText(text);
 }

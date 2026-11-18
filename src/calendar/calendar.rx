@@ -59,7 +59,7 @@
 import { mergeProps, withoutHandlers, createRef } from "../internal/props.js"
 import { createFormReset, setInputValue, isEmptyView } from "../internal/field.js"
 import { createFocusKeeper } from "../internal/focus-keeper.js"
-import { isSameDay, isSameMonth, isDateInRange, isMonthInRange, isWeekend, today, monthGrid, weekdayNames, formatDayLabel, formatDayNumber, monthOptions, yearOptions, dateMoveForKey, moveDate, normalizeRange, isInRange, isRangeStart, isRangeEnd, previewRange, rangeHasDisabledDate, dateToString } from "../internal/date.js"
+import { isSameDay, isSameMonth, isDateInRange, isMonthInRange, isWeekend, today, monthGrid, weekdayNames, formatDayLabel, formatDayNumber, formatWeekNumber, monthOptions, yearOptions, dateMoveForKey, moveDate, normalizeRange, isInRange, isRangeStart, isRangeEnd, previewRange, rangeHasDisabledDate, dateToString } from "../internal/date.js"
 import { visibleMonths, pageFor, tabStopDate, isRtl, createDayFocus } from "../internal/calendar.js"
 import { field, FieldContext, fieldGroupProps } from "../field/field.rx"
 import { DivProps, ButtonProps, SpanProps, TableProps, TableSectionProps, TableHeaderCellProps, TableCellProps, SelectElementProps, PartProps, PlainDate, PlainYearMonth, DateRange, CalendarDay, CalendarWeek, CalendarOption, WeekdayName } from "../internal/types.rx"
@@ -731,7 +731,7 @@ export component CalendarGridHeader({ format, children, ...rest }: CalendarGridH
   <thead {...merged}>
     <tr>
       {if showWeeks {
-        <th scope="col" aria-label={weekLabel} data-week-number=""></th>
+        <th scope="col" aria-label={weekLabel} data-week-number="">{weekLabel}</th>
       }}
       {for weekday in names {
         <CalendarGridHeaderCell weekday={weekday} />
@@ -785,7 +785,7 @@ export component CalendarGridBody({ children, ...rest }: TableSectionProps) {
 
 // A row header with the week's ISO number, named "Week 47" (the root's `weekNumberLabel` and the number).
 export fn calendarWeekNumber(ref c: CalendarContext, ref week: CalendarWeek): PartProps {
-  label = `${c.weekNumberLabel} ${week.weekNumber}`
+  label = `${c.weekNumberLabel} ${formatWeekNumber(week.weekNumber, c.locale)}`
   { scope: "row", "aria-label": label, "data-week-number": "" }
 }
 
@@ -793,7 +793,7 @@ export type CalendarWeekNumberProps = { week: CalendarWeek } & TableHeaderCellPr
 
 export component CalendarWeekNumber({ week, children, ...rest }: CalendarWeekNumberProps) {
   c = use calendar
-  n = week.weekNumber
+  n = formatWeekNumber(week.weekNumber, c.locale)
   own = calendarWeekNumber(c, week)
   merged = latest mergeProps(own, rest)
   <th {...merged}>

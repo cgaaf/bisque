@@ -487,9 +487,12 @@ export type MenuSubmenuRootProps = {
 export component MenuSubmenuRoot(props: MenuSubmenuRootProps) {
   // Read here and passed down: in a component that provides `menu`, `use menu` sees its own provision.
   parent = use menu
-  <SubmenuProvider parent={parent} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} disabled={props.disabled}>
-    {props.children}
-  </SubmenuProvider>
+  // Isolate the child provider from the owner that reads the parent menu.
+  if true {
+    <SubmenuProvider parent={parent} open={props.open} defaultOpen={props.defaultOpen} onOpenChange={props.onOpenChange} disabled={props.disabled}>
+      {props.children}
+    </SubmenuProvider>
+  }
 }
 
 component SubmenuProvider(props: MenuSubmenuRootProps & { parent: MenuContext }) {

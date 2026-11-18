@@ -20,3 +20,4 @@ export fn chosenOption(target: EventTarget | null): string | undefined
 export pure fn createLateFormReset(ref element: HTMLElement | undefined, ref formId: string | undefined, onReset: () => void) instantiates
 export pure fn createTimeRangeValidity(ref start: HTMLInputElement | undefined, ref end: HTMLInputElement | undefined, ref startMessage: string, ref endMessage: string, ref key: string) instantiates
 export pure fn rangeFieldValue(start: string, end: string): { start: string; end: string } | null
+export pure fn createTimeOptionWindow(ref element: HTMLElement | undefined, ref options: TimePickerOption[], ref selected: string | null, ref target: string, ref disabled: boolean) instantiates

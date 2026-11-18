@@ -11,4 +11,4 @@ export declare function neighbours(): any;
 export declare function headings(): any;
 export declare function setTitle(title: string): void;
 export declare function toggleTheme(): void;
-export declare function copyText(text: string): void;
+export declare function copyText(text: string): Promise<void>;

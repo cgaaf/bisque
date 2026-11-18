@@ -44,6 +44,7 @@ export type Checked = [
   Conforms<Implementation["weekdayNames"], (locale: Locale, width: "narrow" | "short" | "long", firstDayOfWeek: number | undefined) => WeekdayName[]>,
   Conforms<Implementation["formatMonth"], (month: Temporal.PlainYearMonth | Temporal.PlainDate, locale: Locale) => string>,
   Conforms<Implementation["formatDayLabel"], (date: Temporal.PlainDate, locale: Locale) => string>,
+  Conforms<Implementation["formatWeekNumber"], (week: number, locale: string | string[] | undefined) => string>,
   Conforms<Implementation["formatDayNumber"], (date: Temporal.PlainDate, locale: Locale) => string>,
   Conforms<Implementation["formatDate"], (date: Temporal.PlainDate | undefined, locale: Locale, style: "full" | "long" | "medium" | "short" | undefined) => string>,
   Conforms<Implementation["formatTime"], (time: Temporal.PlainTime | undefined, locale: Locale, granularity: TimeGranularity | undefined, hourCycle: 12 | 24 | undefined) => string>,

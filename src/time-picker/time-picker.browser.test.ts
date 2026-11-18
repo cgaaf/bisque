@@ -446,3 +446,25 @@ test("number pad arrows follow rows and columns while Tab moves between units", 
   await user.keyboard("{ArrowUp}{ArrowLeft}");
   expect(focused()).toBe("00");
 });
+
+test("a one-minute list defers closed rows and keeps distant times reachable by keyboard and pointer", async () => {
+  const { getByRole, getByTestId, user } = mount(optionsFixture);
+  await user.click(getByRole("button", { name: "Every minute" }));
+  const popup = getByTestId("popup");
+  const trigger = getByRole("button", { name: "Open meeting" });
+  expect(popup.querySelector('[role="option"]')).toBeNull();
+  await user.click(trigger);
+  await expect.poll(() => document.activeElement?.getAttribute("data-value")).toBe("10:00");
+  await user.keyboard("{End}");
+  expect(document.activeElement?.getAttribute("data-value")).toBe("17:00");
+  await user.keyboard("{Home}");
+  expect(document.activeElement?.getAttribute("data-value")).toBe("09:00");
+  expect(popup.querySelectorAll('[role="option"]').length).toBeLessThan(240);
+  const group = popup.querySelector<HTMLElement>('[data-time-group="41"]')!;
+  group.scrollIntoView({ block: "center" });
+  await expect.poll(() => popup.querySelector('[data-value="16:42"]')).not.toBeNull();
+  const distant = popup.querySelector<HTMLElement>('[data-value="16:42"]')!;
+  await user.click(distant);
+  await expect.poll(() => formValue(getByTestId("form"), "meeting")).toEqual(["16:42"]);
+  await expect.poll(() => popup.querySelector('[role="option"]')).toBeNull();
+});

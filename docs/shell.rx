@@ -34,6 +34,7 @@ export component DocsPage(props: DocsPageProps) {
   effect () { setTitle(peek(props.title)) }
 
   <div class="site">
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <header class="site-header">
       <DialogRoot>
         <DialogTrigger class="icon-button menu-button" aria-label="Open navigation">
@@ -49,7 +50,14 @@ export component DocsPage(props: DocsPageProps) {
           <NavList />
         </DialogPopup>
       </DialogRoot>
-      <a class="logo" href={href("")}>Bisque</a>
+      <a class="logo" href={href("")}>
+        <svg class="logo-mark" viewBox="0 0 32 32" aria-hidden="true">
+          <clipPath id="logo-jar"><path d="M11 2.5h10a1.5 1.5 0 0 1 0 3h-.3v1.2C26.5 8.8 30 13 30 18c0 5-3.2 9.2-8 10.4v.4a1.2 1.2 0 0 1-1.2 1.2h-9.6a1.2 1.2 0 0 1-1.2-1.2v-.4C5.2 27.2 2 23 2 18c0-5 3.5-9.2 9.3-11.3V5.5H11a1.5 1.5 0 0 1 0-3z" /></clipPath>
+          <path d="M11 2.5h10a1.5 1.5 0 0 1 0 3h-.3v1.2C26.5 8.8 30 13 30 18c0 5-3.2 9.2-8 10.4v.4a1.2 1.2 0 0 1-1.2 1.2h-9.6a1.2 1.2 0 0 1-1.2-1.2v-.4C5.2 27.2 2 23 2 18c0-5 3.5-9.2 9.3-11.3V5.5H11a1.5 1.5 0 0 1 0-3z" />
+          <path class="logo-shade" clip-path="url(#logo-jar)" fill-rule="evenodd" d="M0 0h32v32H0zM13.5 0a14.5 14.5 0 1 0 0 29 14.5 14.5 0 0 0 0-29z" />
+        </svg>
+        Bisque
+      </a>
       <span class="logo-note">Headless components for ReactiveScript</span>
       <button class="icon-button theme-button" type="button" aria-label="Switch between light and dark" onClick={() => { toggleTheme() }}>
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.25" fill="none" stroke="currentColor" stroke-width="1.5" /><path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" /></svg>
@@ -58,7 +66,7 @@ export component DocsPage(props: DocsPageProps) {
 
     <aside class="sidebar"><NavList /></aside>
 
-    <main class="content">
+    <main class="content" id="main-content" tabindex="-1">
       <article>
         <h1>{props.title}</h1>
         {if props.subtitle { <p class="subtitle">{props.subtitle}</p> }}
@@ -106,14 +114,18 @@ export component Demo(props: DemoProps) {
   rawRx = sourceOf(peek(path + ".rx"))
   rawCss = sourceOf(peek(path + ".css"))
   source tab: string := "rx"
-  source copied := false
+  source feedback := ""
   action choose(value: string) {
     tab := value
-    copied := false
+    feedback := ""
   }
   action copy() {
-    copyText(tab == "css" ? rawCss : rawRx)
-    copied := true
+    try {
+      await copyText(tab == "css" ? rawCss : rawRx)
+      feedback := "Copied"
+    } catch (error) {
+      feedback := "Select the source text and copy it manually."
+    }
   }
 
   <figure class="demo">
@@ -124,10 +136,11 @@ export component Demo(props: DemoProps) {
           <TabsTab class="demo-tab" value="rx">{name}.rx</TabsTab>
           <TabsTab class="demo-tab" value="css">{name}.css</TabsTab>
         </TabsList>
-        <button class="copy-button" type="button" onClick={copy}>{copied ? "Copied" : "Copy"}</button>
+        <button class="copy-button" type="button" onClick={copy}>Copy</button>
+        <span role="status">{feedback}</span>
       </div>
-      <TabsPanel class="demo-panel" value="rx"><pre class="code"><code innerHTML={rx} /></pre></TabsPanel>
-      <TabsPanel class="demo-panel" value="css"><pre class="code"><code innerHTML={css} /></pre></TabsPanel>
+      <TabsPanel class="demo-panel" value="rx"><pre class="code"><code translate="no" innerHTML={rx} /></pre></TabsPanel>
+      <TabsPanel class="demo-panel" value="css"><pre class="code"><code translate="no" innerHTML={css} /></pre></TabsPanel>
     </TabsRoot>
   </figure>
 }
@@ -140,7 +153,7 @@ export type CodeProps = {
 // A highlighted snippet that isn't run: an anatomy listing, a stylesheet fragment.
 export component Code(props: CodeProps) {
   html = highlightedSourceOf(peek(props.file))
-  <pre class="code code-block"><code innerHTML={html} /></pre>
+  <pre class="code code-block"><code translate="no" innerHTML={html} /></pre>
 }
 
 export type InlineCodeProps = { code: string; lang?: string }
@@ -148,7 +161,7 @@ export type InlineCodeProps = { code: string; lang?: string }
 // A short snippet written in the page itself.
 export component Snippet(props: InlineCodeProps) {
   html = highlight(props.code, props.lang ?? "rx")
-  <pre class="code code-block"><code innerHTML={html} /></pre>
+  <pre class="code code-block"><code translate="no" innerHTML={html} /></pre>
 }
 
 export type ApiReferenceProps = {
@@ -162,11 +175,11 @@ export component ApiReference(props: ApiReferenceProps) {
   <div class="api">
     {for part in api.parts {
       <section class="api-part">
-        <h3 id={part.name}>{part.name}</h3>
+        <h3 translate="no" id={part.name}>{part.name}</h3>
         {if part.description { <p innerHTML={prose(part.description)} /> }}
         <p class="api-element">
           {if part.element {
-            <span>Renders a <code>{"<" + part.element + ">"}</code> element and passes its other props on to it.</span>
+            <span>Renders a <code translate="no">{"<" + part.element + ">"}</code> element and passes its other props on to it.</span>
           } else {
             <span>Renders no element of its own.</span>
           }}
@@ -179,11 +192,11 @@ export component ApiReference(props: ApiReferenceProps) {
                 {for prop in part.props {
                   <tr>
                     <td>
-                      <code class="api-name">{prop.name}</code>{if prop.required { <span class="api-required">required</span> }}
+                      <code translate="no" class="api-name">{prop.name}</code>{if prop.required { <span class="api-required">required</span> }}
                       {if prop.description { <p class="api-description" innerHTML={prose(prop.description)} /> }}
                     </td>
-                    <td><code class="api-type">{prop.type}</code></td>
-                    <td>{if prop.default { <code>{prop.default}</code> } else { <span class="api-none">—</span> }}</td>
+                    <td><code translate="no" class="api-type">{prop.type}</code></td>
+                    <td>{if prop.default { <code translate="no">{prop.default}</code> } else { <span class="api-none">—</span> }}</td>
                   </tr>
                 }}
               </tbody>
@@ -196,7 +209,7 @@ export component ApiReference(props: ApiReferenceProps) {
               <thead><tr><th>Attribute</th><th>Description</th></tr></thead>
               <tbody>
                 {for attribute in part.dataAttributes {
-                  <tr><td><code class="api-name">{attribute.name}</code></td><td innerHTML={prose(attribute.description)} /></tr>
+                  <tr><td><code translate="no" class="api-name">{attribute.name}</code></td><td innerHTML={prose(attribute.description)} /></tr>
                 }}
               </tbody>
             </table>
@@ -208,7 +221,7 @@ export component ApiReference(props: ApiReferenceProps) {
               <thead><tr><th>CSS variable</th><th>Description</th></tr></thead>
               <tbody>
                 {for variable in part.cssVariables {
-                  <tr><td><code class="api-name">{variable.name}</code></td><td innerHTML={prose(variable.description)} /></tr>
+                  <tr><td><code translate="no" class="api-name">{variable.name}</code></td><td innerHTML={prose(variable.description)} /></tr>
                 }}
               </tbody>
             </table>

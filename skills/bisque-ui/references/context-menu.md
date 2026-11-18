@@ -41,9 +41,13 @@ Renders no element of its own. Holds the context menu's open state and shares it
 | `onOpenChange` | `(open: boolean) => void` |  | Called with the new state after the browser or a part opened or closed the menu. It is called in a change of its own, after the menu's: a request it starts, or a handler that is itself an action, doesn't hold the menu. |
 | `disabled` | `boolean` | `false` | A disabled context menu doesn't open, and the browser's own menu shows instead. |
 
+## ContextMenuButton
+
+Renders `<button>`. A button inside ContextMenuTrigger that opens the same menu by click, tap or keyboard.
+
 ## ContextMenuTrigger
 
-Renders `<div>`. The area that opens the menu: on a right-click at the pointer, on a long press at the finger, and on the context-menu key or Shift+F10 below the focused element inside it. It holds the empty, fixed-position element the popup is anchored to. The area isn't focusable itself.
+Renders `<div>`. The area that opens the menu: on a right-click at the pointer, on a long press at the finger, and on the context-menu key or Shift+F10 below the focused element inside it. It holds the empty, fixed-position element the popup is anchored to. The area is keyboard focusable.
 
 | Data attribute | Meaning |
 | --- | --- |

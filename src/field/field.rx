@@ -312,17 +312,19 @@ export component FieldError({ match, children, ...rest }: FieldErrorProps) {
   }
   attrs = fieldStateAttributes(f?.state)
   merged = latest mergeProps({ id: id, ...attrs }, rest)
-  {if shown {
-    <div {...merged}>
-      {if !isEmptyView(children) {
-        {children}
-      } else if messages.length > 1 {
-        <ul>{for message in messages { <li>{message}</li> }}</ul>
-      } else {
-        {f?.validity.error}
-      }}
-    </div>
-  }}
+  <div aria-live="polite" aria-atomic="true" style={{ display: "contents" }}>
+    {if shown {
+      <div {...merged}>
+        {if !isEmptyView(children) {
+          {children}
+        } else if messages.length > 1 {
+          <ul>{for message in messages { <li>{message}</li> }}</ul>
+        } else {
+          {f?.validity.error}
+        }}
+      </div>
+    }}
+  </div>
 }
 
 // FieldValidity's children read the field's validity from this context: what Base UI passes to a render function.

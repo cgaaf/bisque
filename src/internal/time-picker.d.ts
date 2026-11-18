@@ -18,3 +18,4 @@ export declare function chosenOption(target: EventTarget | null): string | undef
 export declare function createLateFormReset(element: HTMLElement | undefined, formId: string | undefined, onReset: () => void): void;
 export declare function createTimeRangeValidity(start: HTMLInputElement | undefined, end: HTMLInputElement | undefined, startMessage: string, endMessage: string, key: string): void;
 export declare function rangeFieldValue(start: string, end: string): { start: string; end: string } | null;
+export declare function createTimeOptionWindow(element: HTMLElement | undefined, options: TimePickerOption[], selected: string | null, target: string, disabled: boolean): void;

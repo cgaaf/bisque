@@ -429,6 +429,12 @@ export function formatDayNumber(date: PlainDate, locale: Locale): string {
   return formatDateWith(date, locale, { day: "numeric" });
 }
 
+/** The week uses the same numbering system as the calendar's day labels. */
+export function formatWeekNumber(week: number, locale: Locale): string {
+  const { numberingSystem } = dateFormat(locale, { day: "numeric" }).resolvedOptions();
+  return numberFormat(locale, numberingSystem, 1).format(week);
+}
+
 /** `date` for display, with `Intl`'s `dateStyle` (default "medium"); "" for no date. */
 export function formatDate(
   date: PlainDate | undefined,

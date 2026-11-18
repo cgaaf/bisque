@@ -20,8 +20,8 @@ export component TableOfContentsHero() {
       </ul>
       <TableOfContentsIndicator class="Indicator" />
     </TableOfContentsRoot>
-    <div class="Article" ref={setArticle}>
-      <header class="Header">Brewing guide</header>
+    <div class="Article" tabindex="0" ref={setArticle}>
+      <h2 class="Header">Brewing guide</h2>
       <p>A short guide to making a better pot, from the kettle to the cup.</p>
       <h3 class="Heading" id="toc-hero-water">Water</h3>
       <p>Soft water lets the flavour through. If the kettle scales up quickly, try filtered water for a week and compare.</p>

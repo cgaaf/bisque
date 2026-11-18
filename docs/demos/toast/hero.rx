@@ -32,7 +32,7 @@ export component ToastHero() {
   <div class="ToastHero">
     <ToastProvider>
       <SaveButton />
-      <ToastViewport class="Viewport">
+      <ToastViewport class="Viewport" aria-label="Draft notifications">
         <Toasts />
       </ToastViewport>
     </ToastProvider>

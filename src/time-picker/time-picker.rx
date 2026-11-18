@@ -39,9 +39,9 @@
 // cycle are the browser's, partial input can't be read, `step` doesn't take the minutes away, Firefox can't style its
 // segments). Its native popup is the browser's own, different in each engine, and can't be styled at all (not
 // measured here beyond that). So the popup is the library's.
-import { mergeProps } from "../internal/props.js"
+import { mergeProps, createRef } from "../internal/props.js"
 import { now, parseTime, isSameTime, timeToString, clampTime } from "../internal/date.js"
-import { isTwelveHour, columnOptions, columnValue, columnTarget, chooseInColumn, intervalOptions, intervalTarget, focusColumns, createTimeGridNavigation, focusAdjacentColumn, focusLeft, chosenOption, createLateFormReset, openingTime } from "../internal/time-picker.js"
+import { isTwelveHour, columnOptions, columnValue, columnTarget, chooseInColumn, intervalOptions, intervalTarget, createTimeOptionWindow, focusColumns, createTimeGridNavigation, focusAdjacentColumn, focusLeft, chosenOption, createLateFormReset, openingTime } from "../internal/time-picker.js"
 import { createOnShow } from "../internal/listbox.js"
 import { focusElement } from "../internal/dom.js"
 import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
@@ -558,9 +558,16 @@ export component TimePickerOptions(props: TimePickerOptionsProps) {
   hourCycle = c.hourCycle
   min = c.min
   max = c.max
-  options key value = intervalOptions(locale, interval, granularity, hourCycle, min, max)
+  // Small lists keep their ordinary listbox parts. Large lists format only while open.
+  dense = granularity != "hour" && interval >= 1 && interval < 29
+  allTimes = intervalOptions(locale, interval, granularity, hourCycle, min, max)
+  options key value = dense ? [] : allTimes
+  source element: HTMLElement | undefined := undefined
+  action remember(list: HTMLElement) { element := list }
+  setElement = createRef(remember)
   own = timePickerOptions(c, interval)
-  merged = latest mergeProps(own, rest)
+  _window = createTimeOptionWindow(element, dense && c.open ? allTimes : [], own.value, own["data-target"], own.disabled)
+  merged = latest mergeProps(mergeProps(own, { ref: setElement }), rest)
   <ListboxRoot {...merged}>
     {for option in options {
       <ListboxItem value={option.value} disabled={option.disabled}>{option.label}</ListboxItem>

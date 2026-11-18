@@ -21,7 +21,7 @@ Renders `<span>`. Holds the picture's loading status and shares it with the imag
 
 ## AvatarImage
 
-Renders `<img>`. The picture. Its source is loaded off-screen first, and the `<img>` is added only once it has loaded, so a broken image never shows.
+Renders `<img>`. The picture. Its source is loaded off-screen first, and the `<img>` is added only once it has loaded, so a broken image never shows. With `loading="lazy"`, the request starts when the avatar approaches the viewport.
 
 | Prop | Type | Default | Description |
 | --- | --- | --- | --- |

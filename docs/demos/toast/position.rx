@@ -19,7 +19,7 @@ export component ToastPosition() {
   <div class="ToastPosition">
     <ToastProvider timeout={3000}>
       <ConnectButton />
-      <ToastViewport class="Viewport">
+      <ToastViewport class="Viewport" aria-label="Position example notifications">
         <Toasts />
       </ToastViewport>
     </ToastProvider>

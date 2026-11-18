@@ -20,7 +20,7 @@ export component ToastManagerDemo() {
   <div class="ToastManagerDemo">
     <button class="Button" type="button" onClick={() => { manager.add({ title: "Link copied", description: "Anyone with the link can view the board." }) }}>Copy link</button>
     <ToastProvider toastManager={manager}>
-      <ToastViewport class="Viewport">
+      <ToastViewport class="Viewport" aria-label="Shared manager notifications">
         <Toasts />
       </ToastViewport>
     </ToastProvider>

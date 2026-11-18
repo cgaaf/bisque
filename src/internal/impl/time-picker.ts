@@ -440,3 +440,156 @@ export function rangeFieldValue(start: string, end: string): { start: string; en
   }
   return found;
 }
+
+/**
+ * Dense interval lists keep only nearby groups of times in the DOM. Each placeholder reserves its
+ * group's measured height. Keyboard navigation searches the whole model and materializes its
+ * destination before focusing it, including typeahead and Home/End outside the visible groups.
+ */
+export function createTimeOptionWindow(
+  element: Accessor<MaybeElement>,
+  options: Accessor<TimePickerOption[]>,
+  selected: Accessor<string | null>,
+  target: Accessor<string>,
+  disabled: Accessor<boolean>,
+): void {
+  let restoreFocus: { list: HTMLElement; value: string } | undefined;
+  createEffect(
+    () => ({ list: element(), times: options(), value: selected(), start: target(), blocked: disabled() }),
+    ({ list, times, value, start, blocked }) => {
+      const previous = restoreFocus;
+      restoreFocus = undefined;
+      if (!list || times.length === 0) return;
+      const size = 24;
+      const groups: HTMLElement[] = [];
+      const first = times.findIndex((time) => !time.disabled);
+      const wanted = times.findIndex((time) => time.value === (value ?? start) && !time.disabled);
+      const initial = wanted < 0 ? first : wanted;
+      const initialGroup = Math.floor(initial / size);
+      const rows = new Map<number, HTMLElement>();
+      const heights = new Map<HTMLElement, number>();
+
+      function mountGroup(groupIndex: number) {
+        const group = groups[groupIndex];
+        if (!group || group.childElementCount) return;
+        const fragment = document.createDocumentFragment();
+        for (let i = groupIndex * size; i < Math.min(times.length, (groupIndex + 1) * size); i++) {
+          const time = times[i];
+          const row = document.createElement("div");
+          row.setAttribute("role", "option");
+          row.setAttribute("aria-posinset", String(i + 1));
+          row.setAttribute("aria-setsize", String(times.length));
+          row.setAttribute("aria-selected", String(time.value === value));
+          row.toggleAttribute("data-selected", time.value === value);
+          row.toggleAttribute("data-bisque-current", time.value === value);
+          row.toggleAttribute("data-disabled", blocked || time.disabled);
+          if (blocked || time.disabled) row.setAttribute("aria-disabled", "true");
+          row.dataset.bisqueItem = "";
+          row.dataset.value = time.value;
+          row.dataset.label = time.label;
+          row.dataset.timeIndex = String(i);
+          row.tabIndex = i === initial && !blocked ? 0 : -1;
+          row.textContent = time.label;
+          rows.set(i, row);
+          fragment.append(row);
+        }
+        group.style.blockSize = "";
+        group.append(fragment);
+      }
+
+      const resize = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const height = entry.borderBoxSize[0]?.blockSize;
+          if (height && entry.target.childElementCount) heights.set(entry.target as HTMLElement, height);
+        }
+      });
+      const view = new IntersectionObserver(
+        (entries) => {
+          for (const entry of entries) {
+            const group = entry.target as HTMLElement;
+            const n = Number(group.dataset.timeGroup);
+            if (entry.isIntersecting) mountGroup(n);
+            else if (
+              n !== initialGroup &&
+              group.childElementCount &&
+              !group.contains(document.activeElement)
+            ) {
+              const height = heights.get(group) ?? group.getBoundingClientRect().height;
+              if (!height) continue;
+              group.style.blockSize = height + "px";
+              group.replaceChildren();
+              for (let i = n * size; i < (n + 1) * size; i++) rows.delete(i);
+            }
+          }
+        },
+        { rootMargin: "200px" },
+      );
+      for (let i = 0; i < times.length; i += size) {
+        const group = document.createElement("div");
+        group.setAttribute("role", "presentation");
+        group.dataset.timeGroup = String(groups.length);
+        group.style.cssText = "display:grid;row-gap:inherit;align-content:start";
+        group.style.blockSize = Math.min(size, times.length - i) + "lh";
+        groups.push(group);
+        list.append(group);
+        resize.observe(group);
+        view.observe(group);
+      }
+      mountGroup(initialGroup);
+      if (previous?.list === list && !blocked) {
+        const index = times.findIndex((time) => !time.disabled && time.value === previous.value);
+        const next = index < 0 ? initial : index;
+        mountGroup(Math.floor(next / size));
+        rows.get(next)?.focus();
+      }
+      let typed = "";
+      let lastKey = 0;
+      function keydown(event: KeyboardEvent) {
+        if (blocked || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) return;
+        const row =
+          event.target instanceof HTMLElement ? event.target.closest<HTMLElement>("[data-time-index]") : null;
+        if (!row) return;
+        const index = Number(row.dataset.timeIndex);
+        let next = index;
+        const key = event.key;
+        if (key === "Home") next = first;
+        else if (key === "End") next = times.findLastIndex((time) => !time.disabled);
+        else if (key === "ArrowUp" || key === "ArrowDown") {
+          const step = key === "ArrowUp" ? -1 : 1;
+          do {
+            next += step;
+          } while (times[next]?.disabled);
+        } else if (key.length === 1 && key !== " ") {
+          const now = Date.now();
+          typed = now - lastKey > 500 ? key : typed + key;
+          lastKey = now;
+          const cycling = Array.from(typed).every((letter) => letter === typed[0]);
+          const prefix = (cycling ? typed[0] : typed).toLocaleLowerCase();
+          for (let n = 0; n < times.length; n++) {
+            const i = (index + (cycling ? 1 : 0) + n) % times.length;
+            if (!times[i].disabled && times[i].label.toLocaleLowerCase().startsWith(prefix)) {
+              next = i;
+              break;
+            }
+          }
+        } else return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (next < 0 || next >= times.length) return;
+        mountGroup(Math.floor(next / size));
+        rows.get(next)?.focus();
+      }
+      list.addEventListener("keydown", keydown, true);
+      return () => {
+        const focused = list.ownerDocument.activeElement;
+        if (focused instanceof HTMLElement && list.contains(focused) && focused.dataset.value) {
+          restoreFocus = { list, value: focused.dataset.value };
+        }
+        list.removeEventListener("keydown", keydown, true);
+        resize.disconnect();
+        view.disconnect();
+        for (const group of groups) group.remove();
+      };
+    },
+  );
+}

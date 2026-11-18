@@ -39,7 +39,7 @@ export component ToastUndo() {
   <div class="ToastUndo">
     <ToastProvider>
       <Inbox />
-      <ToastViewport class="Viewport">
+      <ToastViewport class="Viewport" aria-label="Undo notifications">
         <Toasts />
       </ToastViewport>
     </ToastProvider>

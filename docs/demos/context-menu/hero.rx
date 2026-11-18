@@ -1,9 +1,12 @@
-import { ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../../../src/context-menu/context-menu.rx"
+import { ContextMenuButton, ContextMenuRoot, ContextMenuTrigger, ContextMenuPopup, ContextMenuItem, ContextMenuSeparator, ContextMenuSubmenuRoot, ContextMenuSubmenuTrigger } from "../../../src/context-menu/context-menu.rx"
 
 export component ContextMenuHero() {
   <div class="ContextMenuHero">
     <ContextMenuRoot>
-      <ContextMenuTrigger class="Area">Right-click here</ContextMenuTrigger>
+      <ContextMenuTrigger class="Area">
+        <span>Right-click or press Shift+F10</span>
+        <ContextMenuButton>Open actions</ContextMenuButton>
+      </ContextMenuTrigger>
       <ContextMenuPopup class="Popup">
         <ContextMenuItem class="Item">Add comment</ContextMenuItem>
         <ContextMenuItem class="Item">Copy link</ContextMenuItem>
