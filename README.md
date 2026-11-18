@@ -62,15 +62,24 @@ selector.
 The package ships a `bisque-ui` [agent skill](https://agentskills.io): how to set the library up, style, animate,
 compose and wire it to a server, plus a reference for every component's parts, props and data attributes,
 generated from the source. pnpm links a dependency's skills into your agent directories (`.claude/skills`,
-`.agents/skills`, `.cursor/skills`, …) once you allow it. With pnpm 12 or later, run
+`.agents/skills`, `.cursor/skills`, …) once you allow it. With pnpm 12.11 or later, run
 
 ```bash
 pnpm approve
 ```
 
 and choose `bisque-ui (git)`. pnpm records the approval for that exact commit in `pnpm-workspace.yaml`, so it asks
-again after you update. With another package manager, copy `node_modules/bisque-ui/skills/bisque-ui` into your
-agent's skills directory.
+again after you update. To approve the repository instead, so updates keep the skill, write the key yourself:
+
+```yaml
+permissions:
+  bisque-ui@git+https://github.com/cgaaf/bisque.git:
+    skills: true
+```
+
+pnpm links only into agent directories that already exist at the workspace root, unless it detects the agent
+running it. With another package manager, copy `node_modules/bisque-ui/skills/bisque-ui` into your agent's skills
+directory.
 
 ## Documentation
 
