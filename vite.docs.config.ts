@@ -50,7 +50,9 @@ function sourceText(): Plugin {
       if (!id.startsWith(prefix)) return;
       const file = id.slice(prefix.length, -".txt".length);
       this.addWatchFile(file);
-      return `export default ${JSON.stringify(readFileSync(file, "utf8"))};`;
+      // Rolldown gives a `.txt` id the "text" module type and would quote this module a second time, so the page
+      // showed `export default "…"`. Saying it is JavaScript keeps the suffix's job without that.
+      return { code: `export default ${JSON.stringify(readFileSync(file, "utf8"))};`, moduleType: "js" };
     },
   };
 }
