@@ -1,4 +1,4 @@
-import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerSeconds, TimePickerDayPeriod } from "../../../src/time-picker/time-picker.rx"
+import { TimePickerRoot, TimePickerField, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes, TimePickerDayPeriod } from "../../../src/time-picker/time-picker.rx"
 import { TimeFieldInput, TimeFieldSegment, timeField } from "../../../src/time-field/time-field.rx"
 import { parseTime } from "../../../src/internal/date.js"
 
@@ -9,8 +9,6 @@ component Segments() {
   }}
 }
 
-// 12-hour (the locale's), minutes every 5. Put all four columns in: the ones this locale and granularity don't use
-// render nothing.
 export component TimePickerHero() {
   <div class="TimePickerHero">
     <span class="Label" id="time-picker-hero-label">Reminder</span>
@@ -24,12 +22,15 @@ export component TimePickerHero() {
           </svg>
         </TimePickerTrigger>
       </TimePickerField>
-      <TimePickerPopup class="Popup" sideOffset={6}>
-        <div class="Columns">
-          <TimePickerHours class="Column" />
-          <TimePickerMinutes class="Column" />
-          <TimePickerSeconds class="Column" />
-          <TimePickerDayPeriod class="Column" />
+      <TimePickerPopup class="Popup" align="center" sideOffset={6}>
+        <div class="HourSection">
+          <span class="UnitLabel" id="reminder-hour">Hour</span>
+          <TimePickerHours class="Numbers" gridColumns={6} aria-labelledby="reminder-hour" />
+          <TimePickerDayPeriod class="Period" gridColumns={2} aria-orientation="horizontal" />
+        </div>
+        <div class="MinuteSection">
+          <span class="UnitLabel" id="reminder-minute">Minute</span>
+          <TimePickerMinutes class="Numbers" gridColumns={6} aria-labelledby="reminder-minute" />
         </div>
       </TimePickerPopup>
     </TimePickerRoot>

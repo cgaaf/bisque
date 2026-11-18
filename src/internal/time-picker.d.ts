@@ -10,6 +10,7 @@ export declare function columnTarget(basis: Temporal.PlainTime, unit: TimeUnit, 
 export declare function chooseInColumn(basis: Temporal.PlainTime, unit: TimeUnit, value: string, granularity: "hour" | "minute" | "second" | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): Temporal.PlainTime | undefined;
 export declare function intervalOptions(locale: string | string[] | undefined, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined, hourCycle: 12 | 24 | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): TimePickerOption[];
 export declare function intervalTarget(basis: Temporal.PlainTime, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined): string;
+export declare function createTimeGridNavigation(popup: HTMLElement | undefined): void;
 export declare function focusColumns(popup: HTMLElement | undefined): void;
 export declare function focusAdjacentColumn(from: EventTarget | null, direction: number): boolean;
 export declare function focusLeft(popup: HTMLElement | undefined, trigger: HTMLElement | undefined, next: EventTarget | null): boolean;

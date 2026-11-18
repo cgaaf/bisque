@@ -1,0 +1,12 @@
+import { TimePickerRoot, TimePickerTrigger, TimePickerPopup, TimePickerHours, TimePickerMinutes } from "../time-picker.rx"
+import { parseTime } from "../../internal/date.js"
+
+export default component Fixture() {
+  <TimePickerRoot locale="en-US" defaultValue={parseTime("09:30")} minuteStep={5}>
+    <TimePickerTrigger />
+    <TimePickerPopup>
+      <TimePickerHours gridColumns={6} />
+      <TimePickerMinutes gridColumns={6} />
+    </TimePickerPopup>
+  </TimePickerRoot>
+}

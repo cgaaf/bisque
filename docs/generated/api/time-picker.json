@@ -275,7 +275,15 @@
       "name": "TimePickerHours",
       "element": null,
       "description": "The hours column, a listbox: 0–23, or in 12-hour time the 12 hours of the value's day period. Opening scrolls it to the selected hour and focuses it. Its options are `role=\"option\"` elements with `data-selected` and `data-disabled`, styled through the column. Named \"Hours\" unless given `aria-label`.",
-      "props": [],
+      "props": [
+        {
+          "name": "gridColumns",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "Number of options per row in a CSS grid. Arrow keys move within the grid and Tab moves between units."
+        }
+      ],
       "dataAttributes": [
         {
           "name": "data-disabled",
@@ -292,7 +300,15 @@
       "name": "TimePickerMinutes",
       "element": null,
       "description": "The minutes column, a listbox of the minutes every `minuteStep`. Renders nothing with `granularity=\"hour\"`. Named \"Minutes\" unless given `aria-label`.",
-      "props": [],
+      "props": [
+        {
+          "name": "gridColumns",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "Number of options per row in a CSS grid. Arrow keys move within the grid and Tab moves between units."
+        }
+      ],
       "dataAttributes": [
         {
           "name": "data-disabled",
@@ -309,7 +325,15 @@
       "name": "TimePickerSeconds",
       "element": null,
       "description": "The seconds column, a listbox of the seconds every `secondStep`. Renders nothing unless `granularity=\"second\"`. Named \"Seconds\" unless given `aria-label`.",
-      "props": [],
+      "props": [
+        {
+          "name": "gridColumns",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "Number of options per row in a CSS grid. Arrow keys move within the grid and Tab moves between units."
+        }
+      ],
       "dataAttributes": [
         {
           "name": "data-disabled",
@@ -326,7 +350,15 @@
       "name": "TimePickerDayPeriod",
       "element": null,
       "description": "The AM/PM column, in the locale's words. Renders nothing in 24-hour time. Choosing one keeps the hour on the clock face (9:30 AM becomes 9:30 PM). Named \"AM/PM\" unless given `aria-label`.",
-      "props": [],
+      "props": [
+        {
+          "name": "gridColumns",
+          "type": "number",
+          "default": null,
+          "required": false,
+          "description": "Number of options per row in a CSS grid. Arrow keys move within the grid and Tab moves between units."
+        }
+      ],
       "dataAttributes": [
         {
           "name": "data-disabled",

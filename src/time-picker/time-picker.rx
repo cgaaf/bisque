@@ -41,7 +41,7 @@
 // measured here beyond that). So the popup is the library's.
 import { mergeProps } from "../internal/props.js"
 import { now, parseTime, isSameTime, timeToString, clampTime } from "../internal/date.js"
-import { isTwelveHour, columnOptions, columnValue, columnTarget, chooseInColumn, intervalOptions, intervalTarget, focusColumns, focusAdjacentColumn, focusLeft, chosenOption, createLateFormReset, openingTime } from "../internal/time-picker.js"
+import { isTwelveHour, columnOptions, columnValue, columnTarget, chooseInColumn, intervalOptions, intervalTarget, focusColumns, createTimeGridNavigation, focusAdjacentColumn, focusLeft, chosenOption, createLateFormReset, openingTime } from "../internal/time-picker.js"
 import { createOnShow } from "../internal/listbox.js"
 import { focusElement } from "../internal/dom.js"
 import { createPopoverState, popoverTriggerProps, popoverPopupProps, PopoverState } from "../internal/popover.rx"
@@ -218,6 +218,7 @@ export component TimePickerRoot(props: TimePickerRootProps) {
     opened := { time: clampTime(openingTime(granularity, minuteStep, secondStep), minTime, maxTime) }
     focusColumns(state.popup)
   }
+  _gridNavigation = createTimeGridNavigation(state.popup)
   _show = createOnShow(state.popup, shown)
   // The field is controlled by the picker, so its own reset keeps the picker's value: the picker puts its default back.
   // Inside a FieldRoot, Field ends up with the default as the value it starts from, so the Field isn't dirty after a
@@ -453,24 +454,24 @@ export fn timePickerColumn(ref c: TimePickerContext, ref unit: TimePickerUnit): 
   own
 }
 
-type TimeColumnProps = { unit: TimePickerUnit } & Omit<DivProps, "children" | "defaultValue">
+type TimeColumnProps = { unit: TimePickerUnit } & TimePickerColumnProps
 
 component TimeColumn(props: TimeColumnProps) {
   c = use timePicker
-  { unit, ...rest } = props
+  { unit, gridColumns, ...rest } = props
   step = stepOf(c, unit)
   basis = c.basis
   locale = c.locale
   hourCycle = c.hourCycle
   min = c.min
   max = c.max
-  options key value = columnOptions(unit, basis, { locale: locale, hourCycle: hourCycle, step: step, min: min, max: max })
+  options key value = columnOptions(unit, basis, { locale: locale, hourCycle: hourCycle, step: step, min: min, max: max, gridColumns: gridColumns })
   units = use timePickerUnits
   shown = unit == "dayPeriod" ? units.dayPeriod : unit == "second" ? units.second : unit == "minute" ? units.minute : true
   own = timePickerColumn(c, unit)
   merged = latest mergeProps(own, rest)
   {if shown {
-    <ListboxRoot {...merged}>
+    <ListboxRoot {...merged} data-time-grid-columns={gridColumns}>
       {for option in options {
         <ListboxItem value={option.value} disabled={option.disabled}>{option.label}</ListboxItem>
       }}
@@ -478,7 +479,10 @@ component TimeColumn(props: TimeColumnProps) {
   }}
 }
 
-export type TimePickerColumnProps = Omit<DivProps, "children" | "defaultValue">
+export type TimePickerColumnProps = {
+  // Number of options per row in a CSS grid. Arrow keys move within the grid and Tab moves between units.
+  gridColumns?: number
+} & Omit<DivProps, "children" | "defaultValue">
 
 // The hours: 0–23, or in a 12-hour locale the 12 hours of the value's day period (with no value, of the time the
 // popup opened at).

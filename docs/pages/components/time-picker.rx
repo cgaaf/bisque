@@ -48,7 +48,11 @@ export default component Page() {
       choice starts from <code>placeholderValue</code>, else from the time the popup opened at.
     </p>
     <p>
-      Opening scrolls each column to its selected option and focuses the hours. With no value the columns open on
+      In the Reminder demo, CSS lays out six options per row. Set <code>gridColumns</code> to match the row width
+      so the arrow keys follow the layout. <kbd>Tab</kbd> moves between hours, AM/PM and minutes.
+    </p>
+    <p>
+      In the column layout, opening scrolls each column to its selected option and focuses the hours. With no value the columns open on
       the current time, rounded to the step. <kbd>↑</kbd> <kbd>↓</kbd> <kbd>Home</kbd> <kbd>End</kbd> and typing
       move within a column; <kbd>←</kbd> <kbd>→</kbd> (mirrored when the popup is right to left) or{" "}
       <kbd>Tab</kbd> move between columns. Focus goes back to the

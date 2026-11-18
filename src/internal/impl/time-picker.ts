@@ -30,6 +30,7 @@ export type TimeUnit = "hour" | "minute" | "second" | "dayPeriod";
 export type TimePickerOption = { value: string; label: string; disabled: boolean };
 
 export type ColumnSettings = {
+  gridColumns?: number;
   locale: Locale;
   hourCycle: 12 | 24 | undefined;
   /** Minutes or seconds between options (minute and second columns). Default: 1. */
@@ -123,6 +124,15 @@ export function columnOptions(
       : unit === "minute"
         ? minuteOptions(locale, step)
         : secondOptions(locale, step);
+  // A 12-hour number pad reads 1–12. Midnight or noon comes first in the chronological list.
+  if (
+    Number.isInteger(settings.gridColumns) &&
+    (settings.gridColumns ?? 0) > 0 &&
+    unit === "hour" &&
+    hourCycleOf(locale, hourCycle) === "h12"
+  ) {
+    list.push(...list.splice(0, 1));
+  }
   return list.map((option) => {
     const time = startOf(basis.with({ [unit]: option.value }), unit);
     return {
@@ -264,6 +274,48 @@ export function focusColumns(popup: MaybeElement): void {
     }
     // Focus already inside (an option pressed before this frame) stays where it is.
     if (!popup.contains(popup.ownerDocument.activeElement)) (first ?? popup).focus({ preventScroll: true });
+  });
+}
+
+function onGridKey(event: KeyboardEvent) {
+  if (
+    !event.key.startsWith("Arrow") ||
+    event.defaultPrevented ||
+    event.altKey ||
+    event.ctrlKey ||
+    event.metaKey ||
+    event.shiftKey
+  )
+    return;
+  const item =
+    event.target instanceof HTMLElement ? event.target.closest<HTMLElement>('[role="option"]') : null;
+  const list = item?.closest<HTMLElement>(COLUMN);
+  const columns = Number(list?.dataset.timeGridColumns);
+  if (!item || !list || !Number.isInteger(columns) || columns < 1) return;
+  const items = Array.from(list.querySelectorAll<HTMLElement>('[role="option"]'));
+  const start = items.indexOf(item);
+  const horizontal = event.key === "ArrowLeft" || event.key === "ArrowRight";
+  const forward = horizontal
+    ? (event.key === "ArrowRight") !== (getComputedStyle(list).direction === "rtl")
+    : event.key === "ArrowDown";
+  const stride = (forward ? 1 : -1) * (horizontal ? 1 : columns);
+  event.preventDefault();
+  event.stopPropagation();
+  for (let i = start + stride; i >= 0 && i < items.length; i += stride) {
+    if (horizontal && Math.floor(i / columns) !== Math.floor(start / columns)) break;
+    if (!items[i].hasAttribute("data-disabled")) {
+      items[i].focus();
+      break;
+    }
+  }
+}
+
+/** Handle grid arrows before the listbox's linear roving-focus listener. */
+export function createTimeGridNavigation(popup: Accessor<MaybeElement>): void {
+  createEffect(popup, (element) => {
+    if (!element) return;
+    element.addEventListener("keydown", onGridKey, true);
+    return () => element.removeEventListener("keydown", onGridKey, true);
   });
 }
 

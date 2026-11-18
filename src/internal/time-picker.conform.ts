@@ -16,6 +16,7 @@ export type Checked = [
   Conforms<Implementation["chooseInColumn"], (basis: Temporal.PlainTime, unit: TimeUnit, value: string, granularity: "hour" | "minute" | "second" | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined) => Temporal.PlainTime | undefined>,
   Conforms<Implementation["intervalOptions"], (locale: string | string[] | undefined, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined, hourCycle: 12 | 24 | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined) => TimePickerOption[]>,
   Conforms<Implementation["intervalTarget"], (basis: Temporal.PlainTime, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined) => string>,
+  Conforms<Implementation["createTimeGridNavigation"], (popup: Accessor<HTMLElement | undefined>) => void>,
   Conforms<Implementation["focusColumns"], (popup: HTMLElement | undefined) => void>,
   Conforms<Implementation["focusAdjacentColumn"], (from: EventTarget | null, direction: number) => boolean>,
   Conforms<Implementation["focusLeft"], (popup: HTMLElement | undefined, trigger: HTMLElement | undefined, next: EventTarget | null) => boolean>,

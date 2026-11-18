@@ -12,6 +12,7 @@ export pure fn columnTarget(basis: Temporal.PlainTime, unit: TimeUnit, step: num
 export pure fn chooseInColumn(basis: Temporal.PlainTime, unit: TimeUnit, value: string, granularity: "hour" | "minute" | "second" | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): Temporal.PlainTime | undefined
 export pure fn intervalOptions(locale: string | string[] | undefined, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined, hourCycle: 12 | 24 | undefined, min: Temporal.PlainTime | undefined, max: Temporal.PlainTime | undefined): TimePickerOption[]
 export pure fn intervalTarget(basis: Temporal.PlainTime, interval: number | undefined, granularity: "hour" | "minute" | "second" | undefined): string
+export pure fn createTimeGridNavigation(ref popup: HTMLElement | undefined) instantiates
 export fn focusColumns(popup: HTMLElement | undefined): void
 export fn focusAdjacentColumn(from: EventTarget | null, direction: number): boolean
 export fn focusLeft(popup: HTMLElement | undefined, trigger: HTMLElement | undefined, next: EventTarget | null): boolean

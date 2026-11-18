@@ -3,6 +3,7 @@
 import { afterEach, expect, test, vi } from "vitest";
 import { mount } from "../test/browser.ts";
 import basic from "./fixtures/basic.rx";
+import gridFixture from "./fixtures/grid.rx";
 import fieldFixture from "./fixtures/field.rx";
 import optionsFixture from "./fixtures/options.rx";
 
@@ -426,4 +427,22 @@ test("right to left: Left and Right are mirrored between columns", async () => {
   // Nothing further right than the hours.
   await user.keyboard("{ArrowRight}");
   expect(document.activeElement).toBe(option("rtl-popup", "Hours", "9"));
+});
+
+const focused = () => document.activeElement?.textContent;
+
+test("number pad arrows follow rows and columns while Tab moves between units", async () => {
+  const { getByRole, user } = mount(gridFixture);
+  await user.click(getByRole("button", { name: "Choose time" }));
+  await expect.poll(focused).toBe("9");
+  await user.keyboard("{ArrowUp}{ArrowRight}");
+  expect(focused()).toBe("4");
+  await user.keyboard("{ArrowDown}{ArrowRight}{ArrowRight}{ArrowRight}");
+  expect(focused()).toBe("12");
+  await user.keyboard(" ");
+  expect(document.activeElement?.getAttribute("aria-selected")).toBe("true");
+  await user.keyboard("{Tab}");
+  expect(focused()).toBe("30");
+  await user.keyboard("{ArrowUp}{ArrowLeft}");
+  expect(focused()).toBe("00");
 });
