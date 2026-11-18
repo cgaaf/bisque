@@ -21,6 +21,9 @@ if (globalThis.Temporal === undefined) {
 
 syncThemeColor();
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncThemeColor);
+// index.html takes up a theme switched in another page of the site; its listeners were added first.
+window.addEventListener("storage", syncThemeColor);
+document.addEventListener("prerenderingchange", syncThemeColor);
 const path = pagePath();
 const load = pages[`./pages/${path === "" ? "index" : path}.rx`] ?? pages["./pages/not-found.rx"];
 const page = await load();

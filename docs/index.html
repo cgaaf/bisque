@@ -8,11 +8,45 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Bisque</title>
     <script>
-      // Before first paint, so a stored theme doesn't flash.
-      try {
-        const theme = localStorage.getItem("bisque-theme");
-        if (theme) document.documentElement.dataset.theme = theme;
-      } catch {}
+      {
+        // Before first paint, so a stored theme doesn't flash.
+        const restore = () => {
+          try {
+            const theme = localStorage.getItem("bisque-theme");
+            if (theme) document.documentElement.dataset.theme = theme;
+          } catch {}
+        };
+        restore();
+        // A switch made in another page of the site: another tab, or the page whose link this one was
+        // prerendered from (see the speculation rules below), which read the theme when the link was hovered.
+        // Following the switch as it is made means a prerendered page already has the theme when it is shown.
+        // main.ts updates the theme colour on the same events.
+        window.addEventListener("storage", (event) => {
+          if (event.key === null || event.key === "bisque-theme") restore();
+        });
+        // In case the page is shown before that event arrives.
+        if (document.prerendering) document.addEventListener("prerenderingchange", restore, { once: true });
+      }
+    </script>
+    <!--
+      Chrome and Edge render a page of the docs in the background as soon as a link to it is hovered (on a
+      phone: as it scrolls into view), so the click shows a finished page. Other browsers ignore the block.
+      Links within the current page are left out: they would take one of the two pages Chrome keeps ready.
+    -->
+    <script type="speculationrules">
+      {
+        "prerender": [
+          {
+            "where": {
+              "and": [
+                { "href_matches": "/*" },
+                { "not": { "selector_matches": "[href^='#'], [aria-current='page'], [target], [download]" } }
+              ]
+            },
+            "eagerness": "eager"
+          }
+        ]
+      }
     </script>
   </head>
   <body>
