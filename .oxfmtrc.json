@@ -8,6 +8,7 @@
     "**/*.rx",
     "src/**/*.d.ts",
     "**/*.conform.ts",
-    "skills/*/references"
+    "skills/*/references",
+    ".agents/skills/modern-web-guidance"
   ]
 }
