@@ -41,7 +41,8 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "docs": "vite --config vite.docs.config.ts",
     "build:docs": "vite build --config vite.docs.config.ts --logLevel warn",
-    "gen:api": "node scripts/gen-api.mjs && node scripts/gen-skill.mjs"
+    "gen:api": "node scripts/gen-api.mjs && node scripts/gen-skill.mjs",
+    "deploy:docs": "pnpm build:docs && cf deploy dist/docs"
   },
   "devDependencies": {
     "@mdn/browser-compat-data": "8.1.9",
