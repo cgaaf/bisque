@@ -22,7 +22,7 @@ export default component Page() {
     <ul>
       <li><code>scroll-margin-top</code> on the headings, to keep the one a link jumps to clear of a sticky header.</li>
       <li><code>scroll-behavior: smooth</code> on the scroll container, to animate the jump.</li>
-      <li><code>:target</code>, to style the heading the URL names.</li>
+      <li><code>:target</code>, to style the heading the URL names, when the sections scroll with the page.</li>
       <li><code>:has()</code>, to style the items around the active link at every level of a nested list.</li>
     </ul>
     <p>
@@ -84,8 +84,11 @@ export default component Page() {
     <h3 id="container">A scroll container</h3>
     <p>
       Pass the element that scrolls as <code>container</code>, as the first demo does. The offset is measured from
-      that element's top. A fragment link brings its heading into view in every scrolling ancestor, so if the
-      container isn't fully on screen, the page scrolls too.
+      that element's top. A fragment link brings its heading into view in every scrolling ancestor, so on its own
+      it would scroll the page too. The root scrolls only the container instead, to where the link would put the
+      heading (its <code>scroll-margin-top</code> and the container's <code>scroll-behavior</code> still apply),
+      and updates the URL with the history API. That update doesn't change <code>:target</code> or fire{" "}
+      <code>hashchange</code>: style the active section from the link's <code>aria-current</code> instead.
     </p>
 
     <h3 id="nested">Nested levels and the indicator</h3>

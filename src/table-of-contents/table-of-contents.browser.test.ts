@@ -194,6 +194,24 @@ describe("in a scroll container", () => {
     await frames();
     expect(active()).toBe("Two");
   });
+
+  test("a click scrolls the container only, not the page around it, and updates the URL", async () => {
+    const { getByRole, getByTestId, user } = mount(container);
+    const box = getByTestId("box");
+    await frames();
+    window.scrollTo({ top: 20, behavior: "instant" });
+    await frames();
+    await user.click(getByRole("link", { name: "Three" }));
+    await wait(600);
+    await frames();
+    expect(window.scrollY).toBe(20);
+    const heading = document.getElementById("n-three")!;
+    expect(
+      Math.abs(heading.getBoundingClientRect().top - box.getBoundingClientRect().top),
+    ).toBeLessThanOrEqual(1);
+    expect(location.hash).toBe("#n-three");
+    expect(active()).toBe("Three");
+  });
 });
 
 describe("controlled", () => {

@@ -30,7 +30,7 @@
         {
           "name": "container",
           "type": "HTMLElement",
-          "default": "the viewport",
+          "default": null,
           "required": false,
           "description": "The element that scrolls the sections. Without it, the page's own scroll is followed."
         }

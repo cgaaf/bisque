@@ -1,6 +1,7 @@
 import { TableOfContentsRoot, TableOfContentsLink } from "../table-of-contents.rx"
 
-// The sections scroll inside a 240px box with smooth scrolling; the list sits outside it.
+// The sections scroll inside a 240px box with smooth scrolling; the list sits outside it. The page is taller
+// than the viewport, so it could scroll too.
 export default component Fixture() {
   source box: HTMLElement | undefined := undefined
   source reported: string := "none"
@@ -34,5 +35,6 @@ export default component Fixture() {
       <h2 id="n-five">Five</h2>
       <div style="height: 60px"></div>
     </div>
+    <div style="height: 2000px"></div>
   </div>
 }

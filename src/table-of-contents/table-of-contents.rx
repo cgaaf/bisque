@@ -5,7 +5,8 @@
 //
 // The platform does most of it: a fragment link scrolls to its heading and updates the URL without script,
 // `scroll-margin-top` keeps the heading clear of a sticky header, `scroll-behavior: smooth` animates the jump,
-// `:target` styles the heading, and `:has()` styles the list items around the active link. What no engine does
+// `:target` styles the heading, and `:has()` styles the list items around the active link. In a `container`,
+// the root scrolls the container itself, because a fragment link would scroll the page around it too. What no engine does
 // for every case is know which section is in view (`:target-current` / `scroll-target-group` are Chrome only);
 // that is `createTableOfContents` in ../internal/impl/table-of-contents.ts. There is no List or Item part: they
 // would be a `<ul>` and an `<li>` with nothing to add, and nesting is just a list inside an item.
@@ -30,7 +31,8 @@ export type TableOfContentsRootProps = {
   onActiveChange?: (id: string | undefined) => void
   // How far below the top of the scroll container a heading counts as reached, in px: a sticky header's height.
   offset?: number
-  // The element that scrolls the sections. Default: the viewport.
+  // The element that scrolls the sections. Default: the viewport. A link to a section inside it scrolls only this
+  // element, not the page around it, and updates the URL with the history API (`:target` doesn't follow).
   container?: HTMLElement
   children?: View
 } & Omit<NavProps, "children">

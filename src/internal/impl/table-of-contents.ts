@@ -186,13 +186,41 @@ function linkedIds(nav: HTMLElement): string[] {
   return ids;
 }
 
+/**
+ * A fragment link scrolls every scrolling ancestor of its target, so with sections in a scroll container the page
+ * around it jumps too. (`scrollIntoView({ container: "nearest" })` would avoid it, but only Chrome has it.) For a
+ * target inside `container`, scroll the container alone, to where the fragment would put it (its
+ * `scroll-margin-top` and the container's `scroll-padding-top` included, its `scroll-behavior` honoured), and
+ * update the URL with the history API. `:target` and `hashchange` don't follow that update.
+ */
+function scrollWithin(container: MaybeElement, id: string, href: string, event: MouseEvent): void {
+  if (!container || event.defaultPrevented) return;
+  const target = document.getElementById(id);
+  if (!target || !container.contains(target)) return;
+  event.preventDefault();
+  const margin = parseFloat(getComputedStyle(target).scrollMarginTop) || 0;
+  const padding = parseFloat(getComputedStyle(container).scrollPaddingTop) || 0;
+  const top =
+    target.getBoundingClientRect().top -
+    container.getBoundingClientRect().top -
+    container.clientTop +
+    container.scrollTop -
+    margin -
+    padding;
+  container.scrollTo({ top });
+  // The link's own fragment, as the browser would have written it.
+  if (location.hash === href) history.replaceState(history.state, "", href);
+  else history.pushState(history.state, "", href);
+}
+
 const sameIds = (a: string[], b: string[]) => a.length === b.length && a.every((id, i) => id === b[i]);
 
 /**
  * Scroll spy over the sections that the fragment links inside `nav` point at (`<a href="#intro">`): the links are
  * the registry, re-read when they change, so a list rendered from content that arrives later needs nothing more.
  * A primary click on one of those links (or Enter on it) makes its target active at once (`createScrollSpy`'s
- * `activate`); the browser's own navigation still happens, so the URL and `:target` update as without script.
+ * `activate`). In the viewport the browser's own navigation still happens, so the URL and `:target` update as
+ * without script; in a `container`, `scrollWithin` scrolls only the container.
  */
 export function createTableOfContents(
   nav: Accessor<MaybeElement>,
@@ -211,7 +239,9 @@ export function createTableOfContents(
       const link = (event.target as Element | null)?.closest?.("a[href]");
       if (!link || !element.contains(link)) return;
       const id = targetId(link.getAttribute("href") ?? undefined);
-      if (id !== undefined) activate(id);
+      if (id === undefined) return;
+      activate(id);
+      scrollWithin(container(), id, link.getAttribute("href")!, event);
     };
     const observer = new MutationObserver(read);
     observer.observe(element, {

@@ -31,7 +31,7 @@ Renders `<nav>`. A `<nav>` that follows which section of the document is being r
 | `activeId` | `string` |  | The id of the section to mark. Pass it with `onActiveChange` to decide which link is marked yourself. |
 | `onActiveChange` | `(id: string \| undefined) => void` |  | Called with the id of the new active section when the scroll position names another one or a link is clicked; `undefined` before the first heading reaches the line. |
 | `offset` | `number` | `0` | How far below the top of the scroll container a heading counts as reached, in px: the height of a sticky header. Keep the headings' `scroll-margin-top` no larger. |
-| `container` | `HTMLElement` | `the viewport` | The element that scrolls the sections. Without it, the page's own scroll is followed. |
+| `container` | `HTMLElement` |  | The element that scrolls the sections. Without it, the page's own scroll is followed. |
 
 ## TableOfContentsLink
 
