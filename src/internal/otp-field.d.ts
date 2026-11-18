@@ -1,0 +1,25 @@
+// Generated from otp-field.d.rx by scripts/gen-dts.mjs. Do not edit.
+export declare function otpSlotPattern(type: "numeric" | "alpha" | "alphanumeric" | "none"): string | undefined;
+export declare function otpRootPattern(type: "numeric" | "alpha" | "alphanumeric" | "none", length: number): string | undefined;
+export declare function otpInputMode(type: "numeric" | "alpha" | "alphanumeric" | "none"): "numeric" | "text" | undefined;
+export declare function normalizeOtpValueWithDetails(value: string | null | undefined, length: number, type: "numeric" | "alpha" | "alphanumeric" | "none", normalize: ((value: string) => string) | undefined): { value: string; rejected: boolean };
+export declare function normalizeOtpValue(value: string | null | undefined, length: number, type: "numeric" | "alpha" | "alphanumeric" | "none", normalize: ((value: string) => string) | undefined): string;
+export declare function replaceOtpValue(current: string, index: number, next: string, length: number, type: "numeric" | "alpha" | "alphanumeric" | "none", normalize: ((value: string) => string) | undefined): string;
+export declare function removeOtpCharacter(current: string, index: number): string;
+export declare function otpLength(value: string): number;
+export declare function otpCharAt(value: string, index: number): string;
+export declare function createSlotOrder(root: HTMLElement | undefined): HTMLInputElement[];
+export declare function slotIndex(slots: HTMLInputElement[], element: HTMLInputElement | undefined): number;
+export declare function createSlotText(input: HTMLInputElement | undefined, text: string, revision: number): void;
+export declare function restoreSlot(input: HTMLInputElement, text: string, select: boolean): void;
+export declare function selectSlot(input: HTMLInputElement): void;
+export declare function focusSlot(slots: HTMLInputElement[], index: number): void;
+export declare function isFullySelected(input: HTMLInputElement): boolean;
+export declare function containsNode(root: HTMLElement | undefined, node: Node | null): boolean;
+export declare function clipboardText(event: ClipboardEvent): string | null;
+export declare function isAndroid(): boolean;
+export declare function createComposition(): { start: () => void; end: () => boolean; active: () => boolean };
+export declare function isRtl(element: HTMLElement): boolean;
+export declare function createOTPWatch(value: string, slots: HTMLInputElement[], completion: { onComplete: ((value: string, details: { reason: "input-change" | "input-paste" }) => void) | undefined; autoSubmit: boolean; hidden: HTMLInputElement | undefined; form: string | undefined }): { queueFocus: (index: number, value: string) => void; queueComplete: (value: string, reason: "input-change" | "input-paste") => void; clearComplete: () => void; completeNow: (value: string, reason: "input-change" | "input-paste") => void };
+export declare function createLabelFallback(slot: HTMLInputElement | undefined, enabled: boolean, id: string): string | undefined;
+export declare function joinIds(a: string | undefined, b: string | undefined): string | undefined;

@@ -1,0 +1,11 @@
+import { OTPFieldRoot, OTPFieldInput, OTPFieldSeparator } from "./bisque/otp-field/otp-field.rx"
+
+<OTPFieldRoot length={6}>
+  <OTPFieldInput />
+  <OTPFieldInput />
+  <OTPFieldInput />
+  <OTPFieldSeparator />
+  <OTPFieldInput />
+  <OTPFieldInput />
+  <OTPFieldInput />
+</OTPFieldRoot>

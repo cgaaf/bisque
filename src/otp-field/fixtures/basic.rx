@@ -1,0 +1,127 @@
+import { OTPFieldRoot, OTPFieldInput, OTPFieldSeparator } from "../otp-field.rx"
+
+fn upper(value: string): string => value.toUpperCase()
+
+export default component Fixture() {
+  source changes: string[] := []
+  source completes: string[] := []
+  source invalids: string[] := []
+  source submits := 0
+  source controlled := "12"
+  source refused := ""
+  source autoSubmits := 0
+  source externalSubmits := 0
+  <main>
+    <form data-testid="form" onSubmit={(event) => {
+      event.preventDefault()
+      submits := submits + 1
+    }}>
+      <label for="code">Code</label>
+      <OTPFieldRoot data-testid="root" id="code" name="code" required length={6} onValueChange={(v, d) => { changes := [...changes, `${v}:${d.reason}`] }} onValueComplete={(v, d) => { completes := [...completes, `${v}:${d.reason}`] }} onValueInvalid={(v, d) => { invalids := [...invalids, `${v}:${d.reason}`] }}>
+        <div>
+          <OTPFieldInput aria-label="Character 1 of 6" />
+          <OTPFieldInput aria-label="Character 2 of 6" />
+          <OTPFieldInput />
+        </div>
+        <OTPFieldSeparator data-testid="separator" />
+        <div>
+          <OTPFieldInput />
+          <OTPFieldInput />
+          <OTPFieldInput />
+        </div>
+      </OTPFieldRoot>
+      <label for="preset">Preset</label>
+      <OTPFieldRoot id="preset" name="preset" length={2} defaultValue="42">
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+      <button type="submit">Submit</button>
+      <button type="reset">Reset</button>
+    </form>
+    <output data-testid="changes">{changes.join(" ")}</output>
+    <output data-testid="completes">{completes.join(" ")}</output>
+    <output data-testid="invalids">{invalids.join(" ")}</output>
+    <output data-testid="submits">{submits}</output>
+
+    <label for="controlled">Controlled</label>
+    <OTPFieldRoot id="controlled" length={4} value={controlled} onValueChange={(v) => { controlled := v }}>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+    <output data-testid="controlled">{controlled}</output>
+    <button onClick={() => { controlled := "" }}>Clear</button>
+    <button onClick={() => { controlled := "9876" }}>Fill</button>
+
+    <label for="refused">Refused</label>
+    <OTPFieldRoot id="refused" length={4} value={refused} onValueChange={(v) => { }}>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+    <button onClick={() => { refused := "5" }}>Apply</button>
+
+    <label for="letters">Letters</label>
+    <OTPFieldRoot id="letters" data-testid="letters-root" length={4} validationType="alphanumeric" normalizeValue={upper}>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+
+    <label for="disabled">Disabled</label>
+    <OTPFieldRoot id="disabled" data-testid="disabled-root" length={3} defaultValue="12" disabled>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+
+    <label for="readonly">Read only</label>
+    <OTPFieldRoot id="readonly" data-testid="readonly-root" length={3} defaultValue="12" readOnly>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+
+    <label for="masked">Masked</label>
+    <OTPFieldRoot id="masked" length={2} mask>
+      <OTPFieldInput />
+      <OTPFieldInput type="text" />
+    </OTPFieldRoot>
+
+    <div dir="rtl">
+      <label for="rtl">Right to left</label>
+      <OTPFieldRoot id="rtl" length={3} defaultValue="123">
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+    </div>
+
+    <form data-testid="auto-form" onSubmit={(event) => {
+      event.preventDefault()
+      autoSubmits := autoSubmits + 1
+    }}>
+      <label for="auto">Auto</label>
+      <OTPFieldRoot id="auto" name="auto" length={3} autoSubmit>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+    </form>
+    <output data-testid="auto-submits">{autoSubmits}</output>
+    <form id="external-form" onSubmit={(event) => {
+      event.preventDefault()
+      externalSubmits := externalSubmits + 1
+    }}></form>
+    <label for="external">External</label>
+    <OTPFieldRoot id="external" name="external" form="external-form" length={2} autoSubmit>
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+    <output data-testid="external-submits">{externalSubmits}</output>
+    <input aria-label="Source" />
+  </main>
+}

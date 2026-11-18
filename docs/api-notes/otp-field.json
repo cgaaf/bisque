@@ -1,0 +1,50 @@
+{
+  "OTPFieldRoot": {
+    "description": "Holds the code and shares it with the slots inside it, as a group (`role=\"group\"`). It also renders a visually hidden text input that holds the whole code for the form, with the code's `name`, `pattern` and `required`.",
+    "props": {
+      "value": "The code. Pass it with `onValueChange` to control the field. Focus moves on to the next slot once the new value shows, so an owner that doesn't take a change leaves focus where it was. It may be read from an answer that is loading or guessed over; one that fails is left to the app's `errored` region.",
+      "defaultValue": "The code at first, when it isn't controlled; also what a form reset puts back.",
+      "onValueChange": "Called whenever the code changes. Receives the code and details whose `reason` is `input-change` (typing, or a fill), `input-clear` (typing that emptied a slot, or a form reset back to empty), `input-paste` or `keyboard` (Backspace and Delete). It is called in a change of its own, so it may save or write something a loading question reads without holding the field.",
+      "disabled": "Whether the slots can't be changed or focused. Also true inside a disabled FieldRoot. A field disabled while a slot has focus (`disabled={pending? check}`) gives focus back to a slot when it is enabled again, if focus hasn't moved elsewhere.",
+      "readOnly": "Whether the slots can be focused and moved between but not changed. `readOnly={pending? check}` keeps the code as it is while it is checked, without losing focus.",
+      "required": "Whether the code is needed for the form to be valid: every slot, and the hidden input, is then required."
+    },
+    "dataAttributes": {
+      "data-disabled": "Present when the field is disabled.",
+      "data-readonly": "Present when the field is read-only.",
+      "data-required": "Present when the field is required.",
+      "data-complete": "Present when every slot is filled.",
+      "data-filled": "Present when at least one slot is filled.",
+      "data-focused": "Present while a slot has focus.",
+      "data-touched": "Inside a FieldRoot: present once focus has left the slots at least once.",
+      "data-dirty": "Inside a FieldRoot: present once the code has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid."
+    }
+  },
+  "OTPFieldInput": {
+    "description": "One character's slot: a native text input. Typing fills it and moves to the next; Backspace empties it (or the slot before, from an empty one) and moves back; Delete takes its character out; the arrow keys, Home and End move between slots, and Ctrl or Cmd with an arrow goes to the first slot or the first empty one. A paste or several characters at once are spread from it. Takes every attribute of an `<input>`; a `type` given here wins over `mask`, and an `aria-label` is kept on every slot but the first.",
+    "dataAttributes": {
+      "data-disabled": null,
+      "data-filled": "Present when this slot holds a character.",
+      "data-complete": "Present when every slot is filled.",
+      "data-focused": "Present while any slot of the field has focus.",
+      "data-touched": "Inside a FieldRoot: present once focus has left the slots at least once.",
+      "data-dirty": "Inside a FieldRoot: present once the code has changed.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid."
+    }
+  },
+  "OTPFieldSeparator": {
+    "description": "A separator between groups of slots (`role=\"separator\"`). It carries no behaviour.",
+    "props": {
+      "orientation": "The separator's `aria-orientation` and `data-orientation`."
+    },
+    "defaults": {
+      "orientation": "\"horizontal\""
+    },
+    "dataAttributes": {
+      "data-orientation": "The orientation: `horizontal` or `vertical`."
+    }
+  }
+}

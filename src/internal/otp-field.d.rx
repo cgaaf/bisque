@@ -1,0 +1,28 @@
+// How .rx may use ./otp-field.js (implemented in ./impl/otp-field.ts): the OTP field's value rules, its slot list
+// and the focus and text work on its slots. A `ref` parameter is passed live; the others are read once. Bind every
+// call. The watch's functions are io (call them from an action).
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./otp-field.d.ts.
+export pure fn otpSlotPattern(type: "numeric" | "alpha" | "alphanumeric" | "none"): string | undefined
+export pure fn otpRootPattern(type: "numeric" | "alpha" | "alphanumeric" | "none", length: number): string | undefined
+export pure fn otpInputMode(type: "numeric" | "alpha" | "alphanumeric" | "none"): "numeric" | "text" | undefined
+export pure fn normalizeOtpValueWithDetails(value: string | null | undefined, length: number, type: "numeric" | "alpha" | "alphanumeric" | "none", normalize: ((value: string) => string) | undefined): { value: string; rejected: boolean }
+export pure fn normalizeOtpValue(value: string | null | undefined, length: number, type: "numeric" | "alpha" | "alphanumeric" | "none", normalize: ((value: string) => string) | undefined): string
+export pure fn replaceOtpValue(current: string, index: number, next: string, length: number, type: "numeric" | "alpha" | "alphanumeric" | "none", normalize: ((value: string) => string) | undefined): string
+export pure fn removeOtpCharacter(current: string, index: number): string
+export pure fn otpLength(value: string): number
+export pure fn otpCharAt(value: string, index: number): string
+export pure fn createSlotOrder(ref root: HTMLElement | undefined): ref HTMLInputElement[]
+export pure fn slotIndex(slots: HTMLInputElement[], element: HTMLInputElement | undefined): number
+export pure fn createSlotText(ref input: HTMLInputElement | undefined, ref text: string, ref revision: number) instantiates
+export fn restoreSlot(input: HTMLInputElement, text: string, select: boolean): void
+export fn selectSlot(input: HTMLInputElement): void
+export fn focusSlot(slots: HTMLInputElement[], index: number): void
+export fn isFullySelected(input: HTMLInputElement): boolean
+export fn containsNode(root: HTMLElement | undefined, node: Node | null): boolean
+export fn clipboardText(event: ClipboardEvent): string | null
+export fn isAndroid(): boolean
+export pure fn createComposition(): { start: () => void; end: () => boolean; active: () => boolean } instantiates
+export fn isRtl(element: HTMLElement): boolean
+export pure fn createOTPWatch(ref value: string, ref slots: HTMLInputElement[], ref completion: { onComplete: ((value: string, details: { reason: "input-change" | "input-paste" }) => void) | undefined; autoSubmit: boolean; hidden: HTMLInputElement | undefined; form: string | undefined }): { queueFocus: (index: number, value: string) => void; queueComplete: (value: string, reason: "input-change" | "input-paste") => void; clearComplete: () => void; completeNow: (value: string, reason: "input-change" | "input-paste") => void } instantiates
+export pure fn createLabelFallback(ref slot: HTMLInputElement | undefined, ref enabled: boolean, id: string): ref string | undefined
+export pure fn joinIds(a: string | undefined, b: string | undefined): string | undefined

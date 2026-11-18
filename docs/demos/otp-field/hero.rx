@@ -1,0 +1,21 @@
+import { OTPFieldRoot, OTPFieldInput, OTPFieldSeparator } from "../../../src/otp-field/otp-field.rx"
+
+export component OTPFieldHero() {
+  <div class="OTPFieldHero">
+    <label class="Label" for="otp-field-hero">Verification code</label>
+    <OTPFieldRoot class="Root" id="otp-field-hero" length={6}>
+      <div class="Group">
+        <OTPFieldInput class="Slot" />
+        <OTPFieldInput class="Slot" aria-label="Digit 2 of 6" />
+        <OTPFieldInput class="Slot" aria-label="Digit 3 of 6" />
+      </div>
+      <OTPFieldSeparator class="Separator" />
+      <div class="Group">
+        <OTPFieldInput class="Slot" aria-label="Digit 4 of 6" />
+        <OTPFieldInput class="Slot" aria-label="Digit 5 of 6" />
+        <OTPFieldInput class="Slot" aria-label="Digit 6 of 6" />
+      </div>
+    </OTPFieldRoot>
+    <p class="Hint">Enter the 6-digit code we sent you.</p>
+  </div>
+}

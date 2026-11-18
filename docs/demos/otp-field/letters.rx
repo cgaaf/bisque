@@ -1,0 +1,18 @@
+import { OTPFieldRoot, OTPFieldInput } from "../../../src/otp-field/otp-field.rx"
+
+fn upperCase(value: string): string => value.toUpperCase()
+
+export component OTPFieldLetters() {
+  source code := ""
+  <div class="OTPFieldLetters">
+    <label class="Label" for="otp-field-letters">Recovery key</label>
+    <OTPFieldRoot class="Root" id="otp-field-letters" length={5} validationType="alphanumeric" normalizeValue={upperCase} value={code} onValueChange={(next) => { code := next }}>
+      <OTPFieldInput class="Slot" />
+      <OTPFieldInput class="Slot" aria-label="Character 2 of 5" />
+      <OTPFieldInput class="Slot" aria-label="Character 3 of 5" />
+      <OTPFieldInput class="Slot" aria-label="Character 4 of 5" />
+      <OTPFieldInput class="Slot" aria-label="Character 5 of 5" />
+    </OTPFieldRoot>
+    <p class="Value">Value: <code>{code == "" ? "(empty)" : code}</code></p>
+  </div>
+}

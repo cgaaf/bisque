@@ -1,0 +1,29 @@
+import { OTPFieldRoot, OTPFieldInput } from "../otp-field.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `code=${values.code}` }}>
+    <FieldRoot data-testid="field" name="code" validationMode="onBlur">
+      <FieldLabel data-testid="label">Verification code</FieldLabel>
+      <OTPFieldRoot data-testid="otp-root" required length={4}>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+      <FieldDescription data-testid="description">Sent to your phone.</FieldDescription>
+      <FieldError data-testid="error" />
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <OTPFieldRoot length={2} defaultValue="12">
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

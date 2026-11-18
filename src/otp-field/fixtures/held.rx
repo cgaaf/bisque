@@ -1,0 +1,46 @@
+import { OTPFieldRoot, OTPFieldInput } from "../otp-field.rx"
+import { save } from "../../test/slow-server.js"
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to an
+// OTP field is computed from that write. The field's own state (the code being typed, and focus moving on with it)
+// must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <label for="root-prop">Root prop</label>
+    <OTPFieldRoot id="root-prop" length={4} required={step == 2}>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+
+    // 2. An attribute passed through to the root's element.
+    <label for="root-attribute">Root attribute</label>
+    <OTPFieldRoot id="root-attribute" length={4} class={step == 2 ? "second" : "first"}>
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+
+    // 3. An attribute passed through to a slot's element.
+    <label for="slot-attribute">Slot attribute</label>
+    <OTPFieldRoot id="slot-attribute" length={4}>
+      <OTPFieldInput class={step == 2 ? "second" : "first"} />
+      <OTPFieldInput />
+      <OTPFieldInput />
+      <OTPFieldInput />
+    </OTPFieldRoot>
+  </main>
+}

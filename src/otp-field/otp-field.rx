@@ -1,0 +1,515 @@
+// A one-time code entered one character per slot, after Base UI's OTP Field: a group of native text inputs, one per
+// character, and a visually hidden input that holds the whole code for the form.
+//
+// The browser provides what each slot is: a native <input> with `inputmode` (the numeric keypad for digits),
+// `autocomplete="one-time-code"` on the first slot (the code a phone offers from a text message, which lands in that
+// slot whole: its `maxlength` is the code's length), `pattern` and `required` checked by the form, `type="password"`
+// for a masked code, and the style hooks `:focus`, `:disabled`, `:read-only`. The hidden input
+// carries the code's `name`, `pattern` and `required` into native form submission and validation, and takes a
+// password manager's fill.
+//
+// What the browser can't do is spread one code over several inputs, so this family adds: the value (controlled or
+// not), one character per slot by the validation type, typing that moves on to the next slot, Backspace and Delete
+// that close the gap, the arrow keys, Home and End between slots (swapped right to left), a paste or a fill spread
+// from the slot it lands in, an IME composition taken once it ends, one tab stop for the group, completion
+// (`onValueComplete`, `autoSubmit`), and the Field wiring. Keeping a whole code in one native input was tried and
+// can't do this: `maxlength` cuts a pasted "12 34-56" to "12 34-" before anything can strip the spaces, and nothing
+// can style each character as a slot.
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { createFormReset } from "../internal/field.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
+import { otpSlotPattern, otpRootPattern, otpInputMode, normalizeOtpValueWithDetails, normalizeOtpValue, replaceOtpValue, removeOtpCharacter, otpLength, otpCharAt, createSlotOrder, slotIndex, createSlotText, restoreSlot, selectSlot, focusSlot, isFullySelected, containsNode, clipboardText, isAndroid, createComposition, isRtl, createOTPWatch, createLabelFallback, joinIds } from "../internal/otp-field.js"
+import { field, FieldContext, fieldStateAttributes } from "../field/field.rx"
+import { separator, SeparatorOrientation } from "../separator/separator.rx"
+import { DivProps, InputProps, PartProps } from "../internal/types.rx"
+
+// Which characters a slot takes. "none" takes any (with `normalizeValue` to decide).
+export type OTPFieldValidationType = "numeric" | "alpha" | "alphanumeric" | "none"
+// The virtual keyboard a slot asks for (`inputmode`).
+export type OTPFieldInputMode = "none" | "text" | "decimal" | "numeric" | "tel" | "search" | "email" | "url"
+// What changed the value: typing (or a fill), typing that emptied a slot, a paste, or Backspace and Delete.
+export type OTPFieldChangeReason = "input-change" | "input-clear" | "input-paste" | "keyboard"
+export type OTPFieldChangeDetails = { reason: OTPFieldChangeReason }
+// How text was entered: typed (or filled) or pasted.
+export type OTPFieldEntryReason = "input-change" | "input-paste"
+export type OTPFieldEntryDetails = { reason: OTPFieldEntryReason }
+
+export type OTPFieldContext = {
+  value: string
+  // The number of slots.
+  length: number
+  // The slot that is the group's tab stop: the focused one, else the first empty one (the last when complete).
+  activeIndex: number
+  disabled: boolean
+  readOnly: boolean
+  required: boolean
+  // Focus is in one of the slots.
+  focused: boolean
+  complete: boolean
+  mask: boolean
+  autoComplete: string
+  inputMode: OTPFieldInputMode | undefined
+  // One slot's `pattern`.
+  pattern: string | undefined
+  form: string | undefined
+  // The first slot's id; the others are `${firstId}-2`, `${firstId}-3`…
+  firstId: string
+  // The slots' `aria-labelledby`: the field's label, or the first slot's native label.
+  labelledBy: string | undefined
+  // The slots in document order: a slot's index is its place here.
+  slots: HTMLInputElement[]
+  // Counts form resets, so the slots show the value again after one.
+  revision: number
+  field: FieldContext | undefined
+  // Text was typed, filled or pasted into slot `index` (`element`): spread it from there.
+  enter: (index: number, text: string, reason: OTPFieldEntryReason, element: HTMLInputElement) => void
+  // A key changed the value: Backspace or Delete. Focus goes to slot `focusIndex` once the value has changed.
+  edit: (next: string, focusIndex: number) => void
+  // A slot took focus.
+  slotFocused: (index: number, element: HTMLInputElement) => void
+}
+
+export context otpField: lane OTPFieldContext
+
+export type OTPFieldRootProps = {
+  // The number of slots. Render this many OTPFieldInput parts.
+  length: number
+  value?: string
+  defaultValue?: string
+  onValueChange?: (value: string, details: OTPFieldChangeDetails) => void
+  // When the last empty slot is filled by typing, a fill or a paste, or a whole code is pasted over a complete one.
+  // Called after `onValueChange`, once the value has changed (for a controlled value, once its owner took it).
+  onValueComplete?: (value: string, details: OTPFieldEntryDetails) => void
+  // Typed or pasted text had characters the field dropped (outside the validation type, or past the last slot).
+  // `value` is the text as entered.
+  onValueInvalid?: (value: string, details: OTPFieldEntryDetails) => void
+  // Which characters a slot takes. Default "numeric".
+  validationType?: OTPFieldValidationType
+  // Rewrites entered text after whitespace and the validation type are applied (`(v) => v.toUpperCase()`); its
+  // result is filtered again and cut to `length`. It runs more than once on one edit, so it must give the same result
+  // when run on its own output.
+  normalizeValue?: (value: string) => string
+  // The first slot's and the hidden input's `autocomplete`. Default "one-time-code".
+  autoComplete?: string
+  // The slots' `inputmode`. Default: "numeric" for digits, "text" for letters.
+  inputMode?: OTPFieldInputMode
+  // Shows each character as a dot (`type="password"` on the slots).
+  mask?: boolean
+  // Submits the form (as its submit button would) when the code is complete.
+  autoSubmit?: boolean
+  disabled?: boolean
+  readOnly?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot), the code is submitted with the form under it.
+  name?: string
+  // The id of the form the code belongs to, when it isn't inside it.
+  form?: string
+  // The first slot's id, which a `<label for>` names; the others are `${id}-2`, `${id}-3`…
+  id?: string
+  children?: View
+} & Omit<DivProps, "children" | "defaultValue" | "onChange" | "id">
+
+// The state attributes of the root: the field's, then the code's own.
+fn rootState(ref c: OTPFieldContext): PartProps {
+  attrs = fieldStateAttributes(c.field?.state)
+  isDisabled = c.disabled
+  isReadOnly = c.readOnly
+  isRequired = c.required
+  isComplete = c.complete
+  isFilled = c.value != ""
+  isFocused = c.focused
+  {
+    ...attrs,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-readonly": isReadOnly ? "" : undefined,
+    "data-required": isRequired ? "" : undefined,
+    "data-complete": isComplete ? "" : undefined,
+    "data-filled": isFilled ? "" : undefined,
+    "data-focused": isFocused ? "" : undefined,
+  }
+}
+
+// Groups the slots, holds the code, and renders the hidden input the form reads.
+export component OTPFieldRoot(props: OTPFieldRootProps) {
+  f = use field
+  source uncontrolled: string := peek(props.defaultValue ?? "")
+  source rootElement: HTMLElement | undefined := undefined
+  source hidden: HTMLInputElement | undefined := undefined
+  source focusedIndex := 0
+  source focusedState: boolean := false
+  source revision := 0
+  // `value`, `disabled` and `readOnly` are often read from an answer that can fail (`value={code}` with
+  // `code = await load()`): a failure there is the app's to show, in its `errored` region, not the field's.
+  // `value` is read through `latest`: an owner whose write is held (a loading question reads the code it wrote)
+  // still sees each key fill its slot and focus move on, while an owner that doesn't take a change is still told
+  // apart, as its value doesn't move.
+  givenValue = (latest props.value) catch (e) => undefined
+  givenDisabled = (props.disabled ?? false) catch (e) => false
+  givenReadOnly = (props.readOnly ?? false) catch (e) => false
+  validation = props.validationType ?? "numeric"
+  slotCount = props.length
+  current = normalizeOtpValue(givenValue ?? uncontrolled, slotCount, validation, props.normalizeValue)
+  filled = otpLength(current)
+  isComplete = slotCount > 0 && filled == slotCount
+  isDisabled = givenDisabled || (f?.disabled ?? false)
+  isReadOnly = givenReadOnly
+  isRequired = props.required ?? false
+  // A slot that had focus when the field was disabled loses it without a blur in some engines.
+  isFocused = focusedState && !isDisabled
+  last = slotCount > 1 ? slotCount - 1 : 0
+  activeIndex = isFocused ? (focusedIndex < last ? focusedIndex : last) : (filled < last ? filled : last)
+  slots = createSlotOrder(rootElement)
+  generatedId = createId("otp-field")
+  firstId = props.id ?? (f ? f.controlId : generatedId)
+  explicitLabel = props["aria-labelledby"] ? `${props["aria-labelledby"]}` : undefined
+  fallbackLabelId = createId("otp-field-label")
+  nativeLabel = createLabelFallback(slots.length > 0 ? slots[0] : undefined, explicitLabel == undefined && f?.labelId == undefined, peek(fallbackLabelId))
+  groupLabel = explicitLabel ?? f?.labelId ?? nativeLabel
+  // Labelled on the group, the slots aren't labelled again.
+  slotLabel = explicitLabel == undefined ? groupLabel : undefined
+  // What a form reset puts back: the value the field started with.
+  initialValue = peek(current)
+
+  effect (current) { if (f) { f.setValue($0) } }
+
+  // Focus after an edit, and completion: done once the value has changed (createOTPWatch).
+  completion = { onComplete: props.onValueComplete, autoSubmit: props.autoSubmit ?? false, hidden: hidden, form: props.form }
+  watch = createOTPWatch(current, slots, completion)
+  _hiddenText = createSlotText(hidden, current, revision)
+  _reset = createFormReset(hidden, reset)
+  // Disabled while a slot had focus (`disabled={pending? code}`), the slot takes focus back when re-enabled.
+  _focus = createFocusKeeper(rootElement, isDisabled)
+
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that updates the field:
+  // a handler that saves (an action that awaits, or a write a loading question reads) holds its change until the
+  // answer lands, and the field would be held with it.
+  action report(next: string, reason: OTPFieldChangeReason) {
+    if (props.onValueChange) {
+      let handler = props.onValueChange
+      onFlush(() => { handler(next, { reason: reason }) })
+    }
+  }
+  // Sets the value, reports it, and asks for focus on slot `focusIndex` (-1: none) and for completion, both done once
+  // the value has changed (createOTPWatch). Completion is reported for typing or a paste that fills the last slot,
+  // and for a whole code pasted over a complete one, even an equal one.
+  action setValue(next: string, reason: OTPFieldChangeReason, focusIndex: number) {
+    let normalized = normalizeOtpValue(next, slotCount, validation, props.normalizeValue)
+    let entry: OTPFieldEntryReason = reason == "input-paste" ? "input-paste" : "input-change"
+    let completes = (reason == "input-change" || reason == "input-paste") && slotCount > 0 && otpLength(normalized) == slotCount && (filled != slotCount || reason == "input-paste")
+    if (normalized == current) {
+      if (completes) { watch.completeNow(normalized, entry) }
+      return
+    }
+    uncontrolled := normalized
+    report(normalized, reason)
+    if (focusIndex >= 0) { watch.queueFocus(focusIndex, normalized) }
+    if (completes) {
+      watch.queueComplete(normalized, entry)
+    } else if (otpLength(normalized) != slotCount) {
+      watch.clearComplete()
+    }
+  }
+  action enter(index: number, text: string, reason: OTPFieldEntryReason, element: HTMLInputElement) {
+    let slotChar = otpCharAt(current, index)
+    // The slot shows its own character until the new value reaches it, so text the field drops, or an owner who
+    // doesn't take the change, leaves it as it was.
+    restoreSlot(element, slotChar, false)
+    if (isDisabled || isReadOnly || index < 0) { return }
+    let entered = normalizeOtpValueWithDetails(text, slotCount, validation, props.normalizeValue)
+    if (entered.rejected && props.onValueInvalid) {
+      let handler = props.onValueInvalid
+      onFlush(() => { handler(text, { reason: reason }) })
+    }
+    if (entered.value == "") {
+      // Typing emptied the slot: take its character out. Typing only rejected characters: keep it, selected.
+      if (reason == "input-change" && text == "") {
+        setValue(removeOtpCharacter(current, index), "input-clear", -1)
+      } else if (reason == "input-change" && slotChar != "") {
+        restoreSlot(element, slotChar, true)
+      }
+      return
+    }
+    let target = index + otpLength(entered.value)
+    setValue(replaceOtpValue(current, index, entered.value, slotCount, validation, props.normalizeValue), reason, target < last ? target : last)
+  }
+  action edit(next: string, focusIndex: number) {
+    if (isDisabled || isReadOnly) { return }
+    setValue(next, "keyboard", focusIndex)
+  }
+  action slotFocused(index: number, element: HTMLInputElement) {
+    // A slot past the first empty one can't be filled out of order: focus goes to the first empty slot.
+    if (index > filled) {
+      focusSlot(slots, filled < last ? filled : last)
+      return
+    }
+    if (index >= 0) { focusedIndex := index }
+    focusedState := true
+    selectSlot(element)
+  }
+  action focusIn() { if (f) { f.setFocused(true) } }
+  action focusOut(event: FocusEvent & { relatedTarget: Node | null }) {
+    // Moving between slots stays inside the group.
+    if (containsNode(rootElement, event.relatedTarget)) { return }
+    focusedState := false
+    if (f) { f.setFocused(false) }
+  }
+  action writeRoot(element: HTMLElement) {
+    rootElement := element
+    if (f) { f.setControl(element) }
+  }
+  setRoot = createRef(writeRoot)
+  // A password manager fills the hidden input (it has the `autocomplete` and the whole code's length).
+  action fill(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    let text = event.currentTarget.value
+    restoreSlot(event.currentTarget, current, false)
+    if (isDisabled || isReadOnly) { return }
+    let entered = normalizeOtpValueWithDetails(text, slotCount, validation, props.normalizeValue)
+    if (entered.rejected && props.onValueInvalid) {
+      let handler = props.onValueInvalid
+      onFlush(() => { handler(text, { reason: "input-change" }) })
+    }
+    let size = otpLength(entered.value)
+    setValue(entered.value, "input-change", size > 0 ? size - 1 : -1)
+  }
+  action hiddenFocus() { focusSlot(slots, 0) }
+  action writeHidden(element: HTMLInputElement) {
+    hidden := element
+    if (f) { f.setInput(element) }
+  }
+  setHidden = createRef(writeHidden)
+  // The browser has put the hidden input back to its default and the slots to empty. Uncontrolled, the value goes
+  // back to what it started as, reported once if it changed; controlled, the owner's value is shown again.
+  action reset() {
+    revision := revision + 1
+    if (givenValue == undefined && initialValue != uncontrolled) {
+      uncontrolled := initialValue
+      report(initialValue, initialValue == "" ? "input-clear" : "input-change")
+    }
+    if (f) { f.reset(givenValue == undefined ? initialValue : current) }
+  }
+
+  self = {
+    value: current,
+    length: slotCount,
+    activeIndex: activeIndex,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    required: isRequired,
+    focused: isFocused,
+    complete: isComplete,
+    mask: props.mask ?? false,
+    autoComplete: props.autoComplete ?? "one-time-code",
+    inputMode: props.inputMode ?? otpInputMode(validation),
+    pattern: otpSlotPattern(validation),
+    form: props.form,
+    firstId: firstId,
+    labelledBy: slotLabel,
+    slots: slots,
+    revision: revision,
+    field: f,
+    enter: enter,
+    edit: edit,
+    slotFocused: slotFocused,
+  }
+
+  provide otpField = self
+
+  { value, defaultValue, onValueChange, onValueComplete, onValueInvalid, validationType, normalizeValue, length, autoComplete, inputMode, mask, autoSubmit, disabled, readOnly, required, name, form, id, children, ...rest } = props
+  inputName = (latest name) ?? f?.name
+  state = rootState(self)
+  own = {
+    ...state,
+    role: "group",
+    "aria-labelledby": groupLabel,
+    "aria-describedby": joinIds(props["aria-describedby"] ? `${props["aria-describedby"]}` : undefined, f?.describedBy),
+    ref: setRoot,
+    onFocusIn: focusIn,
+    onFocusOut: focusOut,
+  }
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+  {if slotCount > 0 {
+    <input type="text" ref={setHidden} id={inputName == undefined ? `${firstId}-hidden-input` : undefined} name={inputName} form={latest form} defaultValue={initialValue} autocomplete={self.autoComplete} inputmode={self.inputMode} minlength={slotCount} maxlength={slotCount} pattern={otpRootPattern(validation, slotCount)} disabled={isDisabled} readonly={isReadOnly} required={isRequired} aria-hidden="true" tabindex="-1" style={{ position: "absolute", width: "1px", height: "1px", margin: "-1px", padding: "0", border: "0", overflow: "hidden", clip: "rect(0 0 0 0)", "clip-path": "inset(50%)", "white-space": "nowrap" }} onFocus={hiddenFocus} onInput={fill} />
+  }}
+}
+
+// One character's slot: a native text input. Typing moves on to the next slot; Backspace empties this slot (or the
+// one before, when this one is empty) and moves back; Delete takes this slot's character out and keeps focus; the
+// arrow keys, Home and End move between slots, and Ctrl or Cmd with an arrow goes to the first slot or the first
+// empty one. A paste, a fill or several typed characters are spread from this slot on. Only the first slot takes an
+// `aria-label`'s place from the field's label; the others keep one they are given ("Character 2 of 6").
+export fn otpFieldInput(ref c: OTPFieldContext, ref ariaLabel: string | undefined): PartProps {
+  source element: HTMLInputElement | undefined := undefined
+  // An IME composition in progress: its text is the IME's, shown as it is and entered once it ends.
+  composition = createComposition()
+  action writeElement(input: HTMLInputElement) { element := input }
+  setElement = createRef(writeElement)
+  index = slotIndex(c.slots, element)
+  slotChar = otpCharAt(c.value, index)
+  last = c.length > 1 ? c.length - 1 : 0
+  _text = createSlotText(element, slotChar, c.revision)
+  attrs = fieldStateAttributes(c.field?.state)
+
+  action mouseDown(event: MouseEvent) {
+    if (event.defaultPrevented || c.disabled) { return }
+    // Focus and select, so the next key replaces the character instead of adding one beside it.
+    event.preventDefault()
+    focusSlot(c.slots, index)
+  }
+  action focus(event: FocusEvent & { currentTarget: HTMLInputElement }) {
+    if (event.defaultPrevented || c.disabled) { return }
+    c.slotFocused(index, event.currentTarget)
+  }
+  action compositionStart() { composition.start() }
+  action compositionEnd(event: CompositionEvent & { currentTarget: HTMLInputElement }) {
+    if (!composition.end()) { return }
+    c.enter(index, event.currentTarget.value, "input-change", event.currentTarget)
+  }
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    if (composition.active()) { return }
+    // Firefox sends the composition's last `input` after `compositionend`, which has already entered the text.
+    if (event.inputType == "insertCompositionText" && !isAndroid()) { return }
+    c.enter(index, event.currentTarget.value, "input-change", event.currentTarget)
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLInputElement }) {
+    // Keys inside a composition belong to the IME until it ends.
+    if (event.defaultPrevented || c.disabled || composition.active()) { return }
+    let filledCount = otpLength(c.value)
+    let end = filledCount < last ? filledCount : last
+    let boundary = (event.ctrlKey || event.metaKey) && !event.altKey
+    let rtl = isRtl(event.currentTarget)
+    let previousKey = rtl ? "ArrowRight" : "ArrowLeft"
+    let nextKey = rtl ? "ArrowLeft" : "ArrowRight"
+    if (event.key == previousKey) {
+      event.preventDefault()
+      event.stopPropagation()
+      focusSlot(c.slots, boundary ? 0 : index > 0 ? index - 1 : 0)
+      return
+    }
+    if (event.key == nextKey) {
+      event.preventDefault()
+      event.stopPropagation()
+      focusSlot(c.slots, boundary ? end : index < last ? index + 1 : last)
+      return
+    }
+    if (event.key == "Home" || event.key == "ArrowUp") {
+      event.preventDefault()
+      event.stopPropagation()
+      focusSlot(c.slots, 0)
+      return
+    }
+    if (event.key == "End" || event.key == "ArrowDown") {
+      event.preventDefault()
+      event.stopPropagation()
+      focusSlot(c.slots, end)
+      return
+    }
+    if (c.readOnly) {
+      // Nothing to delete; and Playwright's WebKit takes Backspace in a read-only input as "go back a page".
+      if (event.key == "Backspace" || event.key == "Delete") { event.preventDefault() }
+      return
+    }
+    if (event.key == "Backspace" && boundary) {
+      event.preventDefault()
+      event.stopPropagation()
+      c.edit("", 0)
+      return
+    }
+    if (event.key == "Delete") {
+      event.preventDefault()
+      event.stopPropagation()
+      c.edit(removeOtpCharacter(c.value, index), index)
+      return
+    }
+    // The character the slot already holds: move on rather than type it again.
+    if (event.key.length == 1 && slotChar == event.key && isFullySelected(event.currentTarget)) {
+      event.preventDefault()
+      event.stopPropagation()
+      if (index < last) { focusSlot(c.slots, index + 1) }
+      return
+    }
+    if (event.key == "Backspace") {
+      event.preventDefault()
+      event.stopPropagation()
+      let target = index > 0 ? index - 1 : 0
+      c.edit(removeOtpCharacter(c.value, slotChar == "" ? target : index), target)
+    }
+  }
+  action paste(event: ClipboardEvent & { currentTarget: HTMLInputElement }) {
+    if (event.defaultPrevented || c.disabled || c.readOnly) { return }
+    let text = clipboardText(event)
+    if (text == null) { return }
+    event.preventDefault()
+    c.enter(index, text, "input-paste", event.currentTarget)
+  }
+  // One equation per value the slot's attributes read, then the object built from them: the context is a new
+  // object on every change, and the slot's attributes should be rebuilt only when something about this slot changed.
+  // Built straight from the context, the object was rebuilt equal on each run of a change an app holds
+  // (`readOnly={pending? check}`), and Solid reported it (UNSTABLE_MEMO_OUTPUT).
+  isFocused = c.focused
+  isComplete = c.complete
+  slotId = index < 0 ? undefined : index == 0 ? c.firstId : `${c.firstId}-${index + 1}`
+  slotType = c.mask ? "password" : "text"
+  inputMode = c.inputMode
+  autoComplete = index == 0 ? c.autoComplete : "off"
+  maxLength = index == 0 ? c.length : undefined
+  tabStop = c.activeIndex == index
+  pattern = c.pattern
+  formId = c.form
+  isDisabled = c.disabled
+  isReadOnly = c.readOnly
+  isRequired = c.required
+  labelledBy = index == 0 || ariaLabel == undefined ? c.labelledBy : undefined
+  label = index == 0 ? undefined : ariaLabel
+  isInvalid = !c.disabled && c.field?.state.valid == false
+  slotProps = {
+    ...attrs,
+    "data-bisque-otp-slot": "",
+    "data-disabled": undefined,
+    "data-filled": slotChar != "" ? "" : undefined,
+    "data-focused": isFocused ? "" : undefined,
+    "data-complete": isComplete ? "" : undefined,
+    id: slotId,
+    type: slotType,
+    inputmode: inputMode,
+    autocomplete: autoComplete,
+    autocorrect: "off",
+    spellcheck: "false",
+    enterkeyhint: index == last ? "done" : "next",
+    // Only the first slot takes a whole code (a fill, typed fast), so a password manager offers it there alone.
+    maxlength: maxLength,
+    tabindex: tabStop ? "0" : "-1",
+    pattern: pattern,
+    form: formId,
+    disabled: isDisabled ? true : undefined,
+    readonly: isReadOnly ? true : undefined,
+    required: isRequired ? true : undefined,
+    "aria-labelledby": labelledBy,
+    "aria-label": label,
+    "aria-invalid": isInvalid ? "true" : undefined,
+    onMouseDown: mouseDown,
+    onFocus: focus,
+    onCompositionStart: compositionStart,
+    onCompositionEnd: compositionEnd,
+    onInput: input,
+    onKeyDown: keyDown,
+    onPaste: paste,
+    ref: setElement,
+  }
+  slotProps
+}
+
+export component OTPFieldInput(props: Omit<InputProps, "value" | "defaultValue">) {
+  c = use otpField
+  own = otpFieldInput(c, props["aria-label"] ? `${props["aria-label"]}` : undefined)
+  merged = mergeProps(own, props)
+  // The first slot's `aria-label` is dropped: the field's label names the code.
+  <input {...merged} aria-label={own["aria-label"]} />
+}
+
+// A separator between groups of slots (`123 – 456`). Horizontal by default, as Base UI's Separator is.
+export component OTPFieldSeparator({ orientation, ...rest }: { orientation?: SeparatorOrientation } & DivProps) {
+  own = separator((latest orientation) ?? "horizontal")
+  merged = mergeProps(own, rest)
+  <div {...merged} />
+}

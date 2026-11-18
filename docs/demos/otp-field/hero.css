@@ -1,0 +1,74 @@
+.OTPFieldHero {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 0.5rem;
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .Root {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .Group {
+    display: flex;
+    gap: 0.375rem;
+  }
+
+  /* Each slot is a native text input holding one character. */
+  .Slot {
+    box-sizing: border-box;
+    width: 2.5rem;
+    height: 3rem;
+    padding: 0;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 1.25rem;
+    font-variant-numeric: tabular-nums;
+    text-align: center;
+    /* The slot's character is selected when it takes focus; hide the selection's tint and caret. */
+    caret-color: transparent;
+    outline: none;
+  }
+
+  .Slot::selection {
+    background: transparent;
+  }
+
+  /* A slot with a character in it; `:placeholder-shown` can't tell, as the slots have no placeholder. */
+  .Slot[data-filled] {
+    border-color: light-dark(#9a9aa6, #5a5a66);
+  }
+
+  .Slot:focus-visible {
+    border-color: light-dark(#2f5bea, #8eabff);
+    box-shadow: 0 0 0 1px light-dark(#2f5bea, #8eabff);
+  }
+
+  /* The whole code is in. */
+  .Root[data-complete] .Slot {
+    border-color: light-dark(#1f8a4c, #57c785);
+  }
+
+  /* A separator is horizontal by default: here, a short dash between the two groups. */
+  .Separator {
+    width: 0.625rem;
+    height: 2px;
+    border-radius: 1px;
+    background: light-dark(#b4b4be, #4a4a55);
+  }
+
+  .Hint {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#5c5c66, #a0a0ab);
+  }
+}

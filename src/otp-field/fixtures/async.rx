@@ -1,0 +1,94 @@
+import { OTPFieldRoot, OTPFieldInput } from "../otp-field.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// OTP fields used against a server, written as an app would (../../test/settings-server.ts).
+export default component Fixture() {
+  // A code checked by the server once it is complete: read-only while the check is out, cleared when it fails.
+  source code := ""
+  source verified := ""
+  source verifyError := ""
+  // Disabled while its check is out.
+  source pin := ""
+  source pinChecked := ""
+  // A controlled code saved on every change, optimistically.
+  source draft: string = ""
+  // A controlled code whose value a loading question reads (a check as the person types). Three slots: a fourth
+  // keystroke would have the app's question abandon three answers in a second, which Solid reports.
+  source typed := ""
+  check = await load(`check-${typed}`, typed) -> ""
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := ""
+  preview = await load(`preview-${wanted}`, wanted) -> ""
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+      <label for="code">Code</label>
+      <OTPFieldRoot id="code" length={4} value={code} readOnly={pending? verified} onValueChange={(next) => { code := next }} onValueComplete={(next) => {
+        onFlush(() => { verifyError := "" })
+        affects verified
+        try {
+          await save("verify", next)
+          verified := next
+        } catch (e) {
+          verifyError := "wrong"
+          code := ""
+        }
+      }}>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+      <output data-testid="verified">{verified}</output>
+      <output data-testid="verify-error">{verifyError}</output>
+
+      <label for="pin">Pin</label>
+      <OTPFieldRoot id="pin" length={3} value={pin} disabled={pending? pinChecked} onValueChange={(next) => { pin := next }} onValueComplete={(next) => {
+        affects pinChecked
+        try {
+          await save("pin", next)
+          pinChecked := next
+        } catch (e) {
+          pin := ""
+        }
+      }}>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+      <output data-testid="pin-checked">{pinChecked}</output>
+
+      <label for="draft">Draft</label>
+      <OTPFieldRoot id="draft" length={4} value={draft} onValueChange={(next) => {
+        guess draft := next
+        try {
+          await save("draft", next)
+          draft := next
+        } catch (e) {
+        }
+      }}>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+
+      <label for="typed">Typed</label>
+      <OTPFieldRoot id="typed" length={3} value={typed} onValueChange={(next) => { typed := next }}>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+      <output data-testid="check">{check}</output>
+      <output data-testid="checking">{pending? check ? "checking" : ""}</output>
+
+      <label for="wanted">Wanted</label>
+      <OTPFieldRoot id="wanted" data-testid="wanted-root" length={3} onValueChange={(next) => { wanted := next }}>
+        <OTPFieldInput />
+        <OTPFieldInput />
+        <OTPFieldInput />
+      </OTPFieldRoot>
+      <output data-testid="preview">{preview}</output>
+      <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

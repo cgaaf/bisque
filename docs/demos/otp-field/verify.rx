@@ -1,0 +1,35 @@
+import { OTPFieldRoot, OTPFieldInput } from "../../../src/otp-field/otp-field.rx"
+import { saveSetting, messageOf } from "../../lib/settings-server.js"
+
+export component OTPFieldVerify() {
+  source code := ""
+  source checked := ""
+  source message := ""
+  <div class="OTPFieldVerify">
+    <label class="Label" for="otp-field-verify">Sign-in code</label>
+    <OTPFieldRoot class="Root" id="otp-field-verify" length={4} value={code} readOnly={pending? checked} onValueChange={(next) => { code := next }} onValueComplete={(next) => {
+      // Checked by the server once all four digits are in; read-only while the check is out.
+      onFlush(() => { message := "" })
+      affects checked
+      try {
+        await saveSetting("otp-check", next)
+        if (next == "2468") {
+          checked := next
+          message := "Signed in."
+        } else {
+          message := "That code isn't right. Try again."
+          code := ""
+        }
+      } catch (error) {
+        message := messageOf(error)
+        code := ""
+      }
+    }}>
+      <OTPFieldInput class="Slot" />
+      <OTPFieldInput class="Slot" aria-label="Digit 2 of 4" />
+      <OTPFieldInput class="Slot" aria-label="Digit 3 of 4" />
+      <OTPFieldInput class="Slot" aria-label="Digit 4 of 4" />
+    </OTPFieldRoot>
+    <p class="Status" aria-live="polite">{pending? checked ? "Checking…" : message == "" ? "The code is 2468." : message}</p>
+  </div>
+}
