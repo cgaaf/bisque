@@ -60,7 +60,7 @@ function familyPage(family) {
   const anatomyFile = join(root, "docs/demos", family, "anatomy.rx.txt");
   const lines = [`# ${title}`, "", summary, ""];
   lines.push(
-    `Source after \`bisque-ui copy\`: \`<copy>/${family}/${family}.rx\`. Parts are named exports of that file.`,
+    `Source after \`bisque copy\`: \`<copy>/${family}/${family}.rx\`. Parts are named exports of that file.`,
     "",
   );
   if (existsSync(anatomyFile)) {

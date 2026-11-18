@@ -2,7 +2,7 @@
 
 A dialog that interrupts to ask for a decision.
 
-Source after `bisque-ui copy`: `<copy>/alert-dialog/alert-dialog.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/alert-dialog/alert-dialog.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

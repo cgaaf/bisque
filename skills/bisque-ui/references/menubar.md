@@ -2,7 +2,7 @@
 
 A row of menus, as at the top of a desktop application.
 
-Source after `bisque-ui copy`: `<copy>/menubar/menubar.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/menubar/menubar.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

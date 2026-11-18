@@ -2,7 +2,7 @@
 
 An input that filters a list of options to choose from.
 
-Source after `bisque-ui copy`: `<copy>/combobox/combobox.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/combobox/combobox.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

@@ -2,7 +2,7 @@
 
 A button that opens a list of options to choose a value from.
 
-Source after `bisque-ui copy`: `<copy>/select/select.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/select/select.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

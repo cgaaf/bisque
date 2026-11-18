@@ -2,7 +2,7 @@
 
 Two date fields with a range calendar in a popup, behind one range.
 
-Source after `bisque-ui copy`: `<copy>/date-range-picker/date-range-picker.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/date-range-picker/date-range-picker.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

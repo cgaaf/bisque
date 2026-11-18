@@ -2,7 +2,7 @@
 
 A button that can stay focusable while disabled, or be another element.
 
-Source after `bisque-ui copy`: `<copy>/button/button.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/button/button.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

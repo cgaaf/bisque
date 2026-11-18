@@ -2,7 +2,7 @@
 
 A native form that validates its fields, waits for the server and shows the errors it returns.
 
-Source after `bisque-ui copy`: `<copy>/form/form.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/form/form.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

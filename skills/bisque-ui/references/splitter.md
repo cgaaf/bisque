@@ -2,7 +2,7 @@
 
 Panels separated by bars that resize them, with a pointer or the keyboard.
 
-Source after `bisque-ui copy`: `<copy>/splitter/splitter.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/splitter/splitter.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

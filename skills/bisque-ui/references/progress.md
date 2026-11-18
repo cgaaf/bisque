@@ -2,7 +2,7 @@
 
 Shows how far a task that takes a while has got.
 
-Source after `bisque-ui copy`: `<copy>/progress/progress.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/progress/progress.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

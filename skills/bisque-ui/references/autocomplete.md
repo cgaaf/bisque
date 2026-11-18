@@ -2,7 +2,7 @@
 
 A text input that suggests what to type.
 
-Source after `bisque-ui copy`: `<copy>/autocomplete/autocomplete.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/autocomplete/autocomplete.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

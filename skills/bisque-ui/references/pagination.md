@@ -2,7 +2,7 @@
 
 Previous and next, numbered pages and ellipses, for moving through a long list.
 
-Source after `bisque-ui copy`: `<copy>/pagination/pagination.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/pagination/pagination.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

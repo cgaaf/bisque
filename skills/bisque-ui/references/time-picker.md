@@ -2,7 +2,7 @@
 
 A time field with a popup of hours, minutes and AM/PM to choose from.
 
-Source after `bisque-ui copy`: `<copy>/time-picker/time-picker.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/time-picker/time-picker.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

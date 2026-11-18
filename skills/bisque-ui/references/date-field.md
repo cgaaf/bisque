@@ -2,7 +2,7 @@
 
 A date typed or stepped one segment at a time, in the locale's order.
 
-Source after `bisque-ui copy`: `<copy>/date-field/date-field.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/date-field/date-field.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

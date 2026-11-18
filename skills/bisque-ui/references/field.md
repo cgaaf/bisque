@@ -2,7 +2,7 @@
 
 Labels a control, describes it, validates it and shows its errors.
 
-Source after `bisque-ui copy`: `<copy>/field/field.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/field/field.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

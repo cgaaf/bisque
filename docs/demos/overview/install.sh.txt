@@ -1,2 +1,2 @@
-pnpm add bisque-ui @reactivescript/runtime solid-js @solidjs/web
-pnpm dlx bisque-ui copy src/bisque
+pnpm add github:cgaaf/bisque @reactivescript/runtime solid-js @solidjs/web
+pnpm exec bisque copy src/bisque

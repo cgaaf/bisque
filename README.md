@@ -26,15 +26,18 @@ Toggle Group, Toolbar, Tooltip.
 ## Use
 
 ReactiveScript 0.3 resolves an `.rx` import only by relative path, so the library is distributed as source that
-is copied into the app:
+is copied into the app. It isn't on npm yet, so install it from GitHub:
 
 ```bash
-pnpm add bisque-ui @reactivescript/runtime solid-js @solidjs/web
+pnpm add github:cgaaf/bisque @reactivescript/runtime solid-js @solidjs/web
 ```
 
 ```bash
-pnpm dlx bisque-ui copy src/bisque
+pnpm exec bisque copy src/bisque
 ```
+
+Run `pnpm exec bisque copy` again after updating to refresh the copy. It replaces only a folder that holds nothing
+but files it wrote, and refuses one holding anything else, such as a file you added.
 
 ```rx
 import { DialogRoot, DialogTrigger, DialogPopup, DialogTitle, DialogClose } from "./bisque/dialog/dialog.rx"
@@ -59,22 +62,15 @@ selector.
 The package ships a `bisque-ui` [agent skill](https://agentskills.io): how to set the library up, style, animate,
 compose and wire it to a server, plus a reference for every component's parts, props and data attributes,
 generated from the source. pnpm links a dependency's skills into your agent directories (`.claude/skills`,
-`.agents/skills`, `.cursor/skills`, …) once you allow it:
+`.agents/skills`, `.cursor/skills`, …) once you allow it. With pnpm 12 or later, run
 
 ```bash
-pnpm approve bisque-ui
+pnpm approve
 ```
 
-or in `pnpm-workspace.yaml`:
-
-```yaml
-permissions:
-  bisque-ui:
-    skills: true
-```
-
-pnpm 12 or later. Installed from a tarball, git or a folder rather than the registry, the package is approved
-separately: `pnpm approve` records it under that source. With another package manager, copy `node_modules/bisque-ui/skills/bisque-ui` into your agent's skills directory.
+and choose `bisque-ui (git)`. pnpm records the approval for that exact commit in `pnpm-workspace.yaml`, so it asks
+again after you update. With another package manager, copy `node_modules/bisque-ui/skills/bisque-ui` into your
+agent's skills directory.
 
 ## Documentation
 

@@ -2,7 +2,7 @@
 
 A list of links to a document's sections that marks the one being read.
 
-Source after `bisque-ui copy`: `<copy>/table-of-contents/table-of-contents.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/table-of-contents/table-of-contents.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

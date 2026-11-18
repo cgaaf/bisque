@@ -2,7 +2,7 @@
 
 A set of native radios of which one is checked.
 
-Source after `bisque-ui copy`: `<copy>/radio/radio.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/radio/radio.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

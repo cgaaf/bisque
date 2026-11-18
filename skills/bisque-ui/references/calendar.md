@@ -2,7 +2,7 @@
 
 A month grid for choosing a day, or a range of days.
 
-Source after `bisque-ui copy`: `<copy>/calendar/calendar.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/calendar/calendar.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

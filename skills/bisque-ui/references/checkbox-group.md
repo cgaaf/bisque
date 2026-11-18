@@ -2,7 +2,7 @@
 
 A set of checkboxes that share one value: the list of the checked ones.
 
-Source after `bisque-ui copy`: `<copy>/checkbox-group/checkbox-group.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/checkbox-group/checkbox-group.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

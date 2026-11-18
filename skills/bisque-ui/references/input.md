@@ -2,7 +2,7 @@
 
 A native text input that works with Field.
 
-Source after `bisque-ui copy`: `<copy>/input/input.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/input/input.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

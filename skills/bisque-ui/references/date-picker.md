@@ -2,7 +2,7 @@
 
 A date field with a calendar in a popup, behind one value.
 
-Source after `bisque-ui copy`: `<copy>/date-picker/date-picker.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/date-picker/date-picker.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

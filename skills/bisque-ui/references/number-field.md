@@ -2,7 +2,7 @@
 
 A text input for numbers, with buttons and a scrub area to step the value.
 
-Source after `bisque-ui copy`: `<copy>/number-field/number-field.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/number-field/number-field.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

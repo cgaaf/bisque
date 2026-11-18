@@ -2,7 +2,7 @@
 
 A one-time code entered one character per slot.
 
-Source after `bisque-ui copy`: `<copy>/otp-field/otp-field.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/otp-field/otp-field.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

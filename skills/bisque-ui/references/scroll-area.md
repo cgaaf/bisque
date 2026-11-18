@@ -2,7 +2,7 @@
 
 A native scroll container with scrollbars you draw yourself.
 
-Source after `bisque-ui copy`: `<copy>/scroll-area/scroll-area.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/scroll-area/scroll-area.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

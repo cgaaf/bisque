@@ -2,7 +2,7 @@
 
 A card that previews what a link points to while the link is hovered or focused.
 
-Source after `bisque-ui copy`: `<copy>/preview-card/preview-card.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/preview-card/preview-card.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

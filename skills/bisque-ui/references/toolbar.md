@@ -2,7 +2,7 @@
 
 A row of buttons and controls that is one stop for the Tab key.
 
-Source after `bisque-ui copy`: `<copy>/toolbar/toolbar.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/toolbar/toolbar.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

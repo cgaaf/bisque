@@ -2,7 +2,7 @@
 
 A start and an end time, each with its own picker, in one group.
 
-Source after `bisque-ui copy`: `<copy>/time-range-picker/time-range-picker.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/time-range-picker/time-range-picker.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

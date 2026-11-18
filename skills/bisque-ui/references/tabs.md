@@ -2,7 +2,7 @@
 
 A set of panels on the same page, one shown at a time.
 
-Source after `bisque-ui copy`: `<copy>/tabs/tabs.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/tabs/tabs.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

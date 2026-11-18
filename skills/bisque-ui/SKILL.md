@@ -22,19 +22,22 @@ over memory.
 
 ## Setup
 
-ReactiveScript 0.3 resolves an `.rx` import only by relative path, so the library is copied into the app:
+ReactiveScript 0.3 resolves an `.rx` import only by relative path, so the library is copied into the app. It
+isn't on npm: install it from GitHub, and never `pnpm dlx bisque-ui` (that would run whatever the registry
+serves under the name).
 
 ```bash
-pnpm add bisque-ui @reactivescript/runtime solid-js @solidjs/web
-pnpm dlx bisque-ui copy src/bisque
+pnpm add github:cgaaf/bisque @reactivescript/runtime solid-js @solidjs/web
+pnpm exec bisque copy src/bisque
 ```
 
 - Import parts from the family file by a path relative to the importing file:
   `import { DialogRoot, DialogTrigger, DialogPopup } from "../bisque/dialog/dialog.rx"`.
 - The tsconfig that `rx-tsc` reads must exclude the copy's `.d.rx` files: `"exclude": ["**/*.d.rx"]`.
-- Re-run `bisque-ui copy` after upgrading the package; it replaces the folder. Never edit the copy: wrap a part
-  in a component of your own instead (see Composition).
-- Find which folder holds the copy by searching the app for `internal/props` or `dialog/dialog.rx`.
+- Re-run `pnpm exec bisque copy <dir>` after updating the package. It replaces the folder only if every file in
+  it is one the package ships or the last copy wrote (`.bisque-copy.json`), and refuses otherwise. Never edit the
+  copy or add files to it: wrap a part in a component of your own instead (see Composition).
+- Find the copy by searching the app for `.bisque-copy.json` (or `dialog/dialog.rx` in an older copy).
 
 ## Anatomy
 

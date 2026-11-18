@@ -2,7 +2,7 @@
 
 An accessible popup anchored to a button.
 
-Source after `bisque-ui copy`: `<copy>/popover/popover.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/popover/popover.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

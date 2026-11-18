@@ -2,7 +2,7 @@
 
 A text input that turns what is typed into a list of removable tags.
 
-Source after `bisque-ui copy`: `<copy>/tags-input/tags-input.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/tags-input/tags-input.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

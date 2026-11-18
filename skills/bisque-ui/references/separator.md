@@ -2,7 +2,7 @@
 
 A line that divides content, horizontally or vertically.
 
-Source after `bisque-ui copy`: `<copy>/separator/separator.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/separator/separator.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

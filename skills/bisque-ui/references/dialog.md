@@ -2,7 +2,7 @@
 
 A popup that opens on top of the entire page.
 
-Source after `bisque-ui copy`: `<copy>/dialog/dialog.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/dialog/dialog.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

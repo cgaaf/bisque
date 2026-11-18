@@ -2,7 +2,7 @@
 
 A set of collapsible panels with headings.
 
-Source after `bisque-ui copy`: `<copy>/accordion/accordion.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/accordion/accordion.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

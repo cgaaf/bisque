@@ -5,8 +5,8 @@ export default component Page() {
   <DocsPage title="Quick start" subtitle="Add the components to a ReactiveScript app and render the first one.">
     <h2 id="install">Install</h2>
     <p>
-      Bisque needs ReactiveScript and Solid 2 and nothing else: it has no runtime dependencies of its own. Install
-      it, then copy the components into your app:
+      Bisque needs ReactiveScript and Solid 2 and nothing else: it has no runtime dependencies of its own. It
+      isn't on npm yet, so install it from GitHub, then copy the components into your app:
     </p>
     <Code file="overview/install.sh.txt" />
     <p>

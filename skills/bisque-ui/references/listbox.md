@@ -2,7 +2,7 @@
 
 An always-visible list of options to select one or several from.
 
-Source after `bisque-ui copy`: `<copy>/listbox/listbox.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/listbox/listbox.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

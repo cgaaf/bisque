@@ -2,7 +2,7 @@
 
 A measurement within a known range, such as disk usage or a battery level.
 
-Source after `bisque-ui copy`: `<copy>/meter/meter.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/meter/meter.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

@@ -2,7 +2,7 @@
 
 A button that is either pressed or not.
 
-Source after `bisque-ui copy`: `<copy>/toggle/toggle.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/toggle/toggle.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

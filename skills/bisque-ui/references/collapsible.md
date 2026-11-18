@@ -2,7 +2,7 @@
 
 A panel that its trigger shows and hides.
 
-Source after `bisque-ui copy`: `<copy>/collapsible/collapsible.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/collapsible/collapsible.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

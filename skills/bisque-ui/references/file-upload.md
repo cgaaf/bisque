@@ -2,7 +2,7 @@
 
 Choosing files through the browser's picker or by dropping them, with a list of what was chosen.
 
-Source after `bisque-ui copy`: `<copy>/file-upload/file-upload.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/file-upload/file-upload.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

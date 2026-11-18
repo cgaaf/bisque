@@ -2,7 +2,7 @@
 
 A panel that slides in from an edge of the screen and can be swiped away.
 
-Source after `bisque-ui copy`: `<copy>/drawer/drawer.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/drawer/drawer.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

@@ -2,7 +2,7 @@
 
 A picture of a user, with a fallback while it loads or when it fails.
 
-Source after `bisque-ui copy`: `<copy>/avatar/avatar.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/avatar/avatar.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

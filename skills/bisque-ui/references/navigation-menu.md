@@ -2,7 +2,7 @@
 
 A site's main links, with panels of more links that open from it.
 
-Source after `bisque-ui copy`: `<copy>/navigation-menu/navigation-menu.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/navigation-menu/navigation-menu.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

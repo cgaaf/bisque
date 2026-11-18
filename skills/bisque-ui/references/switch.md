@@ -2,7 +2,7 @@
 
 A native checkbox with the switch role, for a setting that is on or off.
 
-Source after `bisque-ui copy`: `<copy>/switch/switch.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/switch/switch.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

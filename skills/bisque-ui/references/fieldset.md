@@ -2,7 +2,7 @@
 
 A native fieldset that groups fields under a legend and disables them together.
 
-Source after `bisque-ui copy`: `<copy>/fieldset/fieldset.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/fieldset/fieldset.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

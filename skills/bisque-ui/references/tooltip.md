@@ -2,7 +2,7 @@
 
 A short label that appears when a button is hovered or focused.
 
-Source after `bisque-ui copy`: `<copy>/tooltip/tooltip.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/tooltip/tooltip.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

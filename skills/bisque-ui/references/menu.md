@@ -2,7 +2,7 @@
 
 A list of actions in a popup, opened from a button and driven from the keyboard.
 
-Source after `bisque-ui copy`: `<copy>/menu/menu.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/menu/menu.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

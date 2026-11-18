@@ -2,7 +2,7 @@
 
 A list whose items can be reordered by drag and drop, with the pointer or the keyboard.
 
-Source after `bisque-ui copy`: `<copy>/sortable/sortable.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/sortable/sortable.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

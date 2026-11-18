@@ -2,7 +2,7 @@
 
 A set of toggles that share one state.
 
-Source after `bisque-ui copy`: `<copy>/toggle-group/toggle-group.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/toggle-group/toggle-group.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

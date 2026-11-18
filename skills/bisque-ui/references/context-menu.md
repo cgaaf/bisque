@@ -2,7 +2,7 @@
 
 A menu that opens at the pointer on a right-click or a long press.
 
-Source after `bisque-ui copy`: `<copy>/context-menu/context-menu.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/context-menu/context-menu.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

@@ -2,7 +2,7 @@
 
 A range input with any number of thumbs that you can style.
 
-Source after `bisque-ui copy`: `<copy>/slider/slider.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/slider/slider.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

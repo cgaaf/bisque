@@ -2,7 +2,7 @@
 
 A native checkbox that can be styled whole, with an optional indicator.
 
-Source after `bisque-ui copy`: `<copy>/checkbox/checkbox.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/checkbox/checkbox.rx`. Parts are named exports of that file.
 
 ## Anatomy
 

@@ -2,7 +2,7 @@
 
 Short messages that appear without taking focus and go away by themselves.
 
-Source after `bisque-ui copy`: `<copy>/toast/toast.rx`. Parts are named exports of that file.
+Source after `bisque copy`: `<copy>/toast/toast.rx`. Parts are named exports of that file.
 
 ## Anatomy
 
