@@ -1,0 +1,2 @@
+// How the link fixture calls ./hash-page.js. One declaration per line: scripts/gen-dts.mjs writes ./hash-page.d.ts.
+export pure fn createHashPage(): ref number instantiates

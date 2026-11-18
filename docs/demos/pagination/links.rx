@@ -1,0 +1,72 @@
+import { PaginationRoot, PaginationEllipsis, pagination, paginationItem, paginationPrevious, paginationNext } from "../../../src/pagination/pagination.rx"
+import { gateButtonHandlers } from "../../../src/button/button.rx"
+import { mergeProps } from "../../../src/internal/props.js"
+import { AnchorProps } from "../../../src/internal/types.rx"
+
+// The same parts on links. A server-rendered app would let the browser follow them and render `page` from the URL;
+// this demo stands in for a client-side router, which cancels the navigation and sets the page itself.
+component PageLink({ value, onGo, children, ...rest }: { value: number; onGo: (page: number) => void } & AnchorProps) {
+  c = use pagination
+  own = paginationItem(c, { value: value, href: `?page=${value}` })
+  action go(event: MouseEvent) {
+    event.preventDefault()
+    onGo(value)
+  }
+  routed = mergeProps(rest, { onClick: go })
+  merged = mergeProps(own, routed)
+  <a {...merged}>{children}</a>
+}
+
+// A disabled step has no `href`: there is nothing to follow, and the router's handler is dropped with the rest.
+component PreviousLink({ onGo, children, ...rest }: { onGo: (page: number) => void } & AnchorProps) {
+  c = use pagination
+  own = paginationPrevious(c, { href: `?page=${c.page - 1}` })
+  action go(event: MouseEvent) {
+    event.preventDefault()
+    onGo(c.page - 1)
+  }
+  routed = mergeProps(rest, { onClick: go })
+  external = gateButtonHandlers(routed, c.page <= 1)
+  merged = mergeProps(own, external)
+  <a {...merged}>{children}</a>
+}
+
+component NextLink({ onGo, children, ...rest }: { onGo: (page: number) => void } & AnchorProps) {
+  c = use pagination
+  own = paginationNext(c, { href: `?page=${c.page + 1}` })
+  action go(event: MouseEvent) {
+    event.preventDefault()
+    onGo(c.page + 1)
+  }
+  routed = mergeProps(rest, { onClick: go })
+  external = gateButtonHandlers(routed, c.page >= c.pageCount)
+  merged = mergeProps(own, external)
+  <a {...merged}>{children}</a>
+}
+
+component Links(props: { onGo: (page: number) => void }) {
+  c = use pagination
+  <ul class="List">
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PageLink class="Item" value={item.value} onGo={props.onGo}>{item.value}</PageLink>
+        } else {
+          <PaginationEllipsis class="Ellipsis">…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+export component PaginationLinks() {
+  // What a router would read from the URL.
+  source page := 1
+  <div class="PaginationLinks">
+    <PaginationRoot class="Root" aria-label="Search results" pageCount={12} page={page}>
+      <PreviousLink class="Step" onGo={(n) => { page := n }}>Previous</PreviousLink>
+      <Links onGo={(n) => { page := n }} />
+      <NextLink class="Step" onGo={(n) => { page := n }}>Next</NextLink>
+    </PaginationRoot>
+  </div>
+}

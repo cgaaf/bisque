@@ -1,0 +1,56 @@
+import { PaginationRoot, PaginationItem, PaginationEllipsis, PaginationPrevious, PaginationNext, pagination } from "../pagination.rx"
+
+// The pages and ellipses of the nearest root, as an app renders them.
+component Pages(props: { prefix: string }) {
+  c = use pagination
+  <ul>
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PaginationItem value={item.value} data-testid={`${props.prefix}-${item.value}`}>{item.value}</PaginationItem>
+        } else {
+          <PaginationEllipsis data-testid={`${props.prefix}-${item.key}`}>…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+export default component Fixture() {
+  source page := 4
+  source log := ""
+  <main>
+    <PaginationRoot data-testid="uncontrolled" class="mine" count={200} defaultPage={5} onPageChange={(n) => { log := `${n}` }}>
+      <PaginationPrevious data-testid="u-prev">Previous</PaginationPrevious>
+      <Pages prefix="u" />
+      <PaginationNext data-testid="u-next">Next</PaginationNext>
+    </PaginationRoot>
+    <output data-testid="log">{log}</output>
+
+    <PaginationRoot data-testid="controlled" aria-label="Results" pageCount={6} page={page} onPageChange={(n) => { page := n }}>
+      <PaginationPrevious data-testid="c-prev">Previous</PaginationPrevious>
+      <Pages prefix="c" />
+      <PaginationNext data-testid="c-next">Next</PaginationNext>
+    </PaginationRoot>
+    <output data-testid="page">{page}</output>
+
+    // The owner refuses every change.
+    <PaginationRoot data-testid="refused" pageCount={3} page={2} onPageChange={(n) => { log := `refused ${n}` }}>
+      <PaginationPrevious data-testid="r-prev">Previous</PaginationPrevious>
+      <Pages prefix="r" />
+      <PaginationNext data-testid="r-next">Next</PaginationNext>
+    </PaginationRoot>
+
+    <PaginationRoot data-testid="single" pageCount={1}>
+      <PaginationPrevious data-testid="s-prev" onClick={() => { log := "prev handler" }}>Previous</PaginationPrevious>
+      <Pages prefix="s" />
+      <PaginationNext data-testid="s-next">Next</PaginationNext>
+    </PaginationRoot>
+
+    <PaginationRoot data-testid="empty" count={0}>
+      <PaginationPrevious data-testid="e-prev">Previous</PaginationPrevious>
+      <Pages prefix="e" />
+      <PaginationNext data-testid="e-next">Next</PaginationNext>
+    </PaginationRoot>
+  </main>
+}

@@ -1,0 +1,204 @@
+// Pagination: previous and next, numbered pages and ellipses, in a <nav>. Base UI has none; the parts follow Ark
+// UI, Kobalte and Bits UI, and the ARIA is the platform's: a `<nav>` landmark with a label, ordinary buttons or
+// links, and `aria-current="page"` on the current page.
+//
+// There is no roving focus. Pagination is a set of ordinary Tab stops: the WAI-ARIA Authoring Practices have no
+// composite pattern for it, and each page is a separate control. The only logic is which pages and ellipses to
+// show (`paginate` in ../internal/impl/pagination.ts, in TypeScript because `.rx` has no `Math` and no loops),
+// and the current page.
+//
+// The root works out the entries; the app renders them, from a component inside the root:
+// `for item in (use pagination).items { … }`. The list is a keyed equation, so a page's button is kept while it
+// stays in the list and keeps focus when it is pressed. Each interactive part's props function takes an `href`
+// for link-based pagination (pages rendered by the server, or a router): spread it on an `<a>`. A link doesn't
+// change the page when pressed; following it does, and the app passes `page` read from the URL it lands on.
+// Writing the page during the click would be too early: the browser follows a link after its click handlers
+// run, and Chromium and WebKit then read the `href` as it stands, which the new page has already changed (or,
+// on Next's last step, removed).
+//
+// No List part: a `<ul>` around the items carries no behaviour, so the app writes its own.
+import { mergeProps } from "../internal/props.js"
+import { paginate } from "../internal/pagination.js"
+import { ButtonProps, NavProps, SpanProps, PartProps } from "../internal/types.rx"
+import { button, gateButtonHandlers } from "../button/button.rx"
+
+export type PaginationEntry = import("../internal/impl/pagination.ts").PaginationEntry
+
+export type PaginationContext = {
+  // The current page, from 1, clamped to the pages there are.
+  page: number
+  // The number of pages; 0 when there is nothing to page through.
+  pageCount: number
+  // What to render, in order: pages and ellipses, each with a stable `key`.
+  items: PaginationEntry[]
+  // Moves to a page (clamped), telling `onPageChange`.
+  setPage: (page: number) => void
+}
+
+export context pagination: lane PaginationContext
+
+export type PaginationRootProps = {
+  // The current page, from 1.
+  page?: number
+  // Default: 1.
+  defaultPage?: number
+  onPageChange?: (page: number) => void
+  // The number of items being paged through, with `pageSize`. Ignored when `pageCount` is given.
+  count?: number
+  // Default: 10.
+  pageSize?: number
+  // The number of pages, when it is known directly.
+  pageCount?: number
+  // Pages shown on each side of the current one. Default: 1.
+  siblingCount?: number
+  // Pages always shown at the start and at the end. Default: 1.
+  boundaryCount?: number
+  children?: View
+} & Omit<NavProps, "children">
+
+export component PaginationRoot(props: PaginationRootProps) {
+  source uncontrolled: number := peek(props.defaultPage ?? 1)
+  // `page` is often read from an answer that can fail (`page={data.page}`): a failure is the app's to show.
+  givenPage = (latest props.page) catch (e) => undefined
+  wanted = givenPage ?? uncontrolled
+  result = paginate({
+    count: latest props.count,
+    pageSize: latest props.pageSize,
+    pageCount: latest props.pageCount,
+    page: wanted,
+    siblingCount: latest props.siblingCount,
+    boundaryCount: latest props.boundaryCount,
+  })
+  current = result.page
+  total = result.pageCount
+  // Keyed, so a page's row (and the button the app renders in it) is kept across a change of page.
+  items key key = result.items
+
+  action setPage(page: number) {
+    let next = page < 1 ? 1 : (page > total ? total : page)
+    if (next < 1 || next == current) { return }
+    uncontrolled := next
+    // In a change of its own: an `onPageChange` that fetches the page would otherwise hold the control with it.
+    if (props.onPageChange) {
+      let report = props.onPageChange
+      onFlush(() => { report(next) })
+    }
+  }
+
+  provide pagination = { page: current, pageCount: total, items: items, setPage: setPage }
+
+  { page, defaultPage, onPageChange, count, pageSize, pageCount, siblingCount, boundaryCount, children, ...rest } = props
+  own = { "aria-label": "Pagination" }
+  merged = latest mergeProps(own, rest)
+  <nav {...merged}>{children}</nav>
+}
+
+export type PaginationItemOptions = {
+  // The page this item goes to.
+  value: number
+  // Where the page is, for a link: spread the props on an `<a>`. Without it they are for a `<button>`. A link
+  // doesn't change the page itself: pass the root a `page` read from the URL.
+  href?: string
+}
+
+// A page. The current one has `aria-current="page"` and `data-current`. It is labelled "Page N" for assistive
+// technology; pass your own `aria-label` to translate it.
+export fn paginationItem(ref c: PaginationContext, ref o: PaginationItemOptions): PartProps {
+  isCurrent = c.page == o.value
+  isLink = o.href != undefined
+  action press() {
+    if (!isLink) { c.setPage(o.value) }
+  }
+  {
+    type: isLink ? undefined : "button",
+    href: o.href,
+    "aria-label": `Page ${o.value}`,
+    "aria-current": isCurrent ? "page" : undefined,
+    "data-current": isCurrent ? "" : undefined,
+    onClick: press,
+  }
+}
+
+export type PaginationItemProps = {
+  value: number
+} & Omit<ButtonProps, "value">
+
+export component PaginationItem({ value, children, ...rest }: PaginationItemProps) {
+  c = use pagination
+  own = paginationItem(c, { value: latest value })
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// Hidden from assistive technology: the page numbers either side already say pages are skipped.
+export fn paginationEllipsis(): PartProps => { "aria-hidden": "true" }
+
+export type PaginationEllipsisProps = SpanProps
+
+export component PaginationEllipsis({ children, ...rest }: PaginationEllipsisProps) {
+  own = paginationEllipsis()
+  merged = latest mergeProps(own, rest)
+  <span {...merged}>{children}</span>
+}
+
+export type PaginationStepOptions = {
+  // Where the previous or next page is, for a link: spread the props on an `<a>`. Without it they are for a
+  // `<button>`. A link doesn't change the page itself: pass the root a `page` read from the URL.
+  href?: string
+}
+
+// Previous and next share this. At the end it moves away from, the step is disabled: a button gets `disabled`; a
+// link loses its `href` (so nothing can follow it, a middle click included) and keeps `role="link"` with
+// `aria-disabled`.
+fn paginationStep(ref c: PaginationContext, ref o: PaginationStepOptions, ref delta: number): PartProps {
+  target = c.page + delta
+  isDisabled = target < 1 || target > c.pageCount
+  isLink = o.href != undefined
+  asButton = button({ disabled: isDisabled })
+  action press(event: MouseEvent) {
+    if (isDisabled) {
+      event.preventDefault()
+      return
+    }
+    if (!isLink) { c.setPage(target) }
+  }
+  link = {
+    href: isDisabled ? undefined : o.href,
+    role: isDisabled ? "link" : undefined,
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+  }
+  own = isLink ? link : asButton
+  mergeProps(own, { onClick: press })
+}
+
+// Goes to the previous page; disabled on the first. Drop the consumer's handlers while disabled with
+// `gateButtonHandlers(rest, disabled)` from ../button/button.rx, as the components below do.
+export fn paginationPrevious(ref c: PaginationContext, ref o: PaginationStepOptions): PartProps {
+  step = paginationStep(c, o, -1)
+  step
+}
+
+// Goes to the next page; disabled on the last.
+export fn paginationNext(ref c: PaginationContext, ref o: PaginationStepOptions): PartProps {
+  step = paginationStep(c, o, 1)
+  step
+}
+
+export type PaginationStepProps = ButtonProps
+
+export component PaginationPrevious({ children, ...rest }: PaginationStepProps) {
+  c = use pagination
+  own = paginationPrevious(c, {})
+  external = gateButtonHandlers(rest, c.page <= 1)
+  merged = latest mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}
+
+export component PaginationNext({ children, ...rest }: PaginationStepProps) {
+  c = use pagination
+  own = paginationNext(c, {})
+  external = gateButtonHandlers(rest, c.page >= c.pageCount)
+  merged = latest mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}

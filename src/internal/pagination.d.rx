@@ -1,0 +1,3 @@
+// How .rx may use ./pagination.js (implemented in ./impl/pagination.ts): which pages a pagination control shows.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./pagination.d.ts.
+export pure fn paginate(options: import("./impl/pagination.ts").PaginationOptions): import("./impl/pagination.ts").Pagination

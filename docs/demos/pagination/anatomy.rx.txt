@@ -1,0 +1,23 @@
+import { PaginationRoot, PaginationPrevious, PaginationItem, PaginationEllipsis, PaginationNext, pagination } from "./bisque/pagination/pagination.rx"
+
+// The entries come from the root's context, so they are rendered by a component inside it.
+component Pages() {
+  c = use pagination
+  <ul>
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PaginationItem value={item.value}>{item.value}</PaginationItem>
+        } else {
+          <PaginationEllipsis>…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+<PaginationRoot count={…}>
+  <PaginationPrevious />
+  <Pages />
+  <PaginationNext />
+</PaginationRoot>

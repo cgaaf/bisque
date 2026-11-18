@@ -1,0 +1,35 @@
+import { PaginationRoot, PaginationItem, PaginationEllipsis, PaginationPrevious, PaginationNext, pagination } from "../../../src/pagination/pagination.rx"
+
+// The pages and ellipses, rendered from inside the root.
+component Pages() {
+  c = use pagination
+  <ul class="List">
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PaginationItem class="Item" value={item.value}>{item.value}</PaginationItem>
+        } else {
+          <PaginationEllipsis class="Ellipsis">…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+export component PaginationHero() {
+  <div class="PaginationHero">
+    <PaginationRoot class="Root" count={240} pageSize={10} defaultPage={6}>
+      <PaginationPrevious class="Step" aria-label="Previous page">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M10 3.5 5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </PaginationPrevious>
+      <Pages />
+      <PaginationNext class="Step" aria-label="Next page">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M6 3.5 10.5 8 6 12.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </PaginationNext>
+    </PaginationRoot>
+  </div>
+}

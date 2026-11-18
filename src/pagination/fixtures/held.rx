@@ -1,0 +1,90 @@
+import { PaginationRoot, PaginationItem, PaginationEllipsis, PaginationPrevious, PaginationNext, pagination } from "../pagination.rx"
+import { save, fetchList } from "../../test/slow-server.js"
+
+component Pages(props: { prefix: string; itemClass: string }) {
+  c = use pagination
+  <ul>
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PaginationItem value={item.value} class={props.itemClass} data-testid={`${props.prefix}-${item.value}`}>{item.value}</PaginationItem>
+        } else {
+          <PaginationEllipsis>…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+// Pagination beside app actions that are still waiting for their server. Its current page must follow the user
+// while they wait.
+export default component Fixture() {
+  // An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to
+  // the pagination is computed from that write.
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  // An `onPageChange` that fetches the page: an action that writes, then waits.
+  source requested := 0
+  action load(n: number) {
+    requested := n
+    try { await save(`page ${n}`) } catch (e) { }
+  }
+
+  // A controlled owner whose `onPageChange` waits on its server and then refuses the change.
+  action refuse(n: number) {
+    try { await save(`refuse ${n}`) } catch (e) { }
+  }
+
+  // A controlled page whose rows are a loading question of it, as an app that fetches each page writes it.
+  source shown := 1
+  rows = (await fetchList(`rows ${shown}`) -> []) catch (e) => []
+
+  <main>
+    <button onClick={() => { next() }}>Next step</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+    <output data-testid="requested">{requested}</output>
+    <output data-testid="fetching-page">{pending? requested ? "fetching" : ""}</output>
+
+    // 1. An `onPageChange` that is a waiting action.
+    <PaginationRoot data-testid="fetching" count={100} onPageChange={(n) => { load(n) }}>
+      <PaginationPrevious data-testid="f-prev">Previous</PaginationPrevious>
+      <Pages prefix="f" itemClass="" />
+      <PaginationNext data-testid="f-next">Next</PaginationNext>
+    </PaginationRoot>
+
+    // 2. A prop of the root computed from the held write. It has to change.
+    <PaginationRoot data-testid="root-prop" count={step == 1 ? 100 : 110}>
+      <PaginationPrevious data-testid="rp-prev">Previous</PaginationPrevious>
+      <Pages prefix="rp" itemClass="" />
+      <PaginationNext data-testid="rp-next">Next</PaginationNext>
+    </PaginationRoot>
+
+    // 3. An attribute of the items computed from the held write.
+    <PaginationRoot data-testid="item-attribute" count={100}>
+      <PaginationPrevious data-testid="ia-prev">Previous</PaginationPrevious>
+      <Pages prefix="ia" itemClass={step == 2 ? "second" : "first"} />
+      <PaginationNext data-testid="ia-next">Next</PaginationNext>
+    </PaginationRoot>
+
+    // 4. Controlled, by an owner that waits and refuses.
+    <PaginationRoot data-testid="refused" count={100} page={3} onPageChange={(n) => { refuse(n) }}>
+      <PaginationPrevious data-testid="r-prev">Previous</PaginationPrevious>
+      <Pages prefix="r" itemClass="" />
+      <PaginationNext data-testid="r-next">Next</PaginationNext>
+    </PaginationRoot>
+
+    // 5. Controlled, with the page's rows loading.
+    <PaginationRoot data-testid="loading" count={100} page={shown} onPageChange={(n) => { shown := n }}>
+      <PaginationPrevious data-testid="l-prev">Previous</PaginationPrevious>
+      <Pages prefix="l" itemClass="" />
+      <PaginationNext data-testid="l-next">Next</PaginationNext>
+    </PaginationRoot>
+    <output data-testid="rows">{rows.join(",")}</output>
+    <output data-testid="loading-rows">{pending? rows ? "loading" : ""}</output>
+  </main>
+}

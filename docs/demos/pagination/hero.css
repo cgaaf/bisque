@@ -1,0 +1,65 @@
+.PaginationHero {
+  .Root {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .List {
+    display: flex;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .Item,
+  .Step,
+  .Ellipsis {
+    display: grid;
+    place-items: center;
+    /* A fixed width per slot: the list keeps its length as the page changes, so the control keeps its width. */
+    min-width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 0.375rem;
+    font: inherit;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Item,
+  .Step {
+    border: 1px solid transparent;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    cursor: pointer;
+  }
+
+  .Item:hover,
+  .Step:hover:not(:disabled) {
+    background: light-dark(#f2f2f5, #222228);
+    color: inherit;
+  }
+
+  .Item:focus-visible,
+  .Step:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -1px;
+  }
+
+  /* The current page: `aria-current="page"` is the hook, as `data-current` would be. */
+  .Item[aria-current="page"] {
+    border-color: light-dark(#d4d4dc, #3a3a43);
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font-weight: 600;
+  }
+
+  .Step:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  .Ellipsis {
+    color: light-dark(#9a9aa6, #63636e);
+  }
+}

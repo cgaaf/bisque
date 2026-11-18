@@ -1,0 +1,84 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { PaginationHero } from "../../demos/pagination/hero.rx"
+import { PaginationLinks } from "../../demos/pagination/links.rx"
+
+export default component Page() {
+  <DocsPage title="Pagination" subtitle="Previous and next, numbered pages and ellipses, for moving through a long list.">
+    <Demo source="pagination/hero"><PaginationHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      The root works out which pages and ellipses to show and puts them in its context. Render them from a
+      component inside it:
+    </p>
+    <Code file="pagination/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Almost all of it. The root is a <code>{"<nav>"}</code> landmark labelled "Pagination" (pass your own{" "}
+      <code>aria-label</code> to name it), each page is a <code>{"<button>"}</code> or a link, and the current
+      page carries <code>aria-current="page"</code>. Previous and Next are disabled at the ends. The library adds
+      the current page, controlled or not, and one pure function: which pages to show, with an ellipsis for each
+      run it skips.
+    </p>
+    <p>
+      There is no roving focus: every page is an ordinary <kbd>Tab</kbd> stop, because the WAI-ARIA Authoring
+      Practices have no composite pattern for pagination. Base UI has no pagination; the parts follow Ark UI,
+      Kobalte and Bits UI. There is no List part either, since a <code>{"<ul>"}</code> around the items has no
+      behaviour to add: write your own.
+    </p>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="pages">Which pages are shown</h3>
+    <p>
+      Give the root <code>count</code> (items) and <code>pageSize</code> (10 by default), or{" "}
+      <code>pageCount</code> directly. It shows <code>boundaryCount</code> pages at each end and{" "}
+      <code>siblingCount</code> on each side of the current one (both 1 by default), with an ellipsis for the rest.
+      An ellipsis never stands for a single page; that page is shown instead.
+    </p>
+    <p>
+      Once there are more pages than fit, the list has the same number of entries on every page:{" "}
+      <code>1 2 3 4 5 … 24</code> on page 1, <code>1 … 5 6 7 … 24</code> on page 6. Give each entry a fixed
+      width and the control doesn't change size as the page moves. Every entry has a <code>key</code> that names
+      it from page to page (<code>page-6</code>, <code>ellipsis-start</code>). The root keeps the row of a page
+      that stays in the list, so the button you pressed keeps focus.
+    </p>
+
+    <h3 id="controlled">Controlling the page</h3>
+    <p>
+      Pass <code>page</code> with <code>onPageChange</code> to hold the page yourself, or{" "}
+      <code>defaultPage</code> to start somewhere other than page 1. <code>onPageChange</code> is called in a
+      change of its own, so it can be an action that fetches the page without holding the control: the current
+      page follows the press while the request is out. A controlled <code>page</code> written in that change shows
+      at once too, even while rows that are a loading question of it are still loading. An owner that doesn't
+      write the new page keeps the page where it was.
+    </p>
+
+    <h3 id="links">Links</h3>
+    <p>
+      For pages the server renders, or a router, use links. The props functions of the interactive parts,{" "}
+      <code>paginationItem</code>, <code>paginationPrevious</code> and <code>paginationNext</code>, take an{" "}
+      <code>href</code> and return props for an <code>{"<a>"}</code>. A link doesn't change the page when
+      pressed; following it does, and the app passes <code>page</code> read from the URL it lands on.
+    </p>
+    <p>
+      A disabled Previous or Next link has no <code>href</code>, so nothing can follow it, a middle click
+      included. It keeps <code>role="link"</code> with <code>aria-disabled="true"</code>. As a button it is plain{" "}
+      <code>disabled</code>. Drop your own handlers while it is disabled with <code>gateButtonHandlers</code>, as
+      this demo does with its router's:
+    </p>
+    <Demo source="pagination/links"><PaginationLinks /></Demo>
+
+    <h3 id="labels">Labels and translation</h3>
+    <p>
+      Each page is labelled "Page 3" for assistive technology; the visible number is still part of the name. Pass
+      your own <code>aria-label</code> on the item to translate it, on the root to rename the landmark, and on
+      Previous and Next when they show only an icon. An ellipsis is <code>aria-hidden</code>: the page numbers on
+      either side already say that pages are skipped.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="pagination" />
+  </DocsPage>
+}

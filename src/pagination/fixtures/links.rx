@@ -1,0 +1,58 @@
+import { PaginationRoot, PaginationEllipsis, pagination, paginationItem, paginationPrevious, paginationNext } from "../pagination.rx"
+import { gateButtonHandlers } from "../../button/button.rx"
+import { mergeProps } from "../../internal/props.js"
+import { AnchorProps } from "../../internal/types.rx"
+import { createHashPage } from "./hash-page.js"
+
+// Link-based pagination, as a server-rendered or routed app writes it: each part's props spread on an <a>, and the
+// page read from the URL (here its hash, standing in for a router).
+component PageLink({ value, children, ...rest }: { value: number } & AnchorProps) {
+  c = use pagination
+  own = paginationItem(c, { value: value, href: `#page-${value}` })
+  merged = mergeProps(own, rest)
+  <a {...merged}>{children}</a>
+}
+
+component PreviousLink({ children, ...rest }: AnchorProps) {
+  c = use pagination
+  own = paginationPrevious(c, { href: `#page-${c.page - 1}` })
+  external = gateButtonHandlers(rest, c.page <= 1)
+  merged = mergeProps(own, external)
+  <a {...merged}>{children}</a>
+}
+
+component NextLink({ children, ...rest }: AnchorProps) {
+  c = use pagination
+  own = paginationNext(c, { href: `#page-${c.page + 1}` })
+  external = gateButtonHandlers(rest, c.page >= c.pageCount)
+  merged = mergeProps(own, external)
+  <a {...merged}>{children}</a>
+}
+
+component Links() {
+  c = use pagination
+  <ul>
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PageLink value={item.value}>{item.value}</PageLink>
+        } else {
+          <PaginationEllipsis>…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+export default component Fixture() {
+  source log := ""
+  page = createHashPage()
+  <main>
+    <PaginationRoot pageCount={3} page={page} onPageChange={(n) => { log := log + `${n}` }}>
+      <PreviousLink onClick={() => { log := log + "p" }}>Previous</PreviousLink>
+      <Links />
+      <NextLink onClick={() => { log := log + "n" }}>Next</NextLink>
+    </PaginationRoot>
+    <output data-testid="log">{log}</output>
+  </main>
+}
