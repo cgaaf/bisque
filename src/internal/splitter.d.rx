@@ -1,0 +1,23 @@
+// How .rx may use ./splitter.js (implemented in ./impl/splitter.ts): the splitter's layout maths, the registry of
+// a root's panels and handles, and pointer dragging. A `ref` parameter is passed live; the others are read once.
+// Bind every call: `_drag = createSplitterDrag(…)`.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./splitter.d.ts.
+export pure fn encodePanel(id: string, defaultSize: number | undefined, minSize: number, maxSize: number, collapsible: boolean, collapsedSize: number): string
+export pure fn isCollapsed(size: number | undefined, panel: import("./impl/splitter.ts").SplitterPanelSpec | undefined): boolean
+export pure fn resolveLayout(sizes: number[] | undefined, ids: string[], panels: import("./impl/splitter.ts").SplitterPanelSpec[]): number[]
+export pure fn initialLayout(panels: import("./impl/splitter.ts").SplitterPanelSpec[], defaultSizes: number[] | undefined): number[]
+export pure fn sameSizes(a: number[], b: number[]): boolean
+export pure fn handleLimit(layout: number[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], handle: number, end: "min" | "max"): number
+export pure fn keyLayout(key: string, layout: number[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], handle: number, step: number, orientation: "horizontal" | "vertical", rtl: boolean): number[] | null
+export pure fn collapseTarget(panels: import("./impl/splitter.ts").SplitterPanelSpec[], handle: number): number
+export pure fn toggleCollapse(layout: number[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], index: number, restore: number | undefined): number[]
+export pure fn restoreSizeFor(list: import("./impl/splitter.ts").SplitterRestore[], id: string): number | undefined
+export pure fn rememberCollapsed(list: import("./impl/splitter.ts").SplitterRestore[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], before: number[], after: number[]): import("./impl/splitter.ts").SplitterRestore[]
+export pure fn panelIds(panels: import("./impl/splitter.ts").SplitterPanelSpec[]): string[]
+export pure fn panelIndex(panels: import("./impl/splitter.ts").SplitterPanelSpec[], id: string): number
+export pure fn handleBefore(items: import("./impl/splitter.ts").SplitterItems, id: string): number
+export pure fn roundSize(size: number | undefined): number | undefined
+export pure fn panelGrow(size: number | undefined, fallback: number | undefined): string
+export fn isRightToLeft(element: Element | null | undefined): boolean
+export pure fn createSplitterRegistry(ref root: HTMLElement | undefined): ref import("./impl/splitter.ts").SplitterItems instantiates
+export pure fn createSplitterDrag(ref root: HTMLElement | undefined, ref options: { layout: number[]; items: import("./impl/splitter.ts").SplitterItems; orientation: "horizontal" | "vertical"; disabled: boolean }, onChange: (sizes: number[]) => void, onCommit: (sizes: number[]) => void, onDragging: (handle: string) => void) instantiates

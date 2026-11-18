@@ -1,0 +1,297 @@
+// Splitter: panels separated by handles that resize them. Base UI has no such component; the behaviour follows
+// the WAI-ARIA Authoring Practices Window Splitter pattern (https://www.w3.org/WAI/ARIA/apg/patterns/windowsplitter/):
+// each handle is a focusable `separator` whose value is the size of the panel before it (the primary pane), moved
+// by the arrow keys along the group's axis, Home/End to the smallest/largest size that panel can reach (exactly
+// what `aria-valuemin`/`aria-valuemax` announce: for a collapsible panel the smallest is its collapsed size, so Home
+// collapses it, as the APG allows), and Enter to collapse or restore it. The layout maths are adapted from the Solid port of a resizable panel group in solid-bedrock
+// (`src/resizable/utils/layout.ts`), which does what Ark UI's Splitter, PaneForge and react-resizable-panels do.
+//
+// The platform has nothing for this: CSS `resize` resizes one element from a corner grip, with no keyboard path
+// and no ARIA. The sizes are applied as each panel's flex grow factor on a zero basis, so they are percentages
+// of the space the panels share and handles of any thickness need no subtracting. The maths and the pointer drag
+// are in ../internal/impl/splitter.ts.
+import { mergeProps, createId, createRef } from "../internal/props.js"
+import { encodePanel, isCollapsed, resolveLayout, initialLayout, sameSizes, handleLimit, keyLayout, collapseTarget, toggleCollapse, restoreSizeFor, rememberCollapsed, panelIds, panelIndex, handleBefore, roundSize, panelGrow, isRightToLeft, createSplitterRegistry, createSplitterDrag } from "../internal/splitter.js"
+import { DivProps, PartProps } from "../internal/types.rx"
+
+export type SplitterOrientation = "horizontal" | "vertical"
+// What changed the sizes: a handle dragged, a key on a handle (arrows, Home, End, Enter), or a double-click that
+// put the default sizes back.
+export type SplitterChangeReason = "drag" | "keyboard" | "reset"
+export type SplitterChangeDetails = { reason: SplitterChangeReason }
+// What a panel declares, as the root reads it from the panel's element.
+export type SplitterPanelSpec = import("../internal/impl/splitter.ts").SplitterPanelSpec
+// The root's panels and handles, in document order: each handle with the index of the panel before it.
+export type SplitterItems = import("../internal/impl/splitter.ts").SplitterItems
+type SplitterRestore = import("../internal/impl/splitter.ts").SplitterRestore
+
+export type SplitterContext = {
+  orientation: SplitterOrientation
+  disabled: boolean
+  // The id of the handle being dragged, else "".
+  draggingHandle: string
+  // The panels and handles, read from the DOM.
+  items: SplitterItems
+  // One size per panel in `items.panels`, in percent, summing to 100.
+  layout: number[]
+  // Panel `id`'s element has the DOM id `${idPrefix}-${id}`.
+  idPrefix: string
+  keyboardStep: number
+  change: (next: number[], reason: SplitterChangeReason) => void
+  toggle: (index: number) => void
+  reset: () => void
+  setRoot: (element: HTMLElement) => void
+}
+
+export context splitter: lane SplitterContext
+
+export type SplitterRootProps = {
+  // Side by side (`horizontal`, the handles are vertical bars) or stacked (`vertical`). Default: horizontal.
+  orientation?: SplitterOrientation
+  // One size per panel, in percent, in the panels' document order. A list that doesn't have one size per panel is
+  // ignored (the panels' default sizes apply); one that doesn't sum to 100 or breaks a panel's bounds is corrected.
+  sizes?: number[]
+  // The sizes to start with, as `sizes`. Without them each panel starts at its `defaultSize`, and the panels
+  // without one share what is left equally.
+  defaultSizes?: number[]
+  // Every change: each move of a drag, each key.
+  onSizesChange?: (sizes: number[], details: SplitterChangeDetails) => void
+  // When a change is final: on release after a drag, and on each key. Where to save a layout.
+  onSizesCommit?: (sizes: number[], details: SplitterChangeDetails) => void
+  // How far an arrow key moves a handle, in percent. Default: 10.
+  keyboardStep?: number
+  // The handles ignore the pointer and the keys and leave the tab order. Default: false.
+  disabled?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+export component SplitterRoot(props: SplitterRootProps) {
+  source root: HTMLElement | undefined := undefined
+  // The root's own layout, and the ids of the panels it was for: a panel added or removed after mount then keeps
+  // the others' sizes. `defaultSizes` is positional (no ids). Seeded with a copy: a list source aliases its seed.
+  source ownSizes: number[] | undefined := peek(props.defaultSizes == undefined ? undefined : [...props.defaultSizes])
+  source ownIds: string[] := []
+  // The layout this splitter moved to and is showing until its owner has answered the commit, as Slider does: an
+  // owner that writes `sizes` only in `onSizesCommit` still sees the handle follow the pointer, then sees what it
+  // decided.
+  source draft: number[] | undefined := undefined
+  source draftIds: string[] := []
+  source draggingHandle := ""
+  // Each collapsed panel's size before it collapsed, for Enter to restore.
+  source restore: SplitterRestore[] := []
+  items = createSplitterRegistry(root)
+  panels = items.panels
+  // `sizes` and `disabled` are often read from an answer that can fail: that failure is the app's to show.
+  givenSizes = props.sizes catch (e) => undefined
+  givenDisabled = latest (props.disabled ?? false) catch (e) => false
+  current = givenSizes != undefined ? resolveLayout(givenSizes, [], panels) : resolveLayout(ownSizes, ownIds, panels)
+  layout = draft != undefined ? resolveLayout(draft, draftIds, panels) : current
+  axis = latest props.orientation ?? "horizontal"
+  step = latest props.keyboardStep ?? 10
+  idPrefix = createId("splitter")
+
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that resizes the panels:
+  // a handler that saves (an action that awaits) holds its change until the answer lands, and the panels would be
+  // held with it.
+  action emit(next: number[], reason: SplitterChangeReason) {
+    let ids = panelIds(panels)
+    restore := rememberCollapsed(restore, panels, layout, next)
+    draft := [...next]
+    draftIds := ids
+    ownSizes := [...next]
+    ownIds := ids
+    if (props.onSizesChange) {
+      let report = props.onSizesChange
+      onFlush(() => { report([...next], { reason: reason }) })
+    }
+  }
+  action endDraft(next: number[]) {
+    // Tested through a local: narrowing `draft` itself would type the write below (rx-tsc).
+    let shown = draft
+    if (shown != undefined && sameSizes(shown, next)) { draft := undefined }
+  }
+  // The draft is cleared in a change of its own right after the owner's commit handler has run (a nested
+  // `onFlush`), never in the owner's change: a write there would join its hold.
+  action commit(next: number[], reason: SplitterChangeReason) {
+    let report = props.onSizesCommit
+    onFlush(() => {
+      if (report) { report([...next], { reason: reason }) }
+      onFlush(() => { endDraft(next) })
+    })
+  }
+  action change(next: number[], reason: SplitterChangeReason) {
+    if (givenDisabled || sameSizes(next, layout)) { return }
+    emit(next, reason)
+    commit(next, reason)
+  }
+  action toggle(index: number) {
+    let spec = panels[index]
+    if (spec == undefined) { return }
+    change(toggleCollapse(layout, panels, index, restoreSizeFor(restore, spec.id)), "keyboard")
+  }
+  action reset() {
+    change(initialLayout(panels, props.defaultSizes), "reset")
+  }
+  action pointerChange(next: number[]) { emit(next, "drag") }
+  action pointerCommit(next: number[]) { commit(next, "drag") }
+  action setDragging(handle: string) { draggingHandle := handle }
+  action writeRoot(element: HTMLElement) { root := element }
+  setRoot = createRef(writeRoot)
+
+  _drag = createSplitterDrag(root, { layout: layout, items: items, orientation: axis, disabled: givenDisabled }, pointerChange, pointerCommit, setDragging)
+
+  self = latest {
+    orientation: axis,
+    disabled: givenDisabled,
+    draggingHandle: draggingHandle,
+    items: items,
+    layout: layout,
+    idPrefix: idPrefix,
+    keyboardStep: step,
+    change: change,
+    toggle: toggle,
+    reset: reset,
+    setRoot: setRoot,
+  }
+
+  provide splitter = self
+
+  { orientation, sizes, defaultSizes, onSizesChange, onSizesCommit, keyboardStep, disabled, children, ...rest } = props
+  own = splitterRoot(self)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The group. It is a flex container in the orientation's direction (written inline: the panels' sizes are flex
+// grow factors, which mean nothing without it, and a direction that disagreed with `orientation` would turn the
+// keys and the drag the wrong way).
+export fn splitterRoot(ref c: SplitterContext): PartProps {
+  {
+    "data-bisque-splitter-root": "",
+    "data-orientation": c.orientation,
+    "data-dragging": c.draggingHandle != "" ? "" : undefined,
+    "data-disabled": c.disabled ? "" : undefined,
+    style: { display: "flex", "flex-direction": c.orientation == "vertical" ? "column" : "row" },
+    ref: c.setRoot,
+  }
+}
+
+export type SplitterPanelProps = {
+  // The panel's key: what the root knows it by, and (prefixed) its element's id.
+  id: string
+  // Percent of the group. Without one, the panel shares what the panels with a default leave.
+  defaultSize?: number
+  // The smallest the panel can be, in percent. Default: 0.
+  minSize?: number
+  // The largest the panel can be, in percent. Default: 100.
+  maxSize?: number
+  // The panel can collapse to `collapsedSize`: dragged past halfway below its minimum, an arrow key at its
+  // minimum, Home on the handle after it, or Enter on the handle beside it. Default: false.
+  collapsible?: boolean
+  // The panel's size when collapsed, in percent, at most `minSize`. Default: 0.
+  collapsedSize?: number
+  // Called when the panel collapses, by any means.
+  onCollapse?: () => void
+  // Called when a collapsed panel opens again, by any means.
+  onExpand?: () => void
+  children?: View
+} & Omit<DivProps, "children" | "id">
+
+// A panel. Its size is its flex grow factor on a zero basis (`flex: <size> 1 0px`), so the sizes are
+// percentages of the space the panels share; `min-width: 0` (`min-height` stacked) lets it shrink below its
+// content's width, which a flex item otherwise refuses. What overflows is the consumer's to decide (`overflow`).
+export fn splitterPanel(ref c: SplitterContext, ref id: string, ref defaultSize: number | undefined, ref minSize: number, ref maxSize: number, ref collapsible: boolean, ref collapsedSize: number): PartProps {
+  index = panelIndex(c.items.panels, id)
+  size = index >= 0 ? c.layout[index] : undefined
+  collapsed = index >= 0 && isCollapsed(size, c.items.panels[index])
+  vertical = c.orientation == "vertical"
+  {
+    id: `${c.idPrefix}-${id}`,
+    "data-bisque-splitter-panel": encodePanel(id, defaultSize, minSize, maxSize, collapsible, collapsedSize),
+    "data-orientation": c.orientation,
+    "data-collapsed": collapsed ? "" : undefined,
+    style: vertical ? { flex: `${panelGrow(size, defaultSize)} 1 0px`, "min-height": "0" } : { flex: `${panelGrow(size, defaultSize)} 1 0px`, "min-width": "0" },
+  }
+}
+
+export component SplitterPanel(props: SplitterPanelProps) {
+  c = use splitter
+  { id, defaultSize, minSize = 0, maxSize = 100, collapsible = false, collapsedSize = 0, onCollapse, onExpand, children, ...rest } = props
+  index = panelIndex(c.items.panels, id)
+  // Undefined until the root has read this panel: the first state seen is not a change.
+  known = index >= 0 ? isCollapsed(c.layout[index], c.items.panels[index]) : undefined
+  source seen: boolean | undefined := undefined
+  effect (known) {
+    let previous = seen
+    seen := $0
+    if (previous != undefined && $0 != undefined && previous != $0) {
+      let report = $0 ? props.onCollapse : props.onExpand
+      if (report) { onFlush(() => { report() }) }
+    }
+  }
+  own = splitterPanel(c, id, defaultSize, minSize, maxSize, collapsible, collapsedSize)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+export type SplitterHandleProps = {
+  // This handle alone ignores the pointer and the keys. Default: false.
+  disabled?: boolean
+  children?: View
+} & Omit<DivProps, "children">
+
+// A handle between two panels: a focusable `separator` whose value is the size of the panel before it, which it
+// controls. Its `aria-orientation` is the bar's own: `vertical` between side-by-side panels. `handle` is an id
+// unique to the handle, which the root finds it by.
+export fn splitterHandle(ref c: SplitterContext, ref handle: string, ref disabled: boolean): PartProps {
+  index = handleBefore(c.items, handle)
+  valid = index >= 0 && c.layout.length == c.items.panels.length
+  // Numbers, not a pair: a new array each run would never compare equal.
+  low = valid ? handleLimit(c.layout, c.items.panels, index, "min") : undefined
+  high = valid ? handleLimit(c.layout, c.items.panels, index, "max") : undefined
+  isDisabled = disabled || c.disabled
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    if (isDisabled || !valid || event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey) { return }
+    if (event.key == "Enter") {
+      let target = collapseTarget(c.items.panels, index)
+      if (target < 0) { return }
+      event.preventDefault()
+      c.toggle(target)
+      return
+    }
+    let next = keyLayout(event.key, c.layout, c.items.panels, index, c.keyboardStep, c.orientation, isRightToLeft(event.currentTarget))
+    if (next == null) { return }
+    event.preventDefault()
+    c.change(next, "keyboard")
+  }
+  action doubleClick() {
+    if (!isDisabled) { c.reset() }
+  }
+  {
+    role: "separator",
+    tabindex: isDisabled ? undefined : 0,
+    "data-bisque-splitter-handle": handle,
+    "aria-orientation": c.orientation == "horizontal" ? "vertical" : "horizontal",
+    "aria-controls": valid ? `${c.idPrefix}-${c.items.panels[index].id}` : undefined,
+    "aria-valuenow": valid ? roundSize(c.layout[index]) : undefined,
+    "aria-valuemin": low,
+    "aria-valuemax": high,
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "data-orientation": c.orientation,
+    "data-dragging": c.draggingHandle == handle ? "" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    // Without it a touch drag would scroll the page instead of moving the handle.
+    style: { "touch-action": "none" },
+    onKeyDown: keyDown,
+    onDblClick: doubleClick,
+  }
+}
+
+export component SplitterHandle(props: SplitterHandleProps) {
+  c = use splitter
+  { disabled = false, children, ...rest } = props
+  handle = createId("splitter-handle")
+  own = splitterHandle(c, handle, latest disabled)
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}

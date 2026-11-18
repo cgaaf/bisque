@@ -1,0 +1,75 @@
+.SplitterNested {
+  width: min(32rem, 100%);
+
+  .Group {
+    height: 14rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: light-dark(#fff, #16161a);
+  }
+
+  /* The inner group fills its panel, without a second border. */
+  .Stack > .Group {
+    height: 100%;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .Group[data-dragging] {
+    user-select: none;
+  }
+
+  .Group[data-orientation="horizontal"][data-dragging] {
+    cursor: col-resize;
+  }
+
+  .Group[data-orientation="vertical"][data-dragging] {
+    cursor: row-resize;
+  }
+
+  .Panel {
+    padding: 0.75rem 1rem;
+    overflow: auto;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Handle {
+    flex: none;
+    z-index: 1;
+    background: light-dark(#e4e4e8, #2a2a31);
+  }
+
+  /* `data-orientation` is the group's: a side-by-side group's handles are tall bars. */
+  .Handle[data-orientation="horizontal"] {
+    width: 1px;
+    cursor: col-resize;
+  }
+
+  .Handle[data-orientation="vertical"] {
+    height: 1px;
+    cursor: row-resize;
+  }
+
+  /* A wider target than the 1px line, without taking space from the panels. */
+  .Handle {
+    position: relative;
+  }
+
+  .Handle::before {
+    content: "";
+    position: absolute;
+    inset: -4px;
+  }
+
+  .Handle:hover,
+  .Handle[data-dragging] {
+    background: light-dark(#2f5bea, #8eabff);
+  }
+
+  .Handle:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+}

@@ -1,0 +1,106 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../splitter.rx"
+
+// Splitters as an app would write them: uncontrolled, controlled, three panels with bounds, a collapsible one,
+// vertical, disabled, and one nested in another's panel.
+export default component Fixture() {
+  source controlled: number[] := [30, 70]
+  source commits := 0
+  source changes := 0
+  source collapses := 0
+  source expands := 0
+  source showExtra := false
+  source commitOnly: number[] := [30, 70]
+  source mountCollapses := 0
+  source mountExpands := 0
+  <main style="width: 400px">
+    // 1. Two panels, uncontrolled, defaults from the panels.
+    <SplitterRoot data-testid="two" style="width: 408px; height: 40px" onSizesCommit={() => { commits := commits + 1 }} onSizesChange={() => { changes := changes + 1 }}>
+      <SplitterPanel id="left" defaultSize={40} data-testid="two-left">Left</SplitterPanel>
+      <SplitterHandle aria-label="Two" style="width: 8px" />
+      <SplitterPanel id="right" data-testid="two-right">Right</SplitterPanel>
+    </SplitterRoot>
+    <output data-testid="commits">{commits}</output>
+    <output data-testid="changes">{changes}</output>
+
+    // 2. Controlled.
+    <SplitterRoot data-testid="controlled" sizes={controlled} onSizesChange={(next) => { controlled := next }} style="width: 400px; height: 40px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Controlled" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    <output data-testid="controlled-sizes">{controlled.join(",")}</output>
+    <button onClick={() => { controlled := [60, 40] }}>Set 60/40</button>
+
+    // 3. Three panels with bounds; the first is collapsible.
+    <SplitterRoot data-testid="three" defaultSizes={[20, 50, 30]} keyboardStep={5} style="width: 416px; height: 40px">
+      <SplitterPanel id="nav" minSize={15} maxSize={40} collapsible collapsedSize={5} onCollapse={() => { collapses := collapses + 1 }} onExpand={() => { expands := expands + 1 }} data-testid="nav">Nav</SplitterPanel>
+      <SplitterHandle aria-label="First" style="width: 8px" />
+      <SplitterPanel id="main" minSize={30} data-testid="main">Main</SplitterPanel>
+      <SplitterHandle aria-label="Second" style="width: 8px" />
+      <SplitterPanel id="aside" minSize={10} data-testid="aside">Aside</SplitterPanel>
+      {if showExtra {
+        <SplitterHandle aria-label="Third" style="width: 8px" />
+        <SplitterPanel id="extra" defaultSize={20} data-testid="extra">Extra</SplitterPanel>
+      }}
+    </SplitterRoot>
+    <output data-testid="collapses">{collapses}</output>
+    <output data-testid="expands">{expands}</output>
+    <button onClick={() => { showExtra := !showExtra }}>Toggle extra</button>
+
+    // 4. Vertical, nested in a horizontal one's panel.
+    <SplitterRoot data-testid="outer" style="width: 400px; height: 200px">
+      <SplitterPanel id="left" data-testid="outer-left">
+        <SplitterRoot data-testid="inner" orientation="vertical" style="height: 200px">
+          <SplitterPanel id="top" data-testid="inner-top">Top</SplitterPanel>
+          <SplitterHandle aria-label="Inner" style="height: 8px" />
+          <SplitterPanel id="bottom">Bottom</SplitterPanel>
+        </SplitterRoot>
+      </SplitterPanel>
+      <SplitterHandle aria-label="Outer" style="width: 8px" />
+      <SplitterPanel id="right">Right</SplitterPanel>
+    </SplitterRoot>
+
+    // 5. Disabled: the whole group, and one handle.
+    <SplitterRoot data-testid="disabled" disabled style="width: 400px; height: 40px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Disabled group" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    <SplitterRoot style="width: 400px; height: 40px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Disabled handle" disabled />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+
+    // 7. Controlled by what is committed only, and controlled with no handler at all.
+    <SplitterRoot data-testid="commit-only" sizes={commitOnly} onSizesCommit={(next) => { commitOnly := next }} style="width: 400px; height: 40px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Commit only" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    <output data-testid="commit-only-sizes">{commitOnly.join(",")}</output>
+    <SplitterRoot sizes={[30, 70]} style="width: 400px; height: 40px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Fixed" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+
+    // 8. A panel that starts collapsed.
+    <SplitterRoot style="width: 400px; height: 40px">
+      <SplitterPanel id="side" data-testid="starts-collapsed" defaultSize={0} minSize={25} collapsible onCollapse={() => { mountCollapses := mountCollapses + 1 }} onExpand={() => { mountExpands := mountExpands + 1 }}>Side</SplitterPanel>
+      <SplitterHandle aria-label="Starts collapsed" />
+      <SplitterPanel id="rest">Rest</SplitterPanel>
+    </SplitterRoot>
+    <output data-testid="mount-collapses">{mountCollapses}</output>
+    <output data-testid="mount-expands">{mountExpands}</output>
+
+    // 6. Right to left.
+    <div dir="rtl">
+      <SplitterRoot data-testid="rtl" style="width: 408px; height: 40px">
+        <SplitterPanel id="start" data-testid="rtl-start">Start</SplitterPanel>
+        <SplitterHandle aria-label="RTL" style="width: 8px" />
+        <SplitterPanel id="end">End</SplitterPanel>
+      </SplitterRoot>
+    </div>
+  </main>
+}

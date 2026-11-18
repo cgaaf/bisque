@@ -1,0 +1,25 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../../../src/splitter/splitter.rx"
+import { saveSetting, messageOf } from "../../lib/settings-server.js"
+
+export component SplitterSaving() {
+  // The last layout sent to the server. `pending? saved` is true while its save is out.
+  source saved: number[] := [40, 60]
+  source failure := ""
+  action saveLayout(sizes: number[]) {
+    saved := sizes
+    onFlush(() => { failure := "" })
+    try {
+      await saveSetting("layout", sizes)
+    } catch (error) {
+      failure := messageOf(error)
+    }
+  }
+  <div class="SplitterSaving">
+    <SplitterRoot class="Group" defaultSizes={[40, 60]} onSizesCommit={saveLayout}>
+      <SplitterPanel class="Panel" id="list">Inbox</SplitterPanel>
+      <SplitterHandle class="Handle" aria-label="Resize inbox" />
+      <SplitterPanel class="Panel" id="reader">Message</SplitterPanel>
+    </SplitterRoot>
+    <p class="Status">{failure != "" ? failure : pending? saved ? "Saving the layout…" : `Saved: ${saved.map((size) => size.toFixed(0)).join(" / ")}`}</p>
+  </div>
+}

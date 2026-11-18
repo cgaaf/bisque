@@ -1,0 +1,26 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../../../src/splitter/splitter.rx"
+
+export component SplitterHero() {
+  <div class="SplitterHero">
+    <SplitterRoot class="Group">
+      <SplitterPanel class="Panel" id="files" defaultSize={25} minSize={15} maxSize={40}>
+        <p class="Heading">Files</p>
+        <ul class="List">
+          <li>index.html</li>
+          <li>styles.css</li>
+          <li>notes.md</li>
+        </ul>
+      </SplitterPanel>
+      <SplitterHandle class="Handle" aria-label="Resize files" />
+      <SplitterPanel class="Panel" id="editor" minSize={30}>
+        <p class="Heading">notes.md</p>
+        <p class="Text">Drag a bar, or focus it and press the arrow keys, Home or End.</p>
+      </SplitterPanel>
+      <SplitterHandle class="Handle" aria-label="Resize preview" />
+      <SplitterPanel class="Panel" id="preview" defaultSize={30} minSize={20}>
+        <p class="Heading">Preview</p>
+        <p class="Text">A double-click on a bar puts the sizes back.</p>
+      </SplitterPanel>
+    </SplitterRoot>
+  </div>
+}

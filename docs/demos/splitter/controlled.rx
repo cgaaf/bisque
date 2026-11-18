@@ -1,0 +1,21 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../../../src/splitter/splitter.rx"
+
+export component SplitterControlled() {
+  source sizes: number[] := [50, 50]
+  source committed: number[] := [50, 50]
+  <div class="SplitterControlled">
+    <SplitterRoot class="Group" sizes={sizes} onSizesChange={(next) => { sizes := next }} onSizesCommit={(next) => { committed := next }}>
+      <SplitterPanel class="Panel" id="left">Left</SplitterPanel>
+      <SplitterHandle class="Handle" aria-label="Resize" />
+      <SplitterPanel class="Panel" id="right">Right</SplitterPanel>
+    </SplitterRoot>
+    <div class="Controls">
+      <button class="Button" onClick={() => { sizes := [25, 75] }}>25 / 75</button>
+      <button class="Button" onClick={() => { sizes := [50, 50] }}>50 / 50</button>
+    </div>
+    <dl class="Readout">
+      <div><dt>onSizesChange</dt><dd>{sizes.map((size) => size.toFixed(1)).join(" / ")}</dd></div>
+      <div><dt>onSizesCommit</dt><dd>{committed.map((size) => size.toFixed(1)).join(" / ")}</dd></div>
+    </dl>
+  </div>
+}

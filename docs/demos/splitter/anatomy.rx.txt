@@ -1,0 +1,7 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "./bisque/splitter/splitter.rx"
+
+<SplitterRoot>
+  <SplitterPanel id="first" />
+  <SplitterHandle />
+  <SplitterPanel id="second" />
+</SplitterRoot>

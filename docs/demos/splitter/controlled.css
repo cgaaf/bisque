@@ -1,0 +1,78 @@
+.SplitterControlled {
+  width: min(28rem, 100%);
+
+  .Group {
+    height: 6rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .Group[data-dragging] {
+    cursor: col-resize;
+    user-select: none;
+  }
+
+  .Panel {
+    display: grid;
+    place-items: center;
+    font-size: 0.875rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Handle {
+    flex: none;
+    width: 4px;
+    background: light-dark(#e4e4e8, #2a2a31);
+    cursor: col-resize;
+  }
+
+  .Handle:hover,
+  .Handle[data-dragging] {
+    background: light-dark(#2f5bea, #8eabff);
+  }
+
+  .Handle:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+
+  .Controls {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+  }
+
+  .Button {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    cursor: pointer;
+  }
+
+  .Readout {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0.75rem 0 0;
+    font-size: 0.8125rem;
+
+    div {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    dt {
+      font-family: ui-monospace, monospace;
+    }
+
+    dd {
+      margin: 0;
+      font-variant-numeric: tabular-nums;
+    }
+  }
+}

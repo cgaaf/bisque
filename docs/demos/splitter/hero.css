@@ -1,0 +1,63 @@
+.SplitterHero {
+  width: min(36rem, 100%);
+
+  .Group {
+    height: 12rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    overflow: hidden;
+    background: light-dark(#fff, #16161a);
+  }
+
+  /* The group holds the cursor and stops text selection for the whole drag, wherever the pointer goes. */
+  .Group[data-dragging] {
+    cursor: col-resize;
+    user-select: none;
+  }
+
+  /* The part sets the panel's flex and `min-width: 0`; what overflows is the demo's to decide. */
+  .Panel {
+    padding: 0.75rem 1rem;
+    overflow: auto;
+    font-size: 0.875rem;
+  }
+
+  .Heading {
+    margin: 0 0 0.5rem;
+    font-weight: 500;
+  }
+
+  .Text,
+  .List {
+    margin: 0;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .List {
+    padding: 0;
+    list-style: none;
+    line-height: 1.75;
+  }
+
+  /* A thin line in a wider target: the handle is 9px wide, the line is the middle pixel. */
+  .Handle {
+    flex: none;
+    width: 9px;
+    margin-inline: -4px;
+    z-index: 1;
+    background: linear-gradient(light-dark(#e4e4e8, #2a2a31), light-dark(#e4e4e8, #2a2a31)) center / 1px 100%
+      no-repeat;
+    cursor: col-resize;
+  }
+
+  .Handle:hover,
+  .Handle[data-dragging] {
+    background-image: linear-gradient(light-dark(#2f5bea, #8eabff), light-dark(#2f5bea, #8eabff));
+    background-size: 3px 100%;
+  }
+
+  .Handle:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -2px;
+  }
+}

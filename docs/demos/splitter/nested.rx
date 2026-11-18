@@ -1,0 +1,17 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../../../src/splitter/splitter.rx"
+
+export component SplitterNested() {
+  <div class="SplitterNested">
+    <SplitterRoot class="Group">
+      <SplitterPanel class="Panel" id="outline" defaultSize={30}>Outline</SplitterPanel>
+      <SplitterHandle class="Handle" aria-label="Resize outline" />
+      <SplitterPanel class="Stack" id="work">
+        <SplitterRoot class="Group" orientation="vertical">
+          <SplitterPanel class="Panel" id="editor" minSize={25}>Editor</SplitterPanel>
+          <SplitterHandle class="Handle" aria-label="Resize console" />
+          <SplitterPanel class="Panel" id="console" defaultSize={35} minSize={20}>Console</SplitterPanel>
+        </SplitterRoot>
+      </SplitterPanel>
+    </SplitterRoot>
+  </div>
+}

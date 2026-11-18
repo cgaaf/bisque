@@ -1,0 +1,20 @@
+// Generated from splitter.d.rx by scripts/gen-dts.mjs. Do not edit.
+export declare function encodePanel(id: string, defaultSize: number | undefined, minSize: number, maxSize: number, collapsible: boolean, collapsedSize: number): string;
+export declare function isCollapsed(size: number | undefined, panel: import("./impl/splitter.ts").SplitterPanelSpec | undefined): boolean;
+export declare function resolveLayout(sizes: number[] | undefined, ids: string[], panels: import("./impl/splitter.ts").SplitterPanelSpec[]): number[];
+export declare function initialLayout(panels: import("./impl/splitter.ts").SplitterPanelSpec[], defaultSizes: number[] | undefined): number[];
+export declare function sameSizes(a: number[], b: number[]): boolean;
+export declare function handleLimit(layout: number[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], handle: number, end: "min" | "max"): number;
+export declare function keyLayout(key: string, layout: number[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], handle: number, step: number, orientation: "horizontal" | "vertical", rtl: boolean): number[] | null;
+export declare function collapseTarget(panels: import("./impl/splitter.ts").SplitterPanelSpec[], handle: number): number;
+export declare function toggleCollapse(layout: number[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], index: number, restore: number | undefined): number[];
+export declare function restoreSizeFor(list: import("./impl/splitter.ts").SplitterRestore[], id: string): number | undefined;
+export declare function rememberCollapsed(list: import("./impl/splitter.ts").SplitterRestore[], panels: import("./impl/splitter.ts").SplitterPanelSpec[], before: number[], after: number[]): import("./impl/splitter.ts").SplitterRestore[];
+export declare function panelIds(panels: import("./impl/splitter.ts").SplitterPanelSpec[]): string[];
+export declare function panelIndex(panels: import("./impl/splitter.ts").SplitterPanelSpec[], id: string): number;
+export declare function handleBefore(items: import("./impl/splitter.ts").SplitterItems, id: string): number;
+export declare function roundSize(size: number | undefined): number | undefined;
+export declare function panelGrow(size: number | undefined, fallback: number | undefined): string;
+export declare function isRightToLeft(element: Element | null | undefined): boolean;
+export declare function createSplitterRegistry(root: HTMLElement | undefined): import("./impl/splitter.ts").SplitterItems;
+export declare function createSplitterDrag(root: HTMLElement | undefined, options: { layout: number[]; items: import("./impl/splitter.ts").SplitterItems; orientation: "horizontal" | "vertical"; disabled: boolean }, onChange: (sizes: number[]) => void, onCommit: (sizes: number[]) => void, onDragging: (handle: string) => void): void;

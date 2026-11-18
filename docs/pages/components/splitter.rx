@@ -1,0 +1,124 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { SplitterHero } from "../../demos/splitter/hero.rx"
+import { SplitterNested } from "../../demos/splitter/nested.rx"
+import { SplitterCollapsible } from "../../demos/splitter/collapsible.rx"
+import { SplitterControlled } from "../../demos/splitter/controlled.rx"
+import { SplitterSaving } from "../../demos/splitter/saving.rx"
+
+export default component Page() {
+  <DocsPage title="Splitter" subtitle="Panels separated by bars that resize them, with a pointer or the keyboard.">
+    <Demo source="splitter/hero"><SplitterHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together, a handle between each pair of panels:</p>
+    <Code file="splitter/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Nothing that makes a splitter. CSS <code>resize</code> is supported everywhere, but it resizes one element
+      from a grip in its corner: the grip isn't a separator, can't be reached with <kbd>Tab</kbd> and doesn't
+      answer the arrow keys (the family's tests check this in Chromium, Firefox and WebKit), and it can't share
+      space between neighbours or keep them within bounds. So the library does it, following the WAI-ARIA
+      Authoring Practices' Window Splitter pattern: each handle is a focusable <code>role="separator"</code>{" "}
+      whose value is the size of the panel before it, with <code>aria-controls</code> naming that panel.
+    </p>
+    <p>
+      What the library adds is the layout and the input: the sizes (percentages that always sum to 100, within
+      each panel's bounds), pointer dragging with pointer capture, and the keys. The arrow keys along the group's
+      axis move a handle by <code>keyboardStep</code>, mirrored in a right-to-left layout; <kbd>Home</kbd> and{" "}
+      <kbd>End</kbd> give the panel before it the smallest and largest size it can reach, exactly the minimum and
+      maximum the handle announces (for a collapsible panel the smallest is its collapsed size, so{" "}
+      <kbd>Home</kbd> collapses it, as the pattern allows); <kbd>Enter</kbd> collapses a
+      collapsible panel and restores its previous size. A double-click on a handle puts the default sizes back.
+    </p>
+    <p>
+      The sizes reach the page as CSS you can see in the inspector, written inline because sizing can't work
+      without it: the root is <code>display: flex</code> in the orientation's direction, and each panel is{" "}
+      <code>flex: &lt;size&gt; 1 0px</code> with <code>min-width: 0</code> (<code>min-height</code> when
+      stacked). A grow factor on a zero basis makes each size a percentage of the space left after the handles,
+      however thick you make them, where a percentage width or a <code>--panel-size</code> variable would need
+      the handles subtracted. <code>min-width: 0</code> lets a panel shrink below its content, which a flex item
+      otherwise refuses. Handles get <code>touch-action: none</code>, so a touch drag moves them instead of
+      scrolling. Everything else, including the handle's size, the cursor and <code>overflow</code>, is your CSS.
+    </p>
+
+    <div class="note">
+      <p>
+        A handle is a focusable control, so it needs a name: give each one an <code>aria-label</code> (or{" "}
+        <code>aria-labelledby</code>) that says what it resizes, such as "Resize files".
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="sizes">Sizes and bounds</h3>
+    <p>
+      Sizes are percentages. Give a panel a <code>defaultSize</code>, or leave it out to share what the others
+      leave; or pass the whole layout as <code>defaultSizes</code> on the root, one size per panel in document
+      order. <code>minSize</code> and <code>maxSize</code> bound a panel. Dragging a handle takes space from the
+      nearest panels on the side it moves towards that can still shrink, one after the other, and gives it to the
+      panel beside the handle on the other side, then to the next once that one reaches its maximum. Each frame of
+      a drag is worked out from where the press began, so dragging past a bound and back puts every panel back.
+    </p>
+    <p>
+      Each panel needs an <code>id</code>, unique in its group. A panel added or removed after the splitter has
+      appeared keeps the others' sizes by their ids: a new one takes its default size and the rest share what
+      remains in proportion; a removed one's space goes to the others in proportion.
+    </p>
+
+    <h3 id="nested">Stacked, and nested</h3>
+    <p>
+      <code>orientation="vertical"</code> stacks the panels; the arrow keys are then <kbd>Up</kbd> and{" "}
+      <kbd>Down</kbd>. A splitter inside another's panel is independent: its handles, keys and drags are its own.
+      The handle's <code>aria-orientation</code> is the bar's own (<code>vertical</code> between side-by-side
+      panels), while every part's <code>data-orientation</code> is the group's, so one selector styles a whole
+      group.
+    </p>
+    <Demo source="splitter/nested"><SplitterNested /></Demo>
+
+    <h3 id="collapsible">Collapsing a panel</h3>
+    <p>
+      A <code>collapsible</code> panel collapses to its <code>collapsedSize</code> when dragged past halfway
+      between that and its minimum, when an arrow key would take it below its minimum, on <kbd>Home</kbd> on the
+      handle after it, or on <kbd>Enter</kbd> on the handle beside it; <kbd>Enter</kbd> again restores the size it
+      had. The handle's <code>aria-valuemin</code> is then the collapsed size, which is where <kbd>Home</kbd> goes;{" "}
+      <kbd>End</kbd> goes to its <code>aria-valuemax</code>: the panel's <code>maxSize</code>, or less if the
+      panels after the handle can't shrink that far. A panel that starts collapsed doesn't call{" "}
+      <code>onCollapse</code>. It never stops in between. It carries{" "}
+      <code>data-collapsed</code> while collapsed, and calls <code>onCollapse</code> and <code>onExpand</code>.{" "}
+      <kbd>Enter</kbd> acts on the panel before the handle, or on the one after it when only that one is
+      collapsible, as a sidebar on the far side is.
+    </p>
+    <Demo source="splitter/collapsible"><SplitterCollapsible /></Demo>
+
+    <h3 id="controlled">Controlling it</h3>
+    <p>
+      Pass <code>sizes</code> and <code>onSizesChange</code> to hold the layout yourself.{" "}
+      <code>onSizesChange</code> is called on every change, many times during a drag; <code>onSizesCommit</code>{" "}
+      when a change is final: on release, on each key and on a reset. Both get the sizes and a{" "}
+      <code>details</code> object whose <code>reason</code> is <code>drag</code>, <code>keyboard</code> or{" "}
+      <code>reset</code>. Sizes you pass that don't sum to 100 or break a panel's bounds are corrected; a list
+      without one size per panel is ignored in favour of the defaults.
+    </p>
+    <Demo source="splitter/controlled"><SplitterControlled /></Demo>
+
+    <h3 id="saving">Saving the layout</h3>
+    <p>
+      To keep a layout, save it in <code>onSizesCommit</code>, to a server or to storage: the splitter has no
+      storage option of its own. The handler is called in a change of its own, so it can be an action that waits
+      for a server, and the panels can be dragged and stepped again while the save is out. Read a saved layout
+      back as <code>defaultSizes</code>.
+    </p>
+    <Demo source="splitter/saving"><SplitterSaving /></Demo>
+
+    <h3 id="styling">Styling the drag</h3>
+    <p>
+      The root and the handle being dragged carry <code>data-dragging</code>. Set the cursor and{" "}
+      <code>user-select: none</code> on the root there, so they hold even when the pointer leaves the handle.
+      Pressing a handle focuses it; style focus with <code>:focus-visible</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="splitter" />
+  </DocsPage>
+}

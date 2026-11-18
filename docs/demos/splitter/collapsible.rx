@@ -1,0 +1,18 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../../../src/splitter/splitter.rx"
+
+export component SplitterCollapsible() {
+  source collapsed := false
+  <div class="SplitterCollapsible">
+    <SplitterRoot class="Group">
+      <SplitterPanel class="Panel Sidebar" id="sidebar" defaultSize={30} minSize={20} maxSize={45} collapsible collapsedSize={6} onCollapse={() => { collapsed := true }} onExpand={() => { collapsed := false }}>
+        <span class="Icon" aria-hidden="true">≡</span>
+        <span class="Label">Library</span>
+      </SplitterPanel>
+      <SplitterHandle class="Handle" aria-label="Resize library" />
+      <SplitterPanel class="Panel" id="content">
+        <p class="Text">Drag the bar to the left past the library's minimum, or focus it and press Enter.</p>
+        <p class="Status">The library is {collapsed ? "collapsed" : "open"}.</p>
+      </SplitterPanel>
+    </SplitterRoot>
+  </div>
+}

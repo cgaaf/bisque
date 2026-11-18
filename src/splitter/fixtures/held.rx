@@ -1,0 +1,70 @@
+import { SplitterRoot, SplitterPanel, SplitterHandle } from "../splitter.rx"
+import { save } from "../../test/slow-server.js"
+
+// Splitters beside app actions that are waiting for their server. The splitter's own state (its sizes, from the
+// keys and from a drag, and `data-dragging`) must not wait for the app's request.
+export default component Fixture() {
+  // 1. `onSizesCommit` saves the layout: an action that writes the app's state and awaits.
+  source saved := ""
+  action saveLayout(sizes: number[]) {
+    saved := sizes.join(",")
+    try { await save("layout") } catch (e) { }
+  }
+  // 2. Controlled: every change is the app's state, and the commit saves it.
+  source layout: number[] := [50, 50]
+  action saveControlled(sizes: number[]) {
+    try { await save("controlled") } catch (e) { }
+  }
+  // 3. An app action that holds a plain write (`step := 2`, then a request), with something passed to a splitter
+  // computed from it.
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main style="width: 400px">
+    <SplitterRoot data-testid="commit" onSizesCommit={saveLayout} style="width: 400px; height: 30px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Commit" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    <output data-testid="saved">{saved}</output>
+    <output data-testid="saving">{pending? saved ? "saving" : ""}</output>
+
+    <SplitterRoot data-testid="controlled" sizes={layout} onSizesChange={(sizes) => { layout := sizes }} onSizesCommit={saveControlled} style="width: 400px; height: 30px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Controlled" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    <output data-testid="layout">{layout.join(",")}</output>
+
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <SplitterRoot data-testid="root-prop" keyboardStep={step == 1 ? 10 : 20} style="width: 400px; height: 30px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Root prop" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    // A prop of a panel.
+    <SplitterRoot data-testid="panel-prop" style="width: 400px; height: 30px">
+      <SplitterPanel id="a" maxSize={step == 1 ? 100 : 99}>A</SplitterPanel>
+      <SplitterHandle aria-label="Panel prop" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    // An attribute passed through to the handle's element.
+    <SplitterRoot data-testid="handle-attribute" style="width: 400px; height: 30px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Handle attribute" class={step == 2 ? "second" : "first"} />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+    // An attribute passed through to the root's element.
+    <SplitterRoot data-testid="root-attribute" class={step == 2 ? "second" : "first"} style="width: 400px; height: 30px">
+      <SplitterPanel id="a">A</SplitterPanel>
+      <SplitterHandle aria-label="Root attribute" />
+      <SplitterPanel id="b">B</SplitterPanel>
+    </SplitterRoot>
+  </main>
+}
