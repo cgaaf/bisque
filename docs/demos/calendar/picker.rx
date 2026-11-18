@@ -1,0 +1,29 @@
+import { CalendarRoot, CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+import { PopoverRoot, PopoverTrigger, PopoverPopup } from "../../../src/popover/popover.rx"
+import { formatDate } from "../../../src/internal/date.js"
+import { PlainDate } from "../../../src/internal/types.rx"
+
+// A date picker composed from a Popover and a calendar: opening moves focus to the chosen day (`autoFocus={open}`),
+// and choosing a day closes the popup (`onSelectionComplete`).
+export component CalendarPicker() {
+  source open := false
+  source chosen: { date: PlainDate | undefined } := { date: undefined }
+  <div class="CalendarPicker">
+    <PopoverRoot open={open} onOpenChange={(next) => { open := next }}>
+      <PopoverTrigger class="Trigger">{chosen.date == undefined ? "Choose a date" : formatDate(chosen.date, undefined, "medium")}</PopoverTrigger>
+      <PopoverPopup class="Popup" aria-label="Choose a date">
+        <CalendarRoot aria-label="Date" value={chosen.date ?? null} autoFocus={open} onValueChange={(date) => { chosen.date := date }} onSelectionComplete={(date) => { open := false }}>
+          <div class="Header">
+            <CalendarPreviousMonth class="Nav">‹</CalendarPreviousMonth>
+            <CalendarMonthLabel class="Label" />
+            <CalendarNextMonth class="Nav">›</CalendarNextMonth>
+          </div>
+          <CalendarGrid class="Grid">
+            <CalendarGridHeader class="Head" format="narrow" />
+            <CalendarGridBody class="Body" />
+          </CalendarGrid>
+        </CalendarRoot>
+      </PopoverPopup>
+    </PopoverRoot>
+  </div>
+}

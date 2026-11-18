@@ -1,0 +1,21 @@
+import { CalendarRoot, CalendarMonthLabel, CalendarPreviousMonth, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../calendar.rx"
+import { parseDate } from "../../internal/date.js"
+
+// An uncontrolled calendar in en-US (weeks start on Sunday), today pinned to 2030-05-15, opening on a value.
+export default component Fixture() {
+  source picked: string := ""
+  source completed := 0
+  <div>
+    <CalendarRoot aria-label="Appointment" locale="en-US" today={parseDate("2030-05-15", undefined)} defaultValue={parseDate("2030-05-20", undefined)} onValueChange={(date) => { picked := date.toString() }} onSelectionComplete={(date) => { completed := completed + 1 }}>
+      <CalendarPreviousMonth />
+      <CalendarMonthLabel data-testid="label" />
+      <CalendarNextMonth />
+      <CalendarGrid>
+        <CalendarGridHeader />
+        <CalendarGridBody />
+      </CalendarGrid>
+    </CalendarRoot>
+    <output data-testid="picked">{picked}</output>
+    <output data-testid="completed">{completed}</output>
+  </div>
+}

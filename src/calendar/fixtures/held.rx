@@ -1,0 +1,37 @@
+import { CalendarRoot, RangeCalendarRoot, CalendarGrid, CalendarGridBody, CalendarNextMonth, CalendarMonthLabel, calendar } from "../calendar.rx"
+import { parseDate } from "../../internal/date.js"
+import { save } from "../../test/slow-server.js"
+
+// What a part inside a calendar reads: its own value, or its range's start.
+component Value(props: { id: string }) {
+  c = use calendar
+  <output data-testid={props.id}>{c.value != undefined ? c.value.toString() : c.range != undefined ? c.range.start.toString() : c.pending ? "pending" : ""}</output>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while props it passes to the
+// calendars are computed from that write. The calendars' own state (the selected day, the focused day, the page,
+// a range under way) must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    <CalendarRoot aria-label="Day" data-testid="day" locale="en-US" today={parseDate("2030-05-15", undefined)} required={step == 2} fixedWeeks={step == 2}>
+      <CalendarNextMonth />
+      <CalendarMonthLabel data-testid="day-label" />
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+      <Value id="day-value" />
+    </CalendarRoot>
+
+    <RangeCalendarRoot aria-label="Range" data-testid="range" locale="en-US" today={parseDate("2030-05-15", undefined)} required={step == 2} showWeekNumbers={step == 2}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+      <Value id="range-value" />
+    </RangeCalendarRoot>
+  </main>
+}

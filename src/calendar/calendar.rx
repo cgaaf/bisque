@@ -1,0 +1,968 @@
+// A month grid for picking a day (CalendarRoot) or a range of days (RangeCalendarRoot). The parts are those of a
+// Base UI-style Calendar (the Solid port in solid-bedrock: root, day grid, header cells, day cell and button, month
+// label, previous/next month, month and year selects, week number). The keyboard and grid semantics follow the
+// WAI-ARIA Authoring Practices "Date Picker Dialog" example and its grid
+// (https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/examples/datepicker-dialog/); range selection follows
+// React Aria's RangeCalendar (first press anchors, hover and the arrow keys preview, a second press completes,
+// Escape cancels, and by default a range can't span an unavailable day).
+//
+// PLATFORM. `<input type="date">` is Baseline (`pnpm baseline input-date-time`), but its picker is the browser's:
+// it can't be styled, shown inline, shown as several months, or made to pick a range, so it can't be a calendar.
+// What the platform does give is the table: the grid is a real `<table role="grid">`, so rows, column headers
+// (`<th scope="col">`, named with the weekday's long name) and cells come from the elements, and `role="grid"`
+// makes the cells grid cells that carry `aria-selected`. Divs would need a role on every row and cell to say the
+// same. Each day is a native `<button>`: Enter and Space press it, `disabled` takes it out of focus and of the
+// accessibility tree's actions, and `:focus-visible` styles the focused day. The month and year selects are native
+// `<select>`s. Dates are Temporal values (`src/internal/date.*`, which says how `.rx` must hold them).
+//
+// WHAT THIS FAMILY ADDS: the grid's keyboard (APG: arrows by day and week, Home/End to the week's start and end,
+// PageUp/PageDown by month, with Shift by year, left and right swapped when the calendar is laid out right to left;
+// moving past the visible months turns the page and focus follows the day), one Tab stop (the day focus was last on
+// if it is visible, else the selected day, else today, else the first available day), selection, range preview,
+// min/max, unavailable days (`isDateUnavailable`: focusable and announced, `aria-disabled`, not selectable), several
+// months side by side, and the form wiring.
+//
+// DAYS: `min`/`max` and `disabled` make a day's button `disabled` (`data-disabled`): it can't be focused or
+// pressed. `isDateUnavailable` keeps it focusable with `aria-disabled="true"` and `data-unavailable`. A day of the
+// next or previous month that fills a row (`data-outside-month`) is shown, `disabled` and hidden from assistive
+// technology: with several months it repeats a day of the next grid. Hide it with
+// `[data-outside-month] { visibility: hidden }` if it shouldn't show.
+//
+// RENDERING YOUR OWN GRID. CalendarGridHeader and CalendarGridBody render every row and cell. To render them
+// yourself, read `use calendarGridState` (its `weeks`) inside a CalendarGrid and loop with keyed equations, or every
+// cell element is replaced on each move and focus is lost:
+//   g = use calendarGridState
+//   weeks key key = g.weeks
+//   {for week in weeks {
+//     days key key = week.days
+//     <tr>{for day in days { <CalendarDayCell day={day}><CalendarDay /></CalendarDayCell> }}</tr>
+//   }}
+// Several months: `for month in c.months { <CalendarGrid offset={month.offset}>…</CalendarGrid> }`, keyed the same
+// way (`months key key = c.months`).
+//
+// FORMS: with `name` (or inside a named FieldRoot) CalendarRoot submits the ISO date (`2026-11-17`, empty for none).
+// RangeCalendarRoot submits two entries, `<name>-start` and `<name>-end`, or the names `startName` and `endName`
+// give. A form reset restores the default value. Inside a FieldRoot the root is the field's control: the field's
+// label names it, and its value (the ISO string, or `{ start, end }` ISO strings for a range) is validated.
+//
+// COMPOSING A DATE PICKER. A picker renders these parts in a Popover, with a controlled `value`:
+// - `onSelectionComplete` says a selection is finished, so the popup can close: on every press of a selectable day
+//   (the same day again included) for CalendarRoot, on the second press for RangeCalendarRoot.
+// - `autoFocus={open}`, whenever it turns true, drops a range left half-chosen and moves focus to the selected day
+//   (the range's start), turning the page to it; with nothing selected, to the grid's Tab stop (today, else the
+//   first available day). It waits up to two frames for the popover to be shown. A part inside the root can
+//   instead call `c.focusGrid()`, or `c.focusDate(date)` to show and focus a given day.
+// - While a range is under way (`c.pending`), Escape cancels it and is prevented, so an enclosing `popover="auto"`
+//   stays open; the next Escape closes the popup as usual.
+// - Otherwise the visible month doesn't follow a controlled `value`: pass `month` to choose it, or call
+//   `c.focusDate(value)`.
+import { mergeProps, withoutHandlers, createRef } from "../internal/props.js"
+import { createFormReset, setInputValue, isEmptyView } from "../internal/field.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
+import { isSameDay, isSameMonth, isDateInRange, isMonthInRange, isWeekend, today, monthGrid, weekdayNames, formatDayLabel, formatDayNumber, monthOptions, yearOptions, dateMoveForKey, moveDate, normalizeRange, isInRange, isRangeStart, isRangeEnd, previewRange, rangeHasDisabledDate, dateToString } from "../internal/date.js"
+import { visibleMonths, pageFor, tabStopDate, isRtl, createDayFocus } from "../internal/calendar.js"
+import { field, FieldContext, fieldGroupProps } from "../field/field.rx"
+import { DivProps, ButtonProps, SpanProps, TableProps, TableSectionProps, TableHeaderCellProps, TableCellProps, SelectElementProps, PartProps, PlainDate, PlainYearMonth, DateRange, CalendarDay, CalendarWeek, CalendarOption, WeekdayName } from "../internal/types.rx"
+
+export type CalendarMonth = import("../internal/impl/calendar.ts").CalendarMonth
+export type CalendarLocale = string | string[] | undefined
+export type CalendarMode = "single" | "range"
+
+export type CalendarContext = {
+  mode: CalendarMode
+  locale: CalendarLocale
+  // The visible months, the first one being `month`; `offset` places each one (CalendarGrid's `offset`).
+  months: CalendarMonth[]
+  month: PlainYearMonth
+  // The days of the week in grid order, short names with the long one as `name`.
+  weekdays: WeekdayName[]
+  firstDayOfWeek: number | undefined
+  fixedWeeks: boolean
+  showWeekNumbers: boolean
+  weekNumberLabel: string
+  min: PlainDate | undefined
+  max: PlainDate | undefined
+  isDateUnavailable: ((date: PlainDate) => boolean) | undefined
+  disabled: boolean
+  readOnly: boolean
+  today: PlainDate
+  // The selected day (CalendarRoot).
+  value: PlainDate | undefined
+  // The selected range (RangeCalendarRoot), complete.
+  range: DateRange | undefined
+  // What the days show as selected: the range, or while one is under way, from its first day to the day hovered
+  // or focused. Undefined for CalendarRoot.
+  highlighted: DateRange | undefined
+  // A range is under way: its first day has been pressed.
+  pending: boolean
+  // The ISO key of the day that is the grid's Tab stop.
+  focusKey: string
+  canGoPrevious: boolean
+  canGoNext: boolean
+  // Presses a day: selects it, or starts or completes a range.
+  selectDate: (date: PlainDate) => void
+  // Moves focus to a day, turning the page to show it.
+  focusDate: (date: PlainDate) => void
+  // Moves focus to the grid's Tab stop.
+  focusGrid: () => void
+  // A day took focus (by Tab or a press): it becomes the Tab stop.
+  setFocused: (date: PlainDate) => void
+  hoverDate: (date: PlainDate) => void
+  keyDown: (event: KeyboardEvent & { currentTarget: HTMLElement }, date: PlainDate) => void
+  // Shows another month as the first visible one.
+  setMonth: (month: PlainYearMonth) => void
+  // Turns `delta` pages (a page is `numberOfMonths` months).
+  turnPage: (delta: number) => void
+  // Cancels a range that is under way.
+  cancelRange: () => void
+}
+
+export context calendar: lane CalendarContext
+
+// What both roots take.
+export type CalendarSharedProps = {
+  // The first visible month.
+  month?: PlainYearMonth
+  // Default: the month of the value, else of today.
+  defaultMonth?: PlainYearMonth
+  // Called with the first visible month when a part or a key turns the page.
+  onMonthChange?: (month: PlainYearMonth) => void
+  // The earliest day that can be focused or selected.
+  min?: PlainDate
+  // The latest day that can be focused or selected.
+  max?: PlainDate
+  // Days that can be focused and are announced, but can't be selected (booked, closed).
+  isDateUnavailable?: (date: PlainDate) => boolean
+  disabled?: boolean
+  // Days can be focused and moved between, but not selected.
+  readOnly?: boolean
+  required?: boolean
+  // The locale for names, labels, the first day of the week and the weekend. Default: the browser's.
+  locale?: string | string[]
+  // 1 (Monday) to 7 (Sunday). Default: the locale's.
+  firstDayOfWeek?: number
+  // Always six rows, so the grid's height doesn't change from month to month. Default: false.
+  fixedWeeks?: boolean
+  // How many months are shown side by side; the previous and next buttons turn this many. Default: 1.
+  numberOfMonths?: number
+  // The time zone "today" is in. Default: the system's.
+  timeZone?: string
+  // The day marked as today. Default: today in `timeZone`.
+  today?: PlainDate
+  // When it turns true (or on mount, if it starts true), moves focus to the selected day (the range's start),
+  // turning the page to it, else to the grid's Tab stop; a range left half-chosen is dropped. Default: false.
+  autoFocus?: boolean
+  // CalendarGridHeader and CalendarGridBody add a column of ISO week numbers. Default: false.
+  showWeekNumbers?: boolean
+  // The week number column's name, and the start of each week number's: "Week" makes "Week 47". Default: "Week".
+  weekNumberLabel?: string
+  children?: View
+} & Omit<DivProps, "defaultValue" | "onChange" | "children">
+
+// The shared props come first: scripts/gen-api.mjs reads an alias up to its first unindented line.
+export type CalendarRootProps = CalendarSharedProps & {
+  // The selected day; `null` for none, under control.
+  value?: PlainDate | null
+  defaultValue?: PlainDate
+  // Called with the day selected.
+  onValueChange?: (value: PlainDate) => void
+  // Called on every press of a selectable day, the selected day again included: a picker closes its popup here.
+  onSelectionComplete?: (value: PlainDate) => void
+  // Submits the ISO date under this name with a form.
+  name?: string
+}
+
+// The shared props come first: scripts/gen-api.mjs reads an alias up to its first unindented line.
+export type RangeCalendarRootProps = CalendarSharedProps & {
+  // The selected range; `null` for none, under control.
+  value?: DateRange | null
+  defaultValue?: DateRange
+  // Called with the range once its second day is pressed.
+  onValueChange?: (value: DateRange) => void
+  // Called when a range is completed (its second press), even if it equals the one selected.
+  onSelectionComplete?: (value: DateRange) => void
+  // Allows a range across unavailable days. Default: false (a second press that would include one is ignored).
+  allowsNonContiguousRanges?: boolean
+  // Submits the range as `<name>-start` and `<name>-end`.
+  name?: string
+  // The start date's name with a form. Default: `<name>-start`.
+  startName?: string
+  // The end date's name with a form. Default: `<name>-end`.
+  endName?: string
+}
+
+type CalendarCoreProps = {
+  value?: any
+  defaultValue?: any
+  onValueChange?: (value: any) => void
+  onSelectionComplete?: (value: any) => void
+  allowsNonContiguousRanges?: boolean
+  name?: string
+  startName?: string
+  endName?: string
+} & CalendarSharedProps
+
+type Held = { date: PlainDate | undefined; start: PlainDate | undefined; end: PlainDate | undefined }
+type Pending = { anchor: PlainDate | undefined; hover: PlainDate | undefined }
+type FocusRequest = { key: string; count: number }
+
+fn rangeKey(start: PlainDate | undefined, end: PlainDate | undefined): string => start == undefined || end == undefined ? "" : `${dateToString(start)}/${dateToString(end)}`
+
+type CalendarInputs = {
+  // Whether the hidden inputs take part: a name was given, or the root is in a FieldRoot.
+  show: boolean
+  name: string | undefined
+  startName: string | undefined
+  endName: string | undefined
+  // ISO strings, "" for none.
+  value: string
+  start: string
+  end: string
+  required: boolean
+  disabled: boolean
+}
+
+type CalendarRootState = {
+  context: CalendarContext
+  // Spread on the root element.
+  root: PartProps
+  inputs: CalendarInputs
+}
+
+// Everything both roots own: a CalendarRoot is this in "single" mode, a RangeCalendarRoot in "range" mode. It is a
+// function, not a component both roots render: a root that spread its props onto an inner component made the
+// checker believe the inner component's actions read `value` uncaught, and refuse an app whose value comes from a
+// request (UNCAUGHT_ACTION_FAILURE), though `value` is read only through a catch.
+// The hidden inputs are the roots' own (`input`, `endInput`): an action in a root that read this function's result
+// would be refused the same way.
+fn calendarRootState(ref props: CalendarCoreProps, ref f: FieldContext | undefined, ref input: HTMLInputElement | undefined, ref endInput: HTMLInputElement | undefined, mode: CalendarMode): CalendarRootState {
+  isRange = mode == "range"
+  // Temporal values are held in a box (../internal/date.d.rx): a source seeded with one breaks its methods.
+  source held: Held := { date: peek(isRange ? undefined : props.defaultValue), start: peek(isRange ? props.defaultValue?.start : undefined), end: peek(isRange ? props.defaultValue?.end : undefined) }
+  source pendingRange: Pending := { anchor: undefined, hover: undefined }
+  source focused: { date: PlainDate | undefined } := { date: undefined }
+  source request: FocusRequest := { key: "", count: 0 }
+  source element: HTMLElement | undefined := undefined
+
+  // `value` is often read from an answer that can fail: a failure there is the app's to show, not the calendar's.
+  // `null` is a controlled "nothing"; undefined leaves the calendar uncontrolled.
+  given = props.value catch (e) => undefined
+  isControlled = given != undefined
+  selectedDate = isRange ? undefined : isControlled ? given ?? undefined : held.date
+  startDate = isRange ? isControlled ? given?.start : held.start : undefined
+  endDate = isRange ? isControlled ? given?.end : held.end : undefined
+  selectedRange = startDate != undefined && endDate != undefined ? { start: startDate, end: endDate } : undefined
+  // The value as strings: what is compared, submitted and given to a Field (effects compare by content).
+  valueKey = isRange ? rangeKey(startDate, endDate) : dateToString(selectedDate)
+
+  locale = latest props.locale
+  firstDay = latest props.firstDayOfWeek
+  isFixed = latest props.fixedWeeks ?? false
+  count = latest props.numberOfMonths ?? 1
+  minDate = latest props.min
+  maxDate = latest props.max
+  unavailable = latest props.isDateUnavailable
+  isDisabled = ((latest props.disabled ?? false) catch (e) => false) || (f?.disabled ?? false)
+  isReadOnly = latest props.readOnly ?? false
+  isRequired = latest props.required ?? false
+  contiguous = !(latest props.allowsNonContiguousRanges ?? false)
+  showWeeks = latest props.showWeekNumbers ?? false
+  weekLabel = latest props.weekNumberLabel ?? "Week"
+  todayDate = (latest props.today) ?? today(latest props.timeZone, undefined)
+
+  source view: { month: PlainYearMonth } := { month: peek(props.defaultMonth ?? (selectedDate ?? startDate ?? todayDate).toPlainYearMonth()) }
+  firstMonth = props.month ?? view.month
+  // An equation that reads a `latest` value and a source an action writes runs twice per action, the second time
+  // new but equal: one that makes an object or a Temporal value is read whole through `latest`, which runs it once
+  // (UNSTABLE_MEMO_OUTPUT otherwise, after four page turns in a row).
+  months = latest visibleMonths(firstMonth, count, locale)
+  lastMonth = latest firstMonth.add({ months: count - 1 })
+  canPrevious = !isDisabled && isMonthInRange(firstMonth.subtract({ months: 1 }), minDate, maxDate)
+  canNext = !isDisabled && isMonthInRange(lastMonth.add({ months: 1 }), minDate, maxDate)
+  weekdays = weekdayNames(locale, "short", firstDay)
+
+  // Focus may rest on an unavailable day, never outside [min, max]; selection refuses both.
+  focusLimits = { min: minDate, max: maxDate }
+  selectLimits = { min: minDate, max: maxDate, isDisabled: unavailable }
+  // A string, not the date: an equation that makes a new Temporal object on every move never settles
+  // (UNSTABLE_MEMO_OUTPUT: two Temporal objects have no fields to tell them apart).
+  focusKey = tabStopDate(firstMonth, count, focused.date, selectedDate ?? startDate, todayDate, focusLimits).toString()
+
+  isPending = pendingRange.anchor != undefined
+  previewed = previewRange(pendingRange.anchor, pendingRange.hover, selectedRange)
+  // A preview across an unavailable day can't be completed: only its first day shows.
+  anchorOnly = normalizeRange(pendingRange.anchor, pendingRange.anchor)
+  allowedPreview = isPending && contiguous && rangeHasDisabledDate(previewed, selectLimits) ? anchorOnly : previewed
+  highlighted = isRange ? allowedPreview : undefined
+
+  // The owner's handlers are called in a change of their own (`onFlush`), never in the one that updates the
+  // calendar: a handler that saves holds its change until the answer lands, and the days would be held with it.
+  action notifyValue(next: any) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyComplete(next: any) {
+    if (props.onSelectionComplete) {
+      let report = props.onSelectionComplete
+      onFlush(() => { report(next) })
+    }
+  }
+  action setMonth(month: PlainYearMonth) {
+    if (isSameMonth(month, firstMonth)) { return }
+    view.month := month
+    if (props.onMonthChange) {
+      let report = props.onMonthChange
+      onFlush(() => { report(month) })
+    }
+  }
+  action turnPage(delta: number) { setMonth(firstMonth.add({ months: delta * count })) }
+  action requestFocus(date: PlainDate) { request := { key: date.toString(), count: request.count + 1 } }
+  action focusDate(date: PlainDate) {
+    focused.date := date
+    setMonth(pageFor(date, firstMonth, count))
+    if (isPending) { pendingRange.hover := date }
+    requestFocus(date)
+  }
+  action focusGrid() { request := { key: focusKey, count: request.count + 1 } }
+  action setFocused(date: PlainDate) {
+    focused.date := date
+    if (isPending) { pendingRange.hover := date }
+  }
+  action hoverDate(date: PlainDate) {
+    if (isPending) { pendingRange.hover := date }
+  }
+  action cancelRange() { pendingRange := { anchor: undefined, hover: undefined } }
+  action selectDate(date: PlainDate) {
+    // WebKit doesn't focus a pressed button: the pressed day becomes the Tab stop here too.
+    focused.date := date
+    if (isDisabled || isReadOnly) { return }
+    if (!isDateInRange(date, minDate, maxDate) || (unavailable != undefined && unavailable(date))) { return }
+    if (!isRange) {
+      if (!isSameDay(date, selectedDate)) {
+        held.date := date
+        notifyValue(date)
+      }
+      notifyComplete(date)
+      return
+    }
+    let anchor = pendingRange.anchor
+    if (anchor == undefined) {
+      pendingRange := { anchor: date, hover: date }
+      return
+    }
+    let range = normalizeRange(anchor, date)
+    if (range == undefined) { return }
+    if (contiguous && rangeHasDisabledDate(range, selectLimits)) { return }
+    pendingRange := { anchor: undefined, hover: undefined }
+    if (rangeKey(range.start, range.end) != valueKey) {
+      held.start := range.start
+      held.end := range.end
+      notifyValue(range)
+    }
+    notifyComplete(range)
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }, date: PlainDate) {
+    if (event.key == "Escape") {
+      if (isPending) {
+        event.preventDefault()
+        cancelRange()
+      }
+      return
+    }
+    if (event.altKey || event.ctrlKey || event.metaKey) { return }
+    let move = dateMoveForKey(event.key, event.shiftKey, isRtl(event.currentTarget))
+    if (move == undefined) { return }
+    event.preventDefault()
+    focusDate(moveDate(date, move, { min: minDate, max: maxDate, locale: locale, firstDayOfWeek: firstDay }))
+  }
+
+  _focus = createDayFocus(element, request)
+  shouldAutoFocus = latest props.autoFocus ?? false
+  // Opening a picker: a range left half-chosen when it closed is dropped, and focus goes to the selected day (the
+  // range's start), turning the page to it, whatever day focus was last on; with nothing selected, to the Tab stop.
+  action focusOnOpen() {
+    cancelRange()
+    let target = selectedDate ?? startDate
+    if (target != undefined && isDateInRange(target, minDate, maxDate)) {
+      focusDate(target)
+    } else {
+      focusGrid()
+    }
+  }
+  effect (shouldAutoFocus) { if ($0) { focusOnOpen() } }
+  // Disabled while a day had focus (`disabled={pending? saving}`), the day takes focus back when re-enabled.
+  _keeper = createFocusKeeper(element, isDisabled)
+
+  // Forms. The first input isn't `type="hidden"` (a Field validates it, `required`), so a form reset empties it:
+  // its value is written back.
+  inputName = latest props.name ?? f?.name
+  startName = latest props.startName ?? (inputName == undefined ? undefined : `${inputName}-start`)
+  endName = latest props.endName ?? (inputName == undefined ? undefined : `${inputName}-end`)
+  hasInputs = isRange ? startName != undefined || endName != undefined || f != undefined : inputName != undefined || f != undefined
+  initialDate = peek(selectedDate)
+  initialStart = peek(startDate)
+  initialEnd = peek(endDate)
+  fieldValue = isRange ? valueKey == "" ? null : { start: dateToString(startDate), end: dateToString(endDate) } : valueKey == "" ? null : valueKey
+  effect (fieldValue) { if (f) { f.setValue($0) } }
+  action reset() {
+    pendingRange := { anchor: undefined, hover: undefined }
+    let date = isControlled ? selectedDate : initialDate
+    let start = isControlled ? startDate : initialStart
+    let end = isControlled ? endDate : initialEnd
+    setInputValue(input, isRange ? dateToString(start) : dateToString(date))
+    setInputValue(endInput, dateToString(end))
+    let changed = isRange ? rangeKey(start, end) != valueKey : dateToString(date) != valueKey
+    if (!isControlled && changed) {
+      held := { date: date, start: start, end: end }
+      if (isRange && start != undefined && end != undefined) { notifyValue({ start: start, end: end }) }
+      if (!isRange && date != undefined) { notifyValue(date) }
+    }
+    if (f) { f.reset(isRange ? start == undefined || end == undefined ? null : { start: dateToString(start), end: dateToString(end) } : date == undefined ? null : dateToString(date)) }
+  }
+  _reset = createFormReset(element, reset)
+  action writeElement(div: HTMLElement) { element := div }
+  setElement = createRef(writeElement)
+
+  // Read through `latest` whole: a plain object below `latest` reads runs twice per action, the second time new
+  // but equal, and every part below would run again (UNSTABLE_MEMO_OUTPUT, ../../.claude/skills/bisque-components/
+  // references/language-notes.md).
+  self = latest {
+    mode: mode,
+    locale: locale,
+    months: months,
+    month: firstMonth,
+    weekdays: weekdays,
+    firstDayOfWeek: firstDay,
+    fixedWeeks: isFixed,
+    showWeekNumbers: showWeeks,
+    weekNumberLabel: weekLabel,
+    min: minDate,
+    max: maxDate,
+    isDateUnavailable: unavailable,
+    disabled: isDisabled,
+    readOnly: isReadOnly,
+    today: todayDate,
+    value: selectedDate,
+    range: selectedRange,
+    highlighted: highlighted,
+    pending: isPending,
+    focusKey: focusKey,
+    canGoPrevious: canPrevious,
+    canGoNext: canNext,
+    selectDate: selectDate,
+    focusDate: focusDate,
+    focusGrid: focusGrid,
+    setFocused: setFocused,
+    hoverDate: hoverDate,
+    keyDown: keyDown,
+    setMonth: setMonth,
+    turnPage: turnPage,
+    cancelRange: cancelRange,
+  }
+
+  inField = fieldGroupProps(f)
+  own = latest mergeProps(inField, {
+    role: "group",
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-readonly": isReadOnly ? "" : undefined,
+    "data-range": isRange ? "" : undefined,
+    "data-pending": isPending ? "" : undefined,
+    ref: setElement,
+  })
+  inputs = latest {
+    show: hasInputs,
+    name: inputName,
+    startName: startName,
+    endName: endName,
+    value: valueKey,
+    start: startDate == undefined ? "" : dateToString(startDate),
+    end: endDate == undefined ? "" : dateToString(endDate),
+    required: isRequired,
+    disabled: isDisabled,
+  }
+  state = latest { context: self, root: own, inputs: inputs }
+  state
+}
+
+// A calendar for picking one day. Label it with `aria-label` or `aria-labelledby`, or put it in a FieldRoot.
+export component CalendarRoot(props: CalendarRootProps) {
+  f = use field
+  source input: HTMLInputElement | undefined := undefined
+  action writeInput(element: HTMLInputElement) {
+    input := element
+    if (f) { f.setInput(element) }
+  }
+  state = calendarRootState(props, f, input, undefined, "single")
+  self = state.context
+  provide calendar = self
+  { value, defaultValue, onValueChange, onSelectionComplete, name, month, defaultMonth, onMonthChange, min, max, isDateUnavailable, disabled, readOnly, required, locale, firstDayOfWeek, fixedWeeks, numberOfMonths, timeZone, today: _today, autoFocus, showWeekNumbers, weekNumberLabel, children, ...rest } = props
+  own = state.root
+  inputs = state.inputs
+  merged = latest mergeProps(own, rest)
+  // The input a form submits (the ISO date, "" for none). Not `type="hidden"`, so a FieldRoot can validate it
+  // (`required`); without a name or a field it submits nothing and constrains nothing.
+  <div {...merged}>
+    {children}
+    <input hidden aria-hidden="true" tabindex="-1" name={inputs.name} value={inputs.value} required={inputs.show && inputs.required} disabled={inputs.disabled} ref={writeInput} />
+  </div>
+}
+
+// A calendar for picking a range of days: the first press sets its start, the second its end.
+export component RangeCalendarRoot(props: RangeCalendarRootProps) {
+  f = use field
+  source input: HTMLInputElement | undefined := undefined
+  source endInput: HTMLInputElement | undefined := undefined
+  action writeInput(element: HTMLInputElement) {
+    input := element
+    if (f) { f.setInput(element) }
+  }
+  action writeEndInput(element: HTMLInputElement) { endInput := element }
+  state = calendarRootState(props, f, input, endInput, "range")
+  self = state.context
+  provide calendar = self
+  { value, defaultValue, onValueChange, onSelectionComplete, allowsNonContiguousRanges, name, startName, endName, month, defaultMonth, onMonthChange, min, max, isDateUnavailable, disabled, readOnly, required, locale, firstDayOfWeek, fixedWeeks, numberOfMonths, timeZone, today: _today, autoFocus, showWeekNumbers, weekNumberLabel, children, ...rest } = props
+  own = state.root
+  inputs = state.inputs
+  merged = latest mergeProps(own, rest)
+  // The start and end a form submits, as CalendarRoot's input.
+  <div {...merged}>
+    {children}
+    <input hidden aria-hidden="true" tabindex="-1" name={inputs.startName} value={inputs.start} required={inputs.show && inputs.required} disabled={inputs.disabled} ref={writeInput} />
+    <input type="hidden" name={inputs.endName} value={inputs.end} disabled={inputs.disabled} ref={writeEndInput} />
+  </div>
+}
+
+// ---- Header ----
+
+export type CalendarMonthLabelOptions = {
+  // Which visible month: 0 for the first. Default: 0.
+  offset?: number
+}
+
+// The visible month's name, "November 2026", as a polite live region: turning the page announces the new month.
+export fn calendarMonthLabel(ref c: CalendarContext, ref o: CalendarMonthLabelOptions): PartProps {
+  m = c.months[o.offset ?? 0] ?? c.months[0]
+  { "aria-live": "polite", "aria-atomic": "true", "data-month": m.key }
+}
+
+export type CalendarMonthLabelProps = { offset?: number } & SpanProps
+
+export component CalendarMonthLabel({ offset, children, ...rest }: CalendarMonthLabelProps) {
+  c = use calendar
+  m = c.months[offset ?? 0] ?? c.months[0]
+  label = m.label
+  own = calendarMonthLabel(c, { offset: offset })
+  merged = latest mergeProps(own, rest)
+  <span {...merged}>
+    {if isEmptyView(children) {
+      {label}
+    } else {
+      {children}
+    }}
+  </span>
+}
+
+// Shared by the previous and next buttons: turns a page, disabled where that page would hold no day in
+// [min, max]. Labelled "Previous month" / "Next month"; pass `aria-label` to translate.
+fn calendarStep(ref c: CalendarContext, ref delta: number): PartProps {
+  isDisabled = delta < 0 ? !c.canGoPrevious : !c.canGoNext
+  action press() { c.turnPage(delta) }
+  {
+    type: "button",
+    "aria-label": delta < 0 ? "Previous month" : "Next month",
+    disabled: isDisabled ? true : undefined,
+    onClick: press,
+  }
+}
+
+export fn calendarPreviousMonth(ref c: CalendarContext): PartProps {
+  step = calendarStep(c, -1)
+  step
+}
+
+export fn calendarNextMonth(ref c: CalendarContext): PartProps {
+  step = calendarStep(c, 1)
+  step
+}
+
+export component CalendarPreviousMonth({ children, ...rest }: ButtonProps) {
+  c = use calendar
+  own = calendarPreviousMonth(c)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+export component CalendarNextMonth({ children, ...rest }: ButtonProps) {
+  c = use calendar
+  own = calendarNextMonth(c)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// Native <select>s: the browser gives the list, the keyboard and the styling hooks. Each sets the first visible
+// month; a month or year with no day in [min, max] is a disabled option. Labelled "Month" / "Year"; pass
+// `aria-label` to translate.
+fn findOption(options: CalendarOption[], key: string): CalendarOption | undefined => options.find((option) => option.key == key)
+
+export fn calendarMonthSelect(ref c: CalendarContext): PartProps {
+  action change(event: Event & { currentTarget: HTMLSelectElement }) {
+    let option = findOption(monthOptions(c.month, c.locale, c.min, c.max), event.currentTarget.value)
+    if (option != undefined) { c.setMonth(option.value) }
+  }
+  isDisabled = c.disabled
+  { "aria-label": "Month", disabled: isDisabled ? true : undefined, onChange: change }
+}
+
+export fn calendarYearSelect(ref c: CalendarContext): PartProps {
+  action change(event: Event & { currentTarget: HTMLSelectElement }) {
+    let option = findOption(yearOptions(c.month, c.locale, c.min, c.max), event.currentTarget.value)
+    if (option != undefined) { c.setMonth(option.value) }
+  }
+  isDisabled = c.disabled
+  { "aria-label": "Year", disabled: isDisabled ? true : undefined, onChange: change }
+}
+
+export component CalendarMonthSelect({ children, ...rest }: SelectElementProps) {
+  c = use calendar
+  shown = c.month
+  loc = c.locale
+  low = c.min
+  high = c.max
+  options key key = monthOptions(shown, loc, low, high)
+  current = c.month.toString()
+  own = calendarMonthSelect(c)
+  merged = latest mergeProps(own, rest)
+  <select {...merged}>
+    {for option in options {
+      <option value={option.key} disabled={option.disabled} selected={option.key == current}>{option.label}</option>
+    }}
+  </select>
+}
+
+export component CalendarYearSelect({ children, ...rest }: SelectElementProps) {
+  c = use calendar
+  shown = c.month
+  loc = c.locale
+  low = c.min
+  high = c.max
+  options key key = yearOptions(shown, loc, low, high)
+  current = c.month.toString()
+  own = calendarYearSelect(c)
+  merged = latest mergeProps(own, rest)
+  <select {...merged}>
+    {for option in options {
+      <option value={option.key} disabled={option.disabled} selected={option.key == current}>{option.label}</option>
+    }}
+  </select>
+}
+
+// ---- Grid ----
+
+export type CalendarGridContext = {
+  // The month this grid shows.
+  month: PlainYearMonth
+  offset: number
+  // Its rows; each day has a stable `key` (its ISO string). Loop over them with keyed equations.
+  weeks: CalendarWeek[]
+}
+
+export context calendarGridState: lane CalendarGridContext
+
+export type CalendarGridOptions = {
+  // Which visible month: 0 for the first. Default: 0.
+  offset?: number
+}
+
+// The month's grid. Named by the month ("November 2026"); `aria-multiselectable` for a range.
+export fn calendarGrid(ref c: CalendarContext, ref o: CalendarGridOptions): PartProps {
+  // Each field through an equation of its own, so the object is rebuilt only when one of them changed.
+  m = c.months[o.offset ?? 0] ?? c.months[0]
+  isRange = c.mode == "range"
+  isDisabled = c.disabled
+  isReadOnly = c.readOnly
+  {
+    role: "grid",
+    "aria-label": m.label,
+    "aria-multiselectable": isRange ? "true" : undefined,
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "aria-readonly": isReadOnly ? "true" : undefined,
+    "data-month": m.key,
+    "data-disabled": isDisabled ? "" : undefined,
+  }
+}
+
+export type CalendarGridProps = { offset?: number } & TableProps
+
+export component CalendarGrid(props: CalendarGridProps) {
+  c = use calendar
+  m = c.months[props.offset ?? 0] ?? c.months[0]
+  shown = m.value
+  monthKey = m.key
+  // Each field of the context through an equation of its own: the context is a new object on every focus move, and
+  // an equation that read it directly would lay the month out again each time, new but equal.
+  loc = c.locale
+  first = c.firstDayOfWeek
+  fixed = c.fixedWeeks
+  // Keyed by month too: a week shared by two months (its days outside one of them) is a different row in each.
+  weeks = monthGrid(shown, { locale: loc, firstDayOfWeek: first, fixedWeeks: fixed }).map((week) => ({ ...week, key: `${monthKey}/${week.key}` }))
+  provide calendarGridState = { month: shown, offset: m.offset, weeks: weeks }
+  { offset, children, ...rest } = props
+  own = calendarGrid(c, { offset: offset })
+  merged = latest mergeProps(own, rest)
+  <table {...merged}>{children}</table>
+}
+
+export type CalendarGridHeaderProps = {
+  // How the weekdays are written: "narrow" (M), "short" (Mon) or "long" (Monday). Default: "short".
+  format?: "narrow" | "short" | "long"
+} & TableSectionProps
+
+// The row of weekday names: a <thead> with a CalendarGridHeaderCell per day.
+export component CalendarGridHeader({ format, children, ...rest }: CalendarGridHeaderProps) {
+  c = use calendar
+  loc = c.locale
+  first = c.firstDayOfWeek
+  names key dayOfWeek = weekdayNames(loc, format ?? "short", first)
+  showWeeks = c.showWeekNumbers
+  weekLabel = c.weekNumberLabel
+  merged = latest mergeProps({}, rest)
+  <thead {...merged}>
+    <tr>
+      {if showWeeks {
+        <th scope="col" aria-label={weekLabel} data-week-number=""></th>
+      }}
+      {for weekday in names {
+        <CalendarGridHeaderCell weekday={weekday} />
+      }}
+    </tr>
+  </thead>
+}
+
+// A weekday's column header: shows the name it is given, named with the long one (`abbr` and `aria-label`).
+export fn calendarGridHeaderCell(ref weekday: WeekdayName): PartProps {
+  { scope: "col", abbr: weekday.name, "aria-label": weekday.name, "data-weekday": weekday.dayOfWeek }
+}
+
+export type CalendarGridHeaderCellProps = { weekday: WeekdayName } & TableHeaderCellProps
+
+export component CalendarGridHeaderCell({ weekday, children, ...rest }: CalendarGridHeaderCellProps) {
+  label = weekday.label
+  own = calendarGridHeaderCell(weekday)
+  merged = latest mergeProps(own, rest)
+  <th {...merged}>
+    {if isEmptyView(children) {
+      {label}
+    } else {
+      {children}
+    }}
+  </th>
+}
+
+// The weeks of the month: a <tbody> with a row per week, a CalendarDayCell and CalendarDay per day, and a
+// CalendarWeekNumber first when the root has `showWeekNumbers`.
+export component CalendarGridBody({ children, ...rest }: TableSectionProps) {
+  c = use calendar
+  g = use calendarGridState
+  weeks key key = g.weeks
+  showWeeks = c.showWeekNumbers
+  merged = latest mergeProps({}, rest)
+  <tbody {...merged}>
+    {for week in weeks {
+      days key key = week.days
+      <tr>
+        {if showWeeks {
+          <CalendarWeekNumber week={week} />
+        }}
+        {for day in days {
+          <CalendarDayCell day={day}><CalendarDay /></CalendarDayCell>
+        }}
+      </tr>
+    }}
+  </tbody>
+}
+
+// A row header with the week's ISO number, named "Week 47" (the root's `weekNumberLabel` and the number).
+export fn calendarWeekNumber(ref c: CalendarContext, ref week: CalendarWeek): PartProps {
+  label = `${c.weekNumberLabel} ${week.weekNumber}`
+  { scope: "row", "aria-label": label, "data-week-number": "" }
+}
+
+export type CalendarWeekNumberProps = { week: CalendarWeek } & TableHeaderCellProps
+
+export component CalendarWeekNumber({ week, children, ...rest }: CalendarWeekNumberProps) {
+  c = use calendar
+  n = week.weekNumber
+  own = calendarWeekNumber(c, week)
+  merged = latest mergeProps(own, rest)
+  <th {...merged}>
+    {if isEmptyView(children) {
+      {n}
+    } else {
+      {children}
+    }}
+  </th>
+}
+
+// ---- Days ----
+
+// Everything about one day of a grid, for its cell and its button (and a custom part: `use calendarCell`).
+export type CalendarDayState = {
+  date: PlainDate
+  key: string
+  // The day's full name, "Tuesday, November 17, 2026": the button's accessible name.
+  label: string
+  selected: boolean
+  today: boolean
+  outsideMonth: boolean
+  // `isDateUnavailable` says so: focusable, not selectable.
+  unavailable: boolean
+  // Outside [min, max], or the calendar is disabled: neither focusable nor selectable.
+  disabled: boolean
+  weekend: boolean
+  rangeStart: boolean
+  rangeEnd: boolean
+  rangeMiddle: boolean
+  // Highlighted as part of a range under way.
+  preview: boolean
+  // The grid's one Tab stop.
+  tabStop: boolean
+}
+
+export context calendarCell: lane CalendarDayState
+
+// One day's state. Each value is an equation of its own, so a focus move changes only the days it concerns.
+export fn calendarDayState(ref c: CalendarContext, ref day: CalendarDay): CalendarDayState {
+  date = day.date
+  inMonth = !day.outsideMonth
+  isRange = c.mode == "range"
+  span = c.highlighted
+  isDisabled = c.disabled || !isDateInRange(date, c.min, c.max)
+  check = c.isDateUnavailable
+  isUnavailable = !isDisabled && check != undefined && check(date)
+  isToday = isSameDay(date, c.today)
+  isWeekendDay = isWeekend(date, c.locale)
+  starts = inMonth && isRange && isRangeStart(date, span)
+  ends = inMonth && isRange && isRangeEnd(date, span)
+  within = inMonth && isRange && isInRange(date, span)
+  isSelected = inMonth && (isRange ? within : isSameDay(date, c.value))
+  isPreview = within && c.pending
+  isTabStop = inMonth && !isDisabled && day.key == c.focusKey
+  label = formatDayLabel(date, c.locale)
+  // Read whole through `latest`: below the context's `latest`, a plain object runs twice per change of the owner's
+  // value, new but equal (UNSTABLE_MEMO_OUTPUT under an optimistic save).
+  state = latest {
+    date: date,
+    key: day.key,
+    label: label,
+    selected: isSelected,
+    today: isToday,
+    outsideMonth: !inMonth,
+    unavailable: isUnavailable,
+    disabled: isDisabled,
+    weekend: isWeekendDay,
+    rangeStart: starts,
+    rangeEnd: ends,
+    rangeMiddle: within && !starts && !ends,
+    preview: isPreview,
+    tabStop: isTabStop,
+  }
+  state
+}
+
+// The state hooks a day's cell and button share. Each field through an equation of its own: the day's state is a
+// new object whenever any field changes (the Tab stop moving), and these hooks change far less often.
+fn dayAttributes(ref s: CalendarDayState): PartProps {
+  isSelected = s.selected
+  isToday = s.today
+  isOutside = s.outsideMonth
+  isUnavailable = s.unavailable
+  isDisabled = s.disabled || s.outsideMonth
+  onWeekend = s.weekend
+  starts = s.rangeStart
+  ends = s.rangeEnd
+  middle = s.rangeMiddle
+  isPreview = s.preview
+  attrs = latest {
+    "data-selected": isSelected ? "" : undefined,
+    "data-today": isToday ? "" : undefined,
+    "data-outside-month": isOutside ? "" : undefined,
+    "data-unavailable": isUnavailable ? "" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    "data-weekend": onWeekend ? "" : undefined,
+    "data-range-start": starts ? "" : undefined,
+    "data-range-end": ends ? "" : undefined,
+    "data-range-middle": middle ? "" : undefined,
+    "data-range-preview": isPreview ? "" : undefined,
+  }
+  attrs
+}
+
+// A day's grid cell: `aria-selected` (for a day of this month) and the day's state hooks.
+export fn calendarDayCell(ref s: CalendarDayState): PartProps {
+  attrs = dayAttributes(s)
+  selected = s.outsideMonth ? undefined : s.selected ? "true" : "false"
+  latest { role: "gridcell", "aria-selected": selected, ...attrs }
+}
+
+export type CalendarDayCellProps = { day: CalendarDay } & TableCellProps
+
+// Provides the day's state to the CalendarDay inside it (and to a custom part, `use calendarCell`).
+export component CalendarDayCell(props: CalendarDayCellProps) {
+  c = use calendar
+  s = calendarDayState(c, props.day)
+  provide calendarCell = s
+  { day, children, ...rest } = props
+  own = calendarDayCell(s)
+  merged = latest mergeProps(own, rest)
+  <td {...merged}>{children}</td>
+}
+
+// A day's button: presses select it, the arrow keys and the rest move focus (handled on the button, so keys typed
+// elsewhere are left alone). Named with the full date; `aria-current="date"` for today; `data-date` is its ISO key.
+export fn calendarDay(ref c: CalendarContext, ref s: CalendarDayState): PartProps {
+  action press() { c.selectDate(s.date) }
+  action focus() { c.setFocused(s.date) }
+  action enter() { c.hoverDate(s.date) }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) { c.keyDown(event, s.date) }
+  attrs = dayAttributes(s)
+  isTabStop = s.tabStop
+  isInert = s.disabled || s.outsideMonth
+  isOutside = s.outsideMonth
+  label = s.label
+  isToday = s.today
+  isUnavailable = s.unavailable
+  key = s.key
+  latest {
+    type: "button",
+    tabindex: isTabStop ? 0 : -1,
+    disabled: isInert ? true : undefined,
+    "aria-hidden": isOutside ? "true" : undefined,
+    "aria-label": label,
+    "aria-current": isToday ? "date" : undefined,
+    "aria-disabled": isUnavailable ? "true" : undefined,
+    "data-date": key,
+    ...attrs,
+    onClick: press,
+    onFocus: focus,
+    onPointerEnter: enter,
+    onKeyDown: keyDown,
+  }
+}
+
+// Shows the day of the month in the locale's digits, unless given children.
+export component CalendarDay({ children, ...rest }: ButtonProps) {
+  c = use calendar
+  s = use calendarCell
+  number = formatDayNumber(s.date, c.locale)
+  own = calendarDay(c, s)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>
+    {if isEmptyView(children) {
+      {number}
+    } else {
+      {children}
+    }}
+  </button>
+}

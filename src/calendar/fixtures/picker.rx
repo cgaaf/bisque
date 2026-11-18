@@ -1,0 +1,22 @@
+import { RangeCalendarRoot, CalendarGrid, CalendarGridBody } from "../calendar.rx"
+import { PopoverRoot, PopoverTrigger, PopoverPopup } from "../../popover/popover.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { DateRange } from "../../internal/types.rx"
+
+// A date range picker as one would be composed: the calendar in a Popover, with a controlled value. Opening moves
+// focus to the selected range's start; completing a range closes the popup; Escape first cancels a range under way.
+export default component Fixture() {
+  source open := false
+  source picked: { range: DateRange | null } := { range: { start: parseDate("2030-05-08", undefined) ?? today(undefined, undefined), end: parseDate("2030-05-10", undefined) ?? today(undefined, undefined) } }
+  <div>
+    <PopoverRoot open={open} onOpenChange={(next) => { open := next }}>
+      <PopoverTrigger>Dates</PopoverTrigger>
+      <PopoverPopup aria-label="Choose dates">
+        <RangeCalendarRoot aria-label="Stay" locale="en-US" today={parseDate("2030-05-15", undefined)} value={picked.range} autoFocus={open} onValueChange={(range) => { picked.range := range }} onSelectionComplete={(range) => { open := false }}>
+          <CalendarGrid><CalendarGridBody /></CalendarGrid>
+        </RangeCalendarRoot>
+      </PopoverPopup>
+    </PopoverRoot>
+    <output data-testid="picked">{picked.range == null ? "" : `${picked.range.start.toString()}/${picked.range.end.toString()}`}</output>
+  </div>
+}

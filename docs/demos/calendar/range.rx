@@ -1,0 +1,32 @@
+import { RangeCalendarRoot, CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody, calendar } from "../../../src/calendar/calendar.rx"
+import { DateRange } from "../../../src/internal/types.rx"
+
+// Two months side by side, from the root's `months`.
+component Months() {
+  c = use calendar
+  months key key = c.months
+  <div class="Months">
+    {for month in months {
+      <div class="Month">
+        <CalendarMonthLabel class="Label" offset={month.offset} />
+        <CalendarGrid class="Grid" offset={month.offset}>
+          <CalendarGridHeader class="Head" format="narrow" />
+          <CalendarGridBody class="Body" />
+        </CalendarGrid>
+      </div>
+    }}
+  </div>
+}
+
+export component CalendarRange() {
+  // Temporal values are held in a box: a source seeded with one breaks its methods.
+  source stay: { range: DateRange | undefined } := { range: undefined }
+  <div class="CalendarRange">
+    <RangeCalendarRoot class="Calendar" aria-label="Stay" numberOfMonths={2} onValueChange={(range) => { stay.range := range }}>
+      <CalendarPreviousMonth class="Nav Previous">‹</CalendarPreviousMonth>
+      <CalendarNextMonth class="Nav Next">›</CalendarNextMonth>
+      <Months />
+    </RangeCalendarRoot>
+    <p class="Summary">{stay.range == undefined ? "Pick the first night, then the last." : `${stay.range.start.toString()} to ${stay.range.end.toString()}`}</p>
+  </div>
+}

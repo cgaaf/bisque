@@ -1,0 +1,47 @@
+import { CalendarRoot, RangeCalendarRoot, CalendarMonthLabel, CalendarPreviousMonth, CalendarNextMonth, CalendarGrid, CalendarGridBody } from "../calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { PlainDate, PlainYearMonth, DateRange } from "../../internal/types.rx"
+
+// A calendar whose value and visible month are the owner's; and disabled and read-only ones.
+export default component Fixture() {
+  // Temporal values are held in a box (src/internal/date.d.rx).
+  source owned: { value: PlainDate | null; month: PlainYearMonth | undefined } := { value: parseDate("2030-05-09", undefined) ?? null, month: parseDate("2030-05-01", undefined)?.toPlainYearMonth() }
+  source keep := false
+  source asked := ""
+  source disabled := false
+  // A picker's calendar, without the popover: `opened` stands for the popup being open.
+  source opened := false
+  source picked: { range: DateRange | null } := { range: null }
+  <div>
+    <CalendarRoot aria-label="Owned" data-testid="owned" locale="en-US" today={parseDate("2030-05-15", undefined)} value={owned.value} month={owned.month} onValueChange={(date) => {
+      asked := date.toString()
+      if (!keep) { owned.value := date }
+    }} onMonthChange={(next) => { owned.month := next }}>
+      <CalendarPreviousMonth />
+      <CalendarMonthLabel data-testid="owned-label" />
+      <CalendarNextMonth />
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <output data-testid="value">{owned.value == null ? "" : owned.value.toString()}</output>
+    <output data-testid="month">{owned.month == undefined ? "" : owned.month.toString()}</output>
+    <output data-testid="asked">{asked}</output>
+    <button onClick={() => { owned.value := parseDate("2030-05-22", undefined) ?? null }}>Set 22nd</button>
+    <button onClick={() => { owned.month := parseDate("2030-08-01", undefined)?.toPlainYearMonth() }}>Show August</button>
+    <button onClick={() => { keep := true }}>Keep</button>
+    <button onClick={() => { disabled := !disabled }}>Toggle disabled</button>
+    <CalendarRoot aria-label="Disabled" data-testid="disabled" locale="en-US" today={parseDate("2030-05-15", undefined)} disabled={disabled} defaultValue={parseDate("2030-05-09", undefined)}>
+      <CalendarPreviousMonth />
+      <CalendarNextMonth />
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <CalendarRoot aria-label="Read only" data-testid="readonly" locale="en-US" today={parseDate("2030-05-15", undefined)} readOnly defaultValue={parseDate("2030-05-09", undefined)}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <button onClick={() => { opened := !opened }}>Toggle open</button>
+    <button onClick={() => { picked.range := { start: parseDate("2030-07-08", undefined) ?? today(undefined, undefined), end: parseDate("2030-07-10", undefined) ?? today(undefined, undefined) } }}>Pick July</button>
+    <RangeCalendarRoot aria-label="Opening" data-testid="opening" locale="en-US" today={parseDate("2030-05-15", undefined)} value={picked.range} autoFocus={opened} onValueChange={(range) => { picked.range := range }}>
+      <CalendarMonthLabel data-testid="opening-label" />
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </RangeCalendarRoot>
+  </div>
+}

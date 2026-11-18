@@ -1,0 +1,46 @@
+import { CalendarRoot, CalendarMonthLabel, CalendarGrid, CalendarGridHeaderCell, CalendarWeekNumber, CalendarDayCell, CalendarDay, calendar, calendarGridState, calendarCell } from "../calendar.rx"
+import { parseDate } from "../../internal/date.js"
+
+// A mark inside a day, reading the day's state.
+component Dot() {
+  s = use calendarCell
+  <span data-testid={`dot-${s.key}`}>{s.selected ? "•" : ""}</span>
+}
+
+// The header and the rows rendered by the consumer, as the docs' anatomy shows.
+component Rows() {
+  c = use calendar
+  g = use calendarGridState
+  weeks key key = g.weeks
+  names key dayOfWeek = c.weekdays
+  <thead>
+    <tr>
+      <th>Wk</th>
+      {for weekday in names {
+        <CalendarGridHeaderCell weekday={weekday} />
+      }}
+    </tr>
+  </thead>
+  <tbody>
+    {for week in weeks {
+      days key key = week.days
+      <tr>
+        <CalendarWeekNumber week={week} />
+        {for day in days {
+          <CalendarDayCell day={day}>
+            <CalendarDay class="day">{day.date.day}<Dot /></CalendarDay>
+          </CalendarDayCell>
+        }}
+      </tr>
+    }}
+  </tbody>
+}
+
+export default component Fixture() {
+  <CalendarRoot aria-label="Custom" locale="en-US" today={parseDate("2030-05-15", undefined)} defaultValue={parseDate("2030-05-20", undefined)}>
+    <CalendarMonthLabel data-testid="label" />
+    <CalendarGrid>
+      <Rows />
+    </CalendarGrid>
+  </CalendarRoot>
+}

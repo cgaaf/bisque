@@ -1,0 +1,39 @@
+import { RangeCalendarRoot, CalendarMonthLabel, CalendarPreviousMonth, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody, calendar } from "../calendar.rx"
+import { parseDate } from "../../internal/date.js"
+import { PlainDate } from "../../internal/types.rx"
+
+// The 13th and 14th of each month are unavailable (booked).
+fn booked(date: PlainDate): boolean => date.day == 13 || date.day == 14
+
+component State() {
+  c = use calendar
+  <output data-testid="pending">{c.pending ? "pending" : ""}</output>
+}
+
+// Range calendars in en-US, today pinned to 2030-05-15: one that refuses ranges across unavailable days, one that
+// allows them.
+export default component Fixture() {
+  source picked: string := ""
+  source completed := 0
+  source loose: string := ""
+  <div>
+    <RangeCalendarRoot aria-label="Stay" locale="en-US" today={parseDate("2030-05-15", undefined)} defaultMonth={parseDate("2030-05-01", undefined)?.toPlainYearMonth()} isDateUnavailable={booked} onValueChange={(range) => { picked := `${range.start.toString()}/${range.end.toString()}` }} onSelectionComplete={(range) => { completed := completed + 1 }}>
+      <CalendarPreviousMonth />
+      <CalendarMonthLabel data-testid="label" />
+      <CalendarNextMonth />
+      <CalendarGrid>
+        <CalendarGridHeader />
+        <CalendarGridBody />
+      </CalendarGrid>
+      <State />
+    </RangeCalendarRoot>
+    <output data-testid="picked">{picked}</output>
+    <output data-testid="completed">{completed}</output>
+    <RangeCalendarRoot aria-label="Loose" data-testid="loose" locale="en-US" today={parseDate("2030-05-15", undefined)} allowsNonContiguousRanges isDateUnavailable={booked} onValueChange={(range) => { loose := `${range.start.toString()}/${range.end.toString()}` }}>
+      <CalendarGrid>
+        <CalendarGridBody />
+      </CalendarGrid>
+    </RangeCalendarRoot>
+    <output data-testid="loose-picked">{loose}</output>
+  </div>
+}

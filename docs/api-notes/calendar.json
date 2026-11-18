@@ -1,0 +1,180 @@
+{
+  "CalendarRoot": {
+    "description": "A calendar for choosing one day: a `<div role=\"group\">` that holds the value and the visible month and provides them to the other parts. Label it with `aria-label` or `aria-labelledby`, or put it in a FieldRoot. Inside a FieldRoot it is the field's control.",
+    "props": {
+      "value": "The chosen day, a `Temporal.PlainDate`. Pass it with `onValueChange` to control the calendar; `null` is a controlled calendar with nothing chosen. It may be read from an answer that is loading or guessed over; one that fails is left to the app's `errored` region.",
+      "defaultValue": "The day chosen at first, when the calendar isn't controlled. A form reset puts it back.",
+      "onValueChange": "Called with the day when the user chooses another one, and once when a form reset returns an uncontrolled calendar to its default. It is called in a change of its own, so it may be an action that saves.",
+      "onSelectionComplete": "Called on every press of a day that can be chosen, the day already chosen included. A date picker closes its popup here.",
+      "name": "Submits the chosen day under this name with a form, as an ISO date (`2026-11-17`), or an empty string. Without one, a named FieldRoot's name is used.",
+      "month": "The first visible month, a `Temporal.PlainYearMonth`. Pass it with `onMonthChange` to control the page.",
+      "defaultMonth": "The first visible month at first. Default: the month of the value, else of today.",
+      "onMonthChange": "Called with the new first visible month when the previous or next button, a select or a key turns the page.",
+      "min": "The earliest day that can be focused or chosen. Days before it are disabled buttons, and the previous button stops at its month.",
+      "max": "The latest day that can be focused or chosen. Days after it are disabled buttons, and the next button stops at its month.",
+      "isDateUnavailable": "Days for which this returns true can be focused, and are announced as unavailable (`aria-disabled`, `data-unavailable`), but can't be chosen.",
+      "disabled": "Disables every day and the navigation buttons natively. A day disabled while it has focus (`disabled={pending? saving}`) takes focus back when it is enabled again, if focus hasn't moved elsewhere.",
+      "readOnly": "Days stay focusable and the keyboard moves between them, but none can be chosen. Sets `aria-readonly` on the grids and `data-readonly`.",
+      "required": "The hidden input is `required`: a day must be chosen for a form or a FieldRoot to be valid.",
+      "locale": "The locale for month and day names, the days' accessible names, the first day of the week and the weekend. Default: the browser's.",
+      "firstDayOfWeek": "The day the weeks start on, from 1 (Monday) to 7 (Sunday). Default: the locale's.",
+      "fixedWeeks": "Always six rows of days, so the grid's height doesn't change from month to month.",
+      "numberOfMonths": "How many months are shown side by side, each in a CalendarGrid with its `offset`. The previous and next buttons, and the keyboard past the last month, turn this many at a time.",
+      "timeZone": "The time zone in which \"today\" is read. Default: the system's.",
+      "today": "The day marked as today (`aria-current=\"date\"`, `data-today`). Default: today in `timeZone`, read once.",
+      "autoFocus": "When it turns true (and on mount, if it starts true), moves focus to the chosen day, turning to its month, or with none to the grid's Tab stop. A date picker passes `autoFocus={open}`.",
+      "showWeekNumbers": "CalendarGridHeader and CalendarGridBody add a first column of ISO week numbers.",
+      "weekNumberLabel": "The week number column's name, and the start of each week number's accessible name: \"Week\" makes \"Week 47\"."
+    },
+    "dataAttributes": {
+      "data-disabled": "Present when the calendar is disabled, by its own prop or by its Field.",
+      "data-readonly": "Present when the calendar is read-only.",
+      "data-pending": null,
+      "data-range": null,
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-touched": "Inside a FieldRoot: present once focus has been in the calendar and left it.",
+      "data-dirty": "Inside a FieldRoot: present while the value differs from its initial one.",
+      "data-filled": "Inside a FieldRoot: present while a day is chosen.",
+      "data-focused": "Inside a FieldRoot: present while focus is in the calendar."
+    }
+  },
+  "RangeCalendarRoot": {
+    "description": "A calendar for choosing a range of days. The first press sets the range's start; moving the pointer or focus previews it; a second press, before or after the first, completes it. Escape cancels a range under way. It takes the same parts as CalendarRoot.",
+    "props": {
+      "value": "The chosen range, `{ start, end }` with `start` never after `end`. Pass it with `onValueChange` to control the calendar; `null` is a controlled calendar with nothing chosen.",
+      "defaultValue": "The range chosen at first, when the calendar isn't controlled. A form reset puts it back.",
+      "onValueChange": "Called with the range when its second day is pressed, and once when a form reset returns an uncontrolled calendar to its default. It is called in a change of its own.",
+      "onSelectionComplete": "Called when a range is completed, even if it equals the range already chosen. A date range picker closes its popup here.",
+      "allowsNonContiguousRanges": "Lets a range include unavailable days. Without it, the preview stops at the range's first day and a second press that would include an unavailable day is ignored.",
+      "name": "Submits the range with a form as two entries, `<name>-start` and `<name>-end` (ISO dates, or empty strings). Without one, a named FieldRoot's name is used.",
+      "startName": "The start date's name with a form, in place of `<name>-start`.",
+      "endName": "The end date's name with a form, in place of `<name>-end`.",
+      "month": "The first visible month, a `Temporal.PlainYearMonth`. Pass it with `onMonthChange` to control the page.",
+      "defaultMonth": "The first visible month at first. Default: the month of the range's start, else of today.",
+      "onMonthChange": "Called with the new first visible month when the previous or next button, a select or a key turns the page.",
+      "min": "The earliest day that can be focused or chosen.",
+      "max": "The latest day that can be focused or chosen.",
+      "isDateUnavailable": "Days for which this returns true can be focused and are announced as unavailable, but can't start, end or (without `allowsNonContiguousRanges`) be inside a range.",
+      "disabled": "Disables every day and the navigation buttons natively.",
+      "readOnly": "Days stay focusable and the keyboard moves between them, but no range can be chosen.",
+      "required": "The start's hidden input is `required`: a range must be chosen for a form or a FieldRoot to be valid.",
+      "locale": "The locale for names, the first day of the week and the weekend. Default: the browser's.",
+      "firstDayOfWeek": "The day the weeks start on, from 1 (Monday) to 7 (Sunday). Default: the locale's.",
+      "fixedWeeks": "Always six rows of days.",
+      "numberOfMonths": "How many months are shown side by side; the previous and next buttons turn this many at a time.",
+      "timeZone": "The time zone in which \"today\" is read. Default: the system's.",
+      "today": "The day marked as today. Default: today in `timeZone`, read once.",
+      "autoFocus": "When it turns true, drops a range left half-chosen and moves focus to the range's start, turning to its month, or with none to the grid's Tab stop. A date range picker passes `autoFocus={open}`.",
+      "showWeekNumbers": "CalendarGridHeader and CalendarGridBody add a first column of ISO week numbers.",
+      "weekNumberLabel": "The week number column's name, and the start of each week number's accessible name."
+    },
+    "dataAttributes": {
+      "data-range": "Always present on a RangeCalendarRoot.",
+      "data-pending": "Present while a range is under way.",
+      "data-disabled": "Present when the calendar is disabled, by its own prop or by its Field.",
+      "data-readonly": "Present when the calendar is read-only.",
+      "data-invalid": "Inside a FieldRoot: present when the field is invalid.",
+      "data-valid": "Inside a FieldRoot: present when the field has been validated and is valid.",
+      "data-touched": "Inside a FieldRoot: present once focus has been in the calendar and left it.",
+      "data-dirty": "Inside a FieldRoot: present while the value differs from its initial one.",
+      "data-focused": "Inside a FieldRoot: present while focus is in the calendar.",
+      "data-filled": "Inside a FieldRoot: present while a range is chosen."
+    }
+  },
+  "CalendarMonthLabel": {
+    "description": "The name of a visible month, \"November 2026\", as a polite live region, so turning the page announces the new month. Children replace the text.",
+    "props": {
+      "offset": "Which visible month, 0 for the first. Default: 0."
+    },
+    "dataAttributes": {
+      "data-month": "The month as an ISO string, `2026-11`."
+    }
+  },
+  "CalendarPreviousMonth": {
+    "description": "A button that turns back a page (`numberOfMonths` months). Disabled when that page holds no day after `min`, or the calendar is disabled. Named \"Previous month\"; pass `aria-label` to translate it."
+  },
+  "CalendarNextMonth": {
+    "description": "A button that turns forward a page (`numberOfMonths` months). Disabled when that page holds no day before `max`, or the calendar is disabled. Named \"Next month\"; pass `aria-label` to translate it."
+  },
+  "CalendarMonthSelect": {
+    "description": "A native `<select>` of the months of the visible year, which sets the first visible month. A month with no day between `min` and `max` is a disabled option. Named \"Month\"; pass `aria-label` to translate it."
+  },
+  "CalendarYearSelect": {
+    "description": "A native `<select>` of years, from `min`'s year to `max`'s (ten years either side where a limit is missing), which sets the first visible month's year. Named \"Year\"; pass `aria-label` to translate it."
+  },
+  "CalendarGrid": {
+    "description": "A visible month: a `<table role=\"grid\">` named by the month. It provides the month's weeks to the parts inside it (`use calendarGridState`). In a RangeCalendarRoot it is `aria-multiselectable`.",
+    "props": {
+      "offset": "Which visible month, 0 for the first. Default: 0."
+    },
+    "dataAttributes": {
+      "data-month": "The month as an ISO string, `2026-11`.",
+      "data-disabled": "Present when the calendar is disabled."
+    }
+  },
+  "CalendarGridHeader": {
+    "description": "A `<thead>` with a row of weekday names (a CalendarGridHeaderCell each), in the locale's order, after a week-number header when the root has `showWeekNumbers`.",
+    "props": {
+      "format": "How the weekdays are written: \"narrow\" (M), \"short\" (Mon) or \"long\" (Monday). Each header is named with the long name either way. Default: \"short\"."
+    },
+    "dataAttributes": {
+      "data-week-number": "On the week number column's header cell."
+    }
+  },
+  "CalendarGridHeaderCell": {
+    "description": "A weekday's column header, `<th scope=\"col\">`, named with the day's long name (`abbr` and `aria-label`). Children replace the name it shows.",
+    "props": {
+      "weekday": "The day, from the context's `weekdays`: `{ dayOfWeek, label, name }`."
+    },
+    "dataAttributes": {
+      "data-weekday": "The day of the week, 1 (Monday) to 7 (Sunday)."
+    }
+  },
+  "CalendarGridBody": {
+    "description": "A `<tbody>` with a row per week and, in each, a CalendarDayCell holding a CalendarDay per day, after a CalendarWeekNumber when the root has `showWeekNumbers`."
+  },
+  "CalendarWeekNumber": {
+    "description": "A row header, `<th scope=\"row\">`, showing the week's ISO number and named with the root's `weekNumberLabel` and the number (\"Week 47\"). Children replace the number.",
+    "props": {
+      "week": "The week, from the grid's `weeks`."
+    },
+    "dataAttributes": {
+      "data-week-number": "Always present."
+    }
+  },
+  "CalendarDayCell": {
+    "description": "A day's grid cell, a `<td>` with `aria-selected` (for a day of the grid's month). It provides the day's state to the CalendarDay inside it, and to a custom part (`use calendarCell`).",
+    "props": {
+      "day": "The day, from a week's `days`."
+    },
+    "dataAttributes": {
+      "data-selected": "Present when the day is chosen, or inside the range (or the preview of one).",
+      "data-today": "Present on today.",
+      "data-outside-month": "Present on a day of the previous or next month that fills the first or last row. It is shown, but disabled and hidden from assistive technology.",
+      "data-unavailable": "Present when `isDateUnavailable` returns true for the day.",
+      "data-disabled": "Present when the day can't be focused: before `min`, after `max`, outside the month, or the calendar is disabled.",
+      "data-weekend": "Present on the locale's weekend days.",
+      "data-range-start": "Present on the first day of the range, or of the preview.",
+      "data-range-end": "Present on the last day of the range, or of the preview.",
+      "data-range-middle": "Present on the days between the range's first and last.",
+      "data-range-preview": "Present on the days of a range under way, before its second day is pressed."
+    }
+  },
+  "CalendarDay": {
+    "description": "A day's `<button>`: a press, Enter or Space chooses it, and the arrow keys, Home, End, PageUp and PageDown move focus. Only one day of the calendar is in the Tab order. Named with the full date (\"Tuesday, November 17, 2026\"); today has `aria-current=\"date\"`; an unavailable day `aria-disabled=\"true\"`. Shows the day of the month in the locale's digits, unless given children.",
+    "dataAttributes": {
+      "data-date": "The day as an ISO string, `2026-11-17`.",
+      "data-selected": "Present when the day is chosen, or inside the range (or the preview of one).",
+      "data-today": "Present on today.",
+      "data-outside-month": "Present on a day of the previous or next month that fills a row: disabled and `aria-hidden`.",
+      "data-unavailable": "Present when `isDateUnavailable` returns true for the day.",
+      "data-disabled": "Present when the button is disabled: before `min`, after `max`, outside the month, or the calendar is disabled.",
+      "data-weekend": "Present on the locale's weekend days.",
+      "data-range-start": "Present on the first day of the range, or of the preview.",
+      "data-range-end": "Present on the last day of the range, or of the preview.",
+      "data-range-middle": "Present on the days between the range's first and last.",
+      "data-range-preview": "Present on the days of a range under way."
+    }
+  }
+}

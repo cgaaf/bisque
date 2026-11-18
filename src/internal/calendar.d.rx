@@ -1,0 +1,12 @@
+// How .rx may use ./calendar.js (implemented in ./impl/calendar.ts): the calendar family's visible months, Tab
+// stop and paging across several months, the writing direction, and focusing a day once it is rendered.
+// Temporal values follow ./date.d.rx's rules. One declaration per line: scripts/gen-dts.mjs turns this file into
+// ./calendar.d.ts.
+export type CalendarMonth = import("./impl/calendar.ts").CalendarMonth
+export type DayFocusRequest = import("./impl/calendar.ts").DayFocusRequest
+export pure fn visibleMonths(first: Temporal.PlainYearMonth, count: number, locale: string | string[] | undefined): CalendarMonth[]
+export pure fn isVisible(date: Temporal.PlainDate | undefined, first: Temporal.PlainYearMonth, count: number): boolean
+export pure fn pageFor(date: Temporal.PlainDate, first: Temporal.PlainYearMonth, count: number): Temporal.PlainYearMonth
+export pure fn tabStopDate(first: Temporal.PlainYearMonth, count: number, focused: Temporal.PlainDate | undefined, selected: Temporal.PlainDate | undefined, todayDate: Temporal.PlainDate | undefined, constraints: import("./impl/date.ts").DateConstraints | undefined): Temporal.PlainDate
+export fn isRtl(element: Element | null | undefined): boolean
+export pure fn createDayFocus(ref root: HTMLElement | undefined, ref request: DayFocusRequest) instantiates

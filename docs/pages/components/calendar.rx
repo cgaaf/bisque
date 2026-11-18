@@ -1,0 +1,151 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { CalendarHero } from "../../demos/calendar/hero.rx"
+import { CalendarRange } from "../../demos/calendar/range.rx"
+import { CalendarConstraints } from "../../demos/calendar/constraints.rx"
+import { CalendarSelects } from "../../demos/calendar/selects.rx"
+import { CalendarPicker } from "../../demos/calendar/picker.rx"
+
+export default component Page() {
+  <DocsPage title="Calendar" subtitle="A month grid for choosing a day, or a range of days.">
+    <Demo source="calendar/hero"><CalendarHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. <code>CalendarRoot</code> chooses a day and{" "}
+      <code>RangeCalendarRoot</code> a range; every other part works inside either.
+    </p>
+    <Code file="calendar/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      <code>{"<input type=\"date\">"}</code> is supported in every browser, but its picker belongs to the browser.
+      It can't be styled, shown inline on the page, shown as several months, or used to choose a range. So it can't
+      be the calendar. The calendar is built from the elements that do fit:
+    </p>
+    <ul>
+      <li>
+        Each month is a real <code>{"<table role=\"grid\">"}</code>. Rows, column headers and cells come from the
+        table itself, and the weekday headers are <code>{"<th scope=\"col\">"}</code> with the long name of the day.
+        Divs would need a role on every row and cell to say the same.
+      </li>
+      <li>
+        Each day is a native <code>{"<button>"}</code>. <kbd>Enter</kbd> and <kbd>Space</kbd> press it,{" "}
+        <code>disabled</code> takes it out of the focus order, and <code>:focus-visible</code> styles the focused
+        day.
+      </li>
+      <li>The month and year pickers are native <code>{"<select>"}</code> elements, with the browser's list and keyboard.</li>
+      <li>
+        Dates are <code>Temporal.PlainDate</code> values. Safari doesn't ship Temporal yet, so an app loads a polyfill
+        until it does. The library never imports one.
+      </li>
+    </ul>
+    <p>
+      The library adds the grid's keyboard, which the platform doesn't have. It also adds a single Tab stop,
+      selection, range preview, <code>min</code> and <code>max</code>, unavailable days, several months side by side,
+      and the form and <a href="../field/">Field</a> wiring.
+    </p>
+    <div class="note">
+      <p>
+        There are no Month, DayGridRow or DayGridHeaderRow parts. Rows and header rows carry no behaviour, so write
+        a plain <code>{"<tr>"}</code>, or let <code>CalendarGridHeader</code> and <code>CalendarGridBody</code>{" "}
+        render them. A grid's month comes from its <code>offset</code> among the visible months.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="keyboard">Keyboard</h3>
+    <p>
+      The grid is one Tab stop. That stop is the day focus was last on, or else the selected day, then today, then
+      the first day that can be chosen. Inside the grid the keys follow the WAI-ARIA date picker pattern:
+    </p>
+    <ul>
+      <li>The arrow keys move by a day and a week. In a right-to-left layout, left and right are swapped.</li>
+      <li><kbd>Home</kbd> and <kbd>End</kbd> go to the start and end of the week.</li>
+      <li><kbd>PageUp</kbd> and <kbd>PageDown</kbd> move by a month; with <kbd>Shift</kbd>, by a year.</li>
+      <li><kbd>Enter</kbd> and <kbd>Space</kbd> choose the focused day.</li>
+    </ul>
+    <p>
+      If focus moves past the visible months, the page turns and focus stays on the new day. The month label is a
+      polite live region (<code>aria-live="polite"</code>), for the new month to be read out. The first day of the week and the weekend days come from
+      the <code>locale</code> (<code>firstDayOfWeek</code> overrides the first day), and the days are named in that
+      locale.
+    </p>
+
+    <h3 id="range">Choosing a range</h3>
+    <p>
+      In a <code>RangeCalendarRoot</code>, the first press sets the start of the range. Moving the pointer or
+      focus previews the range, and a second press completes it, in either order. <kbd>Escape</kbd> cancels a
+      range that is under way. Days carry <code>data-range-start</code>, <code>data-range-middle</code> and{" "}
+      <code>data-range-end</code>, and <code>data-range-preview</code> while the second day is still being chosen.
+      Pass <code>numberOfMonths</code> to show several months, which turn a page at a time. Render them from the
+      root's <code>months</code>, as this demo does.
+    </p>
+    <Demo source="calendar/range"><CalendarRange /></Demo>
+    <p>
+      A range can't include an unavailable day unless you pass <code>allowsNonContiguousRanges</code>. The preview
+      stops at its first day, and a second press past an unavailable day is ignored.
+    </p>
+
+    <h3 id="constraints">Limits and unavailable days</h3>
+    <p>
+      Days before <code>min</code> or after <code>max</code> are disabled buttons. They can't be focused, and the
+      previous and next buttons stop at the limits. Days for which <code>isDateUnavailable</code> returns true stay
+      focusable, so the keyboard still reaches them. They carry{" "}
+      <code>aria-disabled="true"</code> and <code>data-unavailable</code>, and can't be chosen.{" "}
+      <code>showWeekNumbers</code> adds a column of ISO week numbers.
+    </p>
+    <Demo source="calendar/constraints"><CalendarConstraints /></Demo>
+
+    <h3 id="selects">Month and year selects</h3>
+    <p>
+      <code>CalendarMonthSelect</code> and <code>CalendarYearSelect</code> are native selects that set the visible
+      month. A month or year with no day between <code>min</code> and <code>max</code> is a disabled option.{" "}
+      <code>fixedWeeks</code> always shows six rows, so the grid keeps its height from month to month.
+    </p>
+    <Demo source="calendar/selects"><CalendarSelects /></Demo>
+
+    <h3 id="picker">In a popover</h3>
+    <p>
+      A date picker is a calendar in a <a href="../popover/">Popover</a>, with a controlled <code>value</code>.{" "}
+      <code>autoFocus={"{"}open{"}"}</code> moves focus to the chosen day (a range's start) when the popup opens,
+      turning to its month, and drops a range left half-chosen; with nothing chosen, focus goes to today.{" "}
+      <code>onSelectionComplete</code> is called when a choice is finished, so the popup can close. For a single
+      day that is every press, even on the day already chosen; for a range it is the second press. While a range is
+      under way, the first <kbd>Escape</kbd> cancels it and leaves the popup open.
+    </p>
+    <Demo source="calendar/picker"><CalendarPicker /></Demo>
+    <p>
+      Otherwise the visible month doesn't follow a controlled <code>value</code>. Pass <code>month</code> to choose
+      it. A part inside the root can also read <code>use calendar</code> and call <code>focusDate(date)</code> to
+      show and focus a day.
+    </p>
+
+    <h3 id="forms">Forms and fields</h3>
+    <p>
+      With a <code>name</code>, <code>CalendarRoot</code> submits the chosen day as an ISO date (
+      <code>2026-11-17</code>), or an empty string when there is none. <code>RangeCalendarRoot</code> submits two
+      entries, <code>{"<name>-start"}</code> and <code>{"<name>-end"}</code>, unless <code>startName</code> and{" "}
+      <code>endName</code> name them. A form reset puts the default value back. Inside a{" "}
+      <code>FieldRoot</code>, the field's label names the calendar, and <code>required</code> is validated with the
+      field. Pass <code>value={"{"}null{"}"}</code> for a controlled calendar with nothing chosen.
+    </p>
+    <p>
+      The calendar calls <code>onValueChange</code> in a change of its own, so a handler that saves to a server
+      never holds the calendar. Write the handler with a <code>guess</code> and the new day shows at once.
+    </p>
+
+    <h3 id="custom">Rendering the days yourself</h3>
+    <p>
+      <code>CalendarGridBody</code> renders a row per week and a <code>CalendarDayCell</code> with a{" "}
+      <code>CalendarDay</code> per day. To render them yourself, read <code>use calendarGridState</code> inside a{" "}
+      <code>CalendarGrid</code>. Loop over its <code>weeks</code> and each week's <code>days</code> with keyed
+      equations (<code>weeks key key = g.weeks</code>), as the anatomy shows, so each day keeps its element when
+      focus moves. A <code>CalendarDay</code> with children shows them in place of the day's number. A custom part
+      can read the day's state with <code>use calendarCell</code>.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="calendar" />
+  </DocsPage>
+}

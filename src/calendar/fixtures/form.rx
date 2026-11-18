@@ -1,0 +1,27 @@
+import { CalendarRoot, RangeCalendarRoot, CalendarGrid, CalendarGridBody } from "../calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { PlainDate } from "../../internal/types.rx"
+
+// Calendars in a form that can be reset: a day with a default, a range with a default and its own names, a range
+// named once, and a controlled day. Today pinned to 2030-05-15.
+export default component Fixture() {
+  source controlled: { date: PlainDate | null } := { date: parseDate("2030-05-09", undefined) ?? null }
+  source changes := 0
+  <form data-testid="form">
+    <CalendarRoot aria-label="Day" data-testid="day" name="day" locale="en-US" today={parseDate("2030-05-15", undefined)} defaultValue={parseDate("2030-05-20", undefined)} onValueChange={(date) => { changes := changes + 1 }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <RangeCalendarRoot aria-label="Stay" data-testid="stay" startName="arrive" endName="leave" locale="en-US" today={parseDate("2030-05-15", undefined)} defaultValue={{ start: parseDate("2030-05-03", undefined) ?? today(undefined, undefined), end: parseDate("2030-05-05", undefined) ?? today(undefined, undefined) }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </RangeCalendarRoot>
+    <RangeCalendarRoot aria-label="Trip" data-testid="trip" name="trip" locale="en-US" today={parseDate("2030-05-15", undefined)}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </RangeCalendarRoot>
+    <CalendarRoot aria-label="Controlled" data-testid="controlled" name="fixed" locale="en-US" today={parseDate("2030-05-15", undefined)} value={controlled.date} onValueChange={(date) => { controlled.date := date }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <button type="button" onClick={() => { controlled.date := null }}>Clear</button>
+    <output data-testid="changes">{changes}</output>
+    <button type="reset">Reset</button>
+  </form>
+}

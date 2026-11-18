@@ -1,0 +1,26 @@
+import { CalendarRoot, RangeCalendarRoot, CalendarGrid, CalendarGridBody } from "../calendar.rx"
+import { FieldRoot, FieldLabel, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { parseDate } from "../../internal/date.js"
+
+// Calendars as Field controls in a Form: a required day, a range, and a disabled field.
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `due=${values.due}` }}>
+    <FieldRoot name="due" data-testid="due-root">
+      <FieldLabel>Due date</FieldLabel>
+      <CalendarRoot required locale="en-US" today={parseDate("2030-05-15", undefined)}>
+        <CalendarGrid><CalendarGridBody /></CalendarGrid>
+      </CalendarRoot>
+      <FieldError data-testid="due-error">Choose a date</FieldError>
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <RangeCalendarRoot locale="en-US" today={parseDate("2030-05-15", undefined)}>
+        <CalendarGrid><CalendarGridBody /></CalendarGrid>
+      </RangeCalendarRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

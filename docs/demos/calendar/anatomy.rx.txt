@@ -1,0 +1,36 @@
+import {
+  CalendarRoot, RangeCalendarRoot, CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth,
+  CalendarMonthSelect, CalendarYearSelect, CalendarGrid, CalendarGridHeader, CalendarGridBody,
+  CalendarWeekNumber, CalendarDayCell, CalendarDay, calendarGridState,
+} from "./bisque/calendar/calendar.rx"
+
+<CalendarRoot>
+  <CalendarPreviousMonth />
+  <CalendarMonthLabel />
+  <CalendarNextMonth />
+  <CalendarMonthSelect />
+  <CalendarYearSelect />
+  <CalendarGrid>
+    <CalendarGridHeader />
+    <CalendarGridBody />
+  </CalendarGrid>
+</CalendarRoot>
+
+// RangeCalendarRoot takes the same parts.
+
+// Rendering the rows and cells yourself, inside a CalendarGrid:
+//   g = use calendarGridState
+//   weeks key key = g.weeks
+<tbody>
+  {for week in weeks {
+    days key key = week.days
+    <tr>
+      <CalendarWeekNumber week={week} />
+      {for day in days {
+        <CalendarDayCell day={day}>
+          <CalendarDay />
+        </CalendarDayCell>
+      }}
+    </tr>
+  }}
+</tbody>

@@ -1,0 +1,76 @@
+.CalendarSelects {
+  .Calendar {
+    width: fit-content;
+    padding: 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #1c1c21);
+  }
+
+  .Header {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Native <select>s: the browser draws the list, and its keyboard and type-to-find come with it. */
+  .Select {
+    flex: 1;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+  }
+
+  .Select:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+
+  .Grid {
+    border-collapse: collapse;
+  }
+
+  .Head th {
+    width: 2.25rem;
+    padding-bottom: 0.25rem;
+    color: light-dark(#6e6e7a, #8e8e99);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .Body td {
+    padding: 1px;
+  }
+
+  .Body button {
+    width: 2.25rem;
+    height: 2.25rem;
+    border: 0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-size: 0.875rem;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+  }
+
+  .Body button:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+
+  .Body button[data-outside-month] {
+    color: light-dark(#c4c4cc, #4a4a54);
+  }
+
+  .Body button[data-selected] {
+    background: light-dark(#17171a, #ededf0);
+    color: light-dark(#fff, #17171a);
+  }
+}

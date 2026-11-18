@@ -1,0 +1,62 @@
+import { CalendarRoot, CalendarMonthLabel, CalendarPreviousMonth, CalendarNextMonth, CalendarMonthSelect, CalendarYearSelect, CalendarGrid, CalendarGridHeader, CalendarGridBody, calendar } from "../calendar.rx"
+import { parseDate } from "../../internal/date.js"
+import { PlainDate } from "../../internal/types.rx"
+
+fn weekendsOff(date: PlainDate): boolean => date.dayOfWeek == 6 || date.dayOfWeek == 7
+
+// Two months side by side, rendered from the context as an app would.
+component Months() {
+  c = use calendar
+  months key key = c.months
+  <div>
+    {for month in months {
+      <section>
+        <CalendarMonthLabel offset={month.offset} data-testid={`months-label-${month.offset}`} />
+        <CalendarGrid offset={month.offset}>
+          <CalendarGridHeader />
+          <CalendarGridBody />
+        </CalendarGrid>
+      </section>
+    }}
+  </div>
+}
+
+// Calendars with options, each labelled; today pinned to 2030-05-15.
+export default component Fixture() {
+  <div>
+    // de-DE: weeks start on Monday. Bounded to 2030-05-06 … 2030-06-20, weekends unavailable, with week numbers.
+    <CalendarRoot aria-label="German" data-testid="de" locale="de-DE" today={parseDate("2030-05-15", undefined)} min={parseDate("2030-05-06", undefined)} max={parseDate("2030-06-20", undefined)} isDateUnavailable={weekendsOff} showWeekNumbers weekNumberLabel="Woche">
+      <CalendarPreviousMonth />
+      <CalendarMonthLabel data-testid="de-label" />
+      <CalendarNextMonth />
+      <CalendarGrid>
+        <CalendarGridHeader />
+        <CalendarGridBody />
+      </CalendarGrid>
+    </CalendarRoot>
+    // en-US: weeks start on Sunday, six rows always, with month and year selects.
+    <CalendarRoot aria-label="American" data-testid="us" locale="en-US" today={parseDate("2030-05-15", undefined)} fixedWeeks min={parseDate("2028-03-10", undefined)} max={parseDate("2031-08-01", undefined)}>
+      <CalendarMonthSelect data-testid="us-month" />
+      <CalendarYearSelect data-testid="us-year" />
+      <CalendarMonthLabel data-testid="us-label" />
+      <CalendarGrid>
+        <CalendarGridHeader format="long" />
+        <CalendarGridBody />
+      </CalendarGrid>
+    </CalendarRoot>
+    // Right to left.
+    <div dir="rtl">
+      <CalendarRoot aria-label="Hebrew" data-testid="rtl" locale="he-IL" today={parseDate("2030-05-15", undefined)}>
+        <CalendarGrid>
+          <CalendarGridBody />
+        </CalendarGrid>
+      </CalendarRoot>
+    </div>
+    // Two months, starting on the first of the week the root is told.
+    <CalendarRoot aria-label="Two months" data-testid="months" locale="en-GB" firstDayOfWeek={7} numberOfMonths={2} today={parseDate("2030-05-15", undefined)}>
+      <CalendarPreviousMonth />
+      <CalendarNextMonth />
+      <Months />
+    </CalendarRoot>
+  </div>
+}

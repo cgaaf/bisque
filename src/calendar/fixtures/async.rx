@@ -1,0 +1,107 @@
+import { CalendarRoot, RangeCalendarRoot, CalendarGrid, CalendarGridBody, calendar } from "../calendar.rx"
+import { parseDate, today } from "../../internal/date.js"
+import { save, load } from "../../test/settings-server.js"
+
+// What a part inside the calendar reads: its own value.
+component State(props: { id: string }) {
+  c = use calendar
+  <output data-testid={props.id}>{c.value == undefined ? "" : c.value.toString()}</output>
+}
+
+// Calendars whose day is saved to a server, written as an app would (../../test/settings-server.ts). The server
+// stores ISO strings; today is pinned to 2030-05-15.
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  due = await load("due", "2030-05-09") -> "2030-05-09"
+  source dueError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source start := "2030-05-09"
+  source startError := ""
+  // Optimistic, and disabled while its save is out.
+  review = await load("review", "2030-05-09") -> "2030-05-09"
+  // Optimistic, and read-only while its save is out.
+  launch = await load("launch", "2030-05-09") -> "2030-05-09"
+  // A range, optimistic: the server holds "start/end".
+  stay = await load("stay", "2030-05-03/2030-05-05") -> "2030-05-03/2030-05-05"
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := "2030-05-09"
+  preview = await load(`preview-${wanted}`, wanted) -> "2030-05-09"
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <CalendarRoot aria-label="Due" data-testid="due-root" locale="en-US" today={parseDate("2030-05-15", undefined)} value={parseDate(due, undefined)} onValueChange={(next) => {
+      guess due := next.toString()
+      onFlush(() => { dueError := "" })
+      affects due
+      try {
+        await save("due", next.toString())
+        refresh due
+      } catch (e) {
+        dueError := "failed"
+      }
+    }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <output data-testid="due">{due}</output>
+    <output data-testid="due-saving">{pending? due ? "saving" : ""}</output>
+    <output data-testid="due-error">{dueError}</output>
+
+    <CalendarRoot aria-label="Start" data-testid="start-root" locale="en-US" today={parseDate("2030-05-15", undefined)} value={parseDate(start, undefined)} onValueChange={(next) => {
+      onFlush(() => { startError := "" })
+      try {
+        await save("start", next.toString())
+        start := next.toString()
+      } catch (e) {
+        startError := "failed"
+      }
+    }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+    <output data-testid="start">{start}</output>
+    <output data-testid="start-error">{startError}</output>
+
+    <CalendarRoot aria-label="Review" data-testid="review-root" locale="en-US" today={parseDate("2030-05-15", undefined)} value={parseDate(review, undefined)} disabled={pending? review} onValueChange={(next) => {
+      guess review := next.toString()
+      affects review
+      try {
+        await save("review", next.toString())
+        refresh review
+      } catch (e) {
+      }
+    }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+
+    <CalendarRoot aria-label="Launch" data-testid="launch-root" locale="en-US" today={parseDate("2030-05-15", undefined)} value={parseDate(launch, undefined)} readOnly={pending? launch} onValueChange={(next) => {
+      guess launch := next.toString()
+      affects launch
+      try {
+        await save("launch", next.toString())
+        refresh launch
+      } catch (e) {
+      }
+    }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </CalendarRoot>
+
+    <RangeCalendarRoot aria-label="Stay" data-testid="stay-root" locale="en-US" today={parseDate("2030-05-15", undefined)} value={{ start: parseDate(stay.split("/")[0], undefined) ?? today(undefined, undefined), end: parseDate(stay.split("/")[1], undefined) ?? today(undefined, undefined) }} onValueChange={(next) => {
+      guess stay := `${next.start.toString()}/${next.end.toString()}`
+      affects stay
+      try {
+        await save("stay", `${next.start.toString()}/${next.end.toString()}`)
+        refresh stay
+      } catch (e) {
+      }
+    }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+    </RangeCalendarRoot>
+    <output data-testid="stay">{stay}</output>
+
+    <CalendarRoot aria-label="Preview" data-testid="preview-root" locale="en-US" today={parseDate("2030-05-15", undefined)} defaultValue={parseDate("2030-05-09", undefined)} onValueChange={(next) => { wanted := next.toString() }}>
+      <CalendarGrid><CalendarGridBody /></CalendarGrid>
+      <State id="state" />
+    </CalendarRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+  </div>
+}

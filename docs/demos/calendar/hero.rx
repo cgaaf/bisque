@@ -1,0 +1,17 @@
+import { CalendarRoot, CalendarPreviousMonth, CalendarMonthLabel, CalendarNextMonth, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+
+export component CalendarHero() {
+  <div class="CalendarHero">
+    <CalendarRoot class="Calendar" aria-label="Appointment">
+      <div class="Header">
+        <CalendarPreviousMonth class="Nav">‹</CalendarPreviousMonth>
+        <CalendarMonthLabel class="Label" />
+        <CalendarNextMonth class="Nav">›</CalendarNextMonth>
+      </div>
+      <CalendarGrid class="Grid">
+        <CalendarGridHeader class="Head" format="narrow" />
+        <CalendarGridBody class="Body" />
+      </CalendarGrid>
+    </CalendarRoot>
+  </div>
+}

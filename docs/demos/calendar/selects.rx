@@ -1,0 +1,17 @@
+import { CalendarRoot, CalendarMonthSelect, CalendarYearSelect, CalendarGrid, CalendarGridHeader, CalendarGridBody } from "../../../src/calendar/calendar.rx"
+import { parseDate } from "../../../src/internal/date.js"
+
+export component CalendarSelects() {
+  <div class="CalendarSelects">
+    <CalendarRoot class="Calendar" aria-label="Date of birth" min={parseDate("1920-01-01", undefined)} max={parseDate("2010-12-31", undefined)} defaultMonth={parseDate("1990-06-01", undefined)?.toPlainYearMonth()} fixedWeeks>
+      <div class="Header">
+        <CalendarMonthSelect class="Select" />
+        <CalendarYearSelect class="Select" />
+      </div>
+      <CalendarGrid class="Grid">
+        <CalendarGridHeader class="Head" format="narrow" />
+        <CalendarGridBody class="Body" />
+      </CalendarGrid>
+    </CalendarRoot>
+  </div>
+}
