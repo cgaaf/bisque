@@ -1,0 +1,26 @@
+import { FileUploadRoot, FileUploadInput, FileUploadDropZone, FileUploadItem, fileUpload } from "../file-upload.rx"
+import { FileRejection } from "../../internal/types.rx"
+
+component Files() {
+  c = use fileUpload
+  <ul data-testid="list">{for file in c.files { <FileUploadItem file={file}>{file.name}</FileUploadItem> }}</ul>
+}
+
+// A drop zone whose input is visible and covers it, so a drop lands on the input itself; the root takes images only
+// (a MIME-only `accept`, which a drag can be judged against).
+export default component Fixture() {
+  source changes: string[] := []
+  source rejected: string[] := []
+  action report(rejections: FileRejection[]) {
+    rejected := [...rejected, ...rejections.map((r) => `${r.file.name}:${r.reasons.join("+")}`)]
+  }
+  <FileUploadRoot multiple accept="image/*" onFilesChange={(next) => { changes := [...changes, next.map((file) => file.name).join(",")] }} onFilesReject={report}>
+    <FileUploadDropZone data-testid="zone" style="position: relative; display: block; width: 300px; height: 100px">
+      <span>Drop images</span>
+      <FileUploadInput aria-label="Images" style="position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0" />
+    </FileUploadDropZone>
+    <Files />
+    <output data-testid="changes">{changes.join("|")}</output>
+    <output data-testid="rejected">{rejected.join("|")}</output>
+  </FileUploadRoot>
+}

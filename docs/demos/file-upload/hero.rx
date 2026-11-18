@@ -1,0 +1,51 @@
+import { FileUploadRoot, FileUploadInput, FileUploadTrigger, FileUploadDropZone, FileUploadItem, FileUploadItemPreview, FileUploadItemRemove, fileUpload, fileSize } from "../../../src/file-upload/file-upload.rx"
+import { FileRejection } from "../../../src/internal/types.rx"
+
+fn reasonText(reason: string): string => reason == "too-large" ? "is over 5 MB" : reason == "wrong-type" ? "isn't an image" : reason == "too-many" ? "is one too many" : reason == "directory" ? "is a folder" : reason
+
+// The root's files, read from its context.
+component Files() {
+  c = use fileUpload
+  {if c.files.length > 0 {
+    <ul class="List">
+      {for file in c.files {
+        <FileUploadItem class="Item" file={file}>
+          <FileUploadItemPreview class="Preview" />
+          <span class="Name">{file.name}</span>
+          <span class="Size">{fileSize(file.size)}</span>
+          <FileUploadItemRemove class="Remove">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+            </svg>
+          </FileUploadItemRemove>
+        </FileUploadItem>
+      }}
+    </ul>
+  }}
+}
+
+export component FileUploadHero() {
+  source problems: string[] := []
+  action refuse(rejections: FileRejection[]) {
+    problems := rejections.map((r) => `${r.file.name} ${reasonText(r.reasons[0])}`)
+  }
+  <div class="FileUploadHero">
+    <FileUploadRoot class="Root" name="photos" multiple accept="image/*" maxFiles={4} maxFileSize={5000000} onFilesReject={refuse} onFilesChange={() => { problems := [] }}>
+      <FileUploadDropZone class="DropZone">
+        <svg class="Icon" width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        <span class="Prompt">Drop images here, or</span>
+        <FileUploadTrigger class="Trigger">Choose images</FileUploadTrigger>
+        <FileUploadInput class="VisuallyHidden" aria-label="Images" tabindex="-1" />
+        <span class="Hint">Up to 4 images, 5 MB each</span>
+      </FileUploadDropZone>
+      <Files />
+    </FileUploadRoot>
+    {if problems.length > 0 {
+      <ul class="Problems" role="status">
+        {for problem in problems { <li>{problem}</li> }}
+      </ul>
+    }}
+  </div>
+}

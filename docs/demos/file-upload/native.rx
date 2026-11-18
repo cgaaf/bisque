@@ -1,0 +1,23 @@
+import { FileUploadRoot, FileUploadInput, FileUploadItem, FileUploadItemRemove, fileUpload, fileSize } from "../../../src/file-upload/file-upload.rx"
+
+component Chosen() {
+  c = use fileUpload
+  {for file in c.files {
+    <FileUploadItem class="Chosen" file={file}>
+      <span>{file.name}, {fileSize(file.size)}</span>
+      <FileUploadItemRemove class="Remove">Remove</FileUploadItemRemove>
+    </FileUploadItem>
+  }}
+}
+
+export component FileUploadNative() {
+  <div class="FileUploadNative">
+    <FileUploadRoot name="attachment" accept=".pdf,.txt,.md">
+      <label class="Label">
+        Attachment
+        <FileUploadInput class="Input" />
+      </label>
+      <ul class="List"><Chosen /></ul>
+    </FileUploadRoot>
+  </div>
+}

@@ -1,0 +1,145 @@
+.FileUploadHero {
+  width: min(100%, 24rem);
+  font-size: 0.9375rem;
+
+  .Root {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  /* Hidden from sight but not from the browser: `display: none` would stop it reporting a `required` error. */
+  .VisuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .DropZone {
+    display: grid;
+    justify-items: center;
+    gap: 0.375rem;
+    padding: 1.5rem 1rem;
+    border: 1.5px dashed light-dark(#c4c4cc, #4a4a54);
+    border-radius: 0.625rem;
+    background: light-dark(#fafafb, #18181c);
+    text-align: center;
+    transition:
+      border-color 120ms,
+      background-color 120ms;
+  }
+
+  /* While files are dragged over it. */
+  .DropZone[data-dragging] {
+    border-color: light-dark(#2f5bea, #8eabff);
+    background: light-dark(#f0f4ff, #1b2236);
+  }
+
+  /* While the drag can already be seen to be refused: here, more than four files, or something that isn't an image. */
+  .DropZone[data-invalid] {
+    border-color: light-dark(#d23b3b, #ff8a8a);
+    background: light-dark(#fff3f3, #2a1a1c);
+  }
+
+  .Icon {
+    color: light-dark(#6e6e7a, #8e8e99);
+  }
+
+  .Prompt {
+    color: light-dark(#4a4a54, #c4c4cc);
+  }
+
+  .Hint {
+    font-size: 0.8125rem;
+    color: light-dark(#6e6e7a, #8e8e99);
+  }
+
+  .Trigger {
+    padding: 0.4375rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #222228);
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Trigger:hover {
+    background: light-dark(#f2f2f5, #2a2a31);
+  }
+
+  .Trigger:focus-visible,
+  .Remove:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .List {
+    display: grid;
+    gap: 0.375rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .Item {
+    display: grid;
+    grid-template-columns: 2.5rem 1fr auto auto;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.375rem 0.5rem 0.375rem 0.375rem;
+    border: 1px solid light-dark(#e4e4ea, #2e2e35);
+    border-radius: 0.5rem;
+  }
+
+  /* An object URL of the image, revoked when the item leaves. */
+  .Preview {
+    grid-column: 1;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.3125rem;
+    object-fit: cover;
+    background: light-dark(#f2f2f5, #222228);
+  }
+
+  .Name {
+    grid-column: 2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .Size {
+    font-size: 0.8125rem;
+    color: light-dark(#6e6e7a, #8e8e99);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Remove {
+    display: grid;
+    place-items: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border: 0;
+    border-radius: 0.3125rem;
+    background: none;
+    color: light-dark(#6e6e7a, #8e8e99);
+    cursor: pointer;
+  }
+
+  .Remove:hover {
+    background: light-dark(#f2f2f5, #2a2a31);
+    color: inherit;
+  }
+
+  .Problems {
+    margin: 0.75rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.8125rem;
+    color: light-dark(#b42323, #ff8a8a);
+  }
+}

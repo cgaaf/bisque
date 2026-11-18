@@ -1,0 +1,85 @@
+import { FileUploadRoot, FileUploadInput, FileUploadTrigger, FileUploadDropZone, FileUploadItem, FileUploadItemRemove, FileUploadItemPreview, fileUpload, fileSize } from "../file-upload.rx"
+import { FileRejection } from "../../internal/types.rx"
+import { makeFiles } from "./names.js"
+
+// The chosen files of the root above, with a remove button each.
+component Files(props: { id: string }) {
+  c = use fileUpload
+  <ul data-testid={props.id}>
+    {for file in c.files {
+      <FileUploadItem file={file}>
+        <FileUploadItemPreview data-testid="preview" />
+        <span>{file.name}</span> <span>{fileSize(file.size)}</span>
+        <FileUploadItemRemove>×</FileUploadItemRemove>
+      </FileUploadItem>
+    }}
+  </ul>
+}
+
+export default component Fixture() {
+  source changes: string[] := []
+  source rejected: string[] := []
+  source chosen: File[] := []
+  source controlledChanges := 0
+  // Controlled, and the owner keeps its files through a form reset (it ignores the empty list).
+  source kept: File[] := []
+  // Controlled without `multiple`, and given two files.
+  source pair: File[] := []
+  action report(rejections: FileRejection[]) {
+    rejected := [...rejected, ...rejections.map((r) => `${r.file.name}:${r.reasons.join("+")}`)]
+  }
+  <form data-testid="form" style="width: 360px">
+    // Uncontrolled, several files, images and PDFs up to 1000 bytes, three at most.
+    <FileUploadRoot data-testid="docs-root" name="docs" multiple accept="image/*,.pdf" maxFiles={3} maxFileSize={1000} minFileSize={1}
+      validate={(file) => file.name.startsWith("bad") ? "bad-name" : undefined}
+      onFilesChange={(next) => { changes := [...changes, next.map((file) => file.name).join(",")] }}
+      onFilesReject={report}>
+      <FileUploadDropZone data-testid="zone" style="display: block; min-height: 60px; padding: 8px">
+        <span data-testid="zone-child">Drop files</span>
+        <FileUploadInput aria-label="Documents" tabindex="-1" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%)" />
+        <FileUploadTrigger>Choose documents</FileUploadTrigger>
+      </FileUploadDropZone>
+      <Files id="docs-list" />
+    </FileUploadRoot>
+    <output data-testid="changes">{changes.join("|")}</output>
+    <output data-testid="rejected">{rejected.join("|")}</output>
+
+    // Uncontrolled, one file: a new one replaces it.
+    <FileUploadRoot name="avatar" accept="image/png">
+      <FileUploadInput aria-label="Avatar" />
+      <Files id="avatar-list" />
+    </FileUploadRoot>
+
+    // Controlled.
+    <FileUploadRoot name="controlled" multiple files={chosen} onFilesChange={(next) => { chosen := next; controlledChanges := controlledChanges + 1 }}>
+      <FileUploadInput aria-label="Controlled" />
+      <Files id="controlled-list" />
+    </FileUploadRoot>
+    <output data-testid="chosen">{chosen.map((file) => file.name).join(",")}</output>
+    <button type="button" onClick={() => { chosen := [] }}>Clear from outside</button>
+
+    // Controlled, and the owner refuses every change.
+    <FileUploadRoot name="refused" multiple files={[]} onFilesChange={() => { controlledChanges := controlledChanges + 1 }}>
+      <FileUploadInput aria-label="Refused" />
+    </FileUploadRoot>
+    <output data-testid="controlled-changes">{controlledChanges}</output>
+
+    <FileUploadRoot name="kept" multiple files={kept} onFilesChange={(next) => { if (next.length > 0) { kept := next } }}>
+      <FileUploadInput aria-label="Kept" />
+    </FileUploadRoot>
+
+    <FileUploadRoot name="pair" files={pair}>
+      <FileUploadInput aria-label="Pair" />
+      <Files id="pair-list" />
+    </FileUploadRoot>
+    <button type="button" onClick={() => { pair := makeFiles(["first.png", "second.png"]) }}>Give two</button>
+
+    <FileUploadRoot name="locked" disabled>
+      <FileUploadDropZone data-testid="locked-zone" style="display: block; min-height: 40px">
+        <FileUploadInput aria-label="Locked" />
+        <FileUploadTrigger>Choose locked</FileUploadTrigger>
+      </FileUploadDropZone>
+    </FileUploadRoot>
+    <button type="reset">Reset</button>
+  </form>
+}

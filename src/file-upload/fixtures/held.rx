@@ -1,0 +1,36 @@
+import { FileUploadRoot, FileUploadInput, FileUploadItem, FileUploadItemRemove, fileUpload } from "../file-upload.rx"
+import { save } from "../../test/slow-server.js"
+
+// The chosen files of the root above, with a remove button each.
+component Files(props: { id: string }) {
+  c = use fileUpload
+  <ul data-testid={props.id}>
+    {for file in c.files {
+      <FileUploadItem file={file}><span>{file.name}</span><FileUploadItemRemove>×</FileUploadItemRemove></FileUploadItem>
+    }}
+  </ul>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// file upload is computed from that write. The list of chosen files must not wait for the app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+    <output data-testid="saving">{pending? step ? "saving" : ""}</output>
+
+    // A prop of the root, which reaches its context. Attributes passed to the root's element or the input held
+    // nothing here even without `latest` (the list reaches the input through createFileInput, not an attribute), so
+    // those cases proved nothing and were dropped.
+    <FileUploadRoot multiple required={step == 2}>
+      <FileUploadInput aria-label="Root prop" />
+      <Files id="root-prop" />
+    </FileUploadRoot>
+  </main>
+}

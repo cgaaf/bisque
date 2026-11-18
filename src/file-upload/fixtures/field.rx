@@ -1,0 +1,27 @@
+import { FileUploadRoot, FileUploadInput, FileUploadTrigger } from "../file-upload.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+import { names } from "./names.js"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `resume=${names(values.resume)}` }}>
+    <FieldRoot name="resume" data-testid="resume-root">
+      <FieldLabel>Résumé</FieldLabel>
+      <FileUploadRoot required accept=".pdf">
+        <FileUploadInput />
+      </FileUploadRoot>
+      <FieldDescription data-testid="resume-description">A PDF, one page.</FieldDescription>
+      <FieldError data-testid="resume-error">Attach your résumé</FieldError>
+    </FieldRoot>
+    <FieldRoot name="letter" disabled>
+      <FieldLabel>Cover letter</FieldLabel>
+      <FileUploadRoot>
+        <FileUploadInput tabindex="-1" />
+        <FileUploadTrigger>Choose a cover letter</FileUploadTrigger>
+      </FileUploadRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

@@ -1,0 +1,13 @@
+// How .rx may use ./file-upload.js (implemented in ./impl/file-upload.ts): the File Upload family's rules for
+// chosen files, a native file input kept holding the root's list, a drop zone's drag state, and image previews.
+// Types come through ../internal/types.rx (`FileRejection`, `FileRules` …), never from this module.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./file-upload.d.ts.
+export pure fn checkFiles(current: File[], incoming: File[], rules: import("./impl/file-upload.ts").FileRules): import("./impl/file-upload.ts").FileCheck
+export pure fn fileLimit(rules: { multiple: boolean; maxFiles: number | undefined }): number
+export pure fn withoutFile(files: File[], file: File): File[]
+export fn filesOf(input: HTMLInputElement): File[]
+export fn handOffFocus(button: HTMLElement): void
+export pure fn createFileInput(ref element: HTMLInputElement | undefined, ref files: File[], ref revision: number) instantiates
+export pure fn createDropZone(ref element: HTMLElement | undefined, ref options: import("./impl/file-upload.ts").DropZoneOptions, onDrop: (files: File[]) => void): ref import("./impl/file-upload.ts").DropZoneState
+export pure fn createObjectUrl(ref file: File | undefined): ref string | undefined
+export pure fn formatFileSize(bytes: number, locale: string | undefined): string

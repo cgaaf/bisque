@@ -1,0 +1,87 @@
+import { FileUploadRoot, FileUploadInput, FileUploadItem, FileUploadItemRemove, fileUpload } from "../file-upload.rx"
+import { save } from "../../test/slow-server.js"
+
+// The chosen files of the root above, each with its upload's state as the app tracks it.
+component Files(props: { id: string; states: string[] }) {
+  c = use fileUpload
+  <ul data-testid={props.id}>
+    {for file in c.files {
+      <FileUploadItem file={file}>
+        <span>{file.name}</span>
+        <output>{props.states.find((s) => s.startsWith(`${file.name}:`))?.slice(file.name.length + 1) ?? ""}</output>
+        <FileUploadItemRemove>×</FileUploadItemRemove>
+      </FileUploadItem>
+    }}
+  </ul>
+}
+
+// Apps that upload each file as soon as it is chosen, to a server that takes its time (../../test/slow-server.ts).
+// The family hands over File objects and nothing more; the uploads and their states are the app's.
+export default component Fixture() {
+  // "name:state" for every upload started.
+  source states: string[] := []
+  source changes := 0
+  action upload(file: File) {
+    // In a change of its own, so it shows while the request is out (a write before `await` waits for the action).
+    onFlush(() => { states := old => [...old.filter((s) => !s.startsWith(`${file.name}:`)), `${file.name}:uploading`] })
+    try {
+      await save(file.name)
+      states := old => old.map((s) => s == `${file.name}:uploading` ? `${file.name}:done` : s)
+    } catch (e) {
+      states := old => old.map((s) => s == `${file.name}:uploading` ? `${file.name}:failed` : s)
+    }
+  }
+  // Controlled: the app holds the list too, and starts the uploads of the files just added.
+  source chosen: File[] := []
+  source chosenStates: string[] := []
+  action uploadChosen(file: File) {
+    onFlush(() => { chosenStates := old => [...old, `${file.name}:uploading`] })
+    try {
+      await save(`chosen-${file.name}`)
+      chosenStates := old => old.map((s) => s == `${file.name}:uploading` ? `${file.name}:done` : s)
+    } catch (e) {
+      chosenStates := old => old.map((s) => s == `${file.name}:uploading` ? `${file.name}:failed` : s)
+    }
+  }
+  source batchState := ""
+  <main>
+    // Uncontrolled, and the handler itself awaits the request: the plainest way to write it. The handler's change
+    // is held until the answer; the list must not be held with it.
+    <FileUploadRoot multiple onFilesChange={(next) => {
+      try {
+        await save(`batch-${next.length}`)
+        batchState := `saved ${next.length}`
+      } catch (e) {
+        batchState := "failed"
+      }
+    }}>
+      <FileUploadInput aria-label="Batch" />
+      <Files id="batch" states={[]} />
+    </FileUploadRoot>
+    <output data-testid="batch-state">{batchState}</output>
+    <output data-testid="batch-busy">{pending? batchState ? "saving" : ""}</output>
+    // Uncontrolled: the root holds the list, and each change starts the uploads of the files it added.
+    <FileUploadRoot multiple onFilesChange={(next) => {
+      changes := changes + 1
+      let started = states.map((s) => s.slice(0, s.lastIndexOf(":")))
+      // Each upload in a change of its own: started in one run, they would be one change, and each would show as
+      // done only when all were.
+      next.filter((file) => !started.includes(file.name)).forEach((file) => onFlush(() => { upload(file) }))
+    }}>
+      <FileUploadInput aria-label="Uploads" />
+      <Files id="uploads" states={states} />
+    </FileUploadRoot>
+    <output data-testid="changes">{changes}</output>
+    <output data-testid="busy">{pending? states ? "uploading" : ""}</output>
+
+    <FileUploadRoot multiple files={chosen} onFilesChange={(next) => {
+      let added = next.filter((file) => !chosen.includes(file))
+      chosen := next
+      added.forEach((file) => onFlush(() => { uploadChosen(file) }))
+    }}>
+      <FileUploadInput aria-label="Chosen" />
+      <Files id="chosen" states={chosenStates} />
+    </FileUploadRoot>
+    <output data-testid="chosen-busy">{pending? chosenStates ? "uploading" : ""}</output>
+  </main>
+}

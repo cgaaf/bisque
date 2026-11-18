@@ -1,0 +1,63 @@
+.FileUploadNative {
+  font-size: 0.9375rem;
+
+  .Label {
+    display: grid;
+    gap: 0.375rem;
+    font-weight: 500;
+  }
+
+  /* The input itself is the control: its button is `::file-selector-button`, the text after it is the browser's. */
+  .Input {
+    font: inherit;
+    font-weight: 400;
+    color: light-dark(#6e6e7a, #8e8e99);
+  }
+
+  .Input::file-selector-button {
+    margin-right: 0.75rem;
+    padding: 0.4375rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #222228);
+    color: light-dark(#17171a, #ededf0);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Input::file-selector-button:hover {
+    background: light-dark(#f2f2f5, #2a2a31);
+  }
+
+  .Input:focus-visible {
+    outline: none;
+  }
+
+  .Input:focus-visible::file-selector-button {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .List {
+    margin: 0.5rem 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .Chosen {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .Remove {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: light-dark(#2f5bea, #8eabff);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+}

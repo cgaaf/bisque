@@ -1,0 +1,4 @@
+// How the File Upload demos may use ./upload.js.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./upload.d.ts.
+export fn sendFile(file: File, onProgress: (percent: number) => void): Promise<void>
+export pure fn fileNames(files: unknown): string

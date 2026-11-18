@@ -1,0 +1,32 @@
+import {
+  FileUploadRoot,
+  FileUploadDropZone,
+  FileUploadTrigger,
+  FileUploadInput,
+  FileUploadItem,
+  FileUploadItemPreview,
+  FileUploadItemRemove,
+  fileUpload,
+} from "./bisque/file-upload/file-upload.rx"
+
+<FileUploadRoot>
+  <FileUploadDropZone>
+    <FileUploadTrigger />
+    <FileUploadInput />
+  </FileUploadDropZone>
+  <Files />
+</FileUploadRoot>
+
+// The list is yours: read the root's files from its context (or hold them yourself with `files`).
+component Files() {
+  c = use fileUpload
+  <ul>
+    {for file in c.files {
+      <FileUploadItem file={file}>
+        <FileUploadItemPreview />
+        {file.name}
+        <FileUploadItemRemove />
+      </FileUploadItem>
+    }}
+  </ul>
+}

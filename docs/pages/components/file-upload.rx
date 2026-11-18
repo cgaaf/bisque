@@ -1,0 +1,144 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { FileUploadHero } from "../../demos/file-upload/hero.rx"
+import { FileUploadNative } from "../../demos/file-upload/native.rx"
+import { FileUploadForm } from "../../demos/file-upload/form.rx"
+import { FileUploadProgress } from "../../demos/file-upload/progress.rx"
+
+export default component Page() {
+  <DocsPage title="File Upload" subtitle="Choosing files through the browser's picker or by dropping them, with a list of what was chosen.">
+    <Demo source="file-upload/hero"><FileUploadHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      Import the parts and put them together. The list is yours to render: read the root's files from its context,
+      or hold them yourself with <code>files</code>.
+    </p>
+    <Code file="file-upload/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The family stands on a native <code>{"<input type=\"file\">"}</code>, which provides:
+    </p>
+    <ul>
+      <li>The picker, and what it offers: <code>accept</code>, <code>multiple</code>, <code>capture</code> and <code>webkitdirectory</code>.</li>
+      <li>Label association: a <code>{"<label>"}</code> that names the input opens the picker too.</li>
+      <li>Form submission of the chosen files, and <code>required</code> validation.</li>
+      <li>A button that can be styled, <code>::file-selector-button</code>.</li>
+    </ul>
+    <p>
+      The input stays the single source of truth for what is submitted. Every change to the list (a pick, a drop, a
+      removal, a controlled <code>files</code>) is written into it: <code>input.files</code> can be set from a{" "}
+      <code>DataTransfer</code> in Chromium, Firefox and WebKit, and the files then submit with the form. A form reset
+      empties it, and the list with it.
+    </p>
+    <p>The library adds what the input can't do:</p>
+    <ul>
+      <li>A list to add to and remove from. The native picker replaces its selection each time; with <code>multiple</code> the root adds to it.</li>
+      <li>
+        Rules applied to every file however it arrived (<code>accept</code>, sizes, a count and your own{" "}
+        <code>validate</code>), with each refused file reported with its reasons.
+      </li>
+      <li>A drop zone with drag state, and removal buttons that keep focus in the list.</li>
+      <li>The wiring to a <a href="../field/">Field</a>.</li>
+    </ul>
+    <p>
+      Uploading is not part of it. The family hands your app <code>File</code> objects through{" "}
+      <code>onFilesChange</code>; sending them, showing progress and retrying are the app's (see{" "}
+      <a href="#progress">tracking uploads</a>).
+    </p>
+    <div class="note">
+      <p>
+        Can a file input be its own drop zone? In Chromium it can: a file dropped on a visible input, or on an
+        invisible full-size one laid over a zone, fills it with no script. Firefox and WebKit couldn't be tested
+        this way, because a test can only drop a real file in Chromium. Where it works, it can't show that a drag is
+        over it or that the drag will be refused, and it doesn't check <code>accept</code>: Chromium took a text
+        file dropped on an input that accepted only PNG. So <code>FileUploadDropZone</code> takes the drop itself.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="drop-zone">Drop zone</h3>
+    <p>
+      <code>FileUploadDropZone</code> takes a drag only if it carries files. Text or a link dragged over it is left
+      to the page, so it still reaches a text field inside the zone. While files are dragged over it the zone has{" "}
+      <code>data-dragging</code>, and that stays on as the pointer crosses the zone's children. It also has{" "}
+      <code>data-invalid</code> while the drag can already be seen to be refused. During a drag Chromium gives the
+      page each file's MIME type but not its name or size (the other engines couldn't be given a real file drag in
+      a test). So <code>data-invalid</code> covers too many files, or a type that a MIME-only <code>accept</code>{" "}
+      rules out. An extension in <code>accept</code>, and the size limits, are applied on drop. A dropped file goes
+      through the same rules as a picked one.
+    </p>
+    <p>
+      A zone isn't focusable and has no role (WAI-ARIA has no pattern for one). Put a{" "}
+      <code>FileUploadTrigger</code> in or beside it: choosing files through the picker does everything a drop does,
+      for anyone who doesn't drag. A disabled zone doesn't take drops, and the browser handles a drop on it as it
+      would without the zone.
+    </p>
+    <p>
+      In Chromium, a dropped folder arrives as a file named after it, and reading that file fails. The zone tells it
+      apart (through <code>webkitGetAsEntry()</code>) and refuses it with the reason <code>"directory"</code>. To let people choose a folder, put{" "}
+      <code>webkitdirectory</code> on the input: the picker then gives every file in it.
+    </p>
+
+    <h3 id="trigger">The trigger and the input</h3>
+    <p>
+      <code>FileUploadTrigger</code> opens the picker by calling <code>click()</code> on the input during its own
+      press. That opened the picker in Chromium, Firefox and WebKit. <code>showPicker()</code> isn't used: it
+      opened the picker in Chromium and Firefox, but no picker could be seen opening in WebKit's test browser.
+    </p>
+    <p>
+      When you use the trigger, hide the input visually (as the hero does) and give it <code>tabindex="-1"</code>,
+      so keyboard users meet one control, not two. Don't use <code>display: none</code> or <code>hidden</code>. A
+      required input hidden that way still stops the submit, but the browser can't focus it to say why. A visually
+      hidden one, even out of the tab order, takes focus for the browser's message.
+    </p>
+    <p>
+      Or leave the trigger out and let the input be the control, styled through <code>::file-selector-button</code>.
+      The browser's own text says what was chosen; the list adds a way to remove it.
+    </p>
+    <Demo source="file-upload/native"><FileUploadNative /></Demo>
+
+    <h3 id="rules">Rules and rejections</h3>
+    <p>
+      <code>accept</code>, <code>maxFileSize</code>, <code>minFileSize</code>, <code>maxFiles</code> and{" "}
+      <code>validate</code> are checked for every file, picked or dropped. The files that pass are taken and the
+      rest go to <code>onFilesReject</code> as <code>{"{ file, reasons }"}</code>, with every reason that applies:{" "}
+      <code>"wrong-type"</code>, <code>"too-large"</code>, <code>"too-small"</code>, <code>"too-many"</code>,{" "}
+      <code>"directory"</code>, or what <code>validate</code> returned. A file that fails takes no room, and a pick
+      that brings nothing acceptable leaves the list as it was. The hero turns the reasons into messages.
+    </p>
+    <p>
+      Without <code>multiple</code>, a new file replaces the one chosen. With it, each pick or drop is added to the
+      list, up to <code>maxFiles</code>.
+    </p>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      Give the root a <code>name</code> and the input submits the list with its form. A native form posts files only
+      as <code>multipart/form-data</code>, so give it <code>enctype="multipart/form-data"</code>. A{" "}
+      <a href="../form/">Form</a> gives the list, as <code>File</code> objects, to <code>onFormSubmit</code> under
+      that name. Inside a <a href="../field/">Field</a> the input is the field's control: the label names it and
+      opens the picker, and <code>required</code> is the input's own constraint. Submit this one with nothing chosen.
+    </p>
+    <Demo source="file-upload/form"><FileUploadForm /></Demo>
+    <p>
+      A form reset empties the input. An uncontrolled list is emptied with it and <code>onFilesChange</code> is
+      called once with <code>[]</code>. A controlled owner gets the same call and decides; until it changes{" "}
+      <code>files</code>, the input is given its list again.
+    </p>
+
+    <h3 id="progress">Tracking uploads</h3>
+    <p>
+      The family stops at <code>File</code> objects. To upload each file as it is chosen, start the uploads from{" "}
+      <code>onFilesChange</code> and keep each one's progress in the app, keyed by its <code>File</code>. Give each
+      upload a change of its own (<code>onFlush</code>), so each finishes on its own. The root calls{" "}
+      <code>onFilesChange</code> in a change of its own too, so a handler that waits for a server never holds the
+      list: files can be added and removed while uploads are out. This demo's server refuses files over 2 MB.
+    </p>
+    <Demo source="file-upload/progress"><FileUploadProgress /></Demo>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="file-upload" />
+  </DocsPage>
+}

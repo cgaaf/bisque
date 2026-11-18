@@ -1,0 +1,111 @@
+.FileUploadForm {
+  width: min(100%, 22rem);
+  font-size: 0.9375rem;
+
+  .Form,
+  .Field,
+  .Root {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .Form {
+    gap: 1rem;
+  }
+
+  .Root {
+    justify-items: start;
+  }
+
+  .Label {
+    font-weight: 500;
+  }
+
+  /* Focusable by the browser, so it can point at the input when `required` fails; out of the tab order. */
+  .VisuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .Button,
+  .Submit {
+    padding: 0.4375rem 0.875rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #222228);
+    color: inherit;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+
+  .Submit {
+    justify-self: start;
+    border-color: transparent;
+    background: light-dark(#17171a, #ededf0);
+    color: light-dark(#fff, #17171a);
+  }
+
+  .Button:focus-visible,
+  .Submit:focus-visible,
+  .Remove:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  /* The field is invalid after a submit with nothing chosen. */
+  .Field[data-invalid] .Button {
+    border-color: light-dark(#d23b3b, #ff8a8a);
+  }
+
+  .List {
+    display: grid;
+    gap: 0.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .List:empty {
+    display: none;
+  }
+
+  .Chosen {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .Remove {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: light-dark(#2f5bea, #8eabff);
+    font: inherit;
+    font-size: 0.8125rem;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
+  .Description {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#6e6e7a, #8e8e99);
+  }
+
+  .Error {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: light-dark(#b42323, #ff8a8a);
+  }
+
+  .Sent {
+    display: block;
+    margin-top: 0.75rem;
+    font-size: 0.8125rem;
+    color: light-dark(#4a4a54, #c4c4cc);
+  }
+}

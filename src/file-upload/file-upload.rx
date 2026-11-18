@@ -1,0 +1,343 @@
+// Choosing files, through the browser's picker or by dropping them on a zone, with a list of the chosen files that
+// can be removed. Base UI has no such component; the set of parts is the one Ark UI (FileUpload), React Aria
+// (FileTrigger, DropZone) and Kobalte ship, cut to those that carry behaviour. WAI-ARIA has no drop-zone pattern: keyboard and screen-reader users choose files through the
+// picker (the Trigger or the Input), which does everything a drop does.
+//
+// The family is thin on purpose. It stands on a native <input type="file">, which owns the picker, `accept`,
+// `multiple`, `capture`, `webkitdirectory`, label association, form submission (multipart) and `required`
+// validation. The input stays the single source of truth for what submits: every change to the list (a pick, a
+// drop, a removal, a controlled `files`) is written into it with a DataTransfer, which all three engines allow
+// (file-upload.platform.browser.test.ts), so a native form posts exactly the files the list shows.
+//
+// What the library adds: a list the person can add to and remove from (the native picker replaces its selection),
+// the root's rules applied to every file however it arrived (`accept` is not enforced by the browser for a drop),
+// rejections with their reasons, a drop zone's drag state, removal buttons that keep focus in the list, and the
+// Field wiring. Uploading is not in scope: the family hands the app `File` objects through `onFilesChange`, and
+// the app sends them, tracks progress and retries.
+import { mergeProps, createRef } from "../internal/props.js"
+import { createFormReset } from "../internal/field.js"
+import { clickElement } from "../internal/dom.js"
+import { createFocusKeeper } from "../internal/focus-keeper.js"
+import { checkFiles, fileLimit, withoutFile, filesOf, handOffFocus, createFileInput, createDropZone, createObjectUrl, formatFileSize } from "../internal/file-upload.js"
+import { field, fieldInputProps, FieldContext } from "../field/field.rx"
+import { DivProps, InputProps, ButtonProps, ListItemProps, ImageProps, PartProps, FileRejection, FileValidateResult } from "../internal/types.rx"
+
+export type FileUploadContext = {
+  // The chosen files, in the order they were added.
+  files: File[]
+  accept: string | undefined
+  multiple: boolean
+  disabled: boolean
+  required: boolean
+  // The name the files submit under.
+  name: string | undefined
+  // How many more files the list takes (Infinity without a limit). Without `multiple` a new file replaces the one
+  // there, so this is 1.
+  room: number
+  // The native input, once FileUploadInput has rendered.
+  input: HTMLInputElement | undefined
+  // Checks files against the root's rules and adds those that pass (replaces, without `multiple`).
+  addFiles: (files: File[]) => void
+  removeFile: (file: File) => void
+  clearFiles: () => void
+  setInput: (element: HTMLInputElement) => void
+}
+
+export context fileUpload: lane FileUploadContext
+
+export type FileUploadRootProps = {
+  // The chosen files, controlled. Files have no meaningful default (nothing can be chosen for the person, and a
+  // form reset empties the input), so an uncontrolled list starts empty.
+  files?: File[]
+  // Called with the whole new list after a pick, a drop, a removal or a form reset.
+  onFilesChange?: (files: File[]) => void
+  // Called with the files a pick or drop brought that weren't taken, each with its reasons: "wrong-type",
+  // "too-large", "too-small", "too-many", or a reason `validate` returned.
+  onFilesReject?: (rejections: FileRejection[]) => void
+  // The file types to take, as the input's `accept`: extensions (".pdf"), MIME types ("image/png") and "image/*".
+  // The picker offers only these, and dropped files are checked against it.
+  accept?: string
+  // Lets the person choose several files, and adds each pick or drop to the list instead of replacing it.
+  multiple?: boolean
+  // The most files the list holds, with `multiple`. Files past it are refused as "too-many".
+  maxFiles?: number
+  // In bytes.
+  maxFileSize?: number
+  // In bytes.
+  minFileSize?: number
+  // A check of your own, run on each file after the built-in ones: return a reason (or reasons) to refuse it.
+  validate?: (file: File) => FileValidateResult
+  disabled?: boolean
+  // At least one file must be chosen before the form submits: the input's own `required`.
+  required?: boolean
+  // The name the files submit under with a native form (multipart/form-data). Default: the FieldRoot's name.
+  name?: string
+} & DivProps
+
+export component FileUploadRoot(props: FileUploadRootProps) {
+  f = use field
+  source uncontrolled: File[] := []
+  // Counts form resets, so the input is given the list again after one empties it (createFileInput).
+  source revision := 0
+  source input: HTMLInputElement | undefined := undefined
+  // `files` and `disabled` are often read from an answer that can fail: that failure is the app's to show.
+  givenFiles = props.files catch (e) => undefined
+  givenDisabled = (latest props.disabled ?? false) catch (e) => false
+  current = givenFiles ?? uncontrolled
+  isMultiple = latest props.multiple ?? false
+  isDisabled = givenDisabled || (f?.disabled ?? false)
+  isRequired = latest props.required ?? false
+  acceptValue = latest props.accept
+  limit = fileLimit({ multiple: isMultiple, maxFiles: latest props.maxFiles })
+  room = isMultiple ? limit - current.length : 1
+  inputName = latest props.name ?? f?.name
+
+  // A copy: a list source is a store whose writes replace its contents in place, so `current` stays the same
+  // object across changes and an effect on it wouldn't see one.
+  snapshot = [...current]
+  effect (snapshot) { if (f) { f.setValue($0) } }
+  _input = createFileInput(input, current, revision)
+  _reset = createFormReset(input, reset)
+
+  // The owner's handlers are called in a change of their own (`onFlush`): one that starts an upload holds its
+  // change until the answer lands, and the list would be held with it.
+  action notify(next: File[]) {
+    if (props.onFilesChange) {
+      let report = props.onFilesChange
+      onFlush(() => { report(next) })
+    }
+  }
+  action notifyReject(rejected: FileRejection[]) {
+    if (props.onFilesReject) {
+      let report = props.onFilesReject
+      onFlush(() => { report(rejected) })
+    }
+  }
+  action commit(next: File[]) {
+    if (givenFiles == undefined) { uncontrolled := next }
+    notify(next)
+  }
+  action addFiles(incoming: File[]) {
+    if (isDisabled || incoming.length == 0) { return }
+    let result = checkFiles(current, incoming, {
+      accept: props.accept,
+      multiple: props.multiple ?? false,
+      maxFiles: props.maxFiles,
+      maxFileSize: props.maxFileSize,
+      minFileSize: props.minFileSize,
+      validate: props.validate,
+    })
+    // The change first, then the refusals: an app that clears its messages on a change and writes them on a
+    // refusal shows this pick's.
+    if (result.added.length > 0) { commit(result.files) }
+    if (result.rejected.length > 0) { notifyReject(result.rejected) }
+  }
+  action removeFile(file: File) {
+    if (isDisabled) { return }
+    commit(withoutFile(current, file))
+  }
+  action clearFiles() {
+    if (current.length > 0) { commit([]) }
+  }
+  // The browser has emptied the input. Uncontrolled, the list is emptied with it and the change reported; a
+  // controlled owner is told and decides, and the input is given its list again meanwhile.
+  action reset() {
+    revision := revision + 1
+    let had = current.length > 0
+    if (givenFiles == undefined) { uncontrolled := [] }
+    if (had) { notify([]) }
+    if (f) { f.reset(givenFiles ?? []) }
+  }
+  action setInput(element: HTMLInputElement) {
+    input := element
+    if (f) { f.setInput(element) }
+  }
+
+  provide fileUpload = {
+    files: current,
+    accept: acceptValue,
+    multiple: isMultiple,
+    disabled: isDisabled,
+    required: isRequired,
+    name: inputName,
+    room: room,
+    input: input,
+    addFiles: addFiles,
+    removeFile: removeFile,
+    clearFiles: clearFiles,
+    setInput: setInput,
+  }
+
+  { files, onFilesChange, onFilesReject, accept, multiple, maxFiles, maxFileSize, minFileSize, validate, disabled, required, name, children, ...rest } = props
+  own = {
+    "data-bisque-file-upload": "",
+    "data-disabled": isDisabled ? "" : undefined,
+  }
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The native <input type="file">: it opens the picker, carries `accept`, `multiple`, `name` and `required` from the
+// root, and submits the list with its form. Inside a FieldRoot it is the field's control, so a FieldLabel names it
+// and opens the picker. Pass `capture` or `webkitdirectory` here; the browser handles them.
+//
+// It can be the visible control (style it with `::file-selector-button`), or be hidden beside a FileUploadTrigger.
+// Hide it visually rather than with `display: none` or `hidden`, and take it out of the tab order with
+// `tabindex="-1"`: a required input hidden that way still blocks the submit, but the browser can't focus it to say
+// why (file-upload.platform.browser.test.ts).
+export fn fileUploadInput(ref c: FileUploadContext, ref f: FieldContext | undefined): PartProps {
+  action change(event: Event & { currentTarget: HTMLInputElement }) { c.addFiles(filesOf(event.currentTarget)) }
+  action writeInput(element: HTMLInputElement) { c.setInput(element) }
+  setInput = createRef(writeInput)
+  inField = fieldInputProps(f)
+  // Plain values first: the context is a new object whenever the list changes, and the props object should be
+  // rebuilt only when one of these does.
+  name = c.name
+  accept = c.accept
+  multiple = c.multiple
+  required = c.required
+  disabled = c.disabled
+  mergeProps(inField, {
+    type: "file",
+    name: name,
+    accept: accept,
+    multiple: multiple ? true : undefined,
+    required: required ? true : undefined,
+    disabled: disabled ? true : undefined,
+    ref: setInput,
+    onChange: change,
+  })
+}
+
+export component FileUploadInput(props: Omit<InputProps, "type" | "name" | "accept" | "multiple" | "required" | "disabled" | "value" | "children">) {
+  c = use fileUpload
+  f = use field
+  own = fileUploadInput(c, f)
+  merged = latest mergeProps(own, props)
+  <input {...merged} />
+}
+
+// A button that opens the picker. It calls the input's `click()` during its own press, which opened the picker in
+// all three engines; `showPicker()` opened none that a test could see in WebKit. Use it with a visually hidden
+// FileUploadInput. It is natively disabled with the root.
+export fn fileUploadTrigger(ref c: FileUploadContext): PartProps {
+  action open() { clickElement(c.input) }
+  disabled = c.disabled
+  {
+    type: "button",
+    disabled: disabled ? true : undefined,
+    "data-bisque-file-trigger": "",
+    onClick: open,
+  }
+}
+
+export component FileUploadTrigger({ children, ...rest }: ButtonProps) {
+  c = use fileUpload
+  source element: HTMLElement | undefined := undefined
+  action writeElement(button: HTMLElement) { element := button }
+  setElement = createRef(writeElement)
+  // Disabled while it had focus (`disabled={pending? upload}`), it takes focus back when re-enabled.
+  _focus = createFocusKeeper(element, c.disabled)
+  base = fileUploadTrigger(c)
+  own = { ...base, ref: setElement }
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// An area files can be dropped on. Only a drag that carries files is the zone's: text and links dragged over it
+// are left to the page. It is not focusable and has no role: put a FileUploadTrigger in it (or beside it) for
+// everyone who doesn't drag. Dropped files go through the root's rules like picked ones.
+export component FileUploadDropZone({ children, ...rest }: DivProps) {
+  c = use fileUpload
+  source element: HTMLElement | undefined := undefined
+  action writeElement(zone: HTMLElement) { element := zone }
+  setElement = createRef(writeElement)
+  action drop(files: File[]) { c.addFiles(files) }
+  isDisabled = c.disabled
+  accept = c.accept
+  room = c.room
+  options = { disabled: isDisabled, accept: accept, room: room }
+  drag = createDropZone(element, options, drop)
+  own = {
+    // While files are dragged over the zone.
+    "data-dragging": drag.dragging ? "" : undefined,
+    // While a drag over the zone can already be seen to be refused: more files than the list has room for, or a
+    // type `accept` rules out (during a drag only MIME types are known, so an extension in `accept` can't refuse).
+    "data-invalid": drag.dragging && drag.invalid ? "" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    ref: setElement,
+  }
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+}
+
+// The file an item stands for, for the parts inside it (FileUploadItemRemove, FileUploadItemPreview) and a
+// consumer's own.
+export type FileUploadItemContext = {
+  file: File
+  name: string
+  // In bytes; `fileSize(size)` formats it.
+  size: number
+  // The MIME type, "" when the browser doesn't know it.
+  type: string
+}
+
+export context fileUploadItem: FileUploadItemContext
+
+export type FileUploadItemProps = {
+  // The file this item stands for: one of the root's `files`.
+  file: File
+} & ListItemProps
+
+// One chosen file, as an <li>: render it for each of the root's `files`, in a list of your own.
+export component FileUploadItem(props: FileUploadItemProps) {
+  provide fileUploadItem = {
+    file: props.file,
+    name: props.file.name,
+    size: props.file.size,
+    type: props.file.type,
+  }
+  { file, children, ...rest } = props
+  <li {...rest}>{children}</li>
+}
+
+// Removes its item's file from the list. Labelled "Remove <file name>" unless given an `aria-label`. When it had
+// focus, focus moves to the next item's remove button (else the previous one's, else the trigger or input), so a
+// keyboard user isn't dropped at the top of the page.
+export fn fileUploadItemRemove(ref c: FileUploadContext, ref item: FileUploadItemContext): PartProps {
+  action remove(event: MouseEvent & { currentTarget: HTMLElement }) {
+    handOffFocus(event.currentTarget)
+    c.removeFile(item.file)
+  }
+  name = item.name
+  disabled = c.disabled
+  {
+    type: "button",
+    "aria-label": `Remove ${name}`,
+    disabled: disabled ? true : undefined,
+    "data-bisque-file-remove": "",
+    onClick: remove,
+  }
+}
+
+export component FileUploadItemRemove({ children, ...rest }: ButtonProps) {
+  c = use fileUpload
+  item = use fileUploadItem
+  own = fileUploadItemRemove(c, item)
+  merged = latest mergeProps(own, rest)
+  <button {...merged}>{children}</button>
+}
+
+// A thumbnail of its item's file when the file is an image: an <img> showing an object URL, which is revoked when
+// the item leaves. Renders nothing for other files. Its `alt` is "" by default, as the file's name is beside it.
+export component FileUploadItemPreview(props: Omit<ImageProps, "src" | "children">) {
+  item = use fileUploadItem
+  url = createObjectUrl(item.file)
+  merged = latest mergeProps({ alt: "" }, props)
+  {if url != undefined {
+    <img {...merged} src={url} />
+  }}
+}
+
+// A file size for people: "512 bytes", "1.5 kB", "20 MB", in the page's language (powers of 1000).
+export fn fileSize(bytes: number): string => formatFileSize(bytes, undefined)

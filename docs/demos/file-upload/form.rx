@@ -1,0 +1,34 @@
+import { FileUploadRoot, FileUploadInput, FileUploadTrigger, FileUploadItem, FileUploadItemRemove, fileUpload } from "../../../src/file-upload/file-upload.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../../src/field/field.rx"
+import { Form } from "../../../src/form/form.rx"
+import { fileNames } from "./upload.js"
+
+component Chosen() {
+  c = use fileUpload
+  {for file in c.files {
+    <FileUploadItem class="Chosen" file={file}>
+      <span class="Name">{file.name}</span>
+      <FileUploadItemRemove class="Remove">Remove</FileUploadItemRemove>
+    </FileUploadItem>
+  }}
+}
+
+export component FileUploadForm() {
+  source sent := ""
+  <div class="FileUploadForm">
+    <Form class="Form" onFormSubmit={(values) => { sent := `Would send: ${fileNames(values.receipts)}` }}>
+      <FieldRoot class="Field" name="receipts">
+        <FieldLabel class="Label">Receipts</FieldLabel>
+        <FileUploadRoot class="Root" multiple required accept="image/*,.pdf">
+          <FileUploadInput class="VisuallyHidden" tabindex="-1" />
+          <FileUploadTrigger class="Button">Add receipts</FileUploadTrigger>
+          <ul class="List"><Chosen /></ul>
+        </FileUploadRoot>
+        <FieldDescription class="Description">Photos or PDFs of each receipt.</FieldDescription>
+        <FieldError class="Error" />
+      </FieldRoot>
+      <button class="Submit" type="submit">Submit claim</button>
+    </Form>
+    <output class="Sent">{sent}</output>
+  </div>
+}
