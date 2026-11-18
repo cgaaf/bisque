@@ -1,0 +1,12 @@
+import { ListboxRoot, ListboxItem, ListboxItemText, ListboxItemIndicator, ListboxGroup, ListboxGroupLabel } from "./bisque/listbox/listbox.rx"
+
+<ListboxRoot>
+  <ListboxItem>
+    <ListboxItemIndicator />
+    <ListboxItemText />
+  </ListboxItem>
+  <ListboxGroup>
+    <ListboxGroupLabel />
+    <ListboxItem />
+  </ListboxGroup>
+</ListboxRoot>

@@ -1,0 +1,21 @@
+import { ListboxRoot, ListboxItem, ListboxItemText, ListboxItemIndicator, ListboxGroup, ListboxGroupLabel } from "../listbox.rx"
+
+// Single selection, uncontrolled, in a form.
+export default component Fixture() {
+  source changes := ""
+  <form data-testid="form">
+    <input aria-label="Before" />
+    <ListboxRoot aria-label="Fruit" name="fruit" onValueChange={(next) => { changes := `${changes}${next ?? "null"};` }}>
+      <ListboxGroup>
+        <ListboxGroupLabel>Fruits</ListboxGroupLabel>
+        <ListboxItem value="apple"><ListboxItemIndicator>✓</ListboxItemIndicator><ListboxItemText>Apple</ListboxItemText></ListboxItem>
+        <ListboxItem value="apricot" disabled><ListboxItemIndicator>✓</ListboxItemIndicator><ListboxItemText>Apricot</ListboxItemText></ListboxItem>
+        <ListboxItem value="avocado"><ListboxItemIndicator>✓</ListboxItemIndicator><ListboxItemText>Avocado</ListboxItemText></ListboxItem>
+        <ListboxItem value="banana"><ListboxItemIndicator>✓</ListboxItemIndicator><ListboxItemText>Banana</ListboxItemText></ListboxItem>
+      </ListboxGroup>
+      <ListboxItem value="fr" label="France">Option FR</ListboxItem>
+    </ListboxRoot>
+    <input aria-label="After" />
+    <output data-testid="changes">{changes}</output>
+  </form>
+}

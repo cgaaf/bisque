@@ -1,0 +1,8 @@
+// How .rx may use ./listbox-selection.js (implemented in ./impl/listbox-selection.ts): the selection of an
+// always-visible listbox, in document order. Items carry `data-bisque-item`, `data-value` and `data-disabled`.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./listbox-selection.d.ts.
+export pure fn selectionValues(value: string | string[] | null | undefined): string[]
+export fn enabledValues(list: HTMLElement | undefined): string[]
+export fn valuesBetween(list: HTMLElement | undefined, from: string, to: string): string[]
+export fn focusedValue(list: HTMLElement | undefined): string | undefined
+export pure fn createSelectedTabStop(ref container: HTMLElement | undefined) instantiates

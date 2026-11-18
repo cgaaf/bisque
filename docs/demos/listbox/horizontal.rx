@@ -1,0 +1,15 @@
+import { ListboxRoot, ListboxItem } from "../../../src/listbox/listbox.rx"
+
+export component ListboxHorizontal() {
+  source size: string | null := "m"
+  <div class="ListboxHorizontal">
+    <ListboxRoot class="List" aria-label="Size" orientation="horizontal" loop selectionFollowsFocus value={size} onValueChange={(next) => { size := next }}>
+      <ListboxItem class="Item" value="xs">XS</ListboxItem>
+      <ListboxItem class="Item" value="s">S</ListboxItem>
+      <ListboxItem class="Item" value="m">M</ListboxItem>
+      <ListboxItem class="Item" value="l">L</ListboxItem>
+      <ListboxItem class="Item" value="xl" disabled>XL</ListboxItem>
+    </ListboxRoot>
+    <p class="Summary">Size: {size ?? "none"}</p>
+  </div>
+}

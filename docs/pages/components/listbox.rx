@@ -1,0 +1,139 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { ListboxHero } from "../../demos/listbox/hero.rx"
+import { ListboxMultiple } from "../../demos/listbox/multiple.rx"
+import { ListboxGrouped } from "../../demos/listbox/grouped.rx"
+import { ListboxHorizontal } from "../../demos/listbox/horizontal.rx"
+
+export default component Page() {
+  <DocsPage title="Listbox" subtitle="An always-visible list of options to select one or several from.">
+    <Demo source="listbox/hero"><ListboxHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>Import the parts and put them together:</p>
+    <Code file="listbox/anatomy.rx.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      Base UI has no listbox, so this family follows the WAI-ARIA Authoring Practices listbox pattern, as React
+      Aria's ListBox and Ark UI's Listbox do. The list is the same one Select opens in its popup, without the
+      trigger or the popup.
+    </p>
+    <p>
+      The native listbox is a <code>{"<select multiple>"}</code> or <code>{"<select size>"}</code>, and it isn't
+      what this family is built on. Its options can be styled only with <code>appearance: base-select</code>,
+      which isn't shipped in Firefox. Without it, WebKit lays the options out itself and ignores their padding, and
+      Chromium and Firefox paint the option just pressed, while the list has focus, in their own highlight colour
+      rather than the stylesheet's <code>:checked</code> rule. A click in a multiple list replaces the selection instead of toggling it, and there is
+      no horizontal list. The tests in{" "}
+      <code>src/listbox/native-select.browser.test.ts</code> show each of these in the engines it applies to.{" "}
+      <code>focusgroup</code>, which would give the arrow keys to any element, is Chrome only.
+    </p>
+    <p>What the browser still provides:</p>
+    <ul>
+      <li>
+        Real focus on the options. The focused option matches <code>:focus-visible</code>, and the browser
+        scrolls it into view in a list that scrolls.
+      </li>
+      <li>Form submission and reset, through hidden inputs the root renders beside the list.</li>
+    </ul>
+    <p>The library adds:</p>
+    <ul>
+      <li>
+        The roles: a <code>listbox</code> with <code>aria-orientation</code>, and{" "}
+        <code>aria-multiselectable</code> when <code>multiple</code>, of <code>option</code>s carrying{" "}
+        <code>aria-selected</code> and <code>aria-disabled</code>.
+      </li>
+      <li>
+        One Tab stop for the whole list. <kbd>Tab</kbd> enters on the selected option (the first selected, with{" "}
+        <code>multiple</code>), else on the option focused last, else on the first, and leaves in one step.
+      </li>
+      <li>
+        The arrow keys along the orientation, <kbd>Home</kbd> and <kbd>End</kbd>, skipping disabled options, and
+        typeahead: typing focuses the next option whose label starts with what was typed.
+      </li>
+      <li>
+        Selection: a click, <kbd>Space</kbd> or <kbd>Enter</kbd> selects the focused option. The multiple-selection
+        keys are under <a href="#multiple">Multiple selection</a>.
+      </li>
+      <li>The form value and reset, and the wiring to an enclosing FieldRoot.</li>
+    </ul>
+    <div class="note">
+      <p>
+        There is no Separator part: a listbox may contain only options and groups. Draw a line between groups in
+        CSS, as the grouped demo does. There is no Label part either; label the root with{" "}
+        <code>aria-label</code> or <code>aria-labelledby</code>, or put it in a FieldRoot. Options have no{" "}
+        <code>data-highlighted</code>: the focused option is the highlighted one, and <code>:focus-visible</code>{" "}
+        styles it.
+      </p>
+    </div>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="labelling">Labelling it</h3>
+    <p>
+      The first demo puts the list in a <code>FieldRoot</code>, whose <code>FieldLabel</code> names it through{" "}
+      <code>aria-labelledby</code> (a <code>{"<label for>"}</code> can't name a list). Outside a field, give{" "}
+      <code>ListboxRoot</code> an <code>aria-label</code>, as the demos below do.
+    </p>
+
+    <h3 id="multiple">Multiple selection</h3>
+    <p>
+      With <code>multiple</code>, the value is a list of strings, and selecting is independent of focus: the arrow
+      keys move focus without changing the selection. <kbd>Space</kbd>, <kbd>Enter</kbd> and a click toggle an
+      option. <kbd>Shift</kbd>+arrow moves focus and toggles the option it reaches. <kbd>Shift</kbd>+click and{" "}
+      <kbd>Shift</kbd>+<kbd>Space</kbd> add every option from the anchor (the option last toggled) to this one.{" "}
+      <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>Home</kbd> or <kbd>End</kbd> adds every option from the focused one to
+      the first or last and moves there. <kbd>Ctrl</kbd>+<kbd>A</kbd> (<kbd>Cmd</kbd>+<kbd>A</kbd> on a Mac)
+      selects every enabled option, and clears them when all are already selected. Disabled options are left out of
+      every range.
+    </p>
+    <p>
+      Give <code>ListboxItemIndicator</code> the <code>keepMounted</code> prop to draw a box on every option, and
+      fill it from <code>data-selected</code>.
+    </p>
+    <Demo source="listbox/multiple"><ListboxMultiple /></Demo>
+
+    <h3 id="groups">Groups</h3>
+    <p>
+      <code>ListboxGroup</code> gives related options <code>role="group"</code>, named by the{" "}
+      <code>ListboxGroupLabel</code> inside it. The arrow keys run through the groups as one list. Give the root a
+      height and <code>overflow-y: auto</code> for a list that scrolls; the focused option is scrolled into view.
+    </p>
+    <Demo source="listbox/grouped"><ListboxGrouped /></Demo>
+
+    <h3 id="orientation">Orientation and selection following focus</h3>
+    <p>
+      <code>orientation="horizontal"</code> moves focus with <kbd>Left</kbd> and <kbd>Right</kbd>, and lays nothing
+      out: the row is the stylesheet's. <code>loop</code> wraps the arrow keys around at the ends. With{" "}
+      <code>selectionFollowsFocus</code>, moving focus with the keyboard selects the option it reaches, as in a
+      group of radios; <kbd>Tab</kbd> entering the list doesn't change it. It applies to single selection only.
+    </p>
+    <Demo source="listbox/horizontal"><ListboxHorizontal /></Demo>
+
+    <h3 id="controlled">Controlling the value</h3>
+    <p>
+      Pass <code>value</code> and <code>onValueChange</code> to hold the selection yourself: a string, or{" "}
+      <code>null</code> for nothing selected, or a list of strings with <code>multiple</code>. This differs from
+      Select, whose multiple value is a separate <code>values</code> prop. The listbox calls{" "}
+      <code>onValueChange</code> in a change of its own, so a handler that saves to a server, or writes something a
+      loading question reads, doesn't hold the list: with an optimistic <code>guess</code>, the new selection shows
+      at once and a failed save puts the old one back.
+    </p>
+
+    <h3 id="forms">In a form</h3>
+    <p>
+      Give the root a <code>name</code>, or put it in a named <code>FieldRoot</code>, and the selected value is
+      submitted with its form; with <code>multiple</code>, each value is its own entry. A form reset puts back the
+      value the list started with. <code>required</code> makes the form invalid while nothing is selected.{" "}
+      <code>disabled</code> on the root, or on an enclosing <code>FieldRoot</code>, takes the list out of the Tab
+      order and ignores presses. A <code>disabled</code> option is skipped by the arrow keys and typeahead.
+    </p>
+    <p>
+      Options can come from a server: render the answer as the items. A value chosen before they arrive is
+      submitted meanwhile, and becomes the Tab stop once its option is there.
+    </p>
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="listbox" />
+  </DocsPage>
+}

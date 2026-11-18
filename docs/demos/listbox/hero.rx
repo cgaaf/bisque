@@ -1,0 +1,32 @@
+import { FieldRoot, FieldLabel } from "../../../src/field/field.rx"
+import { ListboxRoot, ListboxItem, ListboxItemText, ListboxItemIndicator } from "../../../src/listbox/listbox.rx"
+
+export component ListboxHero() {
+  <div class="ListboxHero">
+    <FieldRoot class="Field">
+      <FieldLabel class="Label">Delivery</FieldLabel>
+      <ListboxRoot class="List" defaultValue="standard">
+        <ListboxItem class="Item" value="standard">
+          <ListboxItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+          <ListboxItemText class="ItemText">Standard</ListboxItemText>
+          <span class="Detail">3–5 days</span>
+        </ListboxItem>
+        <ListboxItem class="Item" value="express">
+          <ListboxItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+          <ListboxItemText class="ItemText">Express</ListboxItemText>
+          <span class="Detail">1–2 days</span>
+        </ListboxItem>
+        <ListboxItem class="Item" value="pickup">
+          <ListboxItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+          <ListboxItemText class="ItemText">Pick up in store</ListboxItemText>
+          <span class="Detail">Today</span>
+        </ListboxItem>
+        <ListboxItem class="Item" value="drone" disabled>
+          <ListboxItemIndicator class="Indicator"><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+          <ListboxItemText class="ItemText">Drone</ListboxItemText>
+          <span class="Detail">Unavailable</span>
+        </ListboxItem>
+      </ListboxRoot>
+    </FieldRoot>
+  </div>
+}

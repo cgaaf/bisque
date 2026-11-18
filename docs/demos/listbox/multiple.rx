@@ -1,0 +1,30 @@
+import { ListboxRoot, ListboxItem, ListboxItemText, ListboxItemIndicator } from "../../../src/listbox/listbox.rx"
+
+export component ListboxMultiple() {
+  source chosen: string[] := ["email"]
+  <div class="ListboxMultiple">
+    <ListboxRoot class="List" aria-label="Notifications" multiple value={chosen} onValueChange={(next) => { chosen := next }}>
+      <ListboxItem class="Item" value="email">
+        <ListboxItemIndicator class="Box" keepMounted><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+        <ListboxItemText>Email</ListboxItemText>
+      </ListboxItem>
+      <ListboxItem class="Item" value="sms">
+        <ListboxItemIndicator class="Box" keepMounted><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+        <ListboxItemText>Text message</ListboxItemText>
+      </ListboxItem>
+      <ListboxItem class="Item" value="push">
+        <ListboxItemIndicator class="Box" keepMounted><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+        <ListboxItemText>Push notification</ListboxItemText>
+      </ListboxItem>
+      <ListboxItem class="Item" value="digest">
+        <ListboxItemIndicator class="Box" keepMounted><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+        <ListboxItemText>Weekly digest</ListboxItemText>
+      </ListboxItem>
+      <ListboxItem class="Item" value="post">
+        <ListboxItemIndicator class="Box" keepMounted><svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="m2 6.5 2.5 2.5L10 3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></ListboxItemIndicator>
+        <ListboxItemText>Letter</ListboxItemText>
+      </ListboxItem>
+    </ListboxRoot>
+    <p class="Summary">{chosen.length == 0 ? "Nothing selected" : `${chosen.length} selected`}</p>
+  </div>
+}

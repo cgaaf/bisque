@@ -1,0 +1,68 @@
+import { ListboxRoot, ListboxItem, listbox } from "../listbox.rx"
+import { save } from "../../test/slow-server.js"
+
+// What a part inside the listbox reads: its selection.
+component Value(props: { id: string }) {
+  c = use listbox
+  <output data-testid={props.id}>{c.selected.join(",")}</output>
+}
+
+// An app that holds a plain write in an action (`step := 2`, then a slow request) while something it passes to a
+// listbox is computed from that write. The listbox's own state (the selection, the Tab stop) must not wait for the
+// app's request.
+export default component Fixture() {
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+
+  <main>
+    <button onClick={() => { next() }}>Next</button>
+    <output data-testid="step">{step}</output>
+
+    // 1. A prop of the root. It has to change: a prop computed from the held write that comes out equal holds nothing.
+    <ListboxRoot aria-label="Root prop" multiple required={step == 2}>
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b">B</ListboxItem>
+      <ListboxItem value="c">C</ListboxItem>
+      <Value id="root-prop" />
+    </ListboxRoot>
+
+    // 2. An attribute passed through to the root's element.
+    <ListboxRoot aria-label="Root attribute" multiple class={step == 2 ? "second" : "first"}>
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b">B</ListboxItem>
+      <ListboxItem value="c">C</ListboxItem>
+    </ListboxRoot>
+
+    // 3. A prop of an item.
+    <ListboxRoot aria-label="Item prop" multiple>
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b" label={step == 1 ? "B" : "B (saved)"}>B</ListboxItem>
+      <ListboxItem value="c">C</ListboxItem>
+    </ListboxRoot>
+
+    // 4. An attribute passed through to an item's element.
+    <ListboxRoot aria-label="Item attribute" multiple>
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b" class={step == 2 ? "second" : "first"}>B</ListboxItem>
+      <ListboxItem value="c">C</ListboxItem>
+    </ListboxRoot>
+
+    // 5. A prop of the root that reaches what it provides to its options.
+    <ListboxRoot aria-label="Root orientation" multiple orientation={step == 1 ? "vertical" : "horizontal"}>
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b">B</ListboxItem>
+      <ListboxItem value="c">C</ListboxItem>
+    </ListboxRoot>
+
+    // 6. The disabled state of an option, which sits beside its selected state. It is enabled by the held write, so
+    // the option can be pressed only if the listbox reads it past the hold.
+    <ListboxRoot aria-label="Item disabled" multiple>
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b">B</ListboxItem>
+      <ListboxItem value="c" disabled={step == 1}>C</ListboxItem>
+    </ListboxRoot>
+  </main>
+}

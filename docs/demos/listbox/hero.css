@@ -1,0 +1,70 @@
+.ListboxHero {
+  .Field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+    width: 17rem;
+  }
+
+  .Label {
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .List {
+    display: flex;
+    flex-direction: column;
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #1c1c21);
+  }
+
+  .Item {
+    display: grid;
+    grid-template-columns: 1rem 1fr auto;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem 0.5rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    cursor: default;
+    /* Shift+click selects a range in a multiple list; keep it from selecting the page's text too. */
+    user-select: none;
+  }
+
+  .Item:hover:not([data-disabled]) {
+    background: light-dark(#f2f2f5, #24242a);
+  }
+
+  /* Options take real focus, so the native focus ring is the keyboard's highlight. */
+  .Item:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -2px;
+  }
+
+  .Item[data-selected] {
+    background: light-dark(#e8edfd, #22294a);
+  }
+
+  .Item[data-disabled] {
+    opacity: 0.45;
+  }
+
+  .Indicator {
+    display: flex;
+    grid-column: 1;
+    color: light-dark(#2f5bea, #8eabff);
+  }
+
+  .ItemText {
+    grid-column: 2;
+  }
+
+  .Detail {
+    grid-column: 3;
+    color: light-dark(#63636e, #9a9aa6);
+    font-size: 0.8125rem;
+  }
+}

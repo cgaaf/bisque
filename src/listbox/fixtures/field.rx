@@ -1,0 +1,26 @@
+import { ListboxRoot, ListboxItem } from "../listbox.rx"
+import { FieldRoot, FieldLabel, FieldDescription, FieldError } from "../../field/field.rx"
+import { Form } from "../../form/form.rx"
+
+export default component Fixture() {
+  source submitted := ""
+  <Form data-testid="form" onFormSubmit={(values) => { submitted := `size=${values.size}` }}>
+    <FieldRoot name="size" data-testid="size-root">
+      <FieldLabel>Size</FieldLabel>
+      <ListboxRoot required>
+        <ListboxItem value="s">Small</ListboxItem>
+        <ListboxItem value="l">Large</ListboxItem>
+      </ListboxRoot>
+      <FieldDescription data-testid="size-description">Pick one.</FieldDescription>
+      <FieldError data-testid="size-error">Choose a size</FieldError>
+    </FieldRoot>
+    <FieldRoot disabled>
+      <FieldLabel>Locked</FieldLabel>
+      <ListboxRoot>
+        <ListboxItem value="x">X</ListboxItem>
+      </ListboxRoot>
+    </FieldRoot>
+    <button type="submit">Submit</button>
+    <output data-testid="submitted">{submitted}</output>
+  </Form>
+}

@@ -1,0 +1,48 @@
+.ListboxGrouped {
+  .List {
+    box-sizing: border-box;
+    width: 14rem;
+    max-height: 15rem;
+    padding: 0.25rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    /* Focusing an option scrolls it into view: the browser does that for an element that takes focus. */
+    overflow-y: auto;
+    background: light-dark(#fff, #1c1c21);
+  }
+
+  .Group + .Group {
+    margin-top: 0.25rem;
+    padding-top: 0.25rem;
+    border-top: 1px solid light-dark(#e6e6ec, #2c2c33);
+  }
+
+  .GroupLabel {
+    padding: 0.375rem 0.625rem 0.25rem;
+    color: light-dark(#63636e, #9a9aa6);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .Item {
+    padding: 0.4375rem 0.625rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    cursor: default;
+  }
+
+  .Item:hover {
+    background: light-dark(#f2f2f5, #24242a);
+  }
+
+  .Item:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: -2px;
+  }
+
+  .Item[data-selected] {
+    background: light-dark(#2f5bea, #8eabff);
+    color: light-dark(#fff, #16161a);
+  }
+}

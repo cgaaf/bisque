@@ -1,0 +1,17 @@
+import { ListboxRoot, ListboxItem } from "../listbox.rx"
+
+// Single-selection lists in a form that can be reset: one uncontrolled with a default, one controlled.
+export default component Fixture() {
+  source size := "m"
+  <form data-testid="form">
+    <ListboxRoot aria-label="Speed" name="speed" defaultValue="slow">
+      <ListboxItem value="slow">Slow</ListboxItem>
+      <ListboxItem value="fast">Fast</ListboxItem>
+    </ListboxRoot>
+    <ListboxRoot aria-label="Size" name="size" value={size} onValueChange={(next) => { size := next }}>
+      <ListboxItem value="s">Small</ListboxItem>
+      <ListboxItem value="m">Medium</ListboxItem>
+    </ListboxRoot>
+    <button type="reset">Reset</button>
+  </form>
+}

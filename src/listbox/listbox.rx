@@ -1,0 +1,346 @@
+// An always-visible list of options, with single or multiple selection: the WAI-ARIA Authoring Practices "Listbox"
+// pattern (https://www.w3.org/WAI/ARIA/apg/patterns/listbox/). Base UI has no listbox; React Aria (ListBox), Ark UI,
+// Kobalte, Bits UI and Headless UI do, and the parts here are named after Select's, whose popup is the same list.
+//
+// The native listbox is `<select multiple>` or `<select size>`. It isn't the base (native-select.browser.test.ts
+// shows why): the form whose options can be styled, `appearance: base-select`, isn't shipped in Firefox (`pnpm
+// baseline customizable-select`); without it WebKit lays the options out itself, ignoring their padding, and a
+// click in a multiple list replaces the selection instead of toggling it. It has no horizontal orientation either.
+// `focusgroup` would do the arrow keys, but is Chrome only. So the roles, the selection and the keyboard are the
+// library's, and the value is submitted with a form through hidden inputs.
+//
+// Focus model: roving tabindex, as in Select. Each option takes real focus, so `:focus-visible` styles the focused
+// option natively, the browser scrolls it into view, and a screen reader follows focus with nothing to keep in
+// sync. `aria-activedescendant` is for a list whose focus must stay elsewhere (Combobox's input); nothing here
+// needs that. One option is the Tab stop (`createRovingFocus`): while focus is inside, the option last focused; once
+// it leaves, the first selected option (`createSelectedTabStop`), else the option last focused, else the first.
+//
+// Keyboard (APG): the arrow keys along `orientation` (Up/Down, or Left/Right), Home and End move focus, skipping
+// disabled options, and typing moves to the next option whose label starts with what was typed. Space and Enter
+// select the focused option. With `selectionFollowsFocus` (single selection only), moving focus selects. With
+// `multiple`, selection is independent of focus: Space, Enter and a click toggle an option; Shift+Arrow moves focus
+// and toggles the option it reaches; Shift+Space and Shift+click select every option from the anchor (the option
+// last toggled) to this one; Ctrl/Cmd+Shift+Home and End select from the focused option to the first or last and
+// move there; Ctrl/Cmd+A selects every enabled option, or clears them when all are already selected.
+import { mergeProps, withoutHandlers, createId, createRef } from "../internal/props.js"
+import { createRovingFocus, focusElement, focusListItem } from "../internal/dom.js"
+import { createTypeahead, itemValue } from "../internal/listbox.js"
+import { selectionValues, enabledValues, valuesBetween, focusedValue, createSelectedTabStop } from "../internal/listbox-selection.js"
+import { createFormReset, sameValue, setInputValue } from "../internal/field.js"
+import { field, fieldGroupProps } from "../field/field.rx"
+import { DivProps, SpanProps, PartProps } from "../internal/types.rx"
+
+export type ListboxOrientation = "vertical" | "horizontal"
+
+export type ListboxContext = {
+  multiple: boolean
+  // The selected values: none or one, or any number when `multiple`.
+  selected: string[]
+  disabled: boolean
+  orientation: ListboxOrientation
+  // A press on an option: selects it (single), toggles it (multiple), or with `extend` selects every option from
+  // the anchor to it (multiple).
+  press: (value: string, extend: boolean) => void
+}
+
+export context listbox: lane ListboxContext
+
+export type ListboxRootProps = {
+  // The selected value: a string, or null for none; with `multiple`, a list of strings.
+  value?: string | string[] | null
+  defaultValue?: string | string[] | null
+  // Called with the new value: a string (single selection) or a list of strings (`multiple`).
+  onValueChange?: (value: any) => void
+  // Any number of options may be selected.
+  multiple?: boolean
+  disabled?: boolean
+  required?: boolean
+  // With a name (or inside a named FieldRoot) the listbox submits its value with a <form>; with `multiple`, one
+  // entry per selected value.
+  name?: string
+  // Which arrow keys move focus: Up and Down, or Left and Right. Default: "vertical".
+  orientation?: ListboxOrientation
+  // Whether the arrow keys wrap around at the ends. Default: false.
+  loop?: boolean
+  // Single selection only: moving focus with the keyboard selects the option it reaches. Default: false.
+  selectionFollowsFocus?: boolean
+} & Omit<DivProps, "defaultValue">
+
+// The list itself, `role="listbox"`. Label it with `aria-label` or `aria-labelledby`, or put it in a FieldRoot,
+// whose FieldLabel then labels it.
+export component ListboxRoot(props: ListboxRootProps) {
+  f = use field
+  // Seeded with a copy (selectionValues makes one): a write to a list source replaces its contents in place.
+  source uncontrolled: string[] := peek(selectionValues(props.defaultValue))
+  // Where a range starts: the option last selected or toggled on its own.
+  source anchor: string | undefined := undefined
+  source element: HTMLElement | undefined := undefined
+  source input: HTMLInputElement | undefined := undefined
+  isMultiple = props.multiple ?? false
+  // `value` is often read from an answer that can fail (`value={saved}` with `saved = await load()`): a failure
+  // there is the app's to show, in its `errored` region, not the listbox's. `null` is a controlled "nothing".
+  givenValue = props.value catch (e) => undefined
+  selected = givenValue != undefined ? selectionValues(givenValue) : uncontrolled
+  // Read through `latest`, so the list's own state doesn't wait on an app's change that one of them comes from
+  // (listbox.held.browser.test.ts). `disabled` is also often computed from a request that can fail.
+  isDisabled = ((latest props.disabled ?? false) catch (e) => false) || (f?.disabled ?? false)
+  isRequired = latest props.required ?? false
+  axis = latest props.orientation ?? "vertical"
+  shouldLoop = latest props.loop ?? false
+  followsFocus = latest props.selectionFollowsFocus ?? false
+  inputName = latest props.name ?? f?.name
+  // What a form reset puts back.
+  initialValue = peek([...selected])
+  [match, resetMatch] = createTypeahead()
+  _roving = createRovingFocus(element, { orientation: axis, loop: shouldLoop, typeahead: false, tabStop: true })
+  // Tab comes back to the selected option, not the one focus left from.
+  _tabStop = createSelectedTabStop(element)
+
+  effect (selected) { if (f) { f.setValue(isMultiple ? $0 : $0.length > 0 ? $0[0] : null) } }
+
+  // The owner's handler is called in a change of its own (`onFlush`), never in the one that updates the listbox: a
+  // handler that saves holds its change until the answer lands, and the options would be held with it.
+  action notify(next: string[]) {
+    if (props.onValueChange) {
+      let report = props.onValueChange
+      let reported = isMultiple ? next : next.length > 0 ? next[0] : null
+      onFlush(() => { report(reported) })
+    }
+  }
+  action commit(next: string[]) {
+    uncontrolled := next
+    notify(next)
+  }
+  action choose(value: string) {
+    anchor := value
+    if (selected.length != 1 || selected[0] != value) { commit([value]) }
+  }
+  action toggle(value: string) {
+    anchor := value
+    commit(selected.includes(value) ? selected.filter((other) => other != value) : [...selected, value])
+  }
+  action add(values: string[]) {
+    let added = values.filter((value) => !selected.includes(value))
+    if (added.length > 0) { commit([...selected, ...added]) }
+  }
+  action extendTo(value: string) {
+    let from = anchor ?? value
+    // Tested through a local: narrowing `anchor` itself would type the write as `undefined` (rx-tsc).
+    let unset = anchor == undefined
+    if (unset) { anchor := value }
+    add(valuesBetween(element, from, value))
+  }
+  action press(value: string, extend: boolean) {
+    if (isDisabled) { return }
+    if (!isMultiple) {
+      choose(value)
+    } else if (extend) {
+      extendTo(value)
+    } else {
+      toggle(value)
+    }
+  }
+  action selectAll() {
+    let all = enabledValues(element)
+    if (all.every((value) => selected.includes(value))) {
+      commit(selected.filter((value) => !all.includes(value)))
+    } else {
+      add(all)
+    }
+  }
+  // createRovingFocus listens on the list itself, so it has already moved focus for an arrow key, Home or End when
+  // this (delegated to the document) runs: the option that had focus is the event's target, the one that has it now
+  // is focusedValue.
+  action keyDown(event: KeyboardEvent & { target: EventTarget | null }) {
+    if (isDisabled) { return }
+    let key = event.key
+    let command = event.ctrlKey || event.metaKey
+    let was = itemValue(event.target)
+    let now = focusedValue(element)
+    let moved = now != undefined && now != was
+    if (moved && !command && !event.altKey) {
+      if (isMultiple && event.shiftKey && key.startsWith("Arrow")) {
+        toggle(now ?? "")
+      } else if (!isMultiple && followsFocus) {
+        choose(now ?? "")
+      }
+    } else if (isMultiple && command && event.shiftKey && (key == "Home" || key == "End")) {
+      event.preventDefault()
+      let all = enabledValues(element)
+      if (all.length == 0) { return }
+      let end = key == "Home" ? all[0] : all[all.length - 1]
+      add(valuesBetween(element, now ?? end, end))
+      focusListItem(element, key == "Home" ? "first" : "last")
+    } else if (isMultiple && command && !event.altKey && (key == "a" || key == "A")) {
+      event.preventDefault()
+      selectAll()
+    } else if ((key == " " || key == "Enter") && !command && !event.altKey) {
+      if (now == undefined) { return }
+      event.preventDefault()
+      if (isMultiple && event.shiftKey && key == " ") {
+        extendTo(now)
+      } else if (isMultiple) {
+        toggle(now)
+      } else {
+        choose(now)
+      }
+    } else if (!command && !event.altKey && key.length == 1) {
+      let found = match(element, key, undefined)
+      if (found != undefined) {
+        focusElement(found)
+        let value = itemValue(found)
+        if (!isMultiple && followsFocus && value != undefined) { choose(value) }
+      }
+    }
+  }
+  action focusOut(event: FocusEvent & { currentTarget: HTMLElement; relatedTarget: Node | null }) {
+    if (!event.currentTarget.contains(event.relatedTarget)) { resetMatch() }
+  }
+  // The browser has put the form's inputs back. Uncontrolled, the default is the new value, reported once if it
+  // changed; controlled, the owner's value stays. The first hidden input isn't `type="hidden"` (Field validates it),
+  // so the browser emptied it: its value is written back, since Solid writes it only when the value changes.
+  action reset() {
+    let next = givenValue != undefined ? selectionValues(givenValue) : [...initialValue]
+    setInputValue(input, next.join(","))
+    anchor := undefined
+    if (givenValue == undefined && !sameValue(next, uncontrolled)) {
+      uncontrolled := next
+      notify(next)
+    }
+    if (f) { f.reset(isMultiple ? next : next.length > 0 ? next[0] : null) }
+  }
+  _reset = createFormReset(element, reset)
+  action writeElement(div: HTMLElement) { element := div }
+  setElement = createRef(writeElement)
+  action setInput(element: HTMLInputElement) {
+    input := element
+    if (f) { f.setInput(element) }
+  }
+
+  provide listbox = { multiple: isMultiple, selected: selected, disabled: isDisabled, orientation: axis, press: press }
+
+  { value, defaultValue, onValueChange, multiple, disabled, required, name, orientation, loop, selectionFollowsFocus, children, ...rest } = props
+  inField = fieldGroupProps(f)
+  own = mergeProps(inField, {
+    role: "listbox",
+    "aria-multiselectable": isMultiple ? "true" : undefined,
+    "aria-orientation": axis,
+    "aria-disabled": isDisabled ? "true" : undefined,
+    "aria-required": isRequired ? "true" : undefined,
+    "data-orientation": axis,
+    "data-multiple": isMultiple ? "" : undefined,
+    "data-disabled": isDisabled ? "" : undefined,
+    ref: setElement,
+    onKeyDown: keyDown,
+    onFocusOut: focusOut,
+  })
+  merged = latest mergeProps(own, rest)
+  <div {...merged}>{children}</div>
+  // Outside the listbox, which may own only options and groups. The first input is what Field validates
+  // (`required`); a single value is submitted from it, a multiple one from an input per value.
+  {if inputName != undefined || f != undefined {
+    <input hidden aria-hidden="true" tabindex="-1" name={isMultiple ? undefined : inputName} value={selected.join(",")} required={isRequired} disabled={isDisabled} ref={setInput} />
+  }}
+  {if isMultiple && inputName != undefined {
+    {for entry in selected {
+      <input type="hidden" name={inputName} value={entry} disabled={isDisabled} />
+    }}
+  }}
+}
+
+export type ListboxItemContext = {
+  selected: boolean
+  disabled: boolean
+}
+
+export context listboxItemState: lane ListboxItemContext
+
+export type ListboxItemProps = {
+  value: string
+  // The text typeahead matches. Default: the option's text, leaving out what is `aria-hidden` (an indicator).
+  label?: string
+  // Can't be selected, and the arrow keys and typeahead skip it.
+  disabled?: boolean
+} & DivProps
+
+// An option. Its `tabindex` is written by the list (one option is the Tab stop), so a custom option built on this
+// must carry `data-bisque-item` inside a ListboxRoot, as this does, and not set its own.
+export fn listboxItem(ref c: ListboxContext, ref value: string, ref label: string | undefined, ref disabled: boolean): PartProps {
+  isSelected = c.selected.includes(value)
+  multiple = c.multiple
+  // A disabled option doesn't take focus from a press, and Shift+click doesn't select the page's text.
+  action mouseDown(event: MouseEvent) {
+    if (disabled || (multiple && event.shiftKey)) { event.preventDefault() }
+  }
+  action click(event: MouseEvent & { currentTarget: HTMLElement }) {
+    if (disabled) { return }
+    focusElement(event.currentTarget)
+    c.press(value, event.shiftKey)
+  }
+  {
+    role: "option",
+    "aria-selected": isSelected ? "true" : "false",
+    "aria-disabled": disabled ? "true" : undefined,
+    "data-bisque-item": "",
+    "data-bisque-current": isSelected ? "" : undefined,
+    "data-value": value,
+    "data-label": label,
+    "data-selected": isSelected ? "" : undefined,
+    "data-disabled": disabled ? "" : undefined,
+    onMouseDown: mouseDown,
+    onClick: click,
+  }
+}
+
+// Style the focused option with `:focus-visible`: options take real focus.
+export component ListboxItem(props: ListboxItemProps) {
+  c = use listbox
+  isDisabled = (latest props.disabled ?? false) || c.disabled
+  isSelected = c.selected.includes(props.value)
+  provide listboxItemState = { selected: isSelected, disabled: isDisabled }
+  { value, label, disabled, children, ...rest } = props
+  own = listboxItem(c, latest value, latest label, isDisabled)
+  merged = latest mergeProps(own, withoutHandlers(rest, isDisabled))
+  <div {...merged}>{children}</div>
+}
+
+// The option's text, beside an indicator or other content.
+export component ListboxItemText({ children, ...rest }: SpanProps) {
+  <span {...rest}>{children}</span>
+}
+
+// Shown while its option is selected, unless `keepMounted`; hidden from assistive technology, which hears
+// `aria-selected`.
+export component ListboxItemIndicator({ keepMounted = false, children, ...rest }: { keepMounted?: boolean } & SpanProps) {
+  item = use listboxItemState
+  merged = latest mergeProps({ "aria-hidden": "true", "data-selected": item.selected ? "" : undefined }, rest)
+  {if item.selected || keepMounted {
+    <span {...merged}>{children}</span>
+  }}
+}
+
+export type ListboxGroupContext = {
+  labelId: string | undefined
+  setLabelId: (id: string | undefined) => void
+}
+
+export context listboxGroup: ListboxGroupContext
+
+// A set of options, labelled by its ListboxGroupLabel.
+export component ListboxGroup(props: DivProps) {
+  source labelId: string | undefined := undefined
+  action setLabelId(id: string | undefined) { labelId := id }
+  provide listboxGroup = { labelId: labelId, setLabelId: setLabelId }
+  { children, ...rest } = props
+  merged = latest mergeProps({ role: "group", "aria-labelledby": labelId }, rest)
+  <div {...merged}>{children}</div>
+}
+
+export component ListboxGroupLabel({ children, ...rest }: DivProps) {
+  group = use listboxGroup
+  id = createId("listbox-group-label")
+  // No cleanup: a label removed with a `for` row can't call an action from a cleanup, and its group goes with it.
+  effect () { group.setLabelId(id) }
+  merged = latest mergeProps({ id: id }, rest)
+  <div {...merged}>{children}</div>
+}

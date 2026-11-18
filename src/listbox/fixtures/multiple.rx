@@ -1,0 +1,18 @@
+import { ListboxRoot, ListboxItem, ListboxItemIndicator } from "../listbox.rx"
+
+// Multiple selection, uncontrolled, with a default, in a form that can be reset.
+export default component Fixture() {
+  source changes := ""
+  <form data-testid="form">
+    <ListboxRoot aria-label="Toppings" name="toppings" multiple defaultValue={["cheese"]} onValueChange={(next) => { changes := `${changes}${next.join(",")};` }}>
+      <ListboxItem value="cheese"><ListboxItemIndicator>✓</ListboxItemIndicator>Cheese</ListboxItem>
+      <ListboxItem value="ham"><ListboxItemIndicator>✓</ListboxItemIndicator>Ham</ListboxItem>
+      <ListboxItem value="olives" disabled><ListboxItemIndicator>✓</ListboxItemIndicator>Olives</ListboxItem>
+      <ListboxItem value="onion"><ListboxItemIndicator>✓</ListboxItemIndicator>Onion</ListboxItem>
+      <ListboxItem value="pepper"><ListboxItemIndicator>✓</ListboxItemIndicator>Pepper</ListboxItem>
+      <ListboxItem value="tomato"><ListboxItemIndicator>✓</ListboxItemIndicator>Tomato</ListboxItem>
+    </ListboxRoot>
+    <button type="reset">Reset</button>
+    <output data-testid="changes">{changes}</output>
+  </form>
+}

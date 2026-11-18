@@ -1,0 +1,26 @@
+import { ListboxRoot, ListboxItem, ListboxGroup, ListboxGroupLabel } from "../../../src/listbox/listbox.rx"
+
+export component ListboxGrouped() {
+  <div class="ListboxGrouped">
+    <ListboxRoot class="List" aria-label="Time zone" defaultValue="europe-paris">
+      <ListboxGroup class="Group">
+        <ListboxGroupLabel class="GroupLabel">Europe</ListboxGroupLabel>
+        <ListboxItem class="Item" value="europe-lisbon">Lisbon</ListboxItem>
+        <ListboxItem class="Item" value="europe-paris">Paris</ListboxItem>
+        <ListboxItem class="Item" value="europe-helsinki">Helsinki</ListboxItem>
+      </ListboxGroup>
+      <ListboxGroup class="Group">
+        <ListboxGroupLabel class="GroupLabel">Asia</ListboxGroupLabel>
+        <ListboxItem class="Item" value="asia-dubai">Dubai</ListboxItem>
+        <ListboxItem class="Item" value="asia-kolkata">Kolkata</ListboxItem>
+        <ListboxItem class="Item" value="asia-tokyo">Tokyo</ListboxItem>
+      </ListboxGroup>
+      <ListboxGroup class="Group">
+        <ListboxGroupLabel class="GroupLabel">Americas</ListboxGroupLabel>
+        <ListboxItem class="Item" value="america-sao-paulo">São Paulo</ListboxItem>
+        <ListboxItem class="Item" value="america-chicago">Chicago</ListboxItem>
+        <ListboxItem class="Item" value="america-vancouver">Vancouver</ListboxItem>
+      </ListboxGroup>
+    </ListboxRoot>
+  </div>
+}

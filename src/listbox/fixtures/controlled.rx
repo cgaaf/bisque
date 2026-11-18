@@ -1,0 +1,45 @@
+import { ListboxRoot, ListboxItem } from "../listbox.rx"
+
+// Controlled values, the owner refusing a change, orientation, loop, selection following focus, and disabled.
+export default component Fixture() {
+  source size: string | null := "m"
+  source colors: string[] := ["red"]
+  source asked := ""
+  <div>
+    <ListboxRoot aria-label="Size" value={size} onValueChange={(next) => { size := next }}>
+      <ListboxItem value="s">Small</ListboxItem>
+      <ListboxItem value="m">Medium</ListboxItem>
+      <ListboxItem value="l">Large</ListboxItem>
+    </ListboxRoot>
+    <output data-testid="size">{size ?? "none"}</output>
+    <button onClick={() => { size := "l" }}>Choose large</button>
+    <button onClick={() => { size := null }}>Clear size</button>
+
+    <ListboxRoot aria-label="Colors" multiple value={colors} onValueChange={(next) => { colors := next }}>
+      <ListboxItem value="red">Red</ListboxItem>
+      <ListboxItem value="green">Green</ListboxItem>
+      <ListboxItem value="blue">Blue</ListboxItem>
+    </ListboxRoot>
+    <output data-testid="colors">{colors.join(",")}</output>
+    <button onClick={() => { colors := ["green", "blue"] }}>Choose green and blue</button>
+
+    <ListboxRoot aria-label="Fixed" value="one" onValueChange={(next) => { asked := next }}>
+      <ListboxItem value="one">One</ListboxItem>
+      <ListboxItem value="two">Two</ListboxItem>
+    </ListboxRoot>
+    <output data-testid="asked">{asked}</output>
+
+    <ListboxRoot aria-label="Days" orientation="horizontal" loop selectionFollowsFocus defaultValue="mon" style="display: flex">
+      <ListboxItem value="mon">Mon</ListboxItem>
+      <ListboxItem value="tue">Tue</ListboxItem>
+      <ListboxItem value="wed" disabled>Wed</ListboxItem>
+      <ListboxItem value="thu">Thu</ListboxItem>
+    </ListboxRoot>
+
+    <ListboxRoot aria-label="Locked" disabled defaultValue="a">
+      <ListboxItem value="a">A</ListboxItem>
+      <ListboxItem value="b">B</ListboxItem>
+    </ListboxRoot>
+    <input aria-label="End" />
+  </div>
+}

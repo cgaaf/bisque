@@ -1,0 +1,115 @@
+import { ListboxRoot, ListboxItem, listbox } from "../listbox.rx"
+import { save, load } from "../../test/settings-server.js"
+
+// Listboxes whose selection is saved to a server, and one whose options come from it, written as an app would
+// (../../test/settings-server.ts).
+export default component Fixture() {
+  // Optimistic: what the server holds, guessed over while a save is out; a save that succeeds asks again.
+  plan = await load("plan", "free") -> "free"
+  source planError := ""
+  // Not optimistic: the owner's value changes only once the server has it.
+  source shipping := "standard"
+  source shippingError := ""
+  // Optimistic, and disabled while its save is out.
+  theme = await load("theme", "light") -> "light"
+  // Optimistic, multiple.
+  tags = await load("tags", ["news"]) -> ["news"]
+  source tagsError := ""
+  // Uncontrolled, with a handler that writes what a loading question reads.
+  source wanted := "x"
+  preview = await load(`preview-${wanted}`, wanted) -> "x"
+  // Options from the server, with a value chosen before they arrive.
+  fruits = await load("fruits", ["apple", "banana", "cherry"]) -> null
+  <div>
+    {errored fallback(e) { <p>{e.message}</p> } {
+    <ListboxRoot aria-label="Plan" value={plan} onValueChange={(next) => {
+      guess plan := next
+      onFlush(() => { planError := "" })
+      affects plan
+      try {
+        await save("plan", next)
+        refresh plan
+      } catch (e) {
+        planError := "failed"
+      }
+    }}>
+      <ListboxItem value="free">Free</ListboxItem>
+      <ListboxItem value="pro">Pro</ListboxItem>
+      <ListboxItem value="team">Team</ListboxItem>
+    </ListboxRoot>
+    <output data-testid="plan">{plan}</output>
+    <output data-testid="plan-saving">{pending? plan ? "saving" : ""}</output>
+    <output data-testid="plan-error">{planError}</output>
+
+    <ListboxRoot aria-label="Shipping" value={shipping} onValueChange={(next) => {
+      onFlush(() => { shippingError := "" })
+      try {
+        await save("shipping", next)
+        shipping := next
+      } catch (e) {
+        shippingError := "failed"
+      }
+    }}>
+      <ListboxItem value="standard">Standard</ListboxItem>
+      <ListboxItem value="express">Express</ListboxItem>
+    </ListboxRoot>
+    <output data-testid="shipping">{shipping}</output>
+    <output data-testid="shipping-error">{shippingError}</output>
+
+    <ListboxRoot aria-label="Theme" value={theme} disabled={pending? theme} onValueChange={(next) => {
+      guess theme := next
+      affects theme
+      try {
+        await save("theme", next)
+        refresh theme
+      } catch (e) {
+      }
+    }}>
+      <ListboxItem value="light">Light</ListboxItem>
+      <ListboxItem value="dark">Dark</ListboxItem>
+    </ListboxRoot>
+
+    <ListboxRoot aria-label="Tags" multiple value={tags} onValueChange={(next) => {
+      guess tags := next
+      onFlush(() => { tagsError := "" })
+      affects tags
+      try {
+        await save("tags", next)
+        refresh tags
+      } catch (e) {
+        tagsError := "failed"
+      }
+    }}>
+      <ListboxItem value="news">News</ListboxItem>
+      <ListboxItem value="sport">Sport</ListboxItem>
+      <ListboxItem value="weather">Weather</ListboxItem>
+    </ListboxRoot>
+    <output data-testid="tags">{tags.join(",")}</output>
+    <output data-testid="tags-error">{tagsError}</output>
+
+    <ListboxRoot aria-label="Preview" defaultValue="x" onValueChange={(next) => { wanted := next }}>
+      <ListboxItem value="x">X</ListboxItem>
+      <ListboxItem value="y">Y</ListboxItem>
+      <State />
+    </ListboxRoot>
+    <output data-testid="preview">{preview}</output>
+    <output data-testid="previewing">{pending? preview ? "loading" : ""}</output>
+    }}
+
+    <form data-testid="form">
+      <ListboxRoot aria-label="Fruit" name="fruit" defaultValue="cherry">
+        {errored fallback(e) { <div data-testid="fruits-error">{e.message}</div> } {
+          {for fruit in fruits ?? [] {
+            <ListboxItem value={fruit}>{fruit}</ListboxItem>
+          }}
+        }}
+      </ListboxRoot>
+    </form>
+  </div>
+}
+
+// What a part inside the listbox reads: the listbox's own selection.
+component State() {
+  c = use listbox
+  <span data-testid="state">{c.selected.join(",")}</span>
+}

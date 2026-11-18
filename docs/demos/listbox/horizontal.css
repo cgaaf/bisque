@@ -1,0 +1,51 @@
+.ListboxHorizontal {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  .List {
+    display: flex;
+    gap: 0.375rem;
+  }
+
+  .Item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.75rem;
+    height: 2.5rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #1c1c21);
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: default;
+  }
+
+  .Item:hover:not([data-disabled]) {
+    background: light-dark(#f2f2f5, #24242a);
+  }
+
+  .Item:focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 2px;
+  }
+
+  .Item[data-selected] {
+    border-color: light-dark(#16161a, #f2f2f5);
+    background: light-dark(#16161a, #f2f2f5);
+    color: light-dark(#fff, #16161a);
+  }
+
+  /* A disabled option is skipped by the arrow keys and can't be pressed. */
+  .Item[data-disabled] {
+    opacity: 0.4;
+    text-decoration: line-through;
+  }
+
+  .Summary {
+    margin: 0;
+    color: light-dark(#63636e, #9a9aa6);
+    font-size: 0.8125rem;
+  }
+}
