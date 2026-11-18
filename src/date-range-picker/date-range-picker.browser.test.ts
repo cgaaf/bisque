@@ -201,7 +201,7 @@ test("the form submits <name>-start and <name>-end once each, and reset puts eac
   await user.click(getByRole("button", { name: "Reset" }));
   await expect.poll(() => text(start)).toBe("––/––/––––");
   expect(text(end)).toBe("––/––/––––");
-  expect(text(trip)).toBe("5/8/20305/10/2030");
+  await expect.poll(() => text(trip)).toBe("5/8/20305/10/2030");
   expect([...new FormData(form).entries()]).toEqual([
     ["stay-start", ""],
     ["stay-end", ""],
