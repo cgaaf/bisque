@@ -1,0 +1,121 @@
+# Toast
+
+Short messages that appear without taking focus and go away by themselves.
+
+Source after `bisque-ui copy`: `<copy>/toast/toast.rx`. Parts are named exports of that file.
+
+## Anatomy
+
+```rx
+import { ToastProvider, ToastViewport, ToastRoot, ToastContent, ToastTitle, ToastDescription, ToastAction, ToastClose, toast } from "./bisque/toast/toast.rx"
+
+component Toasts() {
+  c = use toast
+  for t in c.toasts {
+    <ToastRoot toast={t}>
+      <ToastContent>
+        <ToastTitle />
+        <ToastDescription />
+        <ToastAction />
+        <ToastClose />
+      </ToastContent>
+    </ToastRoot>
+  }
+}
+
+<ToastProvider>
+  <ToastViewport>
+    <Toasts />
+  </ToastViewport>
+</ToastProvider>
+```
+
+## ToastProvider
+
+Renders no element of its own. Holds the list of toasts and their timers. Inside it, `(use toast).toasts` is the list to render (newest first) and `(use toast).manager` adds, updates and closes toasts. What the manager is told lands in a change of its own, a microtask after the call, so a toast added from inside an action (`await manager.promise(save())`) shows at once rather than when the action ends. A toast's `onClose` and `onRemove` are called the same way.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `timeout` | `number` | `5000` | How long a toast stays before it closes by itself, in ms, unless it was added with its own `timeout`. `0` keeps toasts until they are closed. |
+| `limit` | `number` | `3` | How many toasts show at once. Older ones stay in the list, inert and with `data-limited`, until the ones in front close. |
+| `toastManager` | `ToastManager` | `one of the provider's own` | A manager made with `createToastManager()`, for adding toasts from outside the provider. Read once. Without it the provider makes its own. |
+
+## ToastViewport
+
+Renders `<div>`. The element the toasts are rendered in: a `popover="manual"` shown while it is mounted, so it is in the top layer, and a polite live region labelled "Notifications". It comes with the browser's popover styles: give it a position. Hovering it or moving keyboard focus into it expands the stack and pauses the timers; F6 moves focus to it while there are toasts.
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-expanded` | Present while the pointer is over the viewport or keyboard focus is in it. |
+
+| CSS variable | Meaning |
+| --- | --- |
+| `--toast-frontmost-height` | The height of the newest toast that isn't closing, in px. Set once it has been measured. |
+
+## ToastRoot
+
+Renders `<div>`. One toast, for one entry of `(use toast).toasts`. It closes after its timeout, on Escape while focus is in it, and when swiped past the threshold. A toast added with `priority: "high"` gets the `alertdialog` role.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `toast` (required) | `ToastObject` |  | The toast to render: an entry of `(use toast).toasts`. |
+| `swipeDirection` | `SwipeDirection \| SwipeDirection[]` | `["down", "right"]` | The directions a swipe closes it in, one or several. Movement the other way is damped. `[]` turns swiping off. |
+| `swipeThreshold` | `number` | `40` | How far a swipe must travel to close the toast, in px. A shorter one snaps back. |
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-ending-style` | Present while the toast animates out. It stays in the list until the transitions and animations on it and its descendants finish. |
+| `data-expanded` | Present while the stack is expanded: the pointer is over the viewport or keyboard focus is in it. |
+| `data-limited` | Present on toasts beyond the provider's `limit`. They are inert; hide them. |
+| `data-swipe-direction` | The direction the toast is being swiped in, and after a swipe that closed it, the one it left in. Absent otherwise. |
+| `data-swiping` | Present while the toast is being dragged. |
+| `data-type` | The `type` the toast was added with, such as `success` or `loading`. |
+
+| CSS variable | Meaning |
+| --- | --- |
+| `--toast-index` | The toast's position among those that aren't closing, newest first, from 0. A closing toast keeps its place in the whole list. |
+| `--toast-offset-y` | The heights of the toasts in front of it added up, in px: where it sits when the stack is spread out. |
+| `--toast-height` | The toast's own height, in px, measured as if no `height` were set on it. |
+| `--toast-swipe-movement-x` | How far the toast has been dragged sideways, in px. Back to `0px` when a short swipe snaps back. |
+| `--toast-swipe-movement-y` | How far the toast has been dragged up or down, in px. |
+
+## ToastContent
+
+Renders `<div>`. Holds a toast's text and buttons, so they can be hidden on the toasts behind the front one while the stack is collapsed.
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-behind` | Present on every toast but the newest. |
+| `data-expanded` | Present while the stack is expanded. |
+
+## ToastTitle
+
+Renders `<h2>`. A heading that names the toast: its children, or else the `title` the toast was added with. Renders nothing when it has neither. The toast's `aria-labelledby` points at it.
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-type` | The `type` the toast was added with. |
+
+## ToastDescription
+
+Renders `<p>`. A paragraph that describes the toast: its children, or else the `description` it was added with. Renders nothing when it has neither. The toast's `aria-describedby` points at it.
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-type` | The `type` the toast was added with. |
+
+## ToastAction
+
+Renders `<button>`. A button for the toast's action. It takes the toast's `actionProps`, with their `children` as its label, and then its own props. Renders nothing without a label.
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-type` | The `type` the toast was added with. |
+
+## ToastClose
+
+Renders `<button>`. A button that closes the toast. It is hidden from assistive technology while the stack is collapsed, unless it has focus.
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-type` | The `type` the toast was added with. |

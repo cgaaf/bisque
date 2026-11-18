@@ -2,6 +2,14 @@
   "name": "bisque-ui",
   "version": "0.0.0",
   "description": "Headless, unstyled, accessible components for ReactiveScript (.rx).",
+  "keywords": [
+    "accessible",
+    "agent-skills",
+    "components",
+    "headless",
+    "reactivescript",
+    "solid"
+  ],
   "license": "MIT",
   "bin": {
     "bisque": "./bin/bisque.mjs"
@@ -9,6 +17,7 @@
   "files": [
     "src",
     "bin",
+    "skills",
     "README.md",
     "!src/**/*.test.ts",
     "!src/**/fixtures",
@@ -20,7 +29,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "pnpm typecheck:rx && pnpm typecheck:ts",
-    "typecheck:rx": "node scripts/gen-dts.mjs --check && node scripts/gen-api.mjs --check && rx-tsc --noEmit -p tsconfig.json",
+    "typecheck:rx": "node scripts/gen-dts.mjs --check && node scripts/gen-api.mjs --check && node scripts/gen-skill.mjs --check && rx-tsc --noEmit -p tsconfig.json",
     "typecheck:ts": "tsrs --noEmit -p tsconfig.ts.json",
     "lint": "oxlint --deny-warnings",
     "format": "oxfmt",
@@ -32,7 +41,7 @@
     "test:browser": "vitest run --config vitest.browser.config.ts",
     "docs": "vite --config vite.docs.config.ts",
     "build:docs": "vite build --config vite.docs.config.ts --logLevel warn",
-    "gen:api": "node scripts/gen-api.mjs"
+    "gen:api": "node scripts/gen-api.mjs && node scripts/gen-skill.mjs"
   },
   "devDependencies": {
     "@mdn/browser-compat-data": "8.1.9",

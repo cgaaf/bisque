@@ -54,6 +54,28 @@ Add `"exclude": ["**/*.d.rx"]` to the tsconfig that `rx-tsc` reads. Style parts 
 `:popover-open`, `:checked`, `::backdrop`, `@starting-style`, and a `data-*` attribute where the platform has no
 selector.
 
+## Agent skill
+
+The package ships a `bisque-ui` [agent skill](https://agentskills.io): how to set the library up, style, animate,
+compose and wire it to a server, plus a reference for every component's parts, props and data attributes,
+generated from the source. pnpm links a dependency's skills into your agent directories (`.claude/skills`,
+`.agents/skills`, `.cursor/skills`, …) once you allow it:
+
+```bash
+pnpm approve bisque-ui
+```
+
+or in `pnpm-workspace.yaml`:
+
+```yaml
+permissions:
+  bisque-ui:
+    skills: true
+```
+
+pnpm 12 or later. Installed from a tarball, git or a folder rather than the registry, the package is approved
+separately: `pnpm approve` records it under that source. With another package manager, copy `node_modules/bisque-ui/skills/bisque-ui` into your agent's skills directory.
+
 ## Documentation
 
 The docs site is in `docs/`: a page per component with live demos, their source and CSS, and an API reference

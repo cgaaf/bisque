@@ -1,0 +1,63 @@
+# Radio
+
+A set of native radios of which one is checked.
+
+Source after `bisque-ui copy`: `<copy>/radio/radio.rx`. Parts are named exports of that file.
+
+## Anatomy
+
+```rx
+import { RadioGroup, RadioRoot, RadioIndicator } from "./bisque/radio/radio.rx"
+
+<RadioGroup>
+  <label>
+    <RadioRoot value="a">
+      <RadioIndicator />
+    </RadioRoot>
+    Label
+  </label>
+</RadioGroup>
+```
+
+## RadioGroup
+
+Renders `<div>`. A `<div role="radiogroup">` that holds which radio is checked and gives its radios a shared name. Inside a FieldRoot it is the field's control.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` | `string` |  | The value of the checked radio. Pass it with `onValueChange` to control the group. It may be read from an answer that is loading or guessed over (`value={setting}`); one that fails is left to the app's `errored` region. |
+| `defaultValue` | `string` |  | The value checked at first, when the group isn't controlled. Without one, no radio is checked. The radio holding it carries the `checked` attribute, so a form reset checks it again. |
+| `onValueChange` | `(value: string) => void` |  | Called with the radio's value when the user checks another radio, and once when a form reset returns an uncontrolled group to its default (not when the reset clears a group that has none). It is called in a change of its own, so it may be an action that saves: the radios are never held by it. A controlled group keeps its radio checked until the owner writes the new value, or guesses it. |
+| `disabled` | `boolean` | `false` | Disables every radio in the group natively. A radio disabled while it has focus (`disabled={pending? setting}`) takes focus back when it is enabled again, if focus hasn't moved elsewhere. |
+| `readOnly` | `boolean` | `false` | The radios stay focusable and the arrow keys move between them, but none can be checked. Sets `aria-readonly` and `data-readonly`. `readOnly={pending? setting}` locks the group while a save is out without losing focus. |
+| `required` | `boolean` | `false` | Sets the native `required` attribute on each radio: one must be checked for the form, or the Field, to be valid. Also sets `aria-required` on the group. |
+| `name` | `string` |  | The radios' shared name: they submit the checked value under it. Without one, the FieldRoot's name is used, else a generated one. |
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-dirty` | Inside a FieldRoot: present while the value differs from its initial one. |
+| `data-disabled` | Present when the group is disabled, by its own prop or by its Field or Fieldset. |
+| `data-filled` | Inside a FieldRoot: present while a radio is checked. |
+| `data-focused` | Inside a FieldRoot: present while focus is on one of the radios. |
+| `data-invalid` | Inside a FieldRoot: present when the field is invalid. |
+| `data-readonly` | Present when the group is read-only. |
+| `data-touched` | Inside a FieldRoot: present once focus has been in the group and left it. |
+| `data-valid` | Inside a FieldRoot: present when the field has been validated and is valid. |
+
+## RadioRoot
+
+Renders `<input>`. A radio: a native `<input type="radio">` that carries the group's name. Its children are rendered after it, as its siblings. Style it with `appearance: none`, `:checked`, `:disabled`, `:focus-visible` and `:user-invalid`.
+
+| Prop | Type | Default | Description |
+| --- | --- | --- | --- |
+| `value` (required) | `string` |  | The value the group holds, and the form submits, while this radio is checked. |
+| `disabled` | `boolean` | `false` | Disables this radio natively: the arrow keys skip it. |
+| `readOnly` | `boolean` | `false` | Keeps this radio focusable but cancels a press, so it can't be checked. |
+
+| Data attribute | Meaning |
+| --- | --- |
+| `data-readonly` | Present when the radio or its group is read-only. |
+
+## RadioIndicator
+
+Renders `<span>`. A mark shown beside the radio, always in the document. Place it in RadioRoot, where it is the radio's next sibling, and show it with `.Radio:checked + .Indicator`. It is `aria-hidden`.
