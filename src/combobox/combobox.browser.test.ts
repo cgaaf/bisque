@@ -261,6 +261,49 @@ test("ArrowDown on the closed input opens on the selected option", async () => {
   expect(input.getAttribute("aria-activedescendant")).toBe(getByRole("option", { name: "Cherry" }).id);
 });
 
+function pressChevron(trigger: HTMLElement, pointerType: string, button = 0) {
+  trigger.dispatchEvent(
+    new PointerEvent("pointerdown", { bubbles: true, pointerType, pointerId: 4, isPrimary: true, button }),
+  );
+}
+
+test.each(["touch", "pen"])("the chevron waits for a completed %s tap", async (pointerType) => {
+  const { getByRole, getByTestId } = mount(basic);
+  const trigger = getByRole("button", { name: "Show fruits" });
+  const popup = getByTestId("popup");
+  pressChevron(trigger, pointerType);
+  await frame();
+  expect(shown(popup)).toBe(false);
+  trigger.dispatchEvent(new PointerEvent("pointercancel", { bubbles: true, pointerType, pointerId: 4 }));
+  await frame();
+  expect(shown(popup)).toBe(false);
+  pressChevron(trigger, pointerType);
+  trigger.dispatchEvent(new MouseEvent("click", { detail: 1, bubbles: true }));
+  await frame();
+  expect(shown(popup)).toBe(true);
+});
+
+test("a cancelled primary mouse press can be followed by virtual activation", async () => {
+  const { getByRole, getByTestId } = mount(basic);
+  const trigger = getByRole("button", { name: "Show fruits" });
+  const popup = getByTestId("popup");
+  pressChevron(trigger, "mouse", 2);
+  await frame();
+  expect(shown(popup)).toBe(false);
+  pressChevron(trigger, "mouse");
+  await frame();
+  expect(shown(popup)).toBe(true);
+  trigger.dispatchEvent(
+    new PointerEvent("pointercancel", { bubbles: true, pointerType: "mouse", pointerId: 4 }),
+  );
+  await frame();
+  expect(shown(popup)).toBe(false);
+  trigger.click();
+  await frame();
+  expect(shown(popup)).toBe(true);
+  expect(getByTestId("changes").textContent).toBe("");
+});
+
 test("the trigger toggles the list and keeps focus in the input; Clear empties it", async () => {
   const { getByRole, queryByRole, getByTestId, user } = mount(basic);
   const input = getByRole("combobox", { name: "Fruit" }) as HTMLInputElement;

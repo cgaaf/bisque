@@ -89,7 +89,7 @@ Renders `<input>`. The text input, with `role="combobox"`. Typing filters the op
 
 ## ComboboxTrigger
 
-Renders `<button>`. A button beside the input that opens and closes the popup and leaves focus in the input. It isn't a Tab stop. Give it an `aria-label`.
+Renders `<button>`. A primary mouse press opens the popup and focuses the input. Release outside the trigger to cancel the opening. A completed tap or virtual click toggles it. The trigger isn't a Tab stop. Give it an `aria-label`.
 
 | Data attribute | Meaning |
 | --- | --- |
