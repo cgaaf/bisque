@@ -1,0 +1,73 @@
+import { createTable } from "../../internal/table.js"
+import { TableColumnHeader, TableSortTrigger, TableRow, TableCell, TableSelectRow, TableSelectAll, TableGlobalFilter, TableColumnFilter, TableColumnToggle, TablePagination } from "../table.rx"
+import { PaginationPrevious, PaginationNext } from "../../pagination/pagination.rx"
+
+type Person = { id: string; name: string; team: string; age: number }
+
+export default component Fixture() {
+  source people: Person[] := [
+    { id: "a", name: "Mira", team: "north", age: 41 },
+    { id: "b", name: "Otto", team: "south", age: 23 },
+    { id: "c", name: "Ines", team: "north", age: 35 },
+    { id: "d", name: "Aldo", team: "south", age: 58 },
+    { id: "e", name: "Bea", team: "north", age: 29 },
+  ]
+  columns = [
+    { id: "select", header: "", enableSorting: false, enableHiding: false },
+    { accessorKey: "name", header: "Name" },
+    { accessorKey: "team", header: "Team" },
+    { accessorKey: "age", header: "Age", enableGlobalFilter: false },
+  ]
+  table = createTable({
+    data: people,
+    columns: columns,
+    getRowId: row => row.id,
+    initialState: { pagination: { pageIndex: 0, pageSize: 3 } },
+  })
+  ids = table.getRowModel().rows.map(row => row.id)
+  <main>
+    <TableGlobalFilter table={table} aria-label="Search" />
+    <TableColumnFilter column={table.getColumn("team")} aria-label="Team filter" />
+    <label><TableColumnToggle column={table.getColumn("age")} />Show age</label>
+    <table>
+      <thead>
+        {for group in table.getHeaderGroups() {
+          <tr>
+            {for header in group.headers {
+              <TableColumnHeader header={header}>
+                {if header.column.id == "select" {
+                  <TableSelectAll table={table} />
+                } else {
+                  <TableSortTrigger column={header.column}>{header.column.columnDef.header}</TableSortTrigger>
+                }}
+              </TableColumnHeader>
+            }}
+          </tr>
+        }}
+      </thead>
+      <tbody>
+        {for id in ids {
+          row = table.getRow(id)
+          <TableRow row={row} data-testid={id}>
+            {for cell in row.getVisibleCells() {
+              <TableCell cell={cell}>
+                {if cell.column.id == "select" {
+                  <TableSelectRow row={row} aria-label={`Select ${row.original.name}`} />
+                } else {
+                  {cell.getValue()}
+                }}
+              </TableCell>
+            }}
+          </TableRow>
+        }}
+      </tbody>
+    </table>
+    <TablePagination table={table} class="pager" aria-label="Pages of people">
+      <PaginationPrevious>Previous</PaginationPrevious>
+      <PaginationNext>Next</PaginationNext>
+    </TablePagination>
+    <output data-testid="count">{table.getSelectedRowModel().rows.length}</output>
+    <button onClick={() => { people := ps => ps.filter(p => p.id != "a") }}>Remove Mira</button>
+    <button onClick={() => { people[1].age := 99 }}>Age Otto</button>
+  </main>
+}

@@ -1,0 +1,147 @@
+import { createTable } from "../../internal/table.js"
+import { TableColumnHeader, TableSortTrigger, TableRow, TableCell, TableSelectRow, TablePagination } from "../table.rx"
+import { PaginationPrevious, PaginationNext } from "../../pagination/pagination.rx"
+import { save, fetchList } from "../../test/slow-server.js"
+
+type Sort = { id: string; desc: boolean }
+type Paging = { pageIndex: number; pageSize: number }
+
+// A table beside app actions that are still waiting for their server. Its own state must follow the user while
+// they wait.
+export default component Fixture() {
+  people = [
+    { id: "a", name: "Mira" },
+    { id: "b", name: "Otto" },
+    { id: "c", name: "Ines" },
+    { id: "d", name: "Aldo" },
+  ]
+  columns = [{ accessorKey: "name", header: "Name" }]
+
+  // 1. An app that holds a plain write in an action while an option of the table is computed from it.
+  source step := 1
+  action next() {
+    step := 2
+    try { await save("step") } catch (e) { }
+  }
+  held = createTable({
+    data: people,
+    columns: columns,
+    getRowId: row => row.id,
+    enableMultiSort: step == 2,
+    initialState: { pagination: { pageIndex: 0, pageSize: 2 } },
+  })
+  heldIds = held.getRowModel().rows.map(row => row.id)
+
+  // 2. An `onSortingChange` that saves: an action that writes, then waits.
+  source saved := ""
+  action saveSorting(sorting: Sort[]) {
+    saved := sorting.map(s => `${s.id}:${s.desc ? "desc" : "asc"}`).join(",")
+    try { await save(`sorting ${sorting.length}`) } catch (e) { }
+  }
+  saving = createTable({ data: people, columns: columns, getRowId: row => row.id, onSortingChange: saveSorting })
+  savingIds = saving.getRowModel().rows.map(row => row.id)
+
+  // 3. The server sorts and pages: controlled state, and rows that are a loading question of it.
+  source sorting: Sort[] := []
+  source paging: Paging := { pageIndex: 0, pageSize: 2 }
+  action setSorting(nextSorting: Sort[]) { sorting := nextSorting }
+  action setPaging(nextPaging: Paging) { paging := nextPaging }
+  key = `page ${paging.pageIndex} ${sorting.map(s => `${s.id}:${s.desc ? "desc" : "asc"}`).join(",")}`
+  names = (await fetchList(key) -> []) catch (e) => []
+  rows = names.map(name => ({ id: name, name: name }))
+  remote = createTable({
+    data: rows,
+    columns: columns,
+    getRowId: row => row.id,
+    manualSorting: true,
+    manualPagination: true,
+    rowCount: 6,
+    state: { sorting: sorting, pagination: paging },
+    onSortingChange: setSorting,
+    onPaginationChange: setPaging,
+  })
+  remoteIds = remote.getRowModel().rows.map(row => row.id)
+
+  <main>
+    <button onClick={() => { next() }}>Next step</button>
+    <output data-testid="step">{step}</output>
+
+    <table data-testid="held">
+      <thead>
+        <tr>
+          {for header in held.getFlatHeaders() {
+            <TableColumnHeader header={header}>
+              <TableSortTrigger column={header.column}>Held name</TableSortTrigger>
+            </TableColumnHeader>
+          }}
+        </tr>
+      </thead>
+      <tbody>
+        {for id in heldIds {
+          row = held.getRow(id)
+          <TableRow row={row}>
+            <td><TableSelectRow row={row} aria-label={`Held ${row.original.name}`} /></td>
+            {for cell in row.getVisibleCells() {
+              <TableCell cell={cell}>{cell.getValue()}</TableCell>
+            }}
+          </TableRow>
+        }}
+      </tbody>
+    </table>
+    <TablePagination table={held} aria-label="Held pages">
+      <PaginationNext>Held next</PaginationNext>
+    </TablePagination>
+
+    <table data-testid="saving">
+      <thead>
+        <tr>
+          {for header in saving.getFlatHeaders() {
+            <TableColumnHeader header={header}>
+              <TableSortTrigger column={header.column}>Saving name</TableSortTrigger>
+            </TableColumnHeader>
+          }}
+        </tr>
+      </thead>
+      <tbody>
+        {for id in savingIds {
+          row = saving.getRow(id)
+          <TableRow row={row}>
+            {for cell in row.getVisibleCells() {
+              <TableCell cell={cell}>{cell.getValue()}</TableCell>
+            }}
+          </TableRow>
+        }}
+      </tbody>
+    </table>
+    <output data-testid="saved">{saved}</output>
+    <output data-testid="saving-sort">{pending? saved ? "saving" : ""}</output>
+
+    <table data-testid="remote">
+      <thead>
+        <tr>
+          {for header in remote.getFlatHeaders() {
+            <TableColumnHeader header={header}>
+              <TableSortTrigger column={header.column}>Remote name</TableSortTrigger>
+            </TableColumnHeader>
+          }}
+        </tr>
+      </thead>
+      <tbody>
+        {for id in remoteIds {
+          row = remote.getRow(id)
+          <TableRow row={row}>
+            {for cell in row.getVisibleCells() {
+              <TableCell cell={cell}>{cell.getValue()}</TableCell>
+            }}
+          </TableRow>
+        }}
+      </tbody>
+    </table>
+    <TablePagination table={remote} aria-label="Remote pages">
+      <PaginationPrevious>Remote previous</PaginationPrevious>
+      <PaginationNext>Remote next</PaginationNext>
+    </TablePagination>
+    <output data-testid="remote-page">{paging.pageIndex + 1}</output>
+    <output data-testid="remote-loading">{pending? names ? "loading" : ""}</output>
+  </main>
+}

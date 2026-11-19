@@ -1,0 +1,11 @@
+// How .rx may use ./table.js (implemented in ./impl/table.ts): TanStack Table's core on Solid signals.
+// One declaration per line: scripts/gen-dts.mjs turns this file into ./table.d.ts.
+export pure fn createTable(ref options: import("./impl/table.ts").TableOptions): import("./impl/table.ts").Table instantiates
+export pure fn filterText(value: unknown): string
+export fn callHandler(handler: ((event: any) => void) | undefined, event: Event): void
+export pure fn columnSizeLimits(column: import("./impl/table.ts").Column): { min: number; max: number }
+export fn nudgeColumnSize(column: import("./impl/table.ts").Column, delta: number): void
+export pure fn columnState(column: import("./impl/table.ts").Column): { sorted: "asc" | "desc" | undefined; resizing: boolean }
+export pure fn columnPlace(column: import("./impl/table.ts").Column, header: import("./impl/table.ts").Header | undefined): import("./impl/table.ts").ColumnPlace
+export pure fn rowState(row: import("./impl/table.ts").Row): { selected: boolean; expanded: boolean; grouped: boolean; pinned: "top" | "bottom" | undefined }
+export pure fn cellState(cell: import("./impl/table.ts").Cell): { grouped: boolean; aggregated: boolean; placeholder: boolean }

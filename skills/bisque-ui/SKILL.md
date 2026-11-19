@@ -1,6 +1,6 @@
 ---
 name: bisque-ui
-description: Build UI in a ReactiveScript (.rx) app with bisque-ui, the headless, unstyled, accessible component library (Dialog, Popover, Menu, Select, Combobox, Tabs, Form, Field, Switch, Toast and more). Use when adding, styling, animating, composing or wrapping Bisque parts, wiring them to a server (loading, saving, submitting), or when an app's code imports from a copied `bisque` folder.
+description: Build UI in a ReactiveScript (.rx) app with bisque-ui, the headless, unstyled, accessible component library (Dialog, Popover, Menu, Select, Combobox, Tabs, Form, Field, Switch, Table, Toast and more). Use when adding, styling, animating, composing or wrapping Bisque parts, wiring them to a server (loading, saving, submitting), or when an app's code imports from a copied `bisque` folder.
 license: MIT
 ---
 
@@ -214,6 +214,42 @@ searching = results == null || pending? results
 - A source written before an `await` in an action is held until the action ends, and so is a prop computed from
   it; a few parts then wait for your request. Write with `guess`, or clear messages in `onFlush`, so the change
   shows at once.
+
+## Table
+
+Table is the one family with a dependency, TanStack Table 9's headless core, and `bisque copy` leaves it out
+unless the app has the package: `pnpm add @tanstack/table-core`, then `pnpm exec bisque copy <dir>` again.
+It has no Root and no context. `createTable` from `bisque/internal/table.js` makes the table object; the app
+loops over its header groups, rows and cells and writes native `<table>` elements, and each part takes the
+object it is about as a prop. [references/table.md](references/table.md) has the parts; TanStack Table's docs
+are the reference for the table's options and methods.
+
+```rx
+table = createTable({ data: people, columns: columns, getRowId: row => row.id })
+ids = table.getRowModel().rows.map(row => row.id)
+
+<tbody>
+  {for id in ids {
+    row = table.getRow(id)
+    <TableRow row={row}>
+      {for cell in row.getVisibleCells() {
+        <TableCell cell={cell}>{cell.getValue()}</TableCell>
+      }}
+    </TableRow>
+  }}
+</tbody>
+```
+
+- Loop over row ids, as above, not over the row objects: the core makes new rows whenever the data changes,
+  and a `for` would rebuild every row's elements.
+- Column definitions hold values, never markup, and there is no `flexRender`: branch on `cell.column.id` for a
+  cell with markup of its own.
+- An `on…Change` option (`onSortingChange`) receives the new value, never an updater function. Hold controlled
+  state in a `source` and pass it in `state`.
+- Never put a table, row, column or cell in a `source` or a keyed equation (`x key id = …`): the core's methods
+  fail on the wrapped copy. Data and state may be held in a `source`.
+- Pinning state needs both sides: `columnPinning: { start: ["name"], end: [] }`.
+- Rows are untyped: `row.original` and `cell.getValue()` are `any`.
 
 ## Browsers
 

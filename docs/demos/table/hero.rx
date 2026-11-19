@@ -1,0 +1,145 @@
+import { createTable } from "../../../src/internal/table.js"
+import { TableColumnHeader, TableSortTrigger, TableRow, TableCell, TableSelectRow, TableSelectAll, TableGlobalFilter, TableColumnToggle, TablePagination } from "../../../src/table/table.rx"
+import { PaginationPrevious, PaginationNext, PaginationItem, PaginationEllipsis, pagination } from "../../../src/pagination/pagination.rx"
+
+type Order = { id: string; customer: string; status: string; placed: string; total: number }
+
+// The page numbers, from the pagination context TablePagination provides.
+component Pages() {
+  c = use pagination
+  <ul class="Pages">
+    {for item in c.items {
+      <li>
+        {if item.type == "page" {
+          <PaginationItem class="Page" value={item.value}>{item.value}</PaginationItem>
+        } else {
+          <PaginationEllipsis class="Ellipsis">…</PaginationEllipsis>
+        }}
+      </li>
+    }}
+  </ul>
+}
+
+export component TableHero() {
+  orders = [
+    { id: "A-1042", customer: "Larkspur Supply", status: "Shipped", placed: "2026-11-02", total: 482.5 },
+    { id: "A-1043", customer: "Quill & Co", status: "Processing", placed: "2026-11-02", total: 96 },
+    { id: "A-1044", customer: "Northgate Bikes", status: "Delivered", placed: "2026-11-03", total: 1240 },
+    { id: "A-1045", customer: "Fennel Kitchen", status: "Cancelled", placed: "2026-11-03", total: 58.75 },
+    { id: "A-1046", customer: "Harbor Print", status: "Delivered", placed: "2026-11-04", total: 310.2 },
+    { id: "A-1047", customer: "Juniper Labs", status: "Shipped", placed: "2026-11-05", total: 2150 },
+    { id: "A-1048", customer: "Larkspur Supply", status: "Processing", placed: "2026-11-06", total: 74.9 },
+    { id: "A-1049", customer: "Tidewater Books", status: "Delivered", placed: "2026-11-06", total: 129 },
+    { id: "A-1050", customer: "Quill & Co", status: "Shipped", placed: "2026-11-08", total: 640 },
+    { id: "A-1051", customer: "Meadow Dental", status: "Delivered", placed: "2026-11-09", total: 890.4 },
+    { id: "A-1052", customer: "Northgate Bikes", status: "Processing", placed: "2026-11-10", total: 415 },
+    { id: "A-1053", customer: "Orchard Foods", status: "Cancelled", placed: "2026-11-10", total: 220 },
+    { id: "A-1054", customer: "Harbor Print", status: "Shipped", placed: "2026-11-11", total: 67.3 },
+    { id: "A-1055", customer: "Juniper Labs", status: "Delivered", placed: "2026-11-12", total: 1785 },
+    { id: "A-1056", customer: "Fennel Kitchen", status: "Processing", placed: "2026-11-13", total: 142.6 },
+    { id: "A-1057", customer: "Tidewater Books", status: "Shipped", placed: "2026-11-14", total: 38 },
+    { id: "A-1058", customer: "Meadow Dental", status: "Processing", placed: "2026-11-15", total: 905 },
+    { id: "A-1059", customer: "Orchard Foods", status: "Delivered", placed: "2026-11-16", total: 356.8 },
+    { id: "A-1060", customer: "Cobalt Cycles", status: "Shipped", placed: "2026-11-17", total: 1120 },
+    { id: "A-1061", customer: "Larkspur Supply", status: "Delivered", placed: "2026-11-17", total: 264.15 },
+  ]
+  // Column definitions hold values. A cell with markup of its own is a branch on the column's id, below.
+  columns = [
+    { id: "select", header: "", enableSorting: false, enableHiding: false, enableGlobalFilter: false },
+    { accessorKey: "id", header: "Order", enableHiding: false },
+    { accessorKey: "customer", header: "Customer" },
+    { accessorKey: "status", header: "Status" },
+    { accessorKey: "placed", header: "Placed", enableGlobalFilter: false },
+    { accessorKey: "total", header: "Total", enableGlobalFilter: false },
+  ]
+  table = createTable({
+    data: orders,
+    columns: columns,
+    getRowId: row => row.id,
+    initialState: { pagination: { pageIndex: 0, pageSize: 5 }, sorting: [{ id: "placed", desc: true }] },
+  })
+  // Ids, so a row's element is kept wherever sorting and paging put it.
+  ids = table.getRowModel().rows.map(row => row.id)
+  selected = table.getSelectedRowModel().rows.length
+  matching = table.getFilteredRowModel().rows.length
+  sizes = [5, 10, 20]
+
+  action setPageSize(event: Event & { currentTarget: HTMLSelectElement }) {
+    let size = sizes.find(n => `${n}` == event.currentTarget.value)
+    if (size != undefined) { table.setPageSize(size) }
+  }
+
+  <div class="TableHero">
+    <div class="Toolbar">
+      <TableGlobalFilter class="Search" table={table} placeholder="Search orders, customers, status…" aria-label="Search orders" />
+      <fieldset class="Columns">
+        <legend>Columns</legend>
+        {for column in table.getAllLeafColumns().filter(column => column.getCanHide()) {
+          <label class="Toggle"><TableColumnToggle column={column} />{column.columnDef.header}</label>
+        }}
+      </fieldset>
+    </div>
+
+    <div class="Scroller">
+      <table class="Table">
+        <thead>
+          {for group in table.getHeaderGroups() {
+            <tr>
+              {for header in group.headers {
+                <TableColumnHeader class="Head" header={header}>
+                  {if header.column.id == "select" {
+                    <TableSelectAll class="Checkbox" table={table} scope="page" aria-label="Select all orders on this page" />
+                  } else {
+                    <TableSortTrigger class="Sort" column={header.column}>{header.column.columnDef.header}</TableSortTrigger>
+                  }}
+                </TableColumnHeader>
+              }}
+            </tr>
+          }}
+        </thead>
+        <tbody>
+          {for id in ids {
+            row = table.getRow(id)
+            <TableRow class="Row" row={row}>
+              {for cell in row.getVisibleCells() {
+                <TableCell class="Cell" cell={cell}>
+                  {if cell.column.id == "select" {
+                    <TableSelectRow class="Checkbox" row={row} aria-label={`Select order ${row.original.id}`} />
+                  } else if cell.column.id == "status" {
+                    <span class="Badge" data-status={cell.getValue()}>{cell.getValue()}</span>
+                  } else if cell.column.id == "total" {
+                    {`$${cell.getValue().toFixed(2)}`}
+                  } else {
+                    {cell.getValue()}
+                  }}
+                </TableCell>
+              }}
+            </TableRow>
+          }}
+          {if ids.length == 0 {
+            <tr><td class="Empty" colspan={table.getVisibleLeafColumns().length}>No orders match the search.</td></tr>
+          }}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="Footer">
+      <output class="Summary">{selected > 0 ? `${selected} selected · ${matching} orders` : `${matching} orders`}</output>
+      <label class="PageSize">
+        Rows
+        <select onChange={setPageSize}>
+          {for size in sizes {
+            <option value={size} selected={table.store.state.pagination.pageSize == size}>{size}</option>
+          }}
+        </select>
+      </label>
+      <TablePagination table={table}>
+        <div class="Pagination">
+          <PaginationPrevious class="Step" aria-label="Previous page">‹</PaginationPrevious>
+          <Pages />
+          <PaginationNext class="Step" aria-label="Next page">›</PaginationNext>
+        </div>
+      </TablePagination>
+    </div>
+  </div>
+}

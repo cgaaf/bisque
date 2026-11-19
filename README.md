@@ -12,7 +12,9 @@ Experimental, like ReactiveScript 0.3 itself: expect the API to change.
   dialog is a `<dialog>`, popups are `popover` elements placed with CSS anchor positioning, disclosures are
   `<details>`, checkboxes are checkboxes. There is no portal, focus trap, dismissal layer or positioning engine
   in the library, and no Portal, Positioner or Backdrop parts.
-- **No runtime dependencies** beyond ReactiveScript and Solid.
+- **No runtime dependencies** beyond ReactiveScript and Solid, with one exception: Table is built on
+  [TanStack Table](https://tanstack.com/table)'s core. `bisque copy` includes Table only in an app that has
+  `@tanstack/table-core` installed, so an app without a table installs and copies nothing for it.
 - **Written in `.rx`**, with each part's behaviour also exported as a props function, so it can go on an element
   of your own.
 
@@ -20,7 +22,7 @@ Experimental, like ReactiveScript 0.3 itself: expect the API to change.
 
 Accordion, Alert Dialog, Autocomplete, Avatar, Button, Checkbox, Checkbox Group, Collapsible, Combobox, Context
 Menu, Dialog, Drawer, Field, Fieldset, Form, Input, Menu, Menubar, Meter, Navigation Menu, Number Field,
-Popover, Preview Card, Progress, Radio, Scroll Area, Select, Separator, Slider, Switch, Tabs, Toast, Toggle,
+Popover, Preview Card, Progress, Radio, Scroll Area, Select, Separator, Slider, Switch, Table, Tabs, Toast, Toggle,
 Toggle Group, Toolbar, Tooltip.
 
 ## Use

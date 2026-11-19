@@ -20,6 +20,11 @@ An app that uses the library installs nothing for it beyond ReactiveScript and S
 `dependencies`, and nothing under `src/` imports a third-party package outside tests. If a behaviour seems to
 need a library, the platform-first rule usually answers it; otherwise write the small piece it needs here.
 
+The one exception is Table: `src/internal/impl/table.ts` imports `@tanstack/table-core`, an optional peer
+dependency. No other file may import it. `bin/bisque.mjs` copies the Table family (`src/table`,
+`src/internal/table.*`, `src/internal/impl/table.ts`) only into an app that has the package, because the copy's
+TypeScript would otherwise fail that app's type check; a new file for Table must match `isTable` there.
+
 ## Where the language is documented
 
 Read these before writing `.rx`; they ship with the installed compiler, so they match its version:

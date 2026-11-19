@@ -1,0 +1,2 @@
+// How the minimal fixture calls ./minimal-features.js. One declaration per line: scripts/gen-dts.mjs writes ./minimal-features.d.ts.
+export pure fn sortingFeatures(): unknown

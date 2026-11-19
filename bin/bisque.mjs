@@ -9,6 +9,7 @@
 // The directory is replaced only when every file in it is one this package ships or one the last copy wrote
 // (listed in .bisque-copy.json), so a copy is refreshed but a folder holding anything else (the app's own source,
 // a file added to the copy) is never deleted.
+import { createRequire } from "node:module";
 import { cpSync, existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -21,11 +22,25 @@ if (command !== "copy") {
 
 const source = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "src");
 const destination = path.resolve(target);
+// Table is built on @tanstack/table-core, the one package a family needs beyond ReactiveScript and Solid. It
+// is copied only into an app that has the package: its TypeScript imports the package's types, so a copy
+// without it would fail the app's type check whether or not the app used a table.
+const hasTableCore = (() => {
+  try {
+    createRequire(path.join(process.cwd(), "package.json")).resolve("@tanstack/table-core");
+    return true;
+  } catch {
+    return false;
+  }
+})();
+const isTable = (file) =>
+  /[\\/]src[\\/]table([\\/]|$)/.test(file) || /[\\/]internal[\\/](impl[\\/])?table\.[a-z.]+$/.test(file);
 const skipped = (file) =>
   file.endsWith(".test.ts") ||
   /[\\/]fixtures([\\/]|$)/.test(file) ||
   /[\\/]test([\\/]|$)/.test(file) ||
-  file.endsWith("rx.d.ts");
+  file.endsWith("rx.d.ts") ||
+  (!hasTableCore && isTable(file));
 
 // What the last copy wrote, relative to the copy with `/` separators.
 const MANIFEST = ".bisque-copy.json";
@@ -79,5 +94,8 @@ const families = readdirSync(destination, { withFileTypes: true }).filter(
   (entry) => entry.isDirectory() && entry.name !== "internal",
 );
 console.log(`Copied ${families.length} component families to ${target}.`);
+if (!hasTableCore) {
+  console.log("Table was left out: it needs @tanstack/table-core. Install it and copy again to add Table.");
+}
 console.log(`Import them by relative path, e.g. import { DialogRoot } from "./bisque/dialog/dialog.rx"`);
 console.log(`The app needs "exclude": ["**/*.d.rx"] in the tsconfig rx-tsc reads.`);

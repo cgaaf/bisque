@@ -1,0 +1,249 @@
+.TableHero {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+  font-size: 0.875rem;
+
+  .Toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.75rem 1.25rem;
+  }
+
+  .Search {
+    flex: 1 1 14rem;
+    min-width: 0;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+  }
+
+  .Columns {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.875rem;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
+  }
+
+  .Columns legend {
+    float: left;
+    margin-inline-end: 0.875rem;
+    padding: 0;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .Toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    cursor: pointer;
+  }
+
+  /* A wide table scrolls inside its own box; the page doesn't. */
+  .Scroller {
+    overflow-x: auto;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+    background: light-dark(#fff, #16161a);
+  }
+
+  .Table {
+    width: 100%;
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Head,
+  .Cell {
+    padding: 0.625rem 0.75rem;
+    text-align: start;
+    white-space: nowrap;
+  }
+
+  .Head {
+    border-bottom: 1px solid light-dark(#d4d4dc, #3a3a43);
+    background: light-dark(#f7f7f9, #1c1c21);
+    color: light-dark(#63636e, #9a9aa6);
+    font-weight: 500;
+  }
+
+  [data-column="select"] {
+    width: 2.25rem;
+    padding-inline-end: 0;
+  }
+
+  [data-column="total"] {
+    text-align: end;
+  }
+
+  /* The sort button fills its header; the arrow is drawn from the state the part writes. */
+  .Sort {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin: -0.25rem -0.375rem;
+    padding: 0.25rem 0.375rem;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  .Sort::after {
+    content: "↕";
+    opacity: 0.35;
+  }
+
+  .Sort[data-sorted="asc"]::after {
+    content: "↑";
+    opacity: 1;
+  }
+
+  .Sort[data-sorted="desc"]::after {
+    content: "↓";
+    opacity: 1;
+  }
+
+  .Sort:hover,
+  .Head[aria-sort] .Sort {
+    color: light-dark(#17171a, #ededf0);
+  }
+
+  .Row + .Row .Cell {
+    border-top: 1px solid light-dark(#ececf0, #2a2a31);
+  }
+
+  .Row:hover {
+    background: light-dark(#fafafb, #1a1a1f);
+  }
+
+  /* `data-selected` is the part's; the checkbox carries the state for assistive technology. */
+  .Row[data-selected] {
+    background: light-dark(#eef2fe, #1d2233);
+  }
+
+  .Checkbox {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+    vertical-align: middle;
+    accent-color: light-dark(#2f5bea, #8eabff);
+  }
+
+  .Badge {
+    display: inline-block;
+    padding: 0.0625rem 0.5rem;
+    border-radius: 999px;
+    background: light-dark(#ececf0, #2a2a31);
+    font-size: 0.8125rem;
+  }
+
+  .Badge[data-status="Delivered"] {
+    background: light-dark(#dff5e6, #16321f);
+    color: light-dark(#17653a, #8ddba8);
+  }
+
+  .Badge[data-status="Shipped"] {
+    background: light-dark(#e3ecfd, #1a2542);
+    color: light-dark(#2347b8, #a3bcff);
+  }
+
+  .Badge[data-status="Cancelled"] {
+    background: light-dark(#fde8e8, #3a1a1c);
+    color: light-dark(#a92727, #f2a3a3);
+  }
+
+  .Empty {
+    padding: 2rem;
+    color: light-dark(#63636e, #9a9aa6);
+    text-align: center;
+  }
+
+  .Footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 1rem;
+  }
+
+  .Summary {
+    flex: 1 1 auto;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .PageSize {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: light-dark(#63636e, #9a9aa6);
+  }
+
+  .PageSize select {
+    padding: 0.25rem 0.375rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+  }
+
+  .Pagination,
+  .Pages {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .Page,
+  .Step,
+  .Ellipsis {
+    display: grid;
+    place-items: center;
+    min-width: 2rem;
+    height: 2rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    background: none;
+    color: light-dark(#63636e, #9a9aa6);
+    font: inherit;
+  }
+
+  .Page,
+  .Step {
+    cursor: pointer;
+  }
+
+  .Page:hover,
+  .Step:hover:not(:disabled) {
+    background: light-dark(#f2f2f5, #222228);
+    color: inherit;
+  }
+
+  .Page[aria-current="page"] {
+    border-color: light-dark(#d4d4dc, #3a3a43);
+    color: inherit;
+    font-weight: 600;
+  }
+
+  .Step:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+
+  :is(.Search, .Sort, .Checkbox, .Page, .Step, select, input):focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+}

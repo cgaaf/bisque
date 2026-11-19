@@ -1,0 +1,172 @@
+import { DocsPage, Demo, Code, ApiReference } from "../../shell.rx"
+import { TableHero } from "../../demos/table/hero.rx"
+import { TableColumns } from "../../demos/table/columns.rx"
+import { TableGrouped } from "../../demos/table/grouped.rx"
+
+export default component Page() {
+  <DocsPage title="Table" subtitle="A data table on a native table element: sorting, filtering, selection, paging, column sizing and grouping, with TanStack Table keeping the state.">
+    <Demo source="table/hero"><TableHero /></Demo>
+
+    <h2 id="anatomy">Anatomy</h2>
+    <p>
+      <code>createTable</code> makes the table: an object that holds the state and works out the rows. You loop
+      over its header groups, rows and cells and write the elements; each part takes the object it is about
+      as a prop.
+    </p>
+    <Code file="table/anatomy.rx.txt" />
+    <p>
+      The table needs one package that the rest of Bisque doesn't. Install it, then copy Bisque again:{" "}
+      <code>bisque copy</code> leaves Table out of an app that doesn't have the package.
+    </p>
+    <Code file="table/install.sh.txt" />
+
+    <h2 id="platform">What the browser does</h2>
+    <p>
+      The table itself. <code>{"<table>"}</code>, <code>{"<thead>"}</code>, <code>{"<tr>"}</code>,{" "}
+      <code>{"<th>"}</code> and <code>{"<td>"}</code> give assistive technology the rows, the columns and which
+      header belongs to which cell, so there is no Root part and no context, and the row and cell parts add
+      only <code>data-*</code> attributes to style by. The controls are native too: a sort trigger and an expand
+      trigger are buttons, selection and column visibility are checkboxes, the filters are inputs.
+    </p>
+    <p>
+      What a data table needs beyond that is state and the rows computed from it. That is{" "}
+      <a href="https://tanstack.com/table">TanStack Table</a>'s core, version 9, which is headless and
+      framework-agnostic. Version 9 lets its host supply the reactivity, and here every piece of table state
+      is a Solid signal: an equation or a piece of markup that reads <code>column.getIsSorted()</code> depends
+      on the sorting and on nothing else. Everything the core can do is available on the table object; its{" "}
+      <a href="https://tanstack.com/table/latest/docs">documentation</a> is the reference for the options and
+      methods.
+    </p>
+    <p>
+      There is no grid navigation: the table is a <code>table</code>, not a <code>grid</code>, and each control
+      in it is an ordinary <kbd>Tab</kbd> stop.
+    </p>
+
+    <h2 id="differences">What differs from TanStack Table elsewhere</h2>
+    <ul>
+      <li>
+        <strong>Column definitions hold values, not markup.</strong> ReactiveScript has no markup outside a view,
+        so there is no <code>flexRender</code>. Render <code>column.columnDef.header</code> and{" "}
+        <code>cell.getValue()</code>, and branch on <code>cell.column.id</code> for a cell with markup of its
+        own, as the demo above does for the status and the checkbox.
+      </li>
+      <li>
+        <strong>An <code>on…Change</code> option receives the new value</strong>, never an updater function, in a
+        change of its own.
+      </li>
+      <li>
+        <strong>Loop over row ids.</strong> A <code>for</code> keeps a row's element while the thing it loops
+        over stays the same, and the core makes new row objects whenever the data changes. An id is the same
+        string before and after, so the row's element, and focus inside it, survive.
+      </li>
+      <li>
+        <strong>Never keep a table, row, column or cell in a <code>source</code> or a keyed equation.</strong>{" "}
+        Both wrap the object in a store, and the core's methods fail on the copy. Data and state can be held in
+        a <code>source</code>: <code>createTable</code> hands the core a plain copy when one changes.
+      </li>
+      <li>
+        <strong>Rows are not typed by your data.</strong> ReactiveScript has no generics, so{" "}
+        <code>row.original</code> and <code>cell.getValue()</code> are <code>any</code>.
+      </li>
+    </ul>
+
+    <h2 id="examples">Examples</h2>
+
+    <h3 id="sorting">Sorting</h3>
+    <p>
+      <code>TableSortTrigger</code> is a button for the column's header. A press sorts ascending, then
+      descending, then not at all; a column of numbers starts descending. With <kbd>Shift</kbd> held it adds the
+      column to the sort. The header cell carries <code>aria-sort</code> while its column is sorted, and both
+      carry <code>data-sorted</code> to draw the arrow from. Set <code>enableSorting: false</code> on a column
+      definition and its trigger is disabled.
+    </p>
+
+    <h3 id="filtering">Filtering</h3>
+    <p>
+      <code>TableGlobalFilter</code> is a search input over every column; <code>TableColumnFilter</code> filters
+      by one. Both write the table's state on every keystroke, and a filter returns the table to its first page.
+      Leave a column out of the search with <code>enableGlobalFilter: false</code>. For a filter that isn't a
+      text input (a select of statuses, a range), call <code>column.setFilterValue(value)</code> from a control
+      of your own and give the column a <code>filterFn</code>.
+    </p>
+
+    <h3 id="selection">Selecting rows</h3>
+    <p>
+      <code>TableSelectRow</code> and <code>TableSelectAll</code> are Bisque checkboxes wired to the table.
+      Select-all is mixed while only some rows are selected, and stands for every row or, with{" "}
+      <code>scope="page"</code>, for the rows on the current page. <kbd>Shift</kbd> with a press selects the
+      range from the last row pressed. The selection is{" "}
+      <code>table.getSelectedRowModel().rows</code>; it is kept by row id, so pass <code>getRowId</code> or it
+      follows row positions.
+    </p>
+
+    <h3 id="pagination">Pagination</h3>
+    <p>
+      <code>TablePagination</code> is a <a href="/components/pagination/">Pagination</a> root whose page is the
+      table's: put Pagination's own parts inside it. The page size is{" "}
+      <code>table.setPageSize(n)</code>, from a native select in the demo.
+    </p>
+
+    <h3 id="columns">Column sizes, pinning and visibility</h3>
+    <p>
+      Each header and body cell carries its column's size as <code>--column-size</code>, and a pinned column's
+      offset as <code>--column-start</code> or <code>--column-end</code>. The parts set no layout: a stylesheet
+      that wants sized columns uses <code>table-layout: fixed</code> and <code>width: var(--column-size)</code>,
+      and one that wants pinned columns makes <code>[data-pinned]</code> cells sticky at the offset.
+    </p>
+    <p>
+      <code>TableColumnResizer</code> is a handle to drag. It is also a focusable separator: the arrow keys
+      resize by 10 pixels, <kbd>Home</kbd> and <kbd>End</kbd> go to the column's smallest and largest size, and
+      a double click puts the size back. <code>TableColumnToggle</code>, in the first demo, is a checkbox that
+      shows and hides a column.
+    </p>
+    <Demo source="table/columns"><TableColumns /></Demo>
+    <div class="note">
+      Pinning state needs both sides: <code>{"columnPinning: { start: [\"name\"], end: [] }"}</code>. The core
+      reads <code>end</code> without checking that it is there.
+    </div>
+
+    <h3 id="grouping">Grouping, aggregation and expanding</h3>
+    <p>
+      Group by one or more columns and the table's rows become group rows with their rows under them.{" "}
+      <code>TableExpandTrigger</code> shows and hides what is under a row, and says so with{" "}
+      <code>aria-expanded</code>; it does the same for a tree (<code>getSubRows</code>) and for a detail row you
+      render while <code>row.getIsExpanded()</code>. A column with an <code>aggregationFn</code> shows the
+      group's aggregate in the group's row.
+    </p>
+    <Demo source="table/grouped"><TableGrouped /></Demo>
+
+    <h3 id="controlled">Controlling state, and data from a server</h3>
+    <p>
+      Every piece of state can be held by the app: pass it in <code>state</code> with its{" "}
+      <code>on…Change</code>. The table then shows what it is given, so an owner that doesn't write the new value
+      keeps the table where it was. With an <code>on…Change</code> and no <code>state</code>, the table keeps the
+      state and the handler only listens.
+    </p>
+    <p>
+      That is how a server does the sorting and paging: the request is a question of the state, and the{" "}
+      <code>manual…</code> options turn the table's own stages off.
+    </p>
+    <Code file="table/controlled.rx.txt" />
+    <p>
+      While a page is loading, the table's own controls show the new state at once (the sorted header, the
+      current page) and the rows stay until the answer arrives. The table reads its options ahead of a change
+      that is still in flight, so an app action that is saving never freezes it.
+    </p>
+
+    <h3 id="features">A smaller bundle</h3>
+    <p>
+      <code>createTable</code> registers every feature the core has, so that any option works without setup,
+      and the bundle carries all of them. The core is tree-shakeable by feature: build a <code>features</code>{" "}
+      set in a JavaScript module, pass it as the <code>features</code> option (it is read once), and only those
+      features are bundled. The row, cell and header parts leave out what a missing feature would say; a
+      control needs its feature registered, and so does a method you call yourself:{" "}
+      <code>row.getVisibleCells()</code> is the column visibility feature's, and without it the cells are{" "}
+      <code>row.getAllCells()</code>.
+    </p>
+    <Code file="table/features.js.txt" />
+
+    <h2 id="api-reference">API reference</h2>
+    <ApiReference family="table" />
+  </DocsPage>
+}

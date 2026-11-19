@@ -1,0 +1,29 @@
+import { createTable } from "./bisque/internal/table.js"
+import { TableColumnHeader, TableSortTrigger, TableRow, TableCell } from "./bisque/table/table.rx"
+
+table = createTable({ data: people, columns: columns, getRowId: row => row.id })
+ids = table.getRowModel().rows.map(row => row.id)
+
+<table>
+  <thead>
+    {for group in table.getHeaderGroups() {
+      <tr>
+        {for header in group.headers {
+          <TableColumnHeader header={header}>
+            <TableSortTrigger column={header.column}>{header.column.columnDef.header}</TableSortTrigger>
+          </TableColumnHeader>
+        }}
+      </tr>
+    }}
+  </thead>
+  <tbody>
+    {for id in ids {
+      row = table.getRow(id)
+      <TableRow row={row}>
+        {for cell in row.getVisibleCells() {
+          <TableCell cell={cell}>{cell.getValue()}</TableCell>
+        }}
+      </TableRow>
+    }}
+  </tbody>
+</table>

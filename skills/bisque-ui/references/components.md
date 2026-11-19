@@ -44,6 +44,7 @@ Each family is one file, `<copy>/<family>/<family>.rx`. Read the family's own re
 | Sortable | A list whose items can be reordered by drag and drop, with the pointer or the keyboard. | [sortable.md](sortable.md) |
 | Splitter | Panels separated by bars that resize them, with a pointer or the keyboard. | [splitter.md](splitter.md) |
 | Switch | A native checkbox with the switch role, for a setting that is on or off. | [switch.md](switch.md) |
+| Table | A data table on a native table element: sorting, filtering, selection, paging, column sizing and grouping, with TanStack Table keeping the state. | [table.md](table.md) |
 | Table of Contents | A list of links to a document's sections that marks the one being read. | [table-of-contents.md](table-of-contents.md) |
 | Tabs | A set of panels on the same page, one shown at a time. | [tabs.md](tabs.md) |
 | Tags Input | A text input that turns what is typed into a list of removable tags. | [tags-input.md](tags-input.md) |

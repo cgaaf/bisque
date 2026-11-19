@@ -1,0 +1,432 @@
+// Table: TanStack Table's state and row models, on a native `<table>`.
+//
+// The browser already has the table: `<table>`, `<thead>`, `<tr>`, `<th>` and `<td>` carry the roles, the
+// row and column counts and the header associations, so there is no Root part and no context. What a data
+// table needs beyond that is state (what is sorted, filtered, selected, on which page) and the row models
+// computed from it. That is TanStack Table's core (`@tanstack/table-core`, version 9), which is headless and
+// framework-agnostic: `createTable` from ../internal/table.js binds it to Solid's signals, so reading the table
+// in an equation or in markup depends on exactly the state that was read.
+//
+// The table is an object with methods, and so are its rows, columns, headers and cells. The app loops over
+// them and writes the elements; each part here takes the instance it is about as a prop and adds the
+// attributes and handlers for it: `aria-sort`, a sort button, a selection checkbox, an expand button, a
+// resize handle, filter inputs, and Pagination wired to the table's page.
+//
+// Three things differ from TanStack Table in React or Solid:
+// - A column definition holds values, not markup: `.rx` has no markup outside a view, so there is no
+//   `flexRender`. Render `column.columnDef.header` and `cell.getValue()`, and branch on `cell.column.id` for a
+//   cell with markup of its own.
+// - An `on…Change` option receives the new value, never an updater function.
+// - Loop over row ids, `for id in table.getRowModel().rows.map(row => row.id)` with `row = table.getRow(id)`
+//   inside: a `for` keeps its rows by identity, the core makes new row objects whenever `data` changes, and an
+//   id is the same string before and after. Never put a table, row, column or cell in a `source` or a keyed
+//   equation: both wrap it in a store, and the core's methods stop working on the copy.
+//
+// The header, row and cell parts read the table through `latest`. The table reads its options that way (an
+// option computed from a write the app is still saving must not freeze the table), and a plain equation below
+// a `latest` one runs twice per change, the second time with equal content.
+//
+// The row, cell and header parts read a feature's state only if the table has that feature, so they work on
+// a table made with a `features` set of the app's own; a control for a feature (TableSortTrigger for sorting)
+// needs it registered.
+//
+// `@tanstack/table-core` is the one package a Bisque family needs installed. Only an app that imports this
+// family (or ../internal/table.js) pays for it.
+import { mergeProps } from "../internal/props.js"
+import { filterText, callHandler, columnSizeLimits, nudgeColumnSize, columnState, columnPlace, rowState, cellState } from "../internal/table.js"
+import { createInputValue } from "../internal/listbox.js"
+import { createRef } from "../internal/props.js"
+import { ButtonProps, InputProps, NavProps, SpanProps, TableHeaderCellProps, TableRowProps, TableCellProps, PartProps } from "../internal/types.rx"
+import { button, gateButtonHandlers } from "../button/button.rx"
+import { CheckboxRoot } from "../checkbox/checkbox.rx"
+import { PaginationRoot } from "../pagination/pagination.rx"
+
+// The core's objects, with every stock feature's methods. The row type is `any`: `.rx` has no generics, so
+// `row.original` and `cell.getValue()` are not checked against your data.
+export type TableInstance = import("../internal/impl/table.ts").Table
+export type TableRowInstance = import("../internal/impl/table.ts").Row
+export type TableColumnInstance = import("../internal/impl/table.ts").Column
+export type TableHeaderInstance = import("../internal/impl/table.ts").Header
+export type TableHeaderGroupInstance = import("../internal/impl/table.ts").HeaderGroup
+export type TableCellInstance = import("../internal/impl/table.ts").Cell
+export type TableOptions = import("../internal/impl/table.ts").TableOptions
+type ColumnPlace = import("../internal/impl/table.ts").ColumnPlace
+
+// What sizing and pinning mean for one column's cells, as custom properties: the size in `--column-size`, and
+// for a pinned column the distance from its edge in `--column-start` or `--column-end`. A stylesheet uses the
+// ones it wants (`width: var(--column-size)`; `position: sticky; inset-inline-start: var(--column-start)`).
+// Not a `ref` function: its callers read it through `latest`, which takes a plain call.
+fn columnStyle(place: ColumnPlace): PartProps => {
+  "--column-size": place.size == undefined ? undefined : `${place.size}px`,
+  "--column-start": place.start == undefined ? undefined : `${place.start}px`,
+  "--column-end": place.end == undefined ? undefined : `${place.end}px`,
+}
+
+export type TableColumnHeaderOptions = {
+  // A header from `table.getHeaderGroups()`.
+  header: TableHeaderInstance
+}
+
+// A column's header cell. `aria-sort` says how the column is sorted, on a sorted column only; a header over
+// several columns spans them.
+export fn tableColumnHeader(ref o: TableColumnHeaderOptions): PartProps {
+  column = o.header.column
+  state = latest columnState(column)
+  place = latest columnPlace(column, o.header)
+  span = o.header.colSpan
+  style = latest columnStyle(place)
+  {
+    scope: span > 1 ? "colgroup" : "col",
+    colspan: span > 1 ? span : undefined,
+    "aria-sort": state.sorted == "asc" ? "ascending" : (state.sorted == "desc" ? "descending" : undefined),
+    "data-column": column.id,
+    "data-sorted": state.sorted,
+    "data-pinned": place.pinned,
+    "data-resizing": state.resizing ? "" : undefined,
+    "data-placeholder": o.header.isPlaceholder ? "" : undefined,
+    style: style,
+  }
+}
+
+export type TableColumnHeaderProps = {
+  // A header from `table.getHeaderGroups()`.
+  header: TableHeaderInstance
+} & TableHeaderCellProps
+
+export component TableColumnHeader({ header, children, ...rest }: TableColumnHeaderProps) {
+  own = tableColumnHeader({ header: header })
+  merged = latest mergeProps(own, rest)
+  <th {...merged}>{children}</th>
+}
+
+export type TableSortTriggerOptions = {
+  column: TableColumnInstance
+}
+
+// A button that sorts by its column: ascending, descending, then unsorted (the order is the column's:
+// `sortDescFirst`, `enableSortingRemoval`). With Shift held it adds the column to the sort instead of
+// replacing it. Disabled for a column that can't be sorted. Put it inside the column's header cell, where the
+// cell's `aria-sort` tells assistive technology the result.
+export fn tableSortTrigger(ref o: TableSortTriggerOptions): PartProps {
+  column = o.column
+  canSort = column.getCanSort()
+  sorted = column.getIsSorted()
+  asButton = button({ disabled: !canSort })
+  action press(event: MouseEvent) {
+    if (canSort) { callHandler(column.getToggleSortingHandler(), event) }
+  }
+  own = {
+    "data-sorted": sorted == false ? undefined : sorted,
+    // Where the column stands among several sorted ones, from 0.
+    "data-sort-index": sorted == false ? undefined : `${column.getSortIndex()}`,
+    onClick: press,
+  }
+  mergeProps(asButton, own)
+}
+
+export type TableSortTriggerProps = {
+  column: TableColumnInstance
+} & ButtonProps
+
+export component TableSortTrigger({ column, children, ...rest }: TableSortTriggerProps) {
+  own = tableSortTrigger({ column: column })
+  external = gateButtonHandlers(rest, !column.getCanSort())
+  merged = latest mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}
+
+export type TableColumnResizerOptions = {
+  header: TableHeaderInstance
+  // Pixels an arrow key changes the size by. Default: 10.
+  step?: number
+}
+
+// A handle that resizes its column: drag it, or focus it and press the arrow keys (Home and End go to the
+// column's smallest and largest size); a double click puts the size back. It is a focusable `separator` whose
+// value is the column's size in pixels. The table's `columnResizeMode` option says whether sizes follow the
+// drag ("onChange") or apply when it ends ("onEnd", the default).
+export fn tableColumnResizer(ref o: TableColumnResizerOptions): PartProps {
+  header = o.header
+  column = header.column
+  canResize = column.getCanResize()
+  step = o.step ?? 10
+  limits = columnSizeLimits(column)
+  action start(event: Event) {
+    if (canResize) { callHandler(header.getResizeHandler(), event) }
+  }
+  action reset() {
+    if (canResize) { column.resetSize() }
+  }
+  action keyDown(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+    if (!canResize) { return }
+    let size = column.getSize()
+    // In a right-to-left table the handle is on the column's left edge, and the arrows follow it.
+    let forward = event.currentTarget.matches(":dir(rtl)") ? "ArrowLeft" : "ArrowRight"
+    let back = event.currentTarget.matches(":dir(rtl)") ? "ArrowRight" : "ArrowLeft"
+    if (event.key == forward) {
+      event.preventDefault()
+      nudgeColumnSize(column, step)
+    } else if (event.key == back) {
+      event.preventDefault()
+      nudgeColumnSize(column, -step)
+    } else if (event.key == "Home") {
+      event.preventDefault()
+      nudgeColumnSize(column, limits.min - size)
+    } else if (event.key == "End" && limits.max < 100000) {
+      event.preventDefault()
+      nudgeColumnSize(column, limits.max - size)
+    }
+  }
+  {
+    role: "separator",
+    tabindex: canResize ? "0" : undefined,
+    "aria-orientation": "vertical",
+    "aria-label": "Resize column",
+    "aria-valuenow": column.getSize(),
+    "aria-valuemin": limits.min,
+    "aria-valuemax": limits.max < 100000 ? limits.max : undefined,
+    "aria-disabled": canResize ? undefined : "true",
+    "data-resizing": column.getIsResizing() ? "" : undefined,
+    "data-disabled": canResize ? undefined : "",
+    // A touch on the handle resizes; it must not scroll the table too.
+    style: { "touch-action": "none" },
+    onMouseDown: start,
+    onTouchStart: start,
+    onDblClick: reset,
+    onKeyDown: keyDown,
+  }
+}
+
+export type TableColumnResizerProps = {
+  header: TableHeaderInstance
+  // Pixels an arrow key changes the size by. Default: 10.
+  step?: number
+} & SpanProps
+
+export component TableColumnResizer({ header, step, children, ...rest }: TableColumnResizerProps) {
+  own = tableColumnResizer({ header: header, step: latest step })
+  merged = latest mergeProps(own, rest)
+  <span {...merged}>{children}</span>
+}
+
+export type TableRowOptions = {
+  // A row from the table: `table.getRow(id)`.
+  row: TableRowInstance
+}
+
+// A body row. Its state is in `data-*` attributes for styling; assistive technology hears selection from the
+// row's checkbox and expansion from its expand button.
+export fn tableRow(ref o: TableRowOptions): PartProps {
+  row = o.row
+  state = latest rowState(row)
+  {
+    "data-row": row.id,
+    "data-selected": state.selected ? "" : undefined,
+    "data-expanded": state.expanded ? "" : undefined,
+    "data-grouped": state.grouped ? "" : undefined,
+    // How deep the row is in a tree or under group rows, from 0.
+    "data-depth": `${row.depth}`,
+    "data-pinned": state.pinned,
+  }
+}
+
+export type TableRowComponentProps = {
+  // A row from the table: `table.getRow(id)`.
+  row: TableRowInstance
+} & TableRowProps
+
+export component TableRow({ row, children, ...rest }: TableRowComponentProps) {
+  own = tableRow({ row: row })
+  merged = latest mergeProps(own, rest)
+  <tr {...merged}>{children}</tr>
+}
+
+export type TableCellOptions = {
+  // A cell from `row.getVisibleCells()`.
+  cell: TableCellInstance
+}
+
+// A body cell.
+export fn tableCell(ref o: TableCellOptions): PartProps {
+  cell = o.cell
+  state = latest cellState(cell)
+  place = latest columnPlace(cell.column, undefined)
+  style = latest columnStyle(place)
+  {
+    "data-column": cell.column.id,
+    "data-pinned": place.pinned,
+    // In a grouped table: the cell that names its row's group, a cell holding the group's aggregate, and a
+    // cell left empty because its column is grouped by.
+    "data-grouped": state.grouped ? "" : undefined,
+    "data-aggregated": state.aggregated ? "" : undefined,
+    "data-placeholder": state.placeholder ? "" : undefined,
+    style: style,
+  }
+}
+
+export type TableCellComponentProps = {
+  // A cell from `row.getVisibleCells()`.
+  cell: TableCellInstance
+} & TableCellProps
+
+export component TableCell({ cell, children, ...rest }: TableCellComponentProps) {
+  own = tableCell({ cell: cell })
+  merged = latest mergeProps(own, rest)
+  <td {...merged}>{children}</td>
+}
+
+export type TableSelectRowProps = {
+  row: TableRowInstance
+} & Omit<InputProps, "checked" | "value">
+
+// A checkbox that selects its row. Shift with a press selects every row from the last one pressed to this one.
+// Mixed when some of the row's sub-rows are selected; disabled for a row that can't be selected. Labelled
+// "Select row": pass an `aria-label` that names the row.
+export component TableSelectRow({ row, children, ...rest }: TableSelectRowProps) {
+  // On the click, not the change: only the click says whether Shift was held. The browser has already toggled
+  // the box by then, which is what the core's handler reads.
+  action press(event: MouseEvent) {
+    callHandler(row.getToggleSelectedHandler(), event)
+  }
+  merged = latest mergeProps({ "aria-label": "Select row", onClick: press }, rest)
+  <CheckboxRoot checked={row.getIsSelected()} indeterminate={row.getIsSomeSelected()} disabled={!row.getCanSelect()} {...merged}>{children}</CheckboxRoot>
+}
+
+export type TableSelectAllProps = {
+  table: TableInstance
+  // Which rows the box stands for: every row, or the rows on the current page. Default: "all".
+  scope?: "all" | "page"
+} & Omit<InputProps, "checked" | "value">
+
+// A checkbox that selects every row, or every row on the page: checked when all are selected, mixed when some
+// are. Labelled "Select all rows".
+export component TableSelectAll({ table, scope, children, ...rest }: TableSelectAllProps) {
+  page = (latest scope) == "page"
+  all = page ? table.getIsAllPageRowsSelected() : table.getIsAllRowsSelected()
+  some = page ? table.getIsSomePageRowsSelected() : table.getIsSomeRowsSelected()
+  action change(next: boolean) {
+    if (page) {
+      table.toggleAllPageRowsSelected(next)
+    } else {
+      table.toggleAllRowsSelected(next)
+    }
+  }
+  merged = latest mergeProps({ "aria-label": "Select all rows" }, rest)
+  <CheckboxRoot checked={all} indeterminate={some == true && !all} onCheckedChange={change} {...merged}>{children}</CheckboxRoot>
+}
+
+export type TableExpandTriggerOptions = {
+  row: TableRowInstance
+}
+
+// A button that shows and hides what is under its row: sub-rows, a group's rows, or a detail row the app
+// renders when `row.getIsExpanded()`. `aria-expanded` says which; disabled for a row with nothing to show.
+export fn tableExpandTrigger(ref o: TableExpandTriggerOptions): PartProps {
+  row = o.row
+  canExpand = row.getCanExpand()
+  expanded = row.getIsExpanded()
+  asButton = button({ disabled: !canExpand })
+  action press() {
+    if (canExpand) { row.toggleExpanded() }
+  }
+  own = {
+    "aria-expanded": canExpand ? (expanded ? "true" : "false") : undefined,
+    "data-expanded": expanded ? "" : undefined,
+    onClick: press,
+  }
+  mergeProps(asButton, own)
+}
+
+export type TableExpandTriggerProps = {
+  row: TableRowInstance
+} & ButtonProps
+
+export component TableExpandTrigger({ row, children, ...rest }: TableExpandTriggerProps) {
+  own = tableExpandTrigger({ row: row })
+  external = gateButtonHandlers(rest, !row.getCanExpand())
+  merged = latest mergeProps(own, external)
+  <button {...merged}>{children}</button>
+}
+
+export type TableColumnFilterProps = {
+  column: TableColumnInstance
+} & Omit<InputProps, "value">
+
+// A text input that filters by its column: rows are kept while the column's value matches what is typed (how
+// is the column's `filterFn`). Empty means no filter. Disabled for a column that can't be filtered.
+export component TableColumnFilter({ column, children, ...rest }: TableColumnFilterProps) {
+  source element: HTMLInputElement | undefined := undefined
+  action writeElement(input: HTMLInputElement) { element := input }
+  setElement = createRef(writeElement)
+  // Written to the input only when it differs, so a filter set elsewhere (a reset button) shows, and typing
+  // is never overwritten.
+  _value = createInputValue(element, filterText(column.getFilterValue()))
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    let text = event.currentTarget.value
+    column.setFilterValue(text == "" ? undefined : text)
+  }
+  own = {
+    disabled: column.getCanFilter() ? undefined : true,
+    "data-filtered": column.getIsFiltered() ? "" : undefined,
+    ref: setElement,
+    onInput: input,
+  }
+  merged = mergeProps(own, latest rest)
+  <input {...merged} />
+}
+
+export type TableGlobalFilterProps = {
+  table: TableInstance
+} & Omit<InputProps, "value">
+
+// A search input over every column: rows are kept while any column's value matches. Empty means no filter.
+export component TableGlobalFilter({ table, children, ...rest }: TableGlobalFilterProps) {
+  source element: HTMLInputElement | undefined := undefined
+  action writeElement(input: HTMLInputElement) { element := input }
+  setElement = createRef(writeElement)
+  text = filterText(table.store.state.globalFilter)
+  _value = createInputValue(element, text)
+  action input(event: InputEvent & { currentTarget: HTMLInputElement }) {
+    let next = event.currentTarget.value
+    table.setGlobalFilter(next == "" ? undefined : next)
+  }
+  own = {
+    type: "search",
+    "data-filtered": text == "" ? undefined : "",
+    ref: setElement,
+    onInput: input,
+  }
+  merged = mergeProps(own, latest rest)
+  <input {...merged} />
+}
+
+export type TableColumnToggleProps = {
+  column: TableColumnInstance
+} & Omit<InputProps, "checked" | "value">
+
+// A checkbox that shows and hides its column. Disabled for a column that can't be hidden (`enableHiding`).
+// Give it a label that names the column.
+export component TableColumnToggle({ column, children, ...rest }: TableColumnToggleProps) {
+  action change(next: boolean) { column.toggleVisibility(next) }
+  merged = latest mergeProps({}, rest)
+  <CheckboxRoot checked={column.getIsVisible()} disabled={!column.getCanHide()} onCheckedChange={change} {...merged}>{children}</CheckboxRoot>
+}
+
+export type TablePaginationProps = {
+  table: TableInstance
+  // Pages shown on each side of the current one. Default: 1.
+  siblingCount?: number
+  // Pages always shown at the start and at the end. Default: 1.
+  boundaryCount?: number
+  children?: View
+} & Omit<NavProps, "children">
+
+// Pagination for the table's pages: a PaginationRoot whose page is the table's. Inside it, use Pagination's
+// own parts (PaginationPrevious, PaginationItem, PaginationNext…) and `use pagination`.
+export component TablePagination(props: TablePaginationProps) {
+  action setPage(page: number) { props.table.setPageIndex(page - 1) }
+  // `children` is never named here: read in this component, they would be made before PaginationRoot provides
+  // its context. They travel in `rest`, and are rendered explicitly so the context check sees them.
+  { table, ...rest } = props
+  <PaginationRoot {...rest} page={props.table.store.state.pagination.pageIndex + 1} pageCount={props.table.getPageCount()} onPageChange={setPage}>{props.children}</PaginationRoot>
+}

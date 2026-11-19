@@ -1,0 +1,130 @@
+.TableColumns {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  width: 100%;
+  font-size: 0.875rem;
+
+  .Scroller {
+    max-width: 100%;
+    overflow-x: auto;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.5rem;
+  }
+
+  .Table {
+    /* Fixed layout: a column is as wide as its header cell says, whatever its content. */
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .Head,
+  .Cell {
+    /* The size the table holds for the column, written by the part. */
+    width: var(--column-size);
+    padding: 0.5rem 0.75rem;
+    overflow: hidden;
+    background: light-dark(#fff, #16161a);
+    text-align: start;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .Head {
+    position: relative;
+    border-bottom: 1px solid light-dark(#d4d4dc, #3a3a43);
+    background: light-dark(#f7f7f9, #1c1c21);
+    color: light-dark(#63636e, #9a9aa6);
+    font-weight: 500;
+  }
+
+  .Row + .Row .Cell {
+    border-top: 1px solid light-dark(#ececf0, #2a2a31);
+  }
+
+  /* A pinned column sticks at the offset the part works out from the columns pinned before it. */
+  [data-pinned="start"] {
+    position: sticky;
+    inset-inline-start: var(--column-start);
+    z-index: 1;
+    box-shadow: inset -1px 0 light-dark(#d4d4dc, #3a3a43);
+  }
+
+  .Label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .Pin {
+    display: inline-grid;
+    place-items: center;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-inline-start: 0.25rem;
+    padding: 0;
+    border: 0;
+    border-radius: 0.25rem;
+    background: none;
+    color: inherit;
+    vertical-align: middle;
+    opacity: 0.45;
+    cursor: pointer;
+  }
+
+  .Pin:hover,
+  .Pin[aria-pressed="true"] {
+    opacity: 1;
+  }
+
+  .Pin[aria-pressed="true"] {
+    color: light-dark(#2f5bea, #8eabff);
+  }
+
+  /* The handle: a strip on the header's end edge, wider than the line it draws so it is easy to grab. */
+  .Resizer {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: 0;
+    width: 0.625rem;
+    cursor: col-resize;
+    user-select: none;
+  }
+
+  .Resizer::after {
+    content: "";
+    position: absolute;
+    inset-block: 0.5rem;
+    inset-inline-end: 0;
+    width: 2px;
+    border-radius: 1px;
+    background: light-dark(#d4d4dc, #3a3a43);
+  }
+
+  .Resizer:hover::after,
+  .Resizer:focus-visible::after,
+  .Resizer[data-resizing]::after {
+    inset-block: 0;
+    background: light-dark(#2f5bea, #8eabff);
+  }
+
+  .Resizer:focus-visible {
+    outline: none;
+  }
+
+  .Reset {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid light-dark(#d4d4dc, #3a3a43);
+    border-radius: 0.375rem;
+    background: light-dark(#fff, #16161a);
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+  }
+
+  :is(.Pin, .Reset):focus-visible {
+    outline: 2px solid light-dark(#2f5bea, #8eabff);
+    outline-offset: 1px;
+  }
+}

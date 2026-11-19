@@ -1,0 +1,72 @@
+import { createTable } from "../../../src/internal/table.js"
+import { TableColumnHeader, TableColumnResizer, TableRow, TableCell } from "../../../src/table/table.rx"
+
+export component TableColumns() {
+  services = [
+    { id: "api", name: "api-gateway", owner: "Platform", region: "eu-west-1", version: "4.12.0", requests: 184200, errors: 0.12, latency: 48 },
+    { id: "auth", name: "auth", owner: "Identity", region: "eu-west-1", version: "2.8.3", requests: 96400, errors: 0.03, latency: 31 },
+    { id: "billing", name: "billing", owner: "Payments", region: "us-east-1", version: "7.1.0", requests: 12800, errors: 0.4, latency: 122 },
+    { id: "search", name: "search", owner: "Discovery", region: "us-east-1", version: "1.19.2", requests: 61350, errors: 0.21, latency: 87 },
+    { id: "mailer", name: "mailer", owner: "Growth", region: "ap-south-1", version: "3.0.1", requests: 8420, errors: 1.3, latency: 240 },
+    { id: "media", name: "media-resize", owner: "Platform", region: "ap-south-1", version: "0.44.0", requests: 27900, errors: 0.08, latency: 310 },
+  ]
+  columns = [
+    { accessorKey: "name", header: "Service", size: 170, minSize: 120, maxSize: 320 },
+    { accessorKey: "owner", header: "Owner", size: 130, minSize: 80 },
+    { accessorKey: "region", header: "Region", size: 130, minSize: 80 },
+    { accessorKey: "version", header: "Version", size: 110, minSize: 80 },
+    { accessorKey: "requests", header: "Requests / h", size: 140, minSize: 100 },
+    { accessorKey: "errors", header: "Errors %", size: 110, minSize: 80 },
+    { accessorKey: "latency", header: "p95 ms", size: 110, minSize: 80 },
+  ]
+  table = createTable({
+    data: services,
+    columns: columns,
+    getRowId: row => row.id,
+    // Sizes follow the drag. "onEnd", the default, applies them when it ends.
+    columnResizeMode: "onChange",
+    initialState: { columnPinning: { start: ["name"], end: [] } },
+  })
+  ids = table.getRowModel().rows.map(row => row.id)
+  // The table is as wide as its columns: with `table-layout: fixed`, each column gets exactly its size.
+  totalSize = table.getTotalSize()
+
+  <div class="TableColumns">
+    <div class="Scroller">
+      <table class="Table" style={{ width: `${totalSize}px` }}>
+        <thead>
+          <tr>
+            {for header in table.getFlatHeaders() {
+              <TableColumnHeader class="Head" header={header}>
+                <span class="Label">{header.column.columnDef.header}</span>
+                <button
+                  class="Pin"
+                  type="button"
+                  aria-pressed={header.column.getIsPinned() == "start" ? "true" : "false"}
+                  aria-label={`Pin ${header.column.columnDef.header}`}
+                  onClick={() => { header.column.pin(header.column.getIsPinned() == "start" ? false : "start") }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="M5.5 2h5l-.75 4.5 2.25 2.5H4l2.25-2.5L5.5 2ZM8 9v5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round" />
+                  </svg>
+                </button>
+                <TableColumnResizer class="Resizer" header={header} aria-label={`Resize ${header.column.columnDef.header}`} />
+              </TableColumnHeader>
+            }}
+          </tr>
+        </thead>
+        <tbody>
+          {for id in ids {
+            row = table.getRow(id)
+            <TableRow class="Row" row={row}>
+              {for cell in row.getVisibleCells() {
+                <TableCell class="Cell" cell={cell}>{cell.getValue()}</TableCell>
+              }}
+            </TableRow>
+          }}
+        </tbody>
+      </table>
+    </div>
+    <button class="Reset" type="button" onClick={() => { table.resetColumnSizing(); table.resetColumnPinning() }}>Reset columns</button>
+  </div>
+}

@@ -59,6 +59,7 @@ const COMPONENTS = [
   "sortable",
   "splitter",
   "switch",
+  "table",
   "table-of-contents",
   "tabs",
   "tags-input",

@@ -1,0 +1,2 @@
+pnpm add @tanstack/table-core
+pnpm exec bisque copy src/bisque

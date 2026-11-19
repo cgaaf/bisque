@@ -1,0 +1,18 @@
+// table-features.js: only sorting and pagination end up in the bundle.
+import { createPaginatedRowModel, createSortedRowModel, rowPaginationFeature, rowSortingFeature, sortFns, tableFeatures } from "@tanstack/table-core";
+
+export function orderTableFeatures() {
+  return tableFeatures({
+    rowSortingFeature,
+    sortedRowModel: createSortedRowModel(),
+    sortFns,
+    rowPaginationFeature,
+    paginatedRowModel: createPaginatedRowModel(),
+  });
+}
+
+// table-features.d.rx, beside it, declares the function to ReactiveScript:
+//   export pure fn orderTableFeatures(): unknown
+//
+// and the component passes it on:
+//   table = createTable({ features: orderTableFeatures(), data: orders, columns: columns })

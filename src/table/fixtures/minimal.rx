@@ -1,0 +1,37 @@
+import { createTable } from "../../internal/table.js"
+import { sortingFeatures } from "./minimal-features.js"
+import { TableColumnHeader, TableSortTrigger, TableRow, TableCell } from "../table.rx"
+
+// A table with only the sorting feature registered: the row, cell and header parts still work. The cells come
+// from `getAllCells`: `getVisibleCells` belongs to the column visibility feature, which this table doesn't have.
+export default component Fixture() {
+  people = [
+    { id: "a", name: "Mira" },
+    { id: "b", name: "Otto" },
+    { id: "c", name: "Ines" },
+  ]
+  columns = [{ accessorKey: "name", header: "Name" }]
+  table = createTable({ features: sortingFeatures(), data: people, columns: columns, getRowId: row => row.id })
+  ids = table.getRowModel().rows.map(row => row.id)
+  <table>
+    <thead>
+      <tr>
+        {for header in table.getFlatHeaders() {
+          <TableColumnHeader header={header}>
+            <TableSortTrigger column={header.column}>{header.column.columnDef.header}</TableSortTrigger>
+          </TableColumnHeader>
+        }}
+      </tr>
+    </thead>
+    <tbody>
+      {for id in ids {
+        row = table.getRow(id)
+        <TableRow row={row}>
+          {for cell in row.getAllCells() {
+            <TableCell cell={cell}>{cell.getValue()}</TableCell>
+          }}
+        </TableRow>
+      }}
+    </tbody>
+  </table>
+}

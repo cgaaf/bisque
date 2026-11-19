@@ -1,0 +1,21 @@
+source sorting: Sort[] := []
+source pagination := { pageIndex: 0, pageSize: 20 }
+
+// The server sorts and pages: the request is a question of the table's state.
+page = await fetchOrders(sorting, pagination.pageIndex, pagination.pageSize)
+
+action setSorting(next: Sort[]) { sorting := next }
+action setPagination(next: Paging) { pagination := next }
+
+table = createTable({
+  data: page.rows,
+  columns: columns,
+  getRowId: row => row.id,
+  // `manual…` turns the table's own stage off; it doesn't fetch anything.
+  manualSorting: true,
+  manualPagination: true,
+  rowCount: page.total,
+  state: { sorting: sorting, pagination: pagination },
+  onSortingChange: setSorting,
+  onPaginationChange: setPagination,
+})

@@ -70,6 +70,15 @@ mount and cleanup, an action calling another action, and method calls on DOM obj
 - **`for … in` keeps rows by object identity.** Only a keyed _equation_ (`rows key id = …`) keeps a row when
   its object is replaced; a keyed `source` does not, in either form. Hold the data in a plain source and loop
   over a keyed equation of it (`src/toast/toast.rx`).
+- **An object with methods of its own can't go through a store.** A keyed equation (`rows key id = …`) and a
+  `source` both wrap what they hold; a TanStack Table row read back from one fails in its own methods
+  (`this[memoKey] is not a function`). Loop over ids and look the object up in the row (`src/table/table.rx`).
+- **A source that holds an array or object is one store proxy for its whole life**, changed in place. A library
+  that compares references never sees it change: read it with `deep` and pass a copy (`plain` in
+  `src/internal/impl/table.ts`).
+- **No optional call**: `row.getIsSelected?.()` is `PARSE member near '()'`. Make the call in TypeScript.
+- **A `//` comment inside an element, before a child element, was rendered as text** (a docs demo). Put it
+  above the view.
 - **Module state is one value per app**, and plain TypeScript can't import an `.rx` module's named exports, so
   state that outside code must reach is a JS object passed in (the toast manager), not a module source.
 - **A write before an `await` in an action is hidden until the action ends.** `onFlush(() => { … })` shows it

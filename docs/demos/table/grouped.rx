@@ -1,0 +1,100 @@
+import { createTable } from "../../../src/internal/table.js"
+import { TableColumnHeader, TableSortTrigger, TableRow, TableCell, TableExpandTrigger } from "../../../src/table/table.rx"
+
+export component TableGrouped() {
+  tasks = [
+    { id: "t1", title: "Rotate signing keys", team: "Platform", priority: "High", hours: 6 },
+    { id: "t2", title: "Trim image cache", team: "Platform", priority: "Low", hours: 2 },
+    { id: "t3", title: "Upgrade the queue", team: "Platform", priority: "Medium", hours: 12 },
+    { id: "t4", title: "Invoice export", team: "Payments", priority: "High", hours: 9 },
+    { id: "t5", title: "Retry failed refunds", team: "Payments", priority: "High", hours: 4 },
+    { id: "t6", title: "Tax rate table", team: "Payments", priority: "Medium", hours: 7 },
+    { id: "t7", title: "Onboarding checklist", team: "Growth", priority: "Medium", hours: 5 },
+    { id: "t8", title: "Referral emails", team: "Growth", priority: "Low", hours: 3 },
+  ]
+  // `aggregationFn` is what a group's row shows in the column: how many tasks, and their hours added up.
+  columns = [
+    { accessorKey: "team", header: "Team" },
+    { accessorKey: "priority", header: "Priority" },
+    { accessorKey: "title", header: "Task", aggregationFn: "count", enableGrouping: false },
+    { accessorKey: "hours", header: "Hours", aggregationFn: "sum", enableGrouping: false },
+  ]
+  table = createTable({
+    data: tasks,
+    columns: columns,
+    getRowId: row => row.id,
+    initialState: { grouping: ["team"], expanded: { "team:Platform": true } },
+  })
+  ids = table.getRowModel().rows.map(row => row.id)
+  grouping = table.store.state.grouping
+  options = [
+    { label: "Team", value: "team" },
+    { label: "Priority", value: "priority" },
+    { label: "Team, then priority", value: "team,priority" },
+    { label: "Nothing", value: "" },
+  ]
+
+  // In a group's row, the grouped column's cell names the group (`getIsGrouped`) and gets the button for the
+  // rows under it; a column with an `aggregationFn` holds the group's aggregate (`getIsAggregated`). Under a
+  // group, the grouped column's cell is a placeholder and stays empty.
+  action groupBy(event: Event & { currentTarget: HTMLSelectElement }) {
+    let value = event.currentTarget.value
+    table.setGrouping(value == "" ? [] : value.split(","))
+  }
+
+  <div class="TableGrouped">
+    <div class="Toolbar">
+      <label class="GroupBy">
+        Group by
+        <select onChange={groupBy}>
+          {for option in options {
+            <option value={option.value} selected={grouping.join(",") == option.value}>{option.label}</option>
+          }}
+        </select>
+      </label>
+      <button class="Button" type="button" onClick={() => { table.toggleAllRowsExpanded() }}>
+        {table.getIsAllRowsExpanded() ? "Collapse all" : "Expand all"}
+      </button>
+    </div>
+    <div class="Scroller">
+      <table class="Table">
+        <thead>
+          <tr>
+            {for header in table.getFlatHeaders() {
+              <TableColumnHeader class="Head" header={header}>
+                <TableSortTrigger class="Sort" column={header.column}>{header.column.columnDef.header}</TableSortTrigger>
+              </TableColumnHeader>
+            }}
+          </tr>
+        </thead>
+        <tbody>
+          {for id in ids {
+            row = table.getRow(id)
+            <TableRow class="Row" row={row}>
+              {for cell in row.getVisibleCells() {
+                <TableCell class="Cell" cell={cell}>
+                  {if cell.getIsGrouped() {
+                    <TableExpandTrigger class="Expand" row={row}>
+                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                        <path d="M6 3.5 10.5 8 6 12.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                      </svg>
+                      {cell.getValue()}
+                    </TableExpandTrigger>
+                  } else if cell.getIsAggregated() {
+                    {if cell.column.id == "title" {
+                      <span class="Muted">{`${cell.getValue()} tasks`}</span>
+                    } else if cell.column.id == "hours" {
+                      <strong>{cell.getValue()}</strong>
+                    }}
+                  } else if !cell.getIsPlaceholder() {
+                    {cell.getValue() ?? ""}
+                  }}
+                </TableCell>
+              }}
+            </TableRow>
+          }}
+        </tbody>
+      </table>
+    </div>
+  </div>
+}

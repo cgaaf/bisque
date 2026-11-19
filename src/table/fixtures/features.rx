@@ -1,0 +1,72 @@
+import { createTable } from "../../internal/table.js"
+import { TableColumnHeader, TableSortTrigger, TableColumnResizer, TableRow, TableCell, TableExpandTrigger, TableSelectRow } from "../table.rx"
+
+type Node = { id: string; name: string; size: number; children?: Node[] }
+type Sort = { id: string; desc: boolean }
+
+// A tree with controlled sorting held in a source, resizable columns and a pinned column.
+export default component Fixture() {
+  source sorting: Sort[] := [{ id: "size", desc: true }]
+  source refuse: boolean := false
+  source log := ""
+  nodes = [
+    { id: "src", name: "src", size: 30, children: [
+      { id: "src/a", name: "a.ts", size: 10 },
+      { id: "src/b", name: "b.ts", size: 20 },
+    ] },
+    { id: "docs", name: "docs", size: 50, children: [{ id: "docs/x", name: "x.md", size: 50 }] },
+    { id: "readme", name: "readme.md", size: 5 },
+  ]
+  columns = [
+    { accessorKey: "name", header: "Name", size: 200, minSize: 100, maxSize: 300 },
+    { accessorKey: "size", header: "Size", enableResizing: false },
+  ]
+  action setSorting(next: Sort[]) {
+    log := next.map(s => `${s.id}:${s.desc ? "desc" : "asc"}`).join(",")
+    if (!refuse) { sorting := next }
+  }
+  table = createTable({
+    data: nodes,
+    columns: columns,
+    getRowId: row => row.id,
+    getSubRows: row => row.children,
+    state: { sorting: sorting },
+    onSortingChange: setSorting,
+    columnResizeMode: "onChange",
+    initialState: { columnPinning: { start: ["name"], end: [] } },
+  })
+  ids = table.getRowModel().rows.map(row => row.id)
+  <main>
+    <table>
+      <thead>
+        <tr>
+          {for header in table.getFlatHeaders() {
+            <TableColumnHeader header={header}>
+              <TableSortTrigger column={header.column}>{header.column.columnDef.header}</TableSortTrigger>
+              <TableColumnResizer header={header} aria-label={`Resize ${header.column.columnDef.header}`}>|</TableColumnResizer>
+            </TableColumnHeader>
+          }}
+        </tr>
+      </thead>
+      <tbody>
+        {for id in ids {
+          row = table.getRow(id)
+          <TableRow row={row} data-testid={id}>
+            {for cell in row.getVisibleCells() {
+              <TableCell cell={cell}>
+                {if cell.column.id == "name" {
+                  <TableSelectRow row={row} aria-label={`Select ${row.original.name}`} />
+                  <TableExpandTrigger row={row}>{`Toggle ${row.original.name}`}</TableExpandTrigger>
+                }}
+                <span>{cell.getValue()}</span>
+              </TableCell>
+            }}
+          </TableRow>
+        }}
+      </tbody>
+    </table>
+    <output data-testid="log">{log}</output>
+    <button onClick={() => { refuse := true }}>Refuse</button>
+    <button onClick={() => { sorting := [] }}>Clear sorting</button>
+  </main>
+}

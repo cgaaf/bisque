@@ -1,0 +1,163 @@
+{
+  "TableColumnHeader": {
+    "description": "A column's header cell, a `<th>`. It carries `aria-sort` while its column is sorted, spans the columns a group header stands over, and holds the column's size and pinned offset as custom properties.",
+    "props": {
+      "header": "The header this cell is for: one of `group.headers` from `table.getHeaderGroups()`, or of `table.getFlatHeaders()`."
+    },
+    "dataAttributes": {
+      "data-column": "The column's id.",
+      "data-sorted": "`asc` or `desc` while the column is sorted.",
+      "data-pinned": "`start` or `end` while the column is pinned.",
+      "data-resizing": "Present while the column is being resized.",
+      "data-placeholder": "Present on a header that only fills the space above a column in a deeper header group."
+    },
+    "cssVariables": {
+      "--column-size": "The column's size in pixels.",
+      "--column-start": "On a column pinned to the start: its distance from the table's start edge.",
+      "--column-end": "On a column pinned to the end: its distance from the table's end edge."
+    }
+  },
+  "TableSortTrigger": {
+    "description": "A button that sorts by its column: ascending, descending, then unsorted, in the order the column's options give. With Shift held it adds the column to the sort. Disabled for a column that can't be sorted. Put it in the column's header cell.",
+    "props": {
+      "column": "The column to sort by: `header.column`."
+    },
+    "dataAttributes": {
+      "data-sorted": "`asc` or `desc` while the column is sorted.",
+      "data-sort-index": "Where the column stands among the sorted columns, from 0.",
+      "data-disabled": "Present when the column can't be sorted."
+    }
+  },
+  "TableColumnResizer": {
+    "description": "A handle that resizes its column by dragging. It is a focusable `separator` whose value is the column's size: the arrow keys resize it, Home and End go to its smallest and largest size, and a double click puts the size back. Give it an `aria-label` that names the column.",
+    "props": {
+      "header": "The header whose column the handle resizes.",
+      "step": "Pixels an arrow key changes the size by."
+    },
+    "dataAttributes": {
+      "data-resizing": "Present while the column is being resized.",
+      "data-disabled": "Present when the column can't be resized."
+    }
+  },
+  "TableRow": {
+    "description": "A body row, a `<tr>`, with its state as `data-*` attributes to style by.",
+    "props": {
+      "row": "The row: `table.getRow(id)`."
+    },
+    "dataAttributes": {
+      "data-row": "The row's id.",
+      "data-selected": "Present while the row is selected.",
+      "data-expanded": "Present while the row is expanded.",
+      "data-grouped": "Present on a group's own row.",
+      "data-depth": "How deep the row is in a tree or under group rows, from 0.",
+      "data-pinned": "`top` or `bottom` while the row is pinned."
+    }
+  },
+  "TableCell": {
+    "description": "A body cell, a `<td>`, with its column's size and pinned offset as custom properties.",
+    "props": {
+      "cell": "The cell: one of `row.getVisibleCells()`."
+    },
+    "dataAttributes": {
+      "data-column": "The column's id.",
+      "data-pinned": "`start` or `end` while the column is pinned.",
+      "data-grouped": "In a group's row: present on the cell that names the group.",
+      "data-aggregated": "In a group's row: present on a cell that holds the group's aggregate.",
+      "data-placeholder": "Under a group: present on the grouped column's cell, which stays empty."
+    },
+    "cssVariables": {
+      "--column-size": "The column's size in pixels.",
+      "--column-start": "On a column pinned to the start: its distance from the table's start edge.",
+      "--column-end": "On a column pinned to the end: its distance from the table's end edge."
+    }
+  },
+  "TableSelectRow": {
+    "description": "A checkbox that selects its row: a CheckboxRoot wired to the table. Shift with a press selects every row from the last one pressed to this one. It is mixed while only some of the row's sub-rows are selected, and disabled for a row that can't be selected. Labelled \"Select row\": pass an `aria-label` that names the row.",
+    "props": {
+      "row": "The row the box selects."
+    },
+    "dataAttributes": {
+      "data-dirty": null,
+      "data-filled": null,
+      "data-focused": null,
+      "data-invalid": null,
+      "data-parent": null,
+      "data-readonly": null,
+      "data-touched": null,
+      "data-valid": null,
+      "data-disabled": "Present when the row can't be selected."
+    }
+  },
+  "TableSelectAll": {
+    "description": "A checkbox that selects every row, or every row on the current page: checked when all are selected, mixed when some are. A CheckboxRoot wired to the table, labelled \"Select all rows\".",
+    "props": {
+      "table": "The table.",
+      "scope": "Which rows the box stands for: `all`, or the rows on the current `page`."
+    },
+    "dataAttributes": {
+      "data-dirty": null,
+      "data-filled": null,
+      "data-focused": null,
+      "data-invalid": null,
+      "data-parent": null,
+      "data-readonly": null,
+      "data-touched": null,
+      "data-valid": null,
+      "data-disabled": null
+    }
+  },
+  "TableExpandTrigger": {
+    "description": "A button that shows and hides what is under its row: sub-rows, a group's rows, or a detail row the app renders while `row.getIsExpanded()`. It carries `aria-expanded`, and is disabled for a row with nothing under it.",
+    "props": {
+      "row": "The row to expand."
+    },
+    "dataAttributes": {
+      "data-expanded": "Present while the row is expanded.",
+      "data-disabled": "Present when the row has nothing to show."
+    }
+  },
+  "TableColumnFilter": {
+    "description": "A text input that filters by its column: rows are kept while the column's value matches what is typed, as the column's `filterFn` decides. Empty means no filter. Disabled for a column that can't be filtered.",
+    "props": {
+      "column": "The column to filter by."
+    },
+    "dataAttributes": {
+      "data-filtered": "Present while the column has a filter."
+    }
+  },
+  "TableGlobalFilter": {
+    "description": "A search input over every column that allows it: rows are kept while any of those columns matches. Empty means no filter.",
+    "props": {
+      "table": "The table."
+    },
+    "dataAttributes": {
+      "data-filtered": "Present while there is a search."
+    }
+  },
+  "TableColumnToggle": {
+    "description": "A checkbox that shows and hides its column: a CheckboxRoot wired to the table. Disabled for a column that can't be hidden. Label it with the column's name.",
+    "props": {
+      "column": "The column to show and hide."
+    },
+    "dataAttributes": {
+      "data-dirty": null,
+      "data-filled": null,
+      "data-focused": null,
+      "data-invalid": null,
+      "data-parent": null,
+      "data-readonly": null,
+      "data-touched": null,
+      "data-valid": null,
+      "data-disabled": "Present when the column can't be hidden."
+    }
+  },
+  "TablePagination": {
+    "description": "A PaginationRoot whose page is the table's. Put Pagination's own parts inside it, and read `use pagination` for the page numbers.",
+    "element": "nav",
+    "props": {
+      "table": "The table.",
+      "siblingCount": "Pages shown on each side of the current one.",
+      "boundaryCount": "Pages always shown at the start and at the end."
+    }
+  }
+}
